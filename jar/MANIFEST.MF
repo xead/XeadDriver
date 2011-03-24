@@ -1,0 +1,5 @@
+Manifest-Version: 1.0 
+Sealed: true 
+Main-Class: xeadDriver.Application
+Class-Path: ./derby.jar ./derbyclient.jar ./xercesImpl.jar ./poi-3.2-FINAL-20081019.jar ./iText-2.1.7.jar ./iTextAsian.jar
+

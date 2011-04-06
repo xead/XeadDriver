@@ -1,10 +1,40 @@
 package xeadDriver;
 
+/*
+ * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * All rights reserved.
+ *
+ * This file is part of XEAD Driver.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the XEAD Project nor the names of its contributors
+ *       may be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.*;
 import javax.swing.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -61,25 +91,25 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private JPanel jPanelTopEastMargin = new JPanel();
 	private JPanel jPanelTopWestMargin = new JPanel();
 	private JButton jButtonList = new JButton();
-	private JPanel jPanelFilter[] = new JPanel[5];
-	private double filterWidth[] = new double[5];
-	private boolean anyFilterIsEditable[] = new boolean[5];
+	private JPanel jPanelFilter[] = new JPanel[10];
+	private double filterWidth[] = new double[10];
+	private boolean anyFilterIsEditable[] = new boolean[10];
 	@SuppressWarnings("unchecked")
-	private ArrayList<XF300_Filter> filterListArray[] = new ArrayList[5];
+	private ArrayList<XF300_Filter> filterListArray[] = new ArrayList[10];
 	@SuppressWarnings("unchecked")
-	private ArrayList<XF300_DetailColumn>[] detailColumnListArray = new ArrayList[5];
+	private ArrayList<XF300_DetailColumn>[] detailColumnListArray = new ArrayList[10];
 	@SuppressWarnings("unchecked")
-	private ArrayList<XF300_DetailReferTable>[] detailReferTableListArray = new ArrayList[5];
+	private ArrayList<XF300_DetailReferTable>[] detailReferTableListArray = new ArrayList[10];
 	@SuppressWarnings("unchecked")
-	private ArrayList<WorkingRow>[] workingRowListArray = new ArrayList[5];
-	private XF300_DetailTable[] detailTableArray = new XF300_DetailTable[5];
-	private org.w3c.dom.Element[] detailFunctionElementArray = new org.w3c.dom.Element[5];
-	private String[] detailFunctionIDArray = new String[5];
-	private TableModelReadOnlyList[] tableModelMainArray = new TableModelReadOnlyList[5];
-	private JTable[] jTableMainArray = new JTable[5];
-	private String[] initialMsgArray = new String[5];
-	private NodeList[] detailReferElementList = new NodeList[5];
-	private Bindings[] detailScriptBindingsArray = new Bindings[5];
+	private ArrayList<WorkingRow>[] workingRowListArray = new ArrayList[10];
+	private XF300_DetailTable[] detailTableArray = new XF300_DetailTable[10];
+	private org.w3c.dom.Element[] detailFunctionElementArray = new org.w3c.dom.Element[10];
+	private String[] detailFunctionIDArray = new String[10];
+	private TableModelReadOnlyList[] tableModelMainArray = new TableModelReadOnlyList[10];
+	private JTable[] jTableMainArray = new JTable[10];
+	private String[] initialMsgArray = new String[10];
+	private NodeList[] detailReferElementList = new NodeList[10];
+	private Bindings[] detailScriptBindingsArray = new Bindings[10];
 	private DefaultTableCellRenderer rendererTableHeader = null;
 	private DefaultTableCellRenderer rendererAlignmentCenter = new DefaultTableCellRenderer();
 	private DefaultTableCellRenderer rendererAlignmentRight = new DefaultTableCellRenderer();
@@ -198,7 +228,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		rendererAlignmentCenter.setHorizontalAlignment(SwingConstants.CENTER);
 		rendererAlignmentRight.setHorizontalAlignment(SwingConstants.RIGHT);
 		rendererAlignmentLeft.setHorizontalAlignment(SwingConstants.LEFT);
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < 10; i++) {
 			detailTableArray[i] = null;
 			detailReferElementList[i] = null;
 			filterListArray[i] = new ArrayList<XF300_Filter>();
@@ -212,6 +242,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			jTableMainArray[i].setRowHeight(ROW_HEIGHT);
 			jTableMainArray[i].setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			jTableMainArray[i].setRowSelectionAllowed(true);
+			jTableMainArray[i].setSelectionBackground(selectionColorWithoutFocus);
+			jTableMainArray[i].setSelectionForeground(Color.black);
 			jTableMainArray[i].addKeyListener(new XF300_jTableMain_keyAdapter(this));
 			jTableMainArray[i].addMouseListener(new XF300_jTableMain_mouseAdapter(this));
 			jTableMainArray[i].addFocusListener(new XF300_jTableMain_focusAdapter(this));
@@ -1727,8 +1759,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void jTableMain_focusLost(FocusEvent e) {
-		jTableMainArray[jTabbedPane.getSelectedIndex()].setSelectionBackground(selectionColorWithoutFocus);
-		jTableMainArray[jTabbedPane.getSelectedIndex()].setSelectionForeground(Color.black);
+		for (int i = 0; i < detailTabSortingList.getSize(); i++) {
+			jTableMainArray[i].setSelectionBackground(selectionColorWithoutFocus);
+			jTableMainArray[i].setSelectionForeground(Color.black);
+		}
 	}
 
 	void jScrollPaneTable_mousePressed(MouseEvent e) {
@@ -1908,9 +1942,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		return scriptNameRunning;
 	}
 
-	public StringBuffer getProcessLog() {
-		return processLog;
-	}
+	//public StringBuffer getProcessLog() {
+	//	return processLog;
+	//}
 
 	public org.w3c.dom.Element getFunctionElement() {
 		return functionElement_;
@@ -1948,6 +1982,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 
 	public HashMap<String, Object> getParmMap() {
 		return parmMap_;
+	}
+	
+	public void setProcessLog(String text) {
+		XFUtility.appendLog(text, processLog);
 	}
 
 	public HashMap<String, Object> getReturnMap() {
@@ -2234,9 +2272,9 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -2435,9 +2473,9 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -2881,9 +2919,9 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 			fieldCaption = wrkStr;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -3002,9 +3040,9 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		//
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 		if (!tableElement.getAttribute("RangeKey").equals("")) {

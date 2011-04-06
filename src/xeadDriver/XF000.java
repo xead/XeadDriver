@@ -1,5 +1,36 @@
 package xeadDriver;
 
+/*
+ * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * All rights reserved.
+ *
+ * This file is part of XEAD Driver.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the XEAD Project nor the names of its contributors
+ *       may be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -301,11 +332,12 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		jCheckBoxRepeat.setSelected(true);
 		jCheckBoxRunOffDay.setSelected(false);
+		jCheckBoxRunNow.setSelected(false);
 		//
 		if (functionElement_.getAttribute("TimerMessage").equals("")) {
-			jTextAreaMessages.setText("> " + res.getString("FunctionMessage44"));
+			jTextAreaMessages.setText("> " + res.getString("FunctionMessage44") + "\n");
 		} else {
-			jTextAreaMessages.setText(functionElement_.getAttribute("TimerMessage"));
+			jTextAreaMessages.setText(functionElement_.getAttribute("TimerMessage") + "\n");
 		}
 		//
 		jButtonStart.setEnabled(true);
@@ -360,6 +392,8 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			//
 			if (this.isVisible()) {
 				jTextAreaMessages.setText(getNewMessage(session_.getFunctionName(functionID) + "(" + functionID + ")", res.getString("FunctionMessage38")));
+				jScrollPaneMessages.validate();
+				jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 			}
 			//
 			returnMap_ = XFUtility.callFunction(session_, functionID, parmMap_);
@@ -383,13 +417,17 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		return parmMap_;
 	}
 
+	public void setProcessLog(String text) {
+		XFUtility.appendLog(text, processLog);
+	}
+
 	public HashMap<String, Object> getReturnMap() {
 		return returnMap_;
 	}
 
-	public StringBuffer getProcessLog() {
-		return processLog;
-	}
+	//public StringBuffer getProcessLog() {
+	//	return processLog;
+	//}
 
 	public Session getSession() {
 		return session_;
@@ -414,7 +452,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 			jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage47"), ""));
 			runScript();
-			jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), ""));
+			jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), "") + "\n");
 			//
 		} catch(ScriptException e) {
 			JOptionPane.showMessageDialog(null, res.getString("FunctionError12"));
@@ -457,7 +495,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				timer = new Timer(true);
 				task = new TimerTaskScript();
 				timer.schedule(task, date.getTime());
-				jTextAreaMessages.setText(getNewMessage(formatter.format(date.getTime()), res.getString("FunctionMessage45")));
+				jTextAreaMessages.setText(getNewMessage(formatter.format(date.getTime()), res.getString("FunctionMessage45") + "\n"));
+				jScrollPaneMessages.validate();
+				jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 			}
 		}
 	}

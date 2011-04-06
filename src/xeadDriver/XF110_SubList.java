@@ -1,5 +1,36 @@
 package xeadDriver;
 
+/*
+ * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * All rights reserved.
+ *
+ * This file is part of XEAD Driver.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the XEAD Project nor the names of its contributors
+ *       may be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.EventListenerList;
@@ -50,7 +81,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private org.w3c.dom.Element functionElement_ = null;
 	private Session session_ = null;
 	private Connection connection = null;
-	private StringBuffer processLog;
+	//private StringBuffer processLog;
 	private JPanel jPanelMain = new JPanel();
 	private JPanel jPanelCenter = new JPanel();
 	private Dimension scrSize;
@@ -288,7 +319,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		session_ = dialog_.getSession();
 		//exceptionStream = dialog_.getExceptionStream();
 		//exceptionHeader = dialog_.getExceptionHeader();
-		processLog = dialog_.getProcessLog();
+		//processLog = dialog_.getProcessLog();
 		connection = session_.getConnection();
 		scriptEngine = dialog_.getScriptEngine();
 		engineScriptBindings = scriptEngine.createBindings();
@@ -770,6 +801,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	public HashMap<String, Object> getParmMap() {
 		return dialog_.getParmMap();
 	}
+	
+	public void setProcessLog(String text) {
+		dialog_.setProcessLog(text);
+	}
 
 	public HashMap<String, Object> getReturnMap() {
 		return dialog_.getReturnMap();
@@ -823,7 +858,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 						//
 						sql = batchReferTableList.get(i).getSelectSQL(false);
-						XFUtility.appendLog(sql, processLog);
+						dialog_.setProcessLog(sql);
+						//XFUtility.appendLog(sql, processLog);
 						resultOfReferTable = statementForReferTable.executeQuery(sql);
 						while (resultOfReferTable.next()) {
 							//
@@ -896,7 +932,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 							//
 							sql = detailReferTableList.get(i).getSelectSQL(false);
 							if (!sql.equals("")) {
-								XFUtility.appendLog(sql, processLog);
+								//XFUtility.appendLog(sql, processLog);
+								dialog_.setProcessLog(sql);
 								resultOfDetailReferTable = statementForReferTable.executeQuery(sql);
 								while (resultOfDetailReferTable.next()) {
 									//
@@ -1030,7 +1067,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				if (checked) {
 					rowNumber = (XF110_RowNumber)dialog_.tableModelMain.getValueAt(p, 0);
 					String sql = detailTable.getSQLToSelect(rowNumber);
-					XFUtility.appendLog(sql, processLog);
+					//XFUtility.appendLog(sql, processLog);
+					dialog_.setProcessLog(sql);
 					resultOfDetailTable = statementForDetailTable.executeQuery(sql);
 					if (resultOfDetailTable.next()) {
 						//
@@ -1146,7 +1184,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 							//
 							if (batchTable != null && isBatchKeyBreak(previousRowNumber, tableRowNumber)) {
 								sql = batchTable.getSQLToInsert(tableRowNumber);
-								XFUtility.appendLog(sql, processLog);
+								//XFUtility.appendLog(sql, processLog);
+								dialog_.setProcessLog(sql);
 								recordCount = statement.executeUpdate(sql);
 								if (recordCount == 1) {
 									batchTable.runScript("AC", "");
@@ -1166,7 +1205,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 							previousRowNumber = tableRowNumber;
 							//
 							sql = detailTable.getSQLToUpdate(tableRowNumber);
-							XFUtility.appendLog(sql, processLog);
+							//XFUtility.appendLog(sql, processLog);
+							dialog_.setProcessLog(sql);
 							recordCount = statement.executeUpdate(sql);
 							if (recordCount == 1) {
 								detailTable.runScript("AU", "", tableRowNumber.getColumnValueMap(), tableRowNumber.getColumnOldValueMap());
@@ -1246,7 +1286,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						keyFieldList.add(workTokenizer.nextToken());
 					}
 					sql = batchTable.getSQLToCheckSKDuplication(keyFieldList);
-					XFUtility.appendLog(sql, processLog);
+					//XFUtility.appendLog(sql, processLog);
+					dialog_.setProcessLog(sql);
 					resultOfPrimaryTable = statement.executeQuery(sql);
 					if (resultOfPrimaryTable.next()) {
 						hasNoError = false;
@@ -1277,7 +1318,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 							keyFieldList.add(workTokenizer.nextToken());
 						}
 						sql = detailTable.getSQLToCheckSKDuplication(tableRowNumber, keyFieldList);
-						XFUtility.appendLog(sql, processLog);
+						//XFUtility.appendLog(sql, processLog);
+						dialog_.setProcessLog(sql);
 						resultOfPrimaryTable = statement.executeQuery(sql);
 						if (resultOfPrimaryTable.next()) {
 							hasNoError = false;
@@ -2021,9 +2063,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		return dialog_.getExceptionStream();
 	}
 
-	public StringBuffer getProcessLog() {
-		return processLog;
-	}
+	//public StringBuffer getProcessLog() {
+	//	return processLog;
+	//}
 
 	public Bindings getEngineScriptBindings() {
 		return 	engineScriptBindings;
@@ -2358,9 +2400,9 @@ class XF110_SubListBatchField extends JPanel implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -2594,9 +2636,9 @@ class XF110_SubListBatchField extends JPanel implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -3892,7 +3934,8 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 					String sql = "select KBUSERKUBUN,TXUSERKUBUN  from "
 						+ dialog_.getSession().getTableNameOfUserVariants()
 						+ " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST";
-					XFUtility.appendLog(sql, dialog_.getProcessLog());
+					//XFUtility.appendLog(sql, dialog_.getProcessLog());
+					dialog_.setProcessLog(sql);
 					ResultSet result = statement.executeQuery(sql);
 					while (result.next()) {
 						//
@@ -4090,7 +4133,8 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 			try {
 				String wrk = "";
 				String sql = referTable_.getSelectSQL(true);
-				XFUtility.appendLog(sql, dialog_.getProcessLog());
+				//XFUtility.appendLog(sql, dialog_.getProcessLog());
+				dialog_.setProcessLog(sql);
 				Statement statement = dialog_.getSession().getConnection().createStatement();
 				ResultSet result = statement.executeQuery(sql);
 				while (result.next()) {
@@ -4667,9 +4711,9 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 			fieldCaption = wrkStr;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -4887,9 +4931,9 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (workElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
 		}

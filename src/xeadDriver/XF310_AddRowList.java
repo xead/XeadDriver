@@ -1,5 +1,36 @@
 package xeadDriver;
 
+/*
+ * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * All rights reserved.
+ *
+ * This file is part of XEAD Driver.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the XEAD Project nor the names of its contributors
+ *       may be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -434,7 +465,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		int countOfRows = 0;
 		int workIndex;
 		String sql = addRowListTable.getSQLToSelect();
-		XFUtility.appendLog(sql, dialog_.getProcessLog());
+		//XFUtility.appendLog(sql, dialog_.getProcessLog());
+		dialog_.setProcessLog(sql);
 		resultOfDetailTable = statementForDetailTable.executeQuery(sql);
 		while (resultOfDetailTable.next()) {
 			if (addRowListTable.isRecordToBeSelected(resultOfDetailTable)) {
@@ -540,6 +572,10 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 
 	public HashMap<String, Object> getParmMap() {
 		return dialog_.getParmMap();
+	}
+	
+	public void setProcessLog(String text) {
+		dialog_.setProcessLog(text);
 	}
 
 	public HashMap<String, Object> getReturnMap() {
@@ -747,7 +783,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 						//
 						sql = addRowListReferTableList.get(i).getSelectSQL();
 						if (!sql.equals("")) {
-							XFUtility.appendLog(sql, dialog_.getProcessLog());
+							//XFUtility.appendLog(sql, dialog_.getProcessLog());
+							dialog_.setProcessLog(sql);
 							resultOfDetailReferTable = statementForReferTable.executeQuery(sql);
 							while (resultOfDetailReferTable.next()) {
 								//
@@ -1611,9 +1648,9 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 			fieldCaption = wrkStr;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -1733,9 +1770,9 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		//
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 		if (!tableElement.getAttribute("RangeKey").equals("")) {

@@ -1,5 +1,36 @@
 package xeadDriver;
 
+/*
+ * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * All rights reserved.
+ *
+ * This file is part of XEAD Driver.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the XEAD Project nor the names of its contributors
+ *       may be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.EventListenerList;
@@ -7,7 +38,6 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.*;
 import javax.swing.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -2364,9 +2394,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		return session_;
 	}
 
-	public StringBuffer getProcessLog() {
-		return processLog;
-	}
+	//public StringBuffer getProcessLog() {
+	//	return processLog;
+	//}
 	
 	public String getFunctionInfo() {
 		return jLabelFunctionID.getText();
@@ -2402,6 +2432,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 	public HashMap<String, Object> getParmMap() {
 		return parmMap_;
+	}
+	
+	public void setProcessLog(String text) {
+		XFUtility.appendLog(text, processLog);
 	}
 
 	public HashMap<String, Object> getReturnMap() {
@@ -2686,9 +2720,9 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -2918,9 +2952,9 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -4345,7 +4379,8 @@ class XF310_DetailCellEditorWithComboBox extends JComboBox implements XFTableCel
 			try {
 				String wrk = "";
 				String sql = referTable_.getSelectSQL(true);
-				XFUtility.appendLog(sql, dialog_.getProcessLog());
+				//XFUtility.appendLog(sql, dialog_.getProcessLog());
+				dialog_.setProcessLog(sql);
 				Statement statement = dialog_.getSession().getConnection().createStatement();
 				ResultSet result = statement.executeQuery(sql);
 				while (result.next()) {
@@ -4936,9 +4971,9 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 			fieldCaption = wrkStr;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -5159,9 +5194,9 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
+		//if (dataSize > 50) {
+		//	dataSize = 50;
+		//}
 		if (workElement.getAttribute("Nullable").equals("F")) {
 				isNullable = false;
 		}

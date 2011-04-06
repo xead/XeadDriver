@@ -1,5 +1,36 @@
 package xeadDriver;
 
+/*
+ * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * All rights reserved.
+ *
+ * This file is part of XEAD Driver.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the XEAD Project nor the names of its contributors
+ *       may be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -889,34 +920,41 @@ public class Session extends JFrame {
 	}
 
 	public float getCurrencyRate(String currencyCode, String date) {
-		float rate = 0;
+		float rateReturn = 0;
+		float rateAnnual = 0;
+		ResultSet result;
 		//
 		try {
 			Statement statement = this.getConnection().createStatement();
-			if (date.equals("")) {
-				ResultSet result = statement.executeQuery("select * from " +
+			result = statement.executeQuery("select * from " + 
 						currencyTable + " where CDCURRENCY = '" + currencyCode + "'");
-				if (result.next()) {
-					rate = result.getFloat("VLANNUALRATE");
-				}
-				result.close();
+			if (result.next()) {
+				rateAnnual = result.getFloat("VLANNUALRATE");
+			}
+			result.close();
+			//
+			if (date.equals("")) {
+				rateReturn = rateAnnual;
 			} else {
 				date = date.replaceAll("-", "");
 				if (date.length() == 8) {
 					String yyyymm = date.substring(0, 6);
-					ResultSet result = statement.executeQuery("select * from " +
+					result = statement.executeQuery("select * from " +
 							currencyDetailTable + " where CDCURRENCY = '" + currencyCode + "' and DTYYYYMM = '" + yyyymm + "'");
 					if (result.next()) {
-						rate = result.getFloat("VLMONTHLYRATE");
+						rateReturn = result.getFloat("VLMONTHLYRATE");
 					}
 					result.close();
+				}
+				if (rateReturn == 0) {
+					rateReturn = rateAnnual;
 				}
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		//
-		return rate;
+		return rateReturn;
 	}
 
 	public int getTaxAmount(String date, int amount) {
@@ -1076,6 +1114,29 @@ public class Session extends JFrame {
 			}
 		}
 		return fYear;
+	}
+	
+	public String getYearMonthOfFYearMSeq(String fYearMSeq) {
+		String resultYear = "";
+		String resultMonth = "";
+		int workInt;
+		int startMonth = getSystemVariantInteger("FIRST_MONTH");
+		int fYear = Integer.parseInt(fYearMSeq.substring(0, 4)); 
+		int mSeq = Integer.parseInt(fYearMSeq.substring(4, 6)); 
+		//
+		workInt = startMonth + mSeq - 1;
+		if (workInt > 12) {
+			workInt = workInt - 12;
+			resultMonth = Integer.toString(workInt);
+			workInt = fYear + 1;
+			resultYear = Integer.toString(workInt);
+		} else {
+			resultMonth = Integer.toString(workInt);
+			workInt = fYear;
+			resultYear = Integer.toString(workInt);
+		}
+		//
+		return resultYear + resultMonth;
 	}
 
 	void closeSession() {
@@ -1346,7 +1407,7 @@ public class Session extends JFrame {
 		private XF310[] xF310 = new XF310[10];
 		private XF390[] xF390 = new XF390[10];
 		private Session session_ = null;
-		private StringBuffer processLog_ = null;
+		//private StringBuffer processLog_ = null;
 		//
 		public Function(Session session) {
 			xF000[0] = new XF000(session, 0);
@@ -1372,12 +1433,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF000")) {
 						if (xF000[i] == null) {
 							xF000[i] = new XF000(session_, i);
-							processLog_ = xF000[i].getProcessLog();
+							//processLog_ = xF000[i].getProcessLog();
 							returnMap = xF000[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF000[i].isAvailable()) {
-								processLog_ = xF000[i].getProcessLog();
+								//processLog_ = xF000[i].getProcessLog();
 								returnMap = xF000[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1386,12 +1447,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF010")) {
 						if (xF010[i] == null) {
 							xF010[i] = new XF010(session_, i);
-							processLog_ = xF010[i].getProcessLog();
+							//processLog_ = xF010[i].getProcessLog();
 							returnMap = xF010[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF010[i].isAvailable()) {
-								processLog_ = xF010[i].getProcessLog();
+								//processLog_ = xF010[i].getProcessLog();
 								returnMap = xF010[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1400,12 +1461,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF100")) {
 						if (xF100[i] == null) {
 							xF100[i] = new XF100(session_, i);
-							processLog_ = xF100[i].getProcessLog();
+							//processLog_ = xF100[i].getProcessLog();
 							returnMap = xF100[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF100[i].isAvailable()) {
-								processLog_ = xF100[i].getProcessLog();
+								//processLog_ = xF100[i].getProcessLog();
 								returnMap = xF100[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1414,12 +1475,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF110")) {
 						if (xF110[i] == null) {
 							xF110[i] = new XF110(session_, i);
-							processLog_ = xF110[i].getProcessLog();
+							//processLog_ = xF110[i].getProcessLog();
 							returnMap = xF110[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF110[i].isAvailable()) {
-								processLog_ = xF110[i].getProcessLog();
+								//processLog_ = xF110[i].getProcessLog();
 								returnMap = xF110[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1428,12 +1489,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF200")) {
 						if (xF200[i] == null) {
 							xF200[i] = new XF200(session_, i);
-							processLog_ = xF200[i].getProcessLog();
+							//processLog_ = xF200[i].getProcessLog();
 							returnMap = xF200[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF200[i].isAvailable()) {
-								processLog_ = xF200[i].getProcessLog();
+								//processLog_ = xF200[i].getProcessLog();
 								returnMap = xF200[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1442,12 +1503,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF210")) {
 						if (xF210[i] == null) {
 							xF210[i] = new XF210(session_, i);
-							processLog_ = xF210[i].getProcessLog();
+							//processLog_ = xF210[i].getProcessLog();
 							returnMap = xF210[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF210[i].isAvailable()) {
-								processLog_ = xF210[i].getProcessLog();
+								//processLog_ = xF210[i].getProcessLog();
 								returnMap = xF210[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1456,12 +1517,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF290")) {
 						if (xF290[i] == null) {
 							xF290[i] = new XF290(session_, i);
-							processLog_ = xF290[i].getProcessLog();
+							//processLog_ = xF290[i].getProcessLog();
 							returnMap = xF290[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF290[i].isAvailable()) {
-								processLog_ = xF290[i].getProcessLog();
+								//processLog_ = xF290[i].getProcessLog();
 								returnMap = xF290[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1470,12 +1531,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF300")) {
 						if (xF300[i] == null) {
 							xF300[i] = new XF300(session_, i);
-							processLog_ = xF300[i].getProcessLog();
+							//processLog_ = xF300[i].getProcessLog();
 							returnMap = xF300[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF300[i].isAvailable()) {
-								processLog_ = xF300[i].getProcessLog();
+								//processLog_ = xF300[i].getProcessLog();
 								returnMap = xF300[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1484,12 +1545,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF310")) {
 						if (xF310[i] == null) {
 							xF310[i] = new XF310(session_, i);
-							processLog_ = xF310[i].getProcessLog();
+							//processLog_ = xF310[i].getProcessLog();
 							returnMap = xF310[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF310[i].isAvailable()) {
-								processLog_ = xF310[i].getProcessLog();
+								//processLog_ = xF310[i].getProcessLog();
 								returnMap = xF310[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1498,12 +1559,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF390")) {
 						if (xF390[i] == null) {
 							xF390[i] = new XF390(session_, i);
-							processLog_ = xF390[i].getProcessLog();
+							//processLog_ = xF390[i].getProcessLog();
 							returnMap = xF390[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF390[i].isAvailable()) {
-								processLog_ = xF390[i].getProcessLog();
+								//processLog_ = xF390[i].getProcessLog();
 								returnMap = xF390[i].execute(functionElement, parmMap);
 								break;
 							}
@@ -1514,10 +1575,10 @@ public class Session extends JFrame {
 			//
 			return returnMap;
 		}
-		
-		public void setProcessLog(String text) {
-			XFUtility.appendLog(text, processLog_);
-		}
+
+		//public void setProcessLog(String text) {
+		//	XFUtility.appendLog(text, processLog_);
+		//}
 	}
 
 	class MenuOption extends Object {
@@ -1588,7 +1649,7 @@ public class Session extends JFrame {
 	
 	public void executeProgram(String pgmName) {
 		try {
-			setProcessLog("execute " + pgmName);
+			//setProcessLog("execute " + pgmName);
 			//
 			Runtime rt = Runtime.getRuntime();
 			Process p = rt.exec(pgmName);
@@ -1629,7 +1690,7 @@ public class Session extends JFrame {
 	
 	public void editFile(String fileName) {
 		try {
-			setProcessLog("edit " + fileName);
+			//setProcessLog("edit " + fileName);
 			//
 			File file = new File(fileName);
 			desktop.edit(file);
@@ -1649,9 +1710,9 @@ public class Session extends JFrame {
 		//
 		if (outputFolder == null) {
 			tempFile.deleteOnExit();
-			setProcessLog("generate and delete " + tempFile.toURI().toString());
+			//setProcessLog("generate and delete " + tempFile.toURI().toString());
 		} else {
-			setProcessLog("generate " + tempFile.toURI().toString());
+			//setProcessLog("generate " + tempFile.toURI().toString());
 		}
 		//
 		return tempFile;
@@ -1669,9 +1730,9 @@ public class Session extends JFrame {
 		return function;
 	}
 
-	public void setProcessLog(String text) {
-		function.setProcessLog(text);
-	}
+	//public void setProcessLog(String text) {
+	//	function.setProcessLog(text);
+	//}
 
 	Desktop getDesktop() {
 		return desktop;
@@ -1734,7 +1795,7 @@ public class Session extends JFrame {
 					statementBuf.append("', 1)") ;
 					//
 					Statement statement = connection.createStatement();
-					setProcessLog(statementBuf.toString());
+					//setProcessLog(statementBuf.toString());
 					statement.executeUpdate(statementBuf.toString());
 					connection.commit();
 				}

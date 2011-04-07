@@ -159,9 +159,9 @@ public class Session extends JFrame {
 			///////////////////////////////////////
 			// Use these steps for quick testing //
 			///////////////////////////////////////
-			loginUser =  "00000";
-			loginPassword =  "0000000000";
-			fileName = "C:/XeadFramework/SalesOrosi/SalesOrosi.xeaf";
+			//loginUser =  "00000";
+			//loginPassword =  "0000000000";
+			//fileName = "C:/XeadFramework/SalesOrosi/SalesOrosi.xeaf";
 			//fileName = "C:/XeadFramework/Skeleton/Skeleton.xeaf";
 			//
 			if (fileName.equals("")) {

@@ -44,11 +44,22 @@ import java.util.Date;
 import java.util.ResourceBundle;
 
 public class LoginDialog extends JDialog {
+	/**
+	 * Public static constants
+	 */
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
+	public static final String APPLICATION_NAME  = "XEAD Driver 1.0";
+	public static final String FULL_VERSION  = "V1.R0.M00";
+	public static final String FORMAT_VERSION  = "1.0";
+	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
+	public static final String COPYRIGHT = "Copyright 2011 DBC,Ltd.";
+	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+
 	private JPanel jPanelMain = new JPanel();
 	private JButton jButtonOK = new JButton();
 	private JButton jButtonClose = new JButton();
+	private JButton jButtonAbout = new JButton();
 	private JLabel jLabelUserID = new JLabel();
 	private JLabel jLabelPassword = new JLabel();
 	private JTextField jTextFieldUserID = new JTextField();
@@ -59,6 +70,7 @@ public class LoginDialog extends JDialog {
 	private Statement statement = null;
 	private ResultSet result = null;
 	private boolean validated = false;
+	private About about;
 
 	public LoginDialog(Session session, String loginUser, String loginPassword) {
 		super(session, "", true);
@@ -70,7 +82,8 @@ public class LoginDialog extends JDialog {
 			this.connection = session.getConnection();
 			this.setTitle(session.getSystemName());
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
-			jPanelMain.setPreferredSize(new Dimension(255, 130));
+			//jPanelMain.setPreferredSize(new Dimension(255, 130));
+			jPanelMain.setPreferredSize(new Dimension(290, 130));
 			jPanelMain.setLayout(null);
 			//
 			jLabelUserID.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -85,31 +98,38 @@ public class LoginDialog extends JDialog {
 			jTextFieldUserID.setText(loginUser);
 			//
 			jLabelPassword.setHorizontalAlignment(SwingConstants.RIGHT);
-			jLabelPassword.setBounds(new Rectangle(10, 50, 80, 25));
+			jLabelPassword.setBounds(new Rectangle(10, 52, 80, 25));
 			jLabelPassword.setFont(new java.awt.Font("Dialog", 0, 14));
 			jLabelPassword.setText(res.getString("Password"));
 			jPasswordField.setFont(new java.awt.Font("Dialog", 0, 12));
-			jPasswordField.setBounds(new Rectangle(100, 50, 130, 25));
+			jPasswordField.setBounds(new Rectangle(100, 52, 130, 25));
 			jPasswordField.setDocument(new LimitedDocument(10));
 			jPasswordField.setText(loginPassword);
 			//
-			jButtonClose.setBounds(new Rectangle(20, 92, 90, 25));
+			jButtonClose.setBounds(new Rectangle(15, 92, 80, 25));
 			jButtonClose.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonClose.setText(res.getString("Close"));
 			jButtonClose.addActionListener(new LoginDialog_jButtonClose_actionAdapter(this));
-			jButtonOK.setBounds(new Rectangle(145, 92, 90, 25));
+			jButtonOK.setBounds(new Rectangle(105, 92, 80, 25));
 			jButtonOK.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonOK.setText(res.getString("LogIn"));
 			jButtonOK.addActionListener(new LoginDialog_jButtonOK_actionAdapter(this));
+			jButtonAbout.setBounds(new Rectangle(195, 92, 80, 25));
+			jButtonAbout.setFont(new java.awt.Font("Dialog", 0, 12));
+			jButtonAbout.setText("About");
+			jButtonAbout.addActionListener(new LoginDialog_jButtonAbout_actionAdapter(this));
 			//
 			this.getContentPane().add(jPanelMain,  BorderLayout.CENTER);
 			jPanelMain.add(jButtonClose, null);
 			jPanelMain.add(jButtonOK, null);
+			jPanelMain.add(jButtonAbout, null);
 			jPanelMain.add(jLabelUserID, null);
 			jPanelMain.add(jLabelPassword, null);
 			jPanelMain.add(jTextFieldUserID, null);
 			jPanelMain.add(jPasswordField, null);
 			pack();
+			//
+			about = new About(this);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -143,6 +163,10 @@ public class LoginDialog extends JDialog {
 			jPasswordField.setText("");
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
+	}
+
+	void jButtonAbout_actionPerformed(ActionEvent e) {
+		about.request();
 	}
 
 	boolean checkUserAndPassword(String userID, String password) {
@@ -265,5 +289,15 @@ class LoginDialog_jButtonClose_actionAdapter implements java.awt.event.ActionLis
   }
   public void actionPerformed(ActionEvent e) {
     adaptee.jButtonClose_actionPerformed(e);
+  }
+}
+
+class LoginDialog_jButtonAbout_actionAdapter implements java.awt.event.ActionListener {
+	LoginDialog adaptee;
+	LoginDialog_jButtonAbout_actionAdapter(LoginDialog adaptee) {
+    this.adaptee = adaptee;
+  }
+  public void actionPerformed(ActionEvent e) {
+    adaptee.jButtonAbout_actionPerformed(e);
   }
 }

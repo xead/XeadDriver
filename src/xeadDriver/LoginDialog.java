@@ -106,15 +106,15 @@ public class LoginDialog extends JDialog {
 			jPasswordField.setDocument(new LimitedDocument(10));
 			jPasswordField.setText(loginPassword);
 			//
-			jButtonClose.setBounds(new Rectangle(15, 92, 80, 25));
+			jButtonClose.setBounds(new Rectangle(10, 92, 80, 25));
 			jButtonClose.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonClose.setText(res.getString("Close"));
 			jButtonClose.addActionListener(new LoginDialog_jButtonClose_actionAdapter(this));
-			jButtonOK.setBounds(new Rectangle(105, 92, 80, 25));
+			jButtonOK.setBounds(new Rectangle(100, 92, 90, 25));
 			jButtonOK.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonOK.setText(res.getString("LogIn"));
 			jButtonOK.addActionListener(new LoginDialog_jButtonOK_actionAdapter(this));
-			jButtonAbout.setBounds(new Rectangle(195, 92, 80, 25));
+			jButtonAbout.setBounds(new Rectangle(200, 92, 80, 25));
 			jButtonAbout.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonAbout.setText("About");
 			jButtonAbout.addActionListener(new LoginDialog_jButtonAbout_actionAdapter(this));

@@ -71,7 +71,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private XF300_KeyInputDialog keyInputDialog = null;
 	private JPanel jPanelMain = new JPanel();
 	private JTabbedPane jTabbedPane = new JTabbedPane();
-	private Dimension scrSize;
 	private JPanel jPanelHeaderFields = new JPanel();
 	private JScrollPane jScrollPaneHeaderFields = new JScrollPane();
 	private XF300_HeaderTable headerTable_;
@@ -171,10 +170,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 
 	void initComponentsAndVariants() throws Exception {
 		//
-		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		//
 		jPanelMain.setLayout(new BorderLayout());
-		//
 		jSplitPaneMain.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		jSplitPaneMain.add(jSplitPaneCenter, JSplitPane.TOP);
 		jSplitPaneMain.add(jScrollPaneMessages, JSplitPane.BOTTOM);
@@ -183,9 +179,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		jScrollPaneHeaderFields.setBorder(null);
 		jPanelHeaderFields.setLayout(null);
 		jPanelHeaderFields.setFocusable(false);
-		//
 		jPanelCenter.setLayout(new BorderLayout());
-		//
 		jPanelTop.setPreferredSize(new Dimension(600, 45));
 		jPanelTop.setLayout(new BorderLayout());
 		jPanelTopNorthMargin.setPreferredSize(new Dimension(600, 8));
@@ -202,7 +196,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		jButtonList.addActionListener(new XF300_jButtonList_actionAdapter(this));
 		jButtonList.addKeyListener(new XF300_keyAdapter(this));
 		jPanelTopCenter.setLayout(new BorderLayout());
-		//jPanelTopCenter.add(jPanelFilter, BorderLayout.CENTER);
 		jPanelTop.setBorder(BorderFactory.createEtchedBorder());
 		jPanelTop.add(jPanelTopCenter, BorderLayout.CENTER);
 		jPanelTop.add(jPanelTopNorthMargin, BorderLayout.NORTH);
@@ -296,7 +289,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelMain.add(jPanelBottom, BorderLayout.SOUTH);
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		this.setSize(new Dimension(scrSize.width, scrSize.height));
 		this.addWindowFocusListener(new XF300_WindowAdapter(this));
 		this.addKeyListener(new XF300_keyAdapter(this));
 	}
@@ -352,16 +344,17 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 			jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 			this.setTitle(functionElement_.getAttribute("Name"));
+	        Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 			if (functionElement_.getAttribute("Size").equals("")) {
-				this.setPreferredSize(new Dimension(scrSize.width, scrSize.height));
-				this.setLocation(0, 0);
+				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
+				this.setLocation(screenRect.x, screenRect.y);
 			} else {
 				workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
 				int width = Integer.parseInt(workTokenizer.nextToken());
 				int height = Integer.parseInt(workTokenizer.nextToken());
 				this.setPreferredSize(new Dimension(width, height));
-				int posX = (scrSize.width - width) / 2;
-				int posY = (scrSize.height - height) / 2;
+				int posX = (screenRect.width - width) / 2;
+				int posY = (screenRect.height - height) / 2;
 				this.setLocation(posX, posY);
 			}
 			this.pack();

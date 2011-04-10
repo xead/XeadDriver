@@ -85,7 +85,6 @@ public class XF210 extends JDialog implements XFExecutable, XFScriptable {
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
 	private String initialMsg = "";
-	private Dimension scrSize;
 	private JPanel jPanelMain = new JPanel();
 	private JSplitPane jSplitPaneMain = new JSplitPane();
 	private JPanel jPanelFields = new JPanel();
@@ -147,7 +146,6 @@ public class XF210 extends JDialog implements XFExecutable, XFScriptable {
 
 	void initComponentsAndVariants() throws Exception {
 		//
-		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		jPanelMain.setLayout(new BorderLayout());
 		jPanelFields.setLayout(null);
 		jScrollPaneFields.getViewport().add(jPanelFields, null);
@@ -203,7 +201,6 @@ public class XF210 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		jPanelBottom.add(jPanelButtons, BorderLayout.CENTER);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		this.setSize(new Dimension(scrSize.width, scrSize.height));
 	}
 
 	public boolean isAvailable() {
@@ -262,9 +259,10 @@ public class XF210 extends JDialog implements XFExecutable, XFScriptable {
 			jLabelFunctionID.setText("210" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
 			FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 			jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
+	        Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 			if (functionElement_.getAttribute("Size").equals("")) {
-				this.setPreferredSize(new Dimension(scrSize.width, scrSize.height));
-				this.setLocation(0, 0);
+				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
+				this.setLocation(screenRect.x, screenRect.y);
 				this.pack();
 			} else {
 				if (!functionElement_.getAttribute("Size").equals("AUTO")) {
@@ -272,8 +270,8 @@ public class XF210 extends JDialog implements XFExecutable, XFScriptable {
 					int width = Integer.parseInt(workTokenizer.nextToken());
 					int height = Integer.parseInt(workTokenizer.nextToken());
 					this.setPreferredSize(new Dimension(width, height));
-					int posX = (scrSize.width - width) / 2;
-					int posY = (scrSize.height - height) / 2;
+					int posX = (screenRect.width - width) / 2;
+					int posY = (screenRect.height - height) / 2;
 					this.setLocation(posX, posY);
 					this.pack();
 				}
@@ -359,17 +357,17 @@ public class XF210 extends JDialog implements XFExecutable, XFScriptable {
 					workWidth = 800;
 				}
 				int workHeight = biggestHeight + 150;
-				if (workWidth > scrSize.width) {
-					workWidth = scrSize.width;
+				if (workWidth > screenRect.width) {
+					workWidth = screenRect.width;
 					posX = 0;
 				} else {
-					posX = (scrSize.width - workWidth) / 2;
+					posX = (screenRect.width - workWidth) / 2;
 				}
-				if (workHeight > scrSize.height) {
-					workHeight = scrSize.height;
+				if (workHeight > screenRect.height) {
+					workHeight = screenRect.height;
 					posY = 0;
 				} else {
-					posY = (scrSize.height - workHeight) / 2;
+					posY = (screenRect.height - workHeight) / 2;
 				}
 				this.setPreferredSize(new Dimension(workWidth, workHeight));
 				this.setLocation(posX, posY);

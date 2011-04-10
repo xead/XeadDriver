@@ -77,7 +77,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
 	private NodeList referElementList;
-	private Dimension scrSize;
 	private JPanel jPanelMain = new JPanel();
 	private JPanel jPanelCenter = new JPanel();
 	private JPanel jPanelTop = new JPanel();
@@ -157,8 +156,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void initComponentsAndVariants() throws Exception {
-		//
-		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		//
 		jPanelMain.setLayout(new BorderLayout());
 		jPanelCenter.setLayout(new BorderLayout());
@@ -258,7 +255,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		jPanelBottom.add(jPanelButtons, BorderLayout.CENTER);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		this.setSize(new Dimension(scrSize.width, scrSize.height));
 	}
 
 	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
@@ -269,9 +265,9 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
-			///////////////////
-			// Process parms //
-			///////////////////
+			////////////////////////
+			// Process parameters //
+			////////////////////////
 			parmMap_ = parmMap;
 			if (parmMap_ == null) {
 				parmMap_ = new HashMap<String, Object>();
@@ -305,7 +301,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			engineScriptBindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
 			engineScriptBindings.clear();
 			engineScriptBindings.put("instance", (XFScriptable)this);
-			//engineScriptBindings.put("session", (XFScriptableSession)session_);
 			
 			//////////////////////////////
 			// Set panel configurations //
@@ -315,16 +310,17 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 			jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 			this.setTitle(functionElement_.getAttribute("Name"));
+	        Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 			if (functionElement_.getAttribute("Size").equals("")) {
-				this.setPreferredSize(new Dimension(scrSize.width, scrSize.height));
-				this.setLocation(0, 0);
+				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
+				this.setLocation(screenRect.x, screenRect.y);
 			} else {
 				workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
 				int width = Integer.parseInt(workTokenizer.nextToken());
 				int height = Integer.parseInt(workTokenizer.nextToken());
 				this.setPreferredSize(new Dimension(width, height));
-				int posX = (scrSize.width - width) / 2;
-				int posY = (scrSize.height - height) / 2;
+				int posX = (screenRect.width - width) / 2;
+				int posY = (screenRect.height - height) / 2;
 				this.setLocation(posX, posY);
 			}
 			this.pack();

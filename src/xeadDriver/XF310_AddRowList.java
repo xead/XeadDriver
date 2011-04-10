@@ -37,6 +37,7 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -96,7 +97,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private JPanel jPanelMain = new JPanel();
-	private Dimension scrSize;
 	private JScrollPane jScrollPaneTable = new JScrollPane();
 	private TableModelMain tableModelMain;
 	private JTable jTableMain = new JTable();
@@ -142,7 +142,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		//
 		dialog_ = dialog;
 		//
-		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		jPanelMain.setLayout(new BorderLayout());
 		jPanelTop.setLayout(new BorderLayout());
 		jTableMain.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
@@ -238,7 +237,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			jPanelButtons.add(jPanelButtonArray[i]);
 		}
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		this.setSize(new Dimension(scrSize.width, scrSize.height));
 		setupFunctionKeysAndButtons();
 		//
 		//////////////////////////////////////
@@ -247,7 +245,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		scriptEngine = dialog_.getScriptEngine();
 		engineScriptBindings = scriptEngine.createBindings();
 		engineScriptBindings.put("instance", (XFScriptable)this);
-		//engineScriptBindings.put("session", (XFScriptableSession)dialog_.getSession());
 		//
 		StringTokenizer workTokenizer;
 		int posX = 0;
@@ -403,11 +400,12 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		// Add common used field (except for keys) to return field list of add-row-list table //
 		addRowListTable.addCommonUsedColumnToReturnList();
 		//
-		int width = scrSize.width - 150;
-		int height = scrSize.height - 150;
+        Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+		int width = screenRect.width - 150;
+		int height = screenRect.height - 150;
 		this.setPreferredSize(new Dimension(width, height));
-		posX = (scrSize.width - width) / 2;
-		posY = (scrSize.height - height) / 2;
+		posX = (screenRect.width - width) / 2;
+		posY = (screenRect.height - height) / 2;
 		this.setLocation(posX, posY);
 		this.pack();
 	}

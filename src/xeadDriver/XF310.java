@@ -89,7 +89,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private XF310_KeyInputDialog keyInputDialog = null;
 	private XF310_AddRowList addRowListDialog = null;
 	private JPanel jPanelMain = new JPanel();
-	private Dimension scrSize;
 	private JPanel jPanelHeaderFields = new JPanel();
 	private JScrollPane jScrollPaneHeaderFields = new JScrollPane();
 	private XF310_HeaderTable headerTable;
@@ -179,10 +178,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 	void initComponentsAndVariants() throws Exception {
 		//
-		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		//
 		jPanelMain.setLayout(new BorderLayout());
-		//
 		jSplitPaneMain.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		jSplitPaneMain.add(jPanelCenter, JSplitPane.TOP);
 		jSplitPaneMain.add(jScrollPaneMessages, JSplitPane.BOTTOM);
@@ -192,7 +188,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		jScrollPaneHeaderFields.setFocusable(false);
 		jPanelHeaderFields.setLayout(null);
 		jPanelHeaderFields.setFocusable(false);
-		//
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
 		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
@@ -309,7 +304,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		jPanelBottom.add(jPanelButtons, BorderLayout.CENTER);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		this.setSize(new Dimension(scrSize.width, scrSize.height));
 	}
 
 	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
@@ -320,9 +314,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
-			///////////////////
-			// Process parms //
-			///////////////////
+			////////////////////////
+			// Process parameters //
+			////////////////////////
 			parmMap_ = parmMap;
 			if (parmMap_ == null) {
 				parmMap_ = new HashMap<String, Object>();
@@ -363,16 +357,17 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 			jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 			this.setTitle(functionElement_.getAttribute("Name"));
+	        Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 			if (functionElement_.getAttribute("Size").equals("")) {
-				this.setPreferredSize(new Dimension(scrSize.width, scrSize.height));
+				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
 				this.setLocation(0, 0);
 			} else {
 				workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
 				int width = Integer.parseInt(workTokenizer.nextToken());
 				int height = Integer.parseInt(workTokenizer.nextToken());
 				this.setPreferredSize(new Dimension(width, height));
-				int posX = (scrSize.width - width) / 2;
-				int posY = (scrSize.height - height) / 2;
+				int posX = (screenRect.width - width) / 2;
+				int posY = (screenRect.height - height) / 2;
 				this.setLocation(posX, posY);
 			}
 			initialMsg = functionElement_.getAttribute("InitialMsg");

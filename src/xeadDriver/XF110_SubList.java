@@ -81,10 +81,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private org.w3c.dom.Element functionElement_ = null;
 	private Session session_ = null;
 	private Connection connection = null;
-	//private StringBuffer processLog;
 	private JPanel jPanelMain = new JPanel();
 	private JPanel jPanelCenter = new JPanel();
-	private Dimension scrSize;
 	private JPanel jPanelBatchFields = new JPanel();
 	private JScrollPane jScrollPaneBatchFields = new JScrollPane();
 	private XF110_SubListBatchTable batchTable;
@@ -151,8 +149,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private final int FIELD_VERTICAL_MARGIN = 5;
 	private final int FONT_SIZE = 14;
 	private final int ROW_HEIGHT = 18;
-	//private PrintStream exceptionStream;
-	//private String exceptionHeader;
 	private boolean lastFocusedWasDetailColumn = false;
 	private boolean readyToShowDialog;
 	private boolean isInvalid = false;
@@ -179,10 +175,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		StringTokenizer workTokenizer, workTokenizer2;
 		org.w3c.dom.Element workElement;
 		//
-		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		//
 		jPanelMain.setLayout(new BorderLayout());
-		//
 		jSplitPaneMain.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		jSplitPaneMain.add(jPanelCenter, JSplitPane.TOP);
 		jSplitPaneMain.add(jScrollPaneMessages, JSplitPane.BOTTOM);
@@ -310,7 +303,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		jPanelBottom.add(jPanelButtons, BorderLayout.CENTER);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		this.setSize(new Dimension(scrSize.width, scrSize.height));
 		//
 		///////////////////////////
 		// Initializing variants //
@@ -333,7 +325,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		this.setTitle(functionElement_.getAttribute("Name"));
 		this.setPreferredSize(new Dimension(dialog_.getPreferredSize().width, dialog_.getPreferredSize().height));
 		this.setLocation(dialog_.getLocation().x, dialog_.getLocation().y);
-		//this.pack();
 		initialMsg = functionElement_.getAttribute("InitialMsg");
 		//
 		// Setup information of Batch Table//

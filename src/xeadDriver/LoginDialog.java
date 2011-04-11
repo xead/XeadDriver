@@ -45,7 +45,7 @@ import java.util.ResourceBundle;
 
 public class LoginDialog extends JDialog {
 	/**
-	 * Public static constants
+	 * Static constants
 	 */
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
@@ -55,7 +55,9 @@ public class LoginDialog extends JDialog {
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
 	public static final String COPYRIGHT = "Copyright 2011 DBC,Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
-
+	/**
+	 * Private variants
+	 */
 	private JPanel jPanelMain = new JPanel();
 	private JButton jButtonOK = new JButton();
 	private JButton jButtonClose = new JButton();

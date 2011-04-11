@@ -147,22 +147,15 @@ public class Session extends JFrame {
 		String loginPassword = "";
 		//
 		try {
-			//
 			if (args.length >= 1) {
 				fileName =  args[0];
 			}
-			if (args.length == 3) {
+			if (args.length >= 2) {
 				loginUser =  args[1];
+			}
+			if (args.length >= 3) {
 				loginPassword =  args[2];
 			}
-			//
-			///////////////////////////////////////
-			// Use these steps for quick testing //
-			///////////////////////////////////////
-			//loginUser =  "00000";
-			//loginPassword =  "0000000000";
-			//fileName = "C:/XeadFramework/SalesOrosi/SalesOrosi.xeaf";
-			//fileName = "C:/XeadFramework/Skeleton/Skeleton.xeaf";
 			//
 			if (fileName.equals("")) {
 				JOptionPane.showMessageDialog(null, res.getString("SessionError1"));
@@ -174,7 +167,6 @@ public class Session extends JFrame {
 					System.exit(0);
 				} else {
 					if (loginDialog.userIsValidated()) {
-						//
 						userID = loginDialog.getUserID();
 						userName = loginDialog.getUserName();
 						userEmployeeNo = loginDialog.getUserEmployeeNo();
@@ -183,7 +175,6 @@ public class Session extends JFrame {
 						setupSessionAndMenus();
 						//
 						this.setVisible(true);
-						//
 					}else {
 						closeSession();
 						System.exit(0);

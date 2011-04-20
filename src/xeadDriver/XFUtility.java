@@ -62,6 +62,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+//import javax.swing.text.Document;
 import javax.swing.text.PlainDocument;
 import org.apache.poi.hssf.usermodel.HSSFDataFormat;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -1213,6 +1214,43 @@ public class XFUtility {
 		//
 		return rec;
 	}
+	
+	static void drawLineOrRect(String keyword, PdfContentByte cb) {
+		float x1, y1, x2, y2;
+		//
+		try {
+			if (keyword.contains("&Line(")) {
+				int pos = keyword.lastIndexOf(")");
+				StringTokenizer workTokenizer = new StringTokenizer(keyword.substring(6, pos), ";" );
+				if (workTokenizer.countTokens() >= 4) {
+					x1 = Float.parseFloat(workTokenizer.nextToken().trim());
+					y1 = Float.parseFloat(workTokenizer.nextToken().trim());
+					x2 = Float.parseFloat(workTokenizer.nextToken().trim());
+					y2 = Float.parseFloat(workTokenizer.nextToken().trim());
+					cb.moveTo(x1, y1);
+					cb.lineTo(x2, y2);
+					cb.stroke();
+				}
+			}
+			if (keyword.contains("&Rect(")) {
+				int pos = keyword.lastIndexOf(")");
+				StringTokenizer workTokenizer = new StringTokenizer(keyword.substring(6, pos), ";" );
+				if (workTokenizer.countTokens() == 4) {
+					x1 = Float.parseFloat(workTokenizer.nextToken().trim());
+					y1 = Float.parseFloat(workTokenizer.nextToken().trim());
+					x2 = Float.parseFloat(workTokenizer.nextToken().trim());
+					y2 = Float.parseFloat(workTokenizer.nextToken().trim());
+					cb.moveTo(x1, y1);
+					cb.lineTo(x2, y1);
+					cb.lineTo(x2, y2);
+					cb.lineTo(x1, y2);
+					cb.closePathStroke();
+				}
+			}
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(null, res.getString("FunctionError39") + keyword + res.getString("FunctionError40") + e.toString());
+		}
+	}
 
 	static Chunk getBarcodeChunkOfValue(String value, String type, PdfContentByte cb) throws BadElementException {
 		Chunk chunk = null;
@@ -1995,6 +2033,7 @@ interface XFEditableField {
 class XFImageField extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
+	private int size_ = 10;
 	private int rows_;
 	private JTextField jTextField = new JTextField();
 	private JScrollPane jScrollPane = new JScrollPane();
@@ -2011,13 +2050,14 @@ class XFImageField extends JPanel implements XFEditableField {
 	private final int FIELD_VERTICAL_MARGIN = 5;
 	private String oldValue = "";
 
-	public XFImageField(String fieldOptions, String imageFileFolder){
+	public XFImageField(String fieldOptions, int size, String imageFileFolder){
 		//
 		super();
 		//
 		String wrkStr;
 		//
 		fieldOptions_ = fieldOptions;
+		size_ = size;
 		imageFileFolder_ = imageFileFolder;
 		//
 		jTextField.setEditable(false);
@@ -2027,6 +2067,7 @@ class XFImageField extends JPanel implements XFEditableField {
 		jTextField.setBackground(Color.white);
 		jTextField.setEditable(true);
 		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextField.setDocument(new LimitDocument());
 		//
 		jButton.setFont(new java.awt.Font("Dialog", 0, 14));
 		jButton.setPreferredSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
@@ -2149,6 +2190,30 @@ class XFImageField extends JPanel implements XFEditableField {
 				jButton.doClick();
 			}
 		}
+	}
+
+	protected class LimitDocument extends PlainDocument{
+		private static final long serialVersionUID = 1L;
+		public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+			if(str == null){
+				return ;
+			}
+			if(a != null) {
+				super.insertString(offs, str, a);
+				return;
+			}
+			if(!canInsertString(str)){
+				return ;
+			}
+			super.insertString(offs, str, a);
+		}
+	}
+
+	private boolean canInsertString(String str){
+		if((jTextField.getText().length() + str.length()) > size_){
+			return false;
+		}
+		return true;
 	}
 }
 
@@ -2393,7 +2458,6 @@ class XFTextField extends JTextField implements XFEditableField {
 		}
 		this.addFocusListener(new ComponentFocusListener());
 		this.setFont(new java.awt.Font("Monospaced", 0, 14));
-		//this.setFont(new java.awt.Font("Dialog", 0, 14));
 		this.setDocument(new LimitedDocument(this));
 		//
 		int fieldWidth, fieldHeight;
@@ -2589,35 +2653,40 @@ class XFTextField extends JTextField implements XFEditableField {
 			if (basicType_.equals("FLOAT")) {
 				setText(getFormattedNumber(getText()));
 			}
+			////getInputContext().setCompositionEnabled(false);
+			//Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
+			//getInputContext().setCharacterSubsets(subsets);
 		}
 		public void focusGained(FocusEvent event){
-			getInputContext().setCharacterSubsets(null);
+			Character.Subset[] subsets;
+			//
+			//getInputContext().setCompositionEnabled(false);
+			subsets = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
+			//
+			String lang = Locale.getDefault().getLanguage();
 			if (basicType_.equals("STRING")) {
 				if (dataTypeOptionList.contains("KANJI")) {
-					String lang = Locale.getDefault().getLanguage();
+					//getInputContext().setCompositionEnabled(true);
 					if (lang.equals("ja")) {
-						Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.KANJI};
-						getInputContext().setCharacterSubsets(subsets);
+						subsets = new Character.Subset[] {java.awt.im.InputSubset.KANJI};
 					}
 					if (lang.equals("ko")) {
-						Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.HANJA};
-						getInputContext().setCharacterSubsets(subsets);
+						subsets = new Character.Subset[] {java.awt.im.InputSubset.HANJA};
 					}
 					if (lang.equals("zh")) {
-						Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.TRADITIONAL_HANZI};
-						getInputContext().setCharacterSubsets(subsets);
+						subsets = new Character.Subset[] {java.awt.im.InputSubset.TRADITIONAL_HANZI};
 					}
 				} else {
 					if (dataTypeOptionList.contains("KATAKANA")) {
-						String lang = Locale.getDefault().getLanguage();
+						//getInputContext().setCompositionEnabled(true);
 						if (lang.equals("ja")) {
-							Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.HALFWIDTH_KATAKANA};
-							getInputContext().setCharacterSubsets(subsets);
+							subsets = new Character.Subset[] {java.awt.im.InputSubset.HALFWIDTH_KATAKANA};
 						}
-				
 					}
 				}
 			}
+			//
+			getInputContext().setCharacterSubsets(subsets);
 		}
 	}
 

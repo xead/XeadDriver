@@ -2497,7 +2497,7 @@ class XF110_SubListBatchField extends JPanel implements XFScriptableField {
 							component = xFUrlField;
 						} else {
 							if (dataTypeOptionList.contains("IMAGE")) {
-								xFImageField = new XFImageField(fieldOptions, dialog_.getSession().getImageFileFolder());
+								xFImageField = new XFImageField(fieldOptions, dataSize, dialog_.getSession().getImageFileFolder());
 								xFImageField.setLocation(5, 0);
 								component = xFImageField;
 								isImage = true;
@@ -6221,13 +6221,15 @@ class XF110_SubListDetailTable extends Object {
 			&& !dialog_.getDetailColumnList().get(i).isKey()
 			&& dialog_.getDetailColumnList().get(i).isEditable()
 			&& !dialog_.getDetailColumnList().get(i).isVirtualField()) {
-				if (!firstField) {
-					statementBuf.append(", ");
+				if (!batchTableWithKeyFieldIDList.contains(dialog_.getDetailColumnList().get(i).getFieldID())) {
+					if (!firstField) {
+						statementBuf.append(", ");
+					}
+					statementBuf.append(dialog_.getDetailColumnList().get(i).getFieldID());
+					statementBuf.append("=");
+					statementBuf.append(convertToTableOperationValue(dialog_.getDetailColumnList().get(i).getBasicType(), rowNumber.getColumnValueMap().get(dialog_.getDetailColumnList().get(i).getDataSourceName())));
+					firstField = false;
 				}
-				statementBuf.append(dialog_.getDetailColumnList().get(i).getFieldID());
-				statementBuf.append("=");
-				statementBuf.append(convertToTableOperationValue(dialog_.getDetailColumnList().get(i).getBasicType(), rowNumber.getColumnValueMap().get(dialog_.getDetailColumnList().get(i).getDataSourceName())));
-				firstField = false;
 			}
 		}
 		for (int i = 0; i < batchTableWithKeyFieldIDList.size(); i++) {

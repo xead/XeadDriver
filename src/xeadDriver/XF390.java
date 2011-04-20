@@ -542,9 +542,13 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				phrase = new Phrase("", font);
 				for (int j = 0; j < paragraphList.get(i).getValueKeywordList().size(); j++) {
 					keyword = paragraphList.get(i).getValueKeywordList().get(j);
-					chunk = getChunkForKeyword(keyword, cb);
-					if (chunk != null) {
-						phrase.add(chunk);
+					if ((keyword.contains("&Line(") || keyword.contains("&Rect(")) && cb != null) {
+						XFUtility.drawLineOrRect(keyword, cb);
+					} else {
+						chunk = getChunkForKeyword(keyword, cb);
+						if (chunk != null) {
+							phrase.add(chunk);
+						}
 					}
 				}
 				paragraph.add(phrase);
@@ -924,7 +928,10 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				pos = keyword.lastIndexOf(")");
 				workTokenizer = new StringTokenizer(keyword.substring(9, pos), ";" );
 				wrkStr = workTokenizer.nextToken().trim();
-				String type = workTokenizer.nextToken().trim();
+				String type = "NW7";
+				if (workTokenizer.hasMoreTokens()) {
+					type = workTokenizer.nextToken().trim();
+				}
 				chunk = XFUtility.getBarcodeChunkOfValue(getExternalStringValueOfFieldByName(wrkStr), type, cb);
 			}
 			//

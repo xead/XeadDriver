@@ -50,7 +50,7 @@ public class LoginDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	public static final String APPLICATION_NAME  = "XEAD Driver 1.0";
-	public static final String FULL_VERSION  = "V1.R0.M01";
+	public static final String FULL_VERSION  = "V1.R0.M2";
 	public static final String FORMAT_VERSION  = "1.0";
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
 	public static final String COPYRIGHT = "Copyright 2011 DBC,Ltd.";

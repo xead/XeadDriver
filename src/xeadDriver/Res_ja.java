@@ -96,7 +96,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "FunctionError46", "の絞込み条件を指定値で正しく初期化できません。" },
 		{ "FunctionError47", "必須の検索条件「" },
 		{ "FunctionError48", "」が指定されていません。" },
-		{ "FunctionError49", "会計日としての許容範囲からはずれています。" },
+		{ "FunctionError49", "会計日として処理可能な範囲からはずれています。" },
 		{ "FunctionMessage1", "＊絞込み条件を指定して検索ボタンを押してください。" },
 		{ "FunctionMessage2", "＊一覧上の行を矢印キー(↑↓)で選択してEnterキーを押してください。" },
 		{ "FunctionMessage3", "＊一覧上の行を矢印キー(↑↓)で選択してEnterキーを押せば、詳細を確認できます。" },

@@ -98,22 +98,16 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		public void actionPerformed(ActionEvent e){
 			try {
 				setCursor(new Cursor(Cursor.WAIT_CURSOR));
-				//
 				if (!panelMode_.equals("DISPLAY")) {
-					//
 					messageList.clear();
-					//
 					if (panelMode_.equals("ADD") || panelMode_.equals("COPY")) {
 						doButtonActionInsert(true);
 					}
-					//
 					if (panelMode_.equals("EDIT")) {
 						doButtonActionUpdate(true);
 					}
-					//
 					setMessagesOnPanel();
 				}
-				//
 			} finally {
 				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}
@@ -229,9 +223,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
-			///////////////////
+			////////////////////////
 			// Process parameters //
-			///////////////////
+			////////////////////////
 			parmMap_ = parmMap;
 			if (parmMap_ == null) {
 				parmMap_ = new HashMap<String, Object>();
@@ -304,13 +298,25 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			// Initializing panel mode //
 			/////////////////////////////
 			if (hasParmMapWithCompleteSetOfKeyFields()) {
-				panelMode_ = "DISPLAY";
-				returnMap_.put("RETURN_CODE", "00");
-				this.setTitle(res.getString("FunctionMessage10") + primaryTable_.getName() + res.getString("FunctionMessage11"));
-				if (initialMsg.equals("")) {
-					messageList.add(res.getString("FunctionMessage12"));
+				if (functionElement_.getAttribute("UpdateOnly").equals("T")) {
+					panelMode_ = "EDIT";
+					returnMap_.put("RETURN_CODE", "21");
+					this.setTitle(functionElement_.getAttribute("Name"));
+					if (initialMsg.equals("")) {
+						messageList.add(res.getString("FunctionMessage24"));
+					} else {
+						messageList.add(initialMsg);
+					}
+					
 				} else {
-					messageList.add(initialMsg);
+					panelMode_ = "DISPLAY";
+					returnMap_.put("RETURN_CODE", "00");
+					this.setTitle(res.getString("FunctionMessage10") + primaryTable_.getName() + res.getString("FunctionMessage11"));
+					if (initialMsg.equals("")) {
+						messageList.add(res.getString("FunctionMessage12"));
+					} else {
+						messageList.add(initialMsg);
+					}
 				}
 			} else {
 				panelMode_ = "ADD";
@@ -327,7 +333,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			// Setup column fields //
 			/////////////////////////
 			jPanelFields.removeAll();
-			//focusComponentList.clear();
 			fieldList.clear();
 			Dimension dimOfPriviousField = new Dimension(0,0);
 			Dimension dim = new Dimension(0,0);
@@ -370,10 +375,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						dimOfPriviousField = new Dimension(dim.width, dim.height);
 					}
 					jPanelFields.add(fieldList.get(i));
-				} else {
-					//fieldList.get(i).setBounds(2000, 2000, dim.width, dim.height);
 				}
-				//jPanelFields.add(fieldList.get(i));
 			}
 			jPanelFields.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeight + 10));
 			if (functionElement_.getAttribute("Size").equals("AUTO")) {
@@ -404,8 +406,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				if (!existsInColumnList(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i))) {
 					XF200_Field columnField = new XF200_Field(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i), this);
 					fieldList.add(columnField);
-					//columnField.setBounds(2000, 2000, columnField.getPreferredSize().width, columnField.getPreferredSize().height);
-					//jPanelFields.add(columnField);
 				}
 			}
 			//
@@ -417,8 +417,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					if (!existsInColumnList(primaryTable_.getTableID(), "", workFieldID)) {
 						XF200_Field columnField = new XF200_Field(primaryTable_.getTableID(), "", workFieldID, this);
 						fieldList.add(columnField);
-						//columnField.setBounds(2000, 2000, columnField.getPreferredSize().width, columnField.getPreferredSize().height);
-						//jPanelFields.add(columnField);
 					}
 				}
 			}
@@ -448,8 +446,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 								if (primaryTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
 									XF200_Field columnField = new XF200_Field(workTableID, workAlias, workFieldID, this);
 									fieldList.add(columnField);
-									//columnField.setBounds(2000, 2000, columnField.getPreferredSize().width, columnField.getPreferredSize().height);
-									//jPanelFields.add(columnField);
 								}
 							}
 						}
@@ -481,8 +477,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						if (!existsInColumnList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
 							XF200_Field columnField = new XF200_Field(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j), this);
 							fieldList.add(columnField);
-							//columnField.setBounds(2000, 2000, columnField.getPreferredSize().width, columnField.getPreferredSize().height);
-							//jPanelFields.add(columnField);
 						}
 					}
 					for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
@@ -493,8 +487,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						if (!existsInColumnList(workTableID, workAlias, workFieldID)) {
 							XF200_Field columnField = new XF200_Field(workTableID, workAlias, workFieldID, this);
 							fieldList.add(columnField);
-							//columnField.setBounds(2000, 2000, columnField.getPreferredSize().width, columnField.getPreferredSize().height);
-							//jPanelFields.add(columnField);
 						}
 					}
 				}
@@ -537,6 +529,16 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			if (panelMode_.equals("DISPLAY")) {
 				initializeFieldValues();
 				fetchTableRecord();
+				resetFieldError();
+			}
+			if (panelMode_.equals("EDIT")) {
+				initializeFieldValues();
+				fetchTableRecord();
+				checkFieldValueErrors("BU");
+				resetFieldError();
+				for (int i = 0; i < fieldList.size(); i++) {
+					fieldList.get(i).setEditMode(panelMode_);
+				}
 			}
 			if (panelMode_.equals("ADD")) {
 				initializeFieldValues();
@@ -733,6 +735,17 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				if (element.getAttribute("Number").equals("8")) {
 					buttonIndexForF8 = workIndex;
 				}
+			}
+		}
+		if (panelMode_.equals("EDIT")) {
+			if (buttonToEdit != null) {
+				buttonToEdit.setVisible(true);
+			}
+			if (buttonToCopy != null) {
+				buttonToCopy.setVisible(false);
+			}
+			if (buttonToDelete != null) {
+				buttonToDelete.setVisible(false);
 			}
 		}
 	}
@@ -1028,15 +1041,19 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 
 	void setMessagesOnPanel() {
 		//
-		boolean topErrorFieldNotFound = true;
+		boolean isFirstErrorField = true;
 		for (int i = 0; i < fieldList.size(); i++) {
 			if (fieldList.get(i).isError()) {
-				if (topErrorFieldNotFound) {
+				if (isFirstErrorField) {
 					fieldList.get(i).requestFocus();
-					topErrorFieldNotFound = false;
+					isFirstErrorField = false;
 				}
 				messageList.add(fieldList.get(i).getCaption() + res.getString("Colon") + fieldList.get(i).getError());
 			}
+			/////////////////////////////////////////////////////////
+			// required step to set focus on the first error field //
+			/////////////////////////////////////////////////////////
+			fieldList.get(i).setFocusable(false);
 		}
 		//
 		jTextAreaMessages.setText("");
@@ -1284,7 +1301,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					if (checkOnly) {
 						messageList.add(res.getString("FunctionMessage9"));
 					} else {
-						//
 						Statement statement = connection.createStatement();
 						String sql = primaryTable_.getSQLToUpdate();
 						XFUtility.appendLog(sql, processLog);
@@ -1309,13 +1325,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 							}
 							setErrorAndCloseFunction();
 						}
-						//
 						closeFunction();
 					}
 				}
-				//
 			}
-			//
 		} catch(SQLException e1) {
 			JOptionPane.showMessageDialog(this, res.getString("FunctionError6"));
 			e1.printStackTrace(exceptionStream);
@@ -1740,10 +1753,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		return scriptNameRunning;
 	}
 
-	//public StringBuffer getProcessLog() {
-	//	return processLog;
-	//}
-
 	public Session getSession() {
 		return session_;
 	}
@@ -1944,9 +1953,6 @@ class XF200_Field extends JPanel implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		//if (dataSize > 50) {
-		//	dataSize = 50;
-		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -2043,7 +2049,7 @@ class XF200_Field extends JPanel implements XFScriptableField {
 							component = xFUrlField;
 						} else {
 							if (dataTypeOptionList.contains("IMAGE")) {
-								xFImageField = new XFImageField(fieldOptions, dialog_.getSession().getImageFileFolder());
+								xFImageField = new XFImageField(fieldOptions, dataSize, dialog_.getSession().getImageFileFolder());
 								xFImageField.setLocation(5, 0);
 								component = xFImageField;
 								isImage = true;
@@ -2179,9 +2185,6 @@ class XF200_Field extends JPanel implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		//if (dataSize > 50) {
-		//	dataSize = 50;
-		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -2369,20 +2372,16 @@ class XF200_Field extends JPanel implements XFScriptableField {
 
 	public void setEditMode(String mode){
 		this.setComponentEditable(false);
-		//this.setFocusable(false);
 		//
 		if (mode.equals("ADD") && this.isEditable) {
 			this.setComponentEditable(true);
-			//this.setFocusable(true);
 		}
 		if (mode.equals("COPY") && this.isEditable) {
 			this.setComponentEditable(true);
-			//this.setFocusable(true);
 		}
 		if (mode.equals("EDIT") && this.isEditable) {
 			if (!this.isKey() && !this.isKeyDependent) {
 				this.setComponentEditable(true);
-				//this.setFocusable(true);
 			}
 		}
 	}
@@ -3157,10 +3156,6 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		}
 		isEditable = editable;
 	}
-
-	//public void requestFocus() {
-	//	xFTextField.requestFocus();
-	//}
 
 	public Object getInternalValue() {
 		return xFTextField.getText();
@@ -4113,9 +4108,7 @@ class XF200_ReferTable extends Object {
 							&& dialog_.getFieldList().get(j).getFieldID().equals(fieldIDList.get(i))
 							&& dialog_.getFieldList().get(j).getTableAlias().equals(this.tableAlias)
 							&& !dialog_.getFieldList().get(j).isError()) {
-						//dialog_.getFieldList().get(j).setError(dialog_.getFieldList().get(j).getCaption() + res.getString("Colon") + tableElement.getAttribute("Name") + res.getString("FunctionError45"));
 						dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + res.getString("FunctionError45"));
-						//dialog_.getMessageList().add(dialog_.getFieldList().get(j).getCaption() + res.getString("Colon") + dialog_.getFieldList().get(j).getError());
 						noneOfKeyFieldsWereSetError = false;
 						break;
 					}
@@ -4132,9 +4125,7 @@ class XF200_ReferTable extends Object {
 				for (int j = 0; j < dialog_.getFieldList().size(); j++) {
 					if (dialog_.getFieldList().get(j).getDataSourceName().equals(withKeyFieldIDList.get(i))
 							&& !dialog_.getFieldList().get(j).isError()) {
-						//dialog_.getFieldList().get(j).setError(dialog_.getFieldList().get(j).getCaption() + res.getString("Colon") + tableElement.getAttribute("Name") + res.getString("FunctionError45"));
 						dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + res.getString("FunctionError45"));
-						//dialog_.getMessageList().add(dialog_.getFieldList().get(j).getCaption() + res.getString("Colon") + dialog_.getFieldList().get(j).getError());
 						break;
 					}
 				}

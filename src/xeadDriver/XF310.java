@@ -2812,7 +2812,7 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 							component = xFUrlField;
 						} else {
 							if (dataTypeOptionList.contains("IMAGE")) {
-								xFImageField = new XFImageField(fieldOptions, dialog_.getSession().getImageFileFolder());
+								xFImageField = new XFImageField(fieldOptions, dataSize, dialog_.getSession().getImageFileFolder());
 								xFImageField.setLocation(5, 0);
 								component = xFImageField;
 								isImage = true;

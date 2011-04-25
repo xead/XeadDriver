@@ -2106,12 +2106,12 @@ class XF200_Field extends JPanel implements XFScriptableField {
 		//
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
-			jLabelFieldComment.setText(wrkStr);
+			jLabelFieldComment.setText(" " + wrkStr);
 			jLabelFieldComment.setForeground(Color.gray);
 			jLabelFieldComment.setFont(new java.awt.Font("Dialog", 0, 12));
 			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			metrics = jLabelFieldComment.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr), this.getPreferredSize().height));
+			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 5, this.getPreferredSize().height));
 			this.add(jLabelFieldComment, BorderLayout.EAST);
 		}
 		//
@@ -2999,7 +2999,6 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
     private org.w3c.dom.Element fieldElement_;
     private ArrayList<XF200_ReferTable> referTableList_;
     private String oldValue = "";
-    //private Color normalColor;
     private ArrayList<String> fieldsToPutList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
@@ -3045,7 +3044,6 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		//
 		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions);
 		xFTextField.setLocation(5, 0);
-		//normalColor = xFTextField.getBackground();
 		//
 		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");
 		if (!wrkStr.equals("")) {
@@ -3132,8 +3130,9 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
 			for (int j = 0; j < dialog_.getFieldList().size(); j++) {
 				if (fieldsToGetToList_.get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
-					if ((!dialog_.getFieldList().get(j).isEditable() || dialog_.getFieldList().get(j).isKey())
-					  && dialog_.getPrimaryTable().getTableID().equals(dialog_.getFieldList().get(j).getTableAlias())) {
+					//if ((!dialog_.getFieldList().get(j).isEditable() || dialog_.getFieldList().get(j).isKey())
+					//  && dialog_.getPrimaryTable().getTableID().equals(dialog_.getFieldList().get(j).getTableAlias())) {
+					if (!dialog_.getFieldList().get(j).isEditable() && dialog_.getPrimaryTable().getTableID().equals(dialog_.getFieldList().get(j).getTableAlias())) {
 						anyOfKeysAreEditControlled = true;
 						break;
 					}

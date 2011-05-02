@@ -3541,7 +3541,8 @@ class XF310_DetailCellEditorWithDateField extends XFDateField implements XFTable
 	}
 
 	void jButton_actionPerformed(ActionEvent e) {
-		java.util.Date selectedValue = dialog_.getSession().getDateOnCalendar((Component)this, this.getDate());
+		//java.util.Date selectedValue = dialog_.getSession().getDateOnCalendar((Component)this, this.getDate());
+		java.util.Date selectedValue = super.getDateOnCalendar(this.getDate());
 		this.setUtilDateValue(selectedValue);
 		stopCellEditing();
 	}
@@ -4659,7 +4660,8 @@ class XF310_DetailCellEditorWithPromptCall extends JPanel implements XFTableCell
 		} else {
 			this.setBackground(XFUtility.ACTIVE_COLOR);
 		}
-		this.setValue((String)detailCell.getInternalValue());
+		//this.setValue((String)detailCell.getInternalValue());
+		this.setValue(detailCell.getInternalValue().toString());
 		return this;
 	}
 

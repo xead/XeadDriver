@@ -63,6 +63,7 @@ public class Session extends JFrame {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private String systemName = "";
+	private String version = "";
 	private String sessionID = "";
 	private String sessionStatus = "";
 	private boolean noErrorsOccured = true;
@@ -122,7 +123,7 @@ public class Session extends JFrame {
 	private ImageIcon imageIcon = null;
 	private JTextArea jTextAreaMessages = new JTextArea();
 	private JScrollPane jScrollPaneMessages = new JScrollPane();
-	private XFCalendar xFCalendar;
+	//private XFCalendar xFCalendar;
 	private Calendar calendar = GregorianCalendar.getInstance();
 
 	private org.w3c.dom.Document domDocument;
@@ -210,6 +211,7 @@ public class Session extends JFrame {
 		org.w3c.dom.Element element = (org.w3c.dom.Element)nodeList.item(0);
 
 		systemName = element.getAttribute("Name");
+		version = element.getAttribute("Version");
 		welcomePageURL = element.getAttribute("WelcomePageURL");
 		dateFormat = element.getAttribute("DateFormat");
 		calendar.setLenient(false);
@@ -292,7 +294,7 @@ public class Session extends JFrame {
 		this.setIconImage(imageTitle);
 		this.enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		this.setPreferredSize(new Dimension(screenSize.width - 40, screenSize.height - 30));
-		this.setTitle(systemName);
+		this.setTitle(systemName + " " + version);
 	    this.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
 		jTabbedPaneMenu.setFont(new java.awt.Font("SansSerif", 0, 14));
@@ -419,7 +421,7 @@ public class Session extends JFrame {
 	    }
 
         digestAdapter = new DigestAdapter("MD5");
-	    modifyPasswordDialog = new ModifyPasswordDialog(this);; 
+	    modifyPasswordDialog = new ModifyPasswordDialog(this);
 
 	    ///////////////////////////////////////////////
 	    // Show Login Dialog and Return Login Object //
@@ -487,7 +489,7 @@ public class Session extends JFrame {
 			scriptEngine.eval(loginScript);
 		}
 	    //
-		xFCalendar = new XFCalendar(this);
+		//xFCalendar = new XFCalendar(this);
 	}
 
 	ScriptEngineManager getScriptEngineManager() {
@@ -585,9 +587,9 @@ public class Session extends JFrame {
 		}
 	}
 
-	public java.util.Date getDateOnCalendar(Component compo, java.util.Date defaultDate) {
-		return xFCalendar.getDateOnCalendar(compo, defaultDate);
-	}
+	//public java.util.Date getDateOnCalendar(Component compo, java.util.Date defaultDate) {
+	//	return xFCalendar.getDateOnCalendar(compo, defaultDate);
+	//}
 
 	public String getTimeStamp() {
 		return XFUtility.getUserExpressionOfUtilDate(null, "", true);
@@ -1735,6 +1737,10 @@ public class Session extends JFrame {
 	
 	String getSystemName() {
 		return systemName;
+	}
+	
+	String getVersion() {
+		return version;
 	}
 
 	String getTableNameOfUser() {

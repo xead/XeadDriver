@@ -47,21 +47,21 @@ public class About extends JDialog implements ActionListener {
 	private JLabel labelURL = new JLabel();
 	private HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
 	private Desktop desktop = Desktop.getDesktop();
-	private LoginDialog loginDialog;
+	private JDialog parent_;
 
-	public About(LoginDialog parent) {
+	public About(JDialog parent) {
 		super(parent);
+		parent_ = parent;
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		try {
-			loginDialog = parent;
-			jbInit(parent);
+			jbInit();
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void jbInit(LoginDialog parent) throws Exception  {
+	private void jbInit() throws Exception  {
 		labelProduct.setFont(new java.awt.Font("Serif", 1, 16));
 		labelProduct.setHorizontalAlignment(SwingConstants.CENTER);
 		labelProduct.setText(LoginDialog.PRODUCT_NAME);
@@ -102,8 +102,8 @@ public class About extends JDialog implements ActionListener {
 	public void request() {
 		panelMain.getRootPane().setDefaultButton(buttonOK);
 		Dimension dlgSize = this.getPreferredSize();
-		Dimension frmSize = loginDialog.getSize();
-		Point loc = loginDialog.getLocation();
+		Dimension frmSize = parent_.getSize();
+		Point loc = parent_.getLocation();
 		this.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x, (frmSize.height - dlgSize.height) / 2 + loc.y);
 		this.pack();
 		super.setVisible(true);

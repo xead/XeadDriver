@@ -34,6 +34,8 @@ package xeadDriver;
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
+import javax.swing.JOptionPane;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -57,7 +59,12 @@ public class DeleteChecker extends Object {
 	private String rangeKeyFieldValid = "";
 	private String rangeKeyFieldExpire = "";
 	private ScriptEngine scriptEngine_;
-
+	
+	///////////////////////////////////////////////////////////////////////
+	// Subject Table : The table which record is to be deleted           //
+	// Base Table : The table which has a reference to the subject table //
+	///////////////////////////////////////////////////////////////////////
+	
 	public DeleteChecker(Session session, org.w3c.dom.Element subjectTableElement, HashMap<String, Object> keyValueMap, ScriptEngine scriptEngine) {
 		super();
 		//
@@ -408,7 +415,9 @@ class DeleteChecker_BaseTable extends Object {
 				}
 				//
 				for (int j = 0; j < withKeyFieldIDList.size(); j++) {
-					fieldElement = deleteChecker_.getSession().getFieldElement(withKeyFieldTableAliasList.get(j), withKeyFieldIDList.get(j));
+					wrkTableID = withKeyFieldTableAliasList.get(j);
+					wrkTableID = XFUtility.getTableIDOfTableAlias(wrkTableID, referNodeList, null);
+					fieldElement = deleteChecker_.getSession().getFieldElement(wrkTableID, withKeyFieldIDList.get(j));
 					wrkStr = fieldElement.getAttribute("Type");
 					if (wrkStr.equals("CHAR")
 							|| wrkStr.equals("VARCHAR")

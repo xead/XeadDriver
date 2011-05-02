@@ -3252,7 +3252,8 @@ class XF110_SubListDetailCellEditorWithDateField extends XFDateField implements 
 	}
 
 	void jButton_actionPerformed(ActionEvent e) {
-		java.util.Date selectedValue = dialog_.getSession().getDateOnCalendar((Component)this, this.getDate());
+		//java.util.Date selectedValue = dialog_.getSession().getDateOnCalendar((Component)this, this.getDate());
+		java.util.Date selectedValue = super.getDateOnCalendar(this.getDate());
 		this.setUtilDateValue(selectedValue);
 		stopCellEditing();
 	}

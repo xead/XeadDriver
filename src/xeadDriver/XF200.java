@@ -664,7 +664,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	void setFocusOnComponent() {
 		boolean noFieldFocused = true;
 		for (int i = 0; i < fieldList.size(); i++) {
-			if (fieldList.get(i).isVisibleOnPanel() && fieldList.get(i).isEditable()) {
+			if (fieldList.get(i).isVisibleOnPanel() && fieldList.get(i).isEditable() && fieldList.get(i).isFocusable()) {
 				fieldList.get(i).requestFocus();
 				noFieldFocused = false;
 				break;

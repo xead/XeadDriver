@@ -67,6 +67,7 @@ import javax.swing.text.PlainDocument;
 import org.apache.poi.hssf.usermodel.HSSFDataFormat;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.w3c.dom.*;
+
 import com.lowagie.text.BadElementException;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.PageSize;
@@ -486,6 +487,33 @@ public class XFUtility {
 		}
 		//
 		return returnValue;
+	}
+
+	static String getTableIDOfTableAlias(String tableAlias, NodeList referList1, NodeList referList2) {
+		String tableID = tableAlias;
+		org.w3c.dom.Element workElement;
+		//
+	    for (int j = 0; j < referList1.getLength(); j++) {
+			workElement = (org.w3c.dom.Element)referList1.item(j);
+			if (workElement.getAttribute("TableAlias").equals(tableAlias) ||
+					(workElement.getAttribute("ToTable").equals(tableAlias) && workElement.getAttribute("TableAlias").equals(""))) {
+				tableID = workElement.getAttribute("ToTable");
+				break;
+			}
+	    }
+	    //
+	    if (referList2 != null) {
+	    	for (int j = 0; j < referList2.getLength(); j++) {
+	    		workElement = (org.w3c.dom.Element)referList2.item(j);
+	    		if (workElement.getAttribute("TableAlias").equals(tableAlias) ||
+	    				(workElement.getAttribute("ToTable").equals(tableAlias) && workElement.getAttribute("TableAlias").equals(""))) {
+	    			tableID = workElement.getAttribute("ToTable");
+	    			break;
+	    		}
+	    	}
+	    }
+	    //
+		return tableID;
 	}
 	
 //	static void setValueToFieldObject(String basicType, Object valueObject, Object fieldObject){
@@ -2228,6 +2256,7 @@ class XFDateField extends JPanel implements XFEditableField {
     private Session session_;
     private Color normalModeColor = null;
     private Object oldValue = null;
+	private XFCalendar xFCalendar;
 
 	public XFDateField(Session session){
 		//
@@ -2268,6 +2297,8 @@ class XFDateField extends JPanel implements XFEditableField {
 		this.add(jButton, BorderLayout.EAST);
 		//this.setFocusable(true);
 		//this.addFocusListener(new ComponentFocusListener());
+		//
+		xFCalendar = new XFCalendar(session_, this);
 	}
 	
 	public void addActionListener(ActionListener listener) {
@@ -2375,8 +2406,13 @@ class XFDateField extends JPanel implements XFEditableField {
 	}
 	
 	void jButton_actionPerformed(ActionEvent e) {
-		java.util.Date selectedValue = session_.getDateOnCalendar((Component)this, date);
+		//java.util.Date selectedValue = session_.getDateOnCalendar((Component)this, date);
+		java.util.Date selectedValue = getDateOnCalendar(date);
 		this.setUtilDateValue(selectedValue);
+	}
+	
+	public java.util.Date getDateOnCalendar(java.util.Date date) {
+		return xFCalendar.getDateOnCalendar(date);
 	}
 
 	void jButton_keyPressed(KeyEvent e) {
@@ -2653,20 +2689,16 @@ class XFTextField extends JTextField implements XFEditableField {
 			if (basicType_.equals("FLOAT")) {
 				setText(getFormattedNumber(getText()));
 			}
-			////getInputContext().setCompositionEnabled(false);
-			//Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
-			//getInputContext().setCharacterSubsets(subsets);
+			if (getInputContext() != null) {
+				getInputContext().setCompositionEnabled(false);
+			}
 		}
 		public void focusGained(FocusEvent event){
-			Character.Subset[] subsets;
-			//
-			//getInputContext().setCompositionEnabled(false);
-			subsets = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
-			//
+			Character.Subset[] subsets  = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
 			String lang = Locale.getDefault().getLanguage();
+			//
 			if (basicType_.equals("STRING")) {
 				if (dataTypeOptionList.contains("KANJI")) {
-					//getInputContext().setCompositionEnabled(true);
 					if (lang.equals("ja")) {
 						subsets = new Character.Subset[] {java.awt.im.InputSubset.KANJI};
 					}
@@ -2676,17 +2708,22 @@ class XFTextField extends JTextField implements XFEditableField {
 					if (lang.equals("zh")) {
 						subsets = new Character.Subset[] {java.awt.im.InputSubset.TRADITIONAL_HANZI};
 					}
+					getInputContext().setCharacterSubsets(subsets);
+					getInputContext().setCompositionEnabled(true);
 				} else {
-					if (dataTypeOptionList.contains("KATAKANA")) {
-						//getInputContext().setCompositionEnabled(true);
-						if (lang.equals("ja")) {
-							subsets = new Character.Subset[] {java.awt.im.InputSubset.HALFWIDTH_KATAKANA};
-						}
+					if (dataTypeOptionList.contains("KATAKANA") && lang.equals("ja")) {
+						subsets = new Character.Subset[] {java.awt.im.InputSubset.HALFWIDTH_KATAKANA};
+						getInputContext().setCharacterSubsets(subsets);
+						getInputContext().setCompositionEnabled(true);
+					} else {
+						getInputContext().setCharacterSubsets(subsets);
+						getInputContext().setCompositionEnabled(false);
 					}
 				}
+			} else {
+				getInputContext().setCharacterSubsets(subsets);
+				getInputContext().setCompositionEnabled(false);
 			}
-			//
-			getInputContext().setCharacterSubsets(subsets);
 		}
 	}
 
@@ -2852,53 +2889,48 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	public Object getOldValue() {
 		return oldValue;
 	}
-
-	//public void requestFocus() {
-	//	transferFocus();
-		//jTextArea.requestFocus();
-	//}
 	
 	public void setEditable(boolean editable) {
 		jTextArea.setEditable(editable);
 		//
 		if (editable) {
-			//jTextArea.setBackground(SystemColor.white);
 			jTextArea.setBackground(XFUtility.ACTIVE_COLOR);
 		} else {
-			//jTextArea.setBackground(SystemColor.control);
 			jTextArea.setBackground(XFUtility.INACTIVE_COLOR);
 		}
 	}
 
 	class TextAreaFocusListener implements FocusListener{
 		public void focusLost(FocusEvent event){
-   			getInputContext().setCharacterSubsets(null);
+			if (getInputContext() != null) {
+				getInputContext().setCompositionEnabled(false);
+			}
 		}
 		public void focusGained(FocusEvent event){
+			Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
+			String lang = Locale.getDefault().getLanguage();
+			//
 			if (dataTypeOptionList.equals("KANJI")) {
-				getInputContext().setCharacterSubsets(null);
-				String lang = Locale.getDefault().getLanguage();
 				if (lang.equals("ja")) {
-					Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.KANJI};
-					getInputContext().setCharacterSubsets(subsets);
+					subsets = new Character.Subset[] {java.awt.im.InputSubset.KANJI};
 				}
 				if (lang.equals("ko")) {
-					Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.HANJA};
-					getInputContext().setCharacterSubsets(subsets);
+					subsets = new Character.Subset[] {java.awt.im.InputSubset.HANJA};
 				}
 				if (lang.equals("zh")) {
-					Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.TRADITIONAL_HANZI};
-					getInputContext().setCharacterSubsets(subsets);
+					subsets = new Character.Subset[] {java.awt.im.InputSubset.TRADITIONAL_HANZI};
 				}
-			}
-			if (dataTypeOptionList.equals("KATAKANA")) {
-				getInputContext().setCharacterSubsets(null);
-				String lang = Locale.getDefault().getLanguage();
-				if (lang.equals("ja")) {
-					Character.Subset[] subsets = new Character.Subset[] {java.awt.im.InputSubset.HALFWIDTH_KATAKANA};
+				getInputContext().setCharacterSubsets(subsets);
+				getInputContext().setCompositionEnabled(true);
+			} else {
+				if (dataTypeOptionList.equals("KATAKANA") && lang.equals("ja")) {
+					subsets = new Character.Subset[] {java.awt.im.InputSubset.HALFWIDTH_KATAKANA};
 					getInputContext().setCharacterSubsets(subsets);
+					getInputContext().setCompositionEnabled(true);
+				} else {
+					getInputContext().setCharacterSubsets(subsets);
+					getInputContext().setCompositionEnabled(false);
 				}
-				
 			}
 		}
 	}
@@ -3729,12 +3761,14 @@ class XFCalendar extends JDialog {
     private Date selectedDate = null;
     private HashMap<String, String> offDateMap = new HashMap<String,String>();
     private String normalMessage;
+    private Component parent_;
     
-    public XFCalendar(Session session) {
+    public XFCalendar(Session session, Component parent) {
 		super();
 		this.setModal(true);
 		this.setTitle(res.getString("Calendar"));
 		this.session_ = session;
+		this.parent_ = parent;
 		jPanelMain.setLayout(new BorderLayout());
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		//
@@ -3871,17 +3905,13 @@ class XFCalendar extends JDialog {
 		dlgSize = new Dimension(346,240);
 		this.setPreferredSize(dlgSize);
 		this.setResizable(false);
-		this.pack();
-    }
-
-    public Date getDateOnCalendar(Component compo, Date date) {
-    	selectedDate = date;
-    	//
-    	if (compo != null && compo.isValid()) {
-    		Rectangle rec = compo.getBounds();
-    		Point point = compo.getLocationOnScreen();
-    		int posX = point.x;
-    		int posY = point.y + rec.height;
+		//
+		int posY;
+    	if (parent_ != null && parent_.isValid()) {
+    		Rectangle rec = parent_.getBounds();
+    		Point point = parent_.getLocationOnScreen();
+    		posX = point.x;
+    		posY = point.y + rec.height;
     		if (posY + dlgSize.height > scrSize.height) {
     			posY = point.y - dlgSize.height;
     		}
@@ -3889,8 +3919,33 @@ class XFCalendar extends JDialog {
     	} else {
     		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
     	}
+		//
+		this.pack();
+    }
+
+    //public Date getDateOnCalendar(Component compo, Date date) {
+    public Date getDateOnCalendar(Date date) {
+    	selectedDate = date;
     	//
-    	if (date != null && date != maxValueDate) {
+//    	if (compo != null && compo.isValid()) {
+//    		Rectangle rec = compo.getBounds();
+//    		Point point = compo.getLocationOnScreen();
+//    		int posX = point.x;
+//    		int posY = point.y + rec.height;
+//    		if (posY + dlgSize.height > scrSize.height) {
+//    			posY = point.y - dlgSize.height;
+//    		}
+//    		this.setLocation(posX, posY);
+//    	} else {
+//    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
+//    	}
+    	//
+    	//if (date != null && date != maxValueDate) {
+        //    this.date = date;
+    	//}
+    	if (date == null || date == maxValueDate) {
+            this.date = null;
+    	} else {
             this.date = date;
     	}
     	setupDates(this.date, 0);
@@ -3905,6 +3960,9 @@ class XFCalendar extends JDialog {
 		int indexOfFocusedDate = 0;
 		//
 		Calendar cal = Calendar.getInstance();
+		if (focusedDate == null) {
+			focusedDate = cal.getTime();
+		}
 		//
 		cal.setTime(focusedDate);
 		if (offset < 0) {
@@ -3972,25 +4030,25 @@ class XFCalendar extends JDialog {
 	}
 	
 	String getYearMonthText(Calendar cal) {
-		//
-		//en00 06/17/10
-		//en01 Thur,06/17/01
-		//en10 Jun17,2010
-		//en11 Thur,Jun17,2001
-		//
-		//jp00 10/06/17
-		//jp01 10/06/17(木)
-		//jp10 2010/06/17
-		//jp11 2010/06/17(木)
-		//jp20 2010年6月17日
-		//jp21 2010年6月17日(木)
-		//jp30 H22/06/17
-		//jp31 H22/06/17(水)
-		//jp40 H22年06月17日
-		//jp41 H22年06月17日(水)
-		//jp50 平成22年06月17日
-		//jp51 平成22年06月17日(水)
-		//
+		////////////////////////////
+		//en00 06/17/10           //
+		//en01 Thur,06/17/01      //
+		//en10 Jun17,2010         //
+		//en11 Thur,Jun17,2001    //
+		//                        //
+		//jp00 10/06/17           //
+		//jp01 10/06/17(木)       //
+		//jp10 2010/06/17         //
+		//jp11 2010/06/17(木)     //
+		//jp20 2010年6月17日                //
+		//jp21 2010年6月17日(木)  //
+		//jp30 H22/06/17          //
+		//jp31 H22/06/17(水)      //
+		//jp40 H22年06月17日                //
+		//jp41 H22年06月17日(水)  //
+		//jp50 平成22年06月17日          //
+		//jp51 平成22年06月17日(水)//
+		///////////////////////////
 		String result = "";
 		String dateFormat = session_.getDateFormat();
 		String language = session_.getDateFormat().substring(0, 2);

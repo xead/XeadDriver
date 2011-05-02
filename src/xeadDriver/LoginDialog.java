@@ -82,9 +82,8 @@ public class LoginDialog extends JDialog {
 			//
 			this.session = session;
 			this.connection = session.getConnection();
-			this.setTitle(session.getSystemName());
+			this.setTitle(session.getSystemName() + " " + session.getVersion());
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
-			//jPanelMain.setPreferredSize(new Dimension(255, 130));
 			jPanelMain.setPreferredSize(new Dimension(290, 130));
 			jPanelMain.setLayout(null);
 			//
@@ -104,7 +103,7 @@ public class LoginDialog extends JDialog {
 			jLabelPassword.setFont(new java.awt.Font("Dialog", 0, 14));
 			jLabelPassword.setText(res.getString("Password"));
 			jPasswordField.setFont(new java.awt.Font("Dialog", 0, 12));
-			jPasswordField.setBounds(new Rectangle(100, 52, 130, 25));
+			jPasswordField.setBounds(new Rectangle(100, 52, 140, 25));
 			jPasswordField.setDocument(new LimitedDocument(10));
 			jPasswordField.setText(loginPassword);
 			//

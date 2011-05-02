@@ -48,6 +48,7 @@ public class ModifyPasswordDialog extends JDialog {
 	private JPanel jPanelMain = new JPanel();
 	private JButton jButtonOK = new JButton();
 	private JButton jButtonClose = new JButton();
+	private JButton jButtonAbout = new JButton();
 	private JLabel jLabelUserName = new JLabel();
 	private JTextField jTextFieldUserName = new JTextField();
 	private JLabel jLabelPasswordCurrent = new JLabel();
@@ -60,6 +61,7 @@ public class ModifyPasswordDialog extends JDialog {
 	private Statement statement = null;
 	private boolean modified = false;
 	private Image imageTitle;
+	private About about;
 
 	public ModifyPasswordDialog(Session session) {
 		super(session, "", true);
@@ -71,45 +73,50 @@ public class ModifyPasswordDialog extends JDialog {
 			this.connection = session.getConnection();
 			this.setTitle(res.getString("ModifyPassword"));
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
-			jPanelMain.setPreferredSize(new Dimension(270, 163));
+			jPanelMain.setPreferredSize(new Dimension(290, 163));
 			jPanelMain.setLayout(null);
 			//
 			jLabelUserName.setHorizontalAlignment(SwingConstants.RIGHT);
-			jLabelUserName.setBounds(new Rectangle(10, 17, 80, 25));
+			jLabelUserName.setBounds(new Rectangle(10, 17, 90, 25));
 			jLabelUserName.setFont(new java.awt.Font("Dialog", 0, 12));
 			jLabelUserName.setText(res.getString("UserName"));
 			jTextFieldUserName.setFont(new java.awt.Font("Dialog", 0, 12));
-			jTextFieldUserName.setBounds(new Rectangle(95, 17, 155, 25));
+			jTextFieldUserName.setBounds(new Rectangle(105, 17, 160, 25));
 			jTextFieldUserName.setEditable(false);
 			//
 			jLabelPasswordCurrent.setHorizontalAlignment(SwingConstants.RIGHT);
-			jLabelPasswordCurrent.setBounds(new Rectangle(10, 50, 80, 25));
+			jLabelPasswordCurrent.setBounds(new Rectangle(10, 50, 90, 25));
 			jLabelPasswordCurrent.setFont(new java.awt.Font("Dialog", 0, 12));
 			jLabelPasswordCurrent.setText(res.getString("PasswordCurrent"));
 			jPasswordCurrent.setFont(new java.awt.Font("Dialog", 0, 12));
-			jPasswordCurrent.setBounds(new Rectangle(95, 50, 130, 25));
+			jPasswordCurrent.setBounds(new Rectangle(105, 50, 140, 25));
 			jPasswordCurrent.setDocument(new LimitedDocument(10));
 			//
 			jLabelPasswordNew.setHorizontalAlignment(SwingConstants.RIGHT);
-			jLabelPasswordNew.setBounds(new Rectangle(10, 83, 80, 25));
+			jLabelPasswordNew.setBounds(new Rectangle(10, 83, 90, 25));
 			jLabelPasswordNew.setFont(new java.awt.Font("Dialog", 0, 12));
 			jLabelPasswordNew.setText(res.getString("PasswordNew"));
 			jPasswordNew.setFont(new java.awt.Font("Dialog", 0, 12));
-			jPasswordNew.setBounds(new Rectangle(95, 83, 130, 25));
+			jPasswordNew.setBounds(new Rectangle(105, 83, 140, 25));
 			jPasswordNew.setDocument(new LimitedDocument(10));
 			//
-			jButtonClose.setBounds(new Rectangle(20, 125, 90, 25));
+			jButtonClose.setBounds(new Rectangle(10, 125, 80, 25));
 			jButtonClose.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonClose.setText(res.getString("Close"));
 			jButtonClose.addActionListener(new ModifyPasswordDialog_jButtonClose_actionAdapter(this));
-			jButtonOK.setBounds(new Rectangle(160, 125, 90, 25));
+			jButtonOK.setBounds(new Rectangle(100, 125, 90, 25));
 			jButtonOK.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonOK.setText(res.getString("Modify"));
 			jButtonOK.addActionListener(new ModifyPasswordDialog_jButtonOK_actionAdapter(this));
+			jButtonAbout.setBounds(new Rectangle(200, 125, 80, 25));
+			jButtonAbout.setFont(new java.awt.Font("Dialog", 0, 12));
+			jButtonAbout.setText("About");
+			jButtonAbout.addActionListener(new ModifyPasswordDialog_jButtonAbout_actionAdapter(this));
 			//
 			this.getContentPane().add(jPanelMain,  BorderLayout.CENTER);
 			jPanelMain.add(jButtonClose, null);
 			jPanelMain.add(jButtonOK, null);
+			jPanelMain.add(jButtonAbout, null);
 			jPanelMain.add(jLabelUserName, null);
 			jPanelMain.add(jTextFieldUserName, null);
 			jPanelMain.add(jLabelPasswordCurrent, null);
@@ -117,6 +124,8 @@ public class ModifyPasswordDialog extends JDialog {
 			jPanelMain.add(jLabelPasswordNew, null);
 			jPanelMain.add(jPasswordNew, null);
 			pack();
+			//
+			about = new About(this); 
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -205,6 +214,10 @@ public class ModifyPasswordDialog extends JDialog {
 		this.setVisible(false);
 	}
 
+	void jButtonAbout_actionPerformed(ActionEvent e) {
+		about.request();
+	}
+
 	class LimitedDocument extends PlainDocument {
 		private static final long serialVersionUID = 1L;
 		int limit;
@@ -240,5 +253,15 @@ class ModifyPasswordDialog_jButtonClose_actionAdapter implements java.awt.event.
   }
   public void actionPerformed(ActionEvent e) {
     adaptee.jButtonClose_actionPerformed(e);
+  }
+}
+
+class ModifyPasswordDialog_jButtonAbout_actionAdapter implements java.awt.event.ActionListener {
+	ModifyPasswordDialog adaptee;
+	ModifyPasswordDialog_jButtonAbout_actionAdapter(ModifyPasswordDialog adaptee) {
+    this.adaptee = adaptee;
+  }
+  public void actionPerformed(ActionEvent e) {
+    adaptee.jButtonAbout_actionPerformed(e);
   }
 }

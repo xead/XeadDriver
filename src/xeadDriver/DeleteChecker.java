@@ -504,6 +504,10 @@ class DeleteChecker_BaseTable extends Object {
 	public String getName() {
 		return baseTableElement_.getAttribute("Name");
 	}
+	
+	public NodeList getReferNodeList() {
+		return referNodeList;
+	}
 
 	public boolean isStaticRefer() {
 		return isStaticRefer;
@@ -930,7 +934,9 @@ class DeleteChecker_ReferTable extends Object {
 		}
 		//
 		for (int j = 0; j < withKeyFieldIDList.size(); j++) {
-			workElement = deleteChecker.getSession().getFieldElement(withKeyFieldTableAliasList.get(j), withKeyFieldIDList.get(j));
+			wrkStr = withKeyFieldTableAliasList.get(j);
+			wrkStr = XFUtility.getTableIDOfTableAlias(wrkStr, baseTable.getReferNodeList(), null);
+			workElement = deleteChecker.getSession().getFieldElement(wrkStr, withKeyFieldIDList.get(j));
 			wrkStr = workElement.getAttribute("Type");
 			if (wrkStr.equals("CHAR")
 					|| wrkStr.equals("VARCHAR")

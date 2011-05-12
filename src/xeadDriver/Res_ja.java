@@ -145,6 +145,8 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "FunctionMessage46", "タイマーが解除されました。" },
 		{ "FunctionMessage47", "処理が開始されました。" },
 		{ "FunctionMessage48", "処理が終了しました。" },
+		{ "FunctionMessage49", "＊選択可能な" },
+		{ "FunctionMessage50", "が見つかりませんでした。" },
 		{ "Iconify", "最小化" },
 		{ "ImageFileNotFound1", "<html>指定された画像ファイル<br>" },
 		{ "ImageFileNotFound2", "<br>が見つかりません" },

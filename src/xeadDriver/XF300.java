@@ -4248,7 +4248,7 @@ class XF300_Filter extends JPanel {
 				//
 				if (componentType.equals("FYEAR")) {
 					stringFilterValue = (String)xFFYearBox.getInternalValue();
-					if (stringFilterValue.equals("0")) {
+					if (stringFilterValue.equals("")) {
 						validated = true;
 					} else {
 						if (columnField.getInternalValue() != null) {

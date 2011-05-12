@@ -38,6 +38,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -1465,7 +1466,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						while (workTokenizer.hasMoreTokens()) {
 							keyFieldList.add(workTokenizer.nextToken());
 						}
-						sql = detailTable.getSQLToCheckSKDuplication(tableRowNumber, keyFieldList);
+						if (tableRowNumber.getRecordType().equals("CURRENT")) {
+							sql = detailTable.getSQLToCheckSKDuplication(tableRowNumber, keyFieldList, true);
+						} else {
+							sql = detailTable.getSQLToCheckSKDuplication(tableRowNumber, keyFieldList, false);
+						}
 						XFUtility.appendLog(sql, processLog);
 						resultOfPrimaryTable = statement.executeQuery(sql);
 						if (resultOfPrimaryTable.next()) {
@@ -6759,7 +6764,7 @@ class XF310_DetailTable extends Object {
 		return statementBuf.toString();
 	}
 	
-	public String getSQLToCheckSKDuplication(XF310_DetailRowNumber rowNumber, ArrayList<String> keyFieldList) {
+	public String getSQLToCheckSKDuplication(XF310_DetailRowNumber rowNumber, ArrayList<String> keyFieldList, boolean isToUpdate) {
 		StringBuffer statementBuf = new StringBuffer();
 		//
 		statementBuf.append("select ");
@@ -6797,23 +6802,25 @@ class XF310_DetailTable extends Object {
 			}
 		}
 		//
-		firstField = true;
-		for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
-			if (dialog_.getDetailColumnList().get(j).isFieldOnDetailTable()) {
-				if (dialog_.getDetailColumnList().get(j).isKey()) {
-					if (firstField) {
-						statementBuf.append(" and (") ;
-					} else {
-						statementBuf.append(" or ") ;
+		if (isToUpdate) {
+			firstField = true;
+			for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
+				if (dialog_.getDetailColumnList().get(j).isFieldOnDetailTable()) {
+					if (dialog_.getDetailColumnList().get(j).isKey()) {
+						if (firstField) {
+							statementBuf.append(" and (") ;
+						} else {
+							statementBuf.append(" or ") ;
+						}
+						statementBuf.append(dialog_.getDetailColumnList().get(j).getFieldID()) ;
+						statementBuf.append("!=") ;
+						statementBuf.append(convertToTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
+						firstField = false;
 					}
-					statementBuf.append(dialog_.getDetailColumnList().get(j).getFieldID()) ;
-					statementBuf.append("!=") ;
-					statementBuf.append(convertToTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
-					firstField = false;
 				}
 			}
+			statementBuf.append(")") ;
 		}
-		statementBuf.append(")") ;
 		//
 		return statementBuf.toString();
 	}
@@ -7682,7 +7689,6 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 		String value = (String)obj;
 		value = value.trim();
 		//
-		//
 		//if (!this.isEditable) {
 			if (listType.equals("VALUES_LIST")) {
 				for (int i = 0; i < jComboBox.getItemCount(); i++) {
@@ -7702,10 +7708,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 			}
 			if (listType.equals("RECORDS_LIST")) {
 				//
-				if (jComboBox.getItemCount() == 0) {
-					setupRecordList();
-				}
-				//
+				setupRecordList();
 				if (jComboBox.getItemCount() > 0) {
 					if (value == null || value.equals("")) {
 						//jComboBox.setSelectedIndex(0);

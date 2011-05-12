@@ -5490,23 +5490,23 @@ class XF110_SubListBatchTable extends Object {
 			}
 		}
 		//
-		firstField = true;
-		for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
-			if (dialog_.getBatchFieldList().get(j).isFieldOnBatchTable()) {
-				if (dialog_.getBatchFieldList().get(j).isKey()) {
-					if (firstField) {
-						statementBuf.append(" and (") ;
-					} else {
-						statementBuf.append(" or ") ;
-					}
-					statementBuf.append(dialog_.getBatchFieldList().get(j).getFieldID()) ;
-					statementBuf.append("!=") ;
-					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue())) ;
-					firstField = false;
-				}
-			}
-		}
-		statementBuf.append(")") ;
+//		firstField = true;
+//		for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
+//			if (dialog_.getBatchFieldList().get(j).isFieldOnBatchTable()) {
+//				if (dialog_.getBatchFieldList().get(j).isKey()) {
+//					if (firstField) {
+//						statementBuf.append(" and (") ;
+//					} else {
+//						statementBuf.append(" or ") ;
+//					}
+//					statementBuf.append(dialog_.getBatchFieldList().get(j).getFieldID()) ;
+//					statementBuf.append("!=") ;
+//					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue())) ;
+//					firstField = false;
+//				}
+//			}
+//		}
+//		statementBuf.append(")") ;
 		//
 		return statementBuf.toString();
 	}
@@ -7231,10 +7231,7 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 			}
 			if (listType.equals("RECORDS_LIST")) {
 				//
-				if (jComboBox.getItemCount() == 0) {
-					setupRecordList();
-				}
-				//
+				setupRecordList();
 				if (jComboBox.getItemCount() > 0) {
 					if (value == null || value.equals("")) {
 						//jComboBox.setSelectedIndex(0);

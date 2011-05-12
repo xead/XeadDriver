@@ -420,14 +420,18 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		result = 0;
 		addRowListNumberReturnList = new ArrayList<XF310_AddRowListNumber>();
 		//
-		if (dialog_.getFunctionElement().getAttribute("AddRowListInitialMsg").equals("")) {
-			if (addSelectedActionName.equals("")) {
-				jTextAreaMessages.setText(res.getString("FunctionMessage32"));
-			} else {
-				jTextAreaMessages.setText(res.getString("FunctionMessage5") + addSelectedActionName + res.getString("FunctionMessage6"));
-			}
+		if (tableModelMain.getRowCount() == 0) {
+			jTextAreaMessages.setText(res.getString("FunctionMessage49") + addRowListTable.getTableElement().getAttribute("Name") + res.getString("FunctionMessage50"));
 		} else {
-			jTextAreaMessages.setText(dialog_.getFunctionElement().getAttribute("AddRowListInitialMsg"));
+			if (dialog_.getFunctionElement().getAttribute("AddRowListInitialMsg").equals("")) {
+				if (addSelectedActionName.equals("")) {
+					jTextAreaMessages.setText(res.getString("FunctionMessage32"));
+				} else {
+					jTextAreaMessages.setText(res.getString("FunctionMessage5") + addSelectedActionName + res.getString("FunctionMessage6"));
+				}
+			} else {
+				jTextAreaMessages.setText(dialog_.getFunctionElement().getAttribute("AddRowListInitialMsg"));
+			}
 		}
 		//
 		if (!addSelectedActionName.equals("")) {

@@ -145,6 +145,8 @@ public class Res extends java.util.ListResourceBundle {
 		{ "FunctionMessage46", "The timer is canceled." },
 		{ "FunctionMessage47", "The process has started." },
 		{ "FunctionMessage48", "The process has finished." },
+		{ "FunctionMessage49", "* You have no " },
+		{ "FunctionMessage50", " to select." },
 		{ "Iconify", "Iconify" },
 		{ "ImageFileNotFound1", "<html>The image file specified<br>" },
 		{ "ImageFileNotFound2", "<br>is not found in folders." },

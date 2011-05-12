@@ -514,8 +514,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						for (int k = 0; k < fieldList.size(); k++) {
 							workFieldID = referTableList.get(i).getFieldIDList().get(j);
 							if (fieldList.get(k).getTableAlias().equals(workAlias) && fieldList.get(k).getFieldID().equals(workFieldID)) {
-								if (fieldList.get(i).isVisibleOnPanel()) {
-									fieldList.get(i).setKeyDependent(true);
+								if (fieldList.get(k).isVisibleOnPanel()) {
+									fieldList.get(k).setKeyDependent(true);
 								}
 							}
 						}
@@ -693,6 +693,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
 		actionMap.put("HELP", helpAction);
 		//
+		functionKeyToEdit = "";
+		buttonToEdit = null;
+		buttonToCopy = null;
+		buttonToDelete = null;
 		buttonIndexForF6 = -1;
 		buttonIndexForF8 = -1;
 		int workIndex;
@@ -738,9 +742,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 		if (panelMode_.equals("EDIT")) {
-			if (buttonToEdit != null) {
-				buttonToEdit.setVisible(true);
-			}
+			//if (buttonToEdit != null) {
+			//	buttonToEdit.setVisible(true);
+			//}
 			if (buttonToCopy != null) {
 				buttonToCopy.setVisible(false);
 			}
@@ -813,7 +817,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	void initializeFieldValues() {
-		//
 		this.hasAutoNumberField = false;
 		//
 		for (int i = 0; i < fieldList.size(); i++) {
@@ -856,7 +859,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	int checkDeleteErrors() {
-		//
 		int countOfErrors = fetchReferTableRecords("BD", true, "");
 		if (countOfErrors == 0) {
 			//
@@ -1009,7 +1011,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					while (workTokenizer.hasMoreTokens()) {
 						keyFieldList.add(workTokenizer.nextToken());
 					}
-					sql = primaryTable_.getSQLToCheckSKDuplication(keyFieldList);
+					if (type.equals("UPDATE")) {
+						sql = primaryTable_.getSQLToCheckSKDuplication(keyFieldList, true);
+					} else {
+						sql = primaryTable_.getSQLToCheckSKDuplication(keyFieldList, false);
+					}
 					XFUtility.appendLog(sql, processLog);
 					resultOfPrimaryTable = statementForPrimaryTable.executeQuery(sql);
 					if (resultOfPrimaryTable.next()) {
@@ -1397,7 +1403,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		buttonToEdit.setText(functionKeyToEdit + " " + res.getString("Add"));
 		buttonToCopy.setVisible(false);
-		buttonToDelete.setVisible(false);
+		if (buttonToDelete != null) {
+			buttonToDelete.setVisible(false);
+		}
 		//
 		messageList.clear();
 		messageList.add(res.getString("FunctionMessage15"));
@@ -2343,7 +2351,7 @@ class XF200_Field extends JPanel implements XFScriptableField {
 	}
 
 	public void setKeyDependent(boolean keyDependent){
-		isKeyDependent = keyDependent;
+		this.isKeyDependent = keyDependent;
 	}
 
 	public void setEditable(boolean editable){
@@ -2939,10 +2947,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 		}
 		if (listType.equals("RECORDS_LIST")) {
 			//
-			if (jComboBox.getItemCount() == 0) {
-				setupRecordList();
-			}
-			//
+			setupRecordList();
 			if (jComboBox.getItemCount() > 0) {
 				if (value == null || value.equals("")) {
 					//jComboBox.setSelectedIndex(0);
@@ -3536,7 +3541,7 @@ class XF200_PrimaryTable extends Object {
 		return uniqueKeyList;
 	}
 	
-	public String getSQLToCheckSKDuplication(ArrayList<String> keyFieldList) {
+	public String getSQLToCheckSKDuplication(ArrayList<String> keyFieldList, boolean isToUpdate) {
 		StringBuffer statementBuf = new StringBuffer();
 		//
 		statementBuf.append("select ");
@@ -3574,23 +3579,25 @@ class XF200_PrimaryTable extends Object {
 			}
 		}
 		//
-		firstField = true;
-		for (int j = 0; j < dialog_.getFieldList().size(); j++) {
-			if (dialog_.getFieldList().get(j).isFieldOnPrimaryTable()) {
-				if (dialog_.getFieldList().get(j).isKey()) {
-					if (firstField) {
-						statementBuf.append(" and (") ;
-					} else {
-						statementBuf.append(" or ") ;
+		if (isToUpdate) {
+			firstField = true;
+			for (int j = 0; j < dialog_.getFieldList().size(); j++) {
+				if (dialog_.getFieldList().get(j).isFieldOnPrimaryTable()) {
+					if (dialog_.getFieldList().get(j).isKey()) {
+						if (firstField) {
+							statementBuf.append(" and (") ;
+						} else {
+							statementBuf.append(" or ") ;
+						}
+						statementBuf.append(dialog_.getFieldList().get(j).getFieldID()) ;
+						statementBuf.append("!=") ;
+						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getFieldList().get(j).getBasicType(), dialog_.getFieldList().get(j).getInternalValue())) ;
+						firstField = false;
 					}
-					statementBuf.append(dialog_.getFieldList().get(j).getFieldID()) ;
-					statementBuf.append("!=") ;
-					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getFieldList().get(j).getBasicType(), dialog_.getFieldList().get(j).getInternalValue())) ;
-					firstField = false;
 				}
 			}
+			statementBuf.append(")") ;
 		}
-		statementBuf.append(")") ;
 		//
 		return statementBuf.toString();
 	}

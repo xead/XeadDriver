@@ -843,7 +843,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						recordNotFound = true;
 						//
 						for (int j = 0; j < batchFieldList.size(); j++) {
-							if (batchFieldList.get(j).getTableAlias().equals(batchReferTableList.get(i).getTableAlias())) {
+							if (batchFieldList.get(j).getTableAlias().equals(batchReferTableList.get(i).getTableAlias())
+									&& !batchFieldList.get(j).isPromptListField()) {
 								batchFieldList.get(j).setValue(batchFieldList.get(j).getNullValue());
 							}
 						}
@@ -2680,6 +2681,10 @@ class XF110_SubListBatchField extends JPanel implements XFScriptableField {
 				this.setEditable(false);
 			}
 		}
+	}
+
+	public boolean isPromptListField(){
+		return fieldOptionList.contains("PROMPT_LIST");
 	}
 
 	public boolean isAutoNumberField() {

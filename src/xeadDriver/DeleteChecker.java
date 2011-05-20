@@ -122,7 +122,8 @@ public class DeleteChecker extends Object {
 			sortableList = XFUtility.getSortedListModel(referList, "Order");
 			for (int j = 0; j < sortableList.getSize(); j++) {
 				referElement = (org.w3c.dom.Element)sortableList.elementAt(j);
-				if (referElement.getAttribute("ToTable").equals(subjectTableID)) {
+				if (referElement.getAttribute("ToTable").equals(subjectTableID)
+						&& !referElement.getAttribute("Optional").equals("T")) {
 					baseTable = new DeleteChecker_BaseTable(tableElement, referElement, this);
 					found = false;
 					for (int k = 0; k < baseTableList.size(); k++) {

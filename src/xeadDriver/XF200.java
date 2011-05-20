@@ -75,6 +75,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private StringBuffer processLog = new StringBuffer();
 	private String panelMode_ = "";
 	private String initialMsg = "";
+	private String dataName = "";
 	private JPanel jPanelMain = new JPanel();
 	private JSplitPane jSplitPaneMain = new JSplitPane();
 	private JPanel jPanelFields = new JPanel();
@@ -293,6 +294,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				org.w3c.dom.Element element = (org.w3c.dom.Element)sortedList.getElementAt(i);
 				referTableList.add(new XF200_ReferTable(element, this));
 			}
+			if (functionElement_.getAttribute("DataName").equals("")) {
+				dataName = primaryTable_.getName();
+			} else {
+				dataName = functionElement_.getAttribute("DataName");
+			}
 
 			/////////////////////////////
 			// Initializing panel mode //
@@ -311,7 +317,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					panelMode_ = "DISPLAY";
 					returnMap_.put("RETURN_CODE", "00");
-					this.setTitle(res.getString("FunctionMessage10") + primaryTable_.getName() + res.getString("FunctionMessage11"));
+					this.setTitle(res.getString("FunctionMessage10") + dataName + res.getString("FunctionMessage11"));
 					if (initialMsg.equals("")) {
 						messageList.add(res.getString("FunctionMessage12"));
 					} else {
@@ -321,7 +327,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			} else {
 				panelMode_ = "ADD";
 				returnMap_.put("RETURN_CODE", "11");
-				this.setTitle(res.getString("FunctionMessage13") + primaryTable_.getName() + res.getString("FunctionMessage14"));
+				this.setTitle(res.getString("FunctionMessage13") + dataName + res.getString("FunctionMessage14"));
 				if (initialMsg.equals("")) {
 					messageList.add(res.getString("FunctionMessage15"));
 				} else {
@@ -869,13 +875,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			countOfErrors = errorMsgList.size();
 			//
-		} else {
-			//
-			for (int i = 0; i < fieldList.size(); i++) {
-				if (fieldList.get(i).isError()) {
-					messageList.add(fieldList.get(i).getError());
-				}
-			}
+//		} else {
+//			//
+//			for (int i = 0; i < fieldList.size(); i++) {
+//				if (fieldList.get(i).isError()) {
+//					messageList.add(fieldList.get(i).getError());
+//				}
+//			}
 		}
 		//
 		return countOfErrors;
@@ -901,7 +907,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						countOfErrors = countOfErrors + primaryTable_.runScript(event, "BR(" + referTableList.get(i).getTableAlias() + ")");
 						//
 						for (int j = 0; j < fieldList.size(); j++) {
-							if (fieldList.get(j).getTableAlias().equals(referTableList.get(i).getTableAlias())) {
+							if (fieldList.get(j).getTableAlias().equals(referTableList.get(i).getTableAlias())
+									&& !fieldList.get(j).isPromptListField()) {
 								fieldList.get(j).setValue(null);
 							}
 						}
@@ -1016,13 +1023,15 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					} else {
 						sql = primaryTable_.getSQLToCheckSKDuplication(keyFieldList, false);
 					}
-					XFUtility.appendLog(sql, processLog);
-					resultOfPrimaryTable = statementForPrimaryTable.executeQuery(sql);
-					if (resultOfPrimaryTable.next()) {
-						hasNoError = false;
-						for (int j = 0; j < fieldList.size(); j++) {
-							if (keyFieldList.contains(fieldList.get(j).getFieldID()) && !fieldList.get(i).isError()) {
-								fieldList.get(j).setError(res.getString("FunctionError22"));
+					if (!sql.equals("")) {
+						XFUtility.appendLog(sql, processLog);
+						resultOfPrimaryTable = statementForPrimaryTable.executeQuery(sql);
+						if (resultOfPrimaryTable.next()) {
+							hasNoError = false;
+							for (int j = 0; j < fieldList.size(); j++) {
+								if (keyFieldList.contains(fieldList.get(j).getFieldID()) && !fieldList.get(i).isError()) {
+									fieldList.get(j).setError(res.getString("FunctionError22"));
+								}
 							}
 						}
 					}
@@ -1215,8 +1224,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 									//
 									if (functionElement_.getAttribute("ContinueAdd").equals("T")) {
 										Object[] bts = {res.getString("Exit"), res.getString("Continue")} ;
-										int reply = JOptionPane.showOptionDialog(jPanelMain, res.getString("FunctionMessage17") + primaryTable_.getName() + res.getString("FunctionMessage18"), res.getString("CheckToContinue"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+										int reply = JOptionPane.showOptionDialog(jPanelMain, res.getString("FunctionMessage17") + dataName + res.getString("FunctionMessage18"), res.getString("CheckToContinue"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 										if (reply == 1) {
+											for (int i = 0; i < fieldList.size(); i++) {
+												if (fieldList.get(i).isAutoNumberField()) {
+													fieldList.get(i).setValue("*AUTO");
+												}
+											}
 											if (initialMsg.equals("")) {
 												messageList.add(res.getString("FunctionMessage19"));
 											} else {
@@ -1361,10 +1375,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	void doButtonActionSetEditMode() {
-		this.setTitle(res.getString("FunctionMessage22") + primaryTable_.getName() + res.getString("FunctionMessage23"));
+		this.setTitle(res.getString("FunctionMessage22") + dataName + res.getString("FunctionMessage23"));
 		panelMode_ = "EDIT";
 		returnMap_.put("RETURN_CODE", "21");
-		messageList.clear();
+		//
+		resetFieldError();
 		//
 		checkFieldValueErrors("BU");
 		//
@@ -1386,7 +1401,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 		
 	void doButtonActionSetCopyMode() {
-		this.setTitle(res.getString("FunctionMessage25") + primaryTable_.getName() + res.getString("FunctionMessage26"));
+		this.setTitle(res.getString("FunctionMessage25") + dataName + res.getString("FunctionMessage26"));
 		panelMode_ = "COPY";
 		returnMap_.put("RETURN_CODE", "11");
 		//
@@ -1412,14 +1427,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	void doButtonActionDelete() {
-		//
-		resetFieldError();
-		//
 		Object[] bts = {res.getString("Yes"), res.getString("No")} ;
-		int reply = JOptionPane.showOptionDialog(jPanelMain, res.getString("FunctionMessage27") + primaryTable_.getName() + res.getString("FunctionMessage28"), res.getString("CheckToDelete"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+		int reply = JOptionPane.showOptionDialog(jPanelMain, res.getString("FunctionMessage27") + dataName + res.getString("FunctionMessage28"), res.getString("CheckToDelete"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 		if (reply == 0) {
 			try {
 				setCursor(new Cursor(Cursor.WAIT_CURSOR));
+				//
+				resetFieldError();
 				//
 				int countOfErrors = checkDeleteErrors();
 				if (countOfErrors == 0) {
@@ -2245,6 +2259,10 @@ class XF200_Field extends JPanel implements XFScriptableField {
 		}
 	}
 
+	public boolean isPromptListField(){
+		return fieldOptionList.contains("PROMPT_LIST");
+	}
+
 	public void requestFocus(){
 		component.requestFocus();
 	}
@@ -2946,7 +2964,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			}
 		}
 		if (listType.equals("RECORDS_LIST")) {
-			//
 			setupRecordList();
 			if (jComboBox.getItemCount() > 0) {
 				if (value == null || value.equals("")) {
@@ -3567,13 +3584,17 @@ class XF200_PrimaryTable extends Object {
 			if (dialog_.getFieldList().get(j).isFieldOnPrimaryTable()) {
 				for (int p = 0; p < keyFieldList.size(); p++) {
 					if (dialog_.getFieldList().get(j).getFieldID().equals(keyFieldList.get(p))) {
-						if (!firstField) {
-							statementBuf.append(" and ") ;
+						if (!isToUpdate && dialog_.getFieldList().get(j).isAutoNumberField()) {
+							return "";
+						} else {
+							if (!firstField) {
+								statementBuf.append(" and ") ;
+							}
+							statementBuf.append(dialog_.getFieldList().get(j).getFieldID()) ;
+							statementBuf.append("=") ;
+							statementBuf.append(XFUtility.getTableOperationValue(dialog_.getFieldList().get(j).getBasicType(), dialog_.getFieldList().get(j).getInternalValue())) ;
+							firstField = false;
 						}
-						statementBuf.append(dialog_.getFieldList().get(j).getFieldID()) ;
-						statementBuf.append("=") ;
-						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getFieldList().get(j).getBasicType(), dialog_.getFieldList().get(j).getInternalValue())) ;
-						firstField = false;
 					}
 				}
 			}

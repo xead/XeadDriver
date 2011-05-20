@@ -1974,7 +1974,7 @@ class XF100_Filter extends JPanel {
 			//
 			if (componentType.equals("DATE")) {
 				xFDateField.setValue(mapValue.toString());
-				xFDateField.setEditable(false);
+				//xFDateField.setEditable(false);
 			}
 			//
 			if (componentType.equals("YMONTH")) {

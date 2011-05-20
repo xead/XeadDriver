@@ -8071,7 +8071,7 @@ class XF310_KeyInputDialog extends JDialog {
 		});
 		jButtonOK.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
 		jButtonOK.setText("OK");
-		jButtonOK.setBounds(new Rectangle(270, 2, 80, 32));
+		jButtonOK.setBounds(new Rectangle(200, 2, 80, 32));
 		jButtonOK.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				boolean anyOfFieldsAreNull = false;

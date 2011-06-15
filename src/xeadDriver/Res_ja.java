@@ -203,6 +203,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "SessionError17", "用のヘルプページが指定されていません。" },
 		{ "SessionError18", "" },
 		{ "SessionError19", "用のメニューのヘルプページを開けません。\n" },
+		{ "SessionError20", "これ以上の再帰呼び出しを避けるため、この機能は利用\nできません。要求は取り消されます。" },
 		{ "SessionMessage", "＊矢印キーで機能ボタンを選択し、Enterしてください。Ｆ１で業務マニュアルが表示され、Ｆ１２でログイン・パスワードを変更できます。" },
 		{ "TimerStart", "スタート" },
 		{ "TimerStop", "ストップ" },

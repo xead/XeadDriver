@@ -1418,148 +1418,230 @@ public class Session extends JFrame {
 		//
 		public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
 			HashMap<String, Object> returnMap = new HashMap<String, Object>();
+			int countOfRuccursiveCalls = 0;
 			//
 			if (functionElement == null) {
 				JOptionPane.showMessageDialog(null, res.getString("SessionError15"));
 			} else {
+				String functionID = functionElement.getAttribute("ID");
 				for (int i = 0; i < 10; i++) {
 					if (functionElement.getAttribute("Type").equals("XF000")) {
 						if (xF000[i] == null) {
 							xF000[i] = new XF000(session_, i);
-							//processLog_ = xF000[i].getProcessLog();
 							returnMap = xF000[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF000[i].isAvailable()) {
-								//processLog_ = xF000[i].getProcessLog();
 								returnMap = xF000[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF000[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF010")) {
 						if (xF010[i] == null) {
 							xF010[i] = new XF010(session_, i);
-							//processLog_ = xF010[i].getProcessLog();
 							returnMap = xF010[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF010[i].isAvailable()) {
-								//processLog_ = xF010[i].getProcessLog();
 								returnMap = xF010[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF010[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF100")) {
 						if (xF100[i] == null) {
 							xF100[i] = new XF100(session_, i);
-							//processLog_ = xF100[i].getProcessLog();
 							returnMap = xF100[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF100[i].isAvailable()) {
-								//processLog_ = xF100[i].getProcessLog();
 								returnMap = xF100[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF100[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF110")) {
 						if (xF110[i] == null) {
 							xF110[i] = new XF110(session_, i);
-							//processLog_ = xF110[i].getProcessLog();
 							returnMap = xF110[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF110[i].isAvailable()) {
-								//processLog_ = xF110[i].getProcessLog();
 								returnMap = xF110[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF110[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF200")) {
 						if (xF200[i] == null) {
 							xF200[i] = new XF200(session_, i);
-							//processLog_ = xF200[i].getProcessLog();
 							returnMap = xF200[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF200[i].isAvailable()) {
-								//processLog_ = xF200[i].getProcessLog();
 								returnMap = xF200[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF200[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF210")) {
 						if (xF210[i] == null) {
 							xF210[i] = new XF210(session_, i);
-							//processLog_ = xF210[i].getProcessLog();
 							returnMap = xF210[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF210[i].isAvailable()) {
-								//processLog_ = xF210[i].getProcessLog();
 								returnMap = xF210[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF210[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF290")) {
 						if (xF290[i] == null) {
 							xF290[i] = new XF290(session_, i);
-							//processLog_ = xF290[i].getProcessLog();
 							returnMap = xF290[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF290[i].isAvailable()) {
-								//processLog_ = xF290[i].getProcessLog();
 								returnMap = xF290[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF290[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF300")) {
 						if (xF300[i] == null) {
 							xF300[i] = new XF300(session_, i);
-							//processLog_ = xF300[i].getProcessLog();
 							returnMap = xF300[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF300[i].isAvailable()) {
-								//processLog_ = xF300[i].getProcessLog();
 								returnMap = xF300[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF300[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF310")) {
 						if (xF310[i] == null) {
 							xF310[i] = new XF310(session_, i);
-							//processLog_ = xF310[i].getProcessLog();
 							returnMap = xF310[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF310[i].isAvailable()) {
-								//processLog_ = xF310[i].getProcessLog();
 								returnMap = xF310[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF310[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
 					if (functionElement.getAttribute("Type").equals("XF390")) {
 						if (xF390[i] == null) {
 							xF390[i] = new XF390(session_, i);
-							//processLog_ = xF390[i].getProcessLog();
 							returnMap = xF390[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF390[i].isAvailable()) {
-								//processLog_ = xF390[i].getProcessLog();
 								returnMap = xF390[i].execute(functionElement, parmMap);
 								break;
+							} else {
+								if (xF390[i].getFunctionID().equals(functionID)) {
+									if (countOfRuccursiveCalls >= 1) {
+										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										returnMap.put("RETURN_CODE", "01");
+										break;
+									} else {
+										countOfRuccursiveCalls++;
+									}
+								}
 							}
 						}
 					}
@@ -1568,10 +1650,6 @@ public class Session extends JFrame {
 			//
 			return returnMap;
 		}
-
-		//public void setProcessLog(String text) {
-		//	XFUtility.appendLog(text, processLog_);
-		//}
 	}
 
 	class MenuOption extends Object {
@@ -1699,13 +1777,19 @@ public class Session extends JFrame {
 	}
 	
 	public File createTempFile(String functionID, String extension) throws IOException {
-		File tempFile = File.createTempFile("XeadDriver_" + functionID + "_", extension, outputFolder);
+		String header = "XeadDriver_";
+		//
+		if (extension.equals(".pdf")) {
+			header = "PDF_" + header;
+		}
+		if (extension.equals(".xls")) {
+			header = "XLS_" + header;
+		}
+		//
+		File tempFile = File.createTempFile(header + functionID + "_", extension, outputFolder);
 		//
 		if (outputFolder == null) {
 			tempFile.deleteOnExit();
-			//setProcessLog("generate and delete " + tempFile.toURI().toString());
-		} else {
-			//setProcessLog("generate " + tempFile.toURI().toString());
 		}
 		//
 		return tempFile;

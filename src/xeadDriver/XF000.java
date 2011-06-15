@@ -452,6 +452,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 			jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage47"), ""));
 			runScript();
+			jButtonStart.setEnabled(false);
 			jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), "") + "\n");
 			//
 		} catch(ScriptException e) {
@@ -570,6 +571,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				//
 				runScript();
 				//
+				jButtonStart.setEnabled(false);
 				jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), ""));
 				//
 				if (jCheckBoxRepeat.isSelected()) {

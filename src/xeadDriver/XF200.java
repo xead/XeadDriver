@@ -1227,7 +1227,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 										int reply = JOptionPane.showOptionDialog(jPanelMain, res.getString("FunctionMessage17") + dataName + res.getString("FunctionMessage18"), res.getString("CheckToContinue"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 										if (reply == 1) {
 											for (int i = 0; i < fieldList.size(); i++) {
-												if (fieldList.get(i).isAutoNumberField()) {
+												if (fieldList.get(i).isAutoNumberField() || fieldList.get(i).isAutoDetailRowNumber()) {
 													fieldList.get(i).setValue("*AUTO");
 												}
 											}
@@ -1867,6 +1867,8 @@ class XF200_Field extends JPanel implements XFScriptableField {
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element functionFieldElement_ = null;
 	org.w3c.dom.Element tableElement = null;
+	private String fieldName = "";
+	private String fieldRemarks = "";
 	private String dataSourceName = "";
 	private String tableID_ = "";
 	private String tableAlias_ = "";
@@ -1966,13 +1968,15 @@ class XF200_Field extends JPanel implements XFScriptableField {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + res.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
+		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (workElement.getAttribute("Name").equals("")) {
 			fieldCaption = workElement.getAttribute("ID");
 		} else {
-			fieldCaption = workElement.getAttribute("Name");
+			fieldCaption = fieldName;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (!workElement.getAttribute("Decimal").equals("")) {
@@ -2096,9 +2100,19 @@ class XF200_Field extends JPanel implements XFScriptableField {
 												xFFYearBox.setLocation(5, 0);
 												component = xFFYearBox;
 											} else {
-												xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions);
-												xFTextField.setLocation(5, 0);
-												component = xFTextField;
+												if (isAutoDetailRowNumber) {
+													if (dataSize < 5) { 
+														xFTextField = new XFTextField("STRING", 5, 0, "", "");
+													} else {
+														xFTextField = new XFTextField("STRING", dataSize, 0, "", "");
+													}
+													xFTextField.setLocation(5, 0);
+													component = xFTextField;
+												} else {
+													xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions);
+													xFTextField.setLocation(5, 0);
+													component = xFTextField;
+												}
 											}
 										}
 									}
@@ -2110,6 +2124,11 @@ class XF200_Field extends JPanel implements XFScriptableField {
 			}
 		}
 		fieldRows = component.getRows();
+		//
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "WIDTH");
+		if (!wrkStr.equals("")) {
+			component.setWidth(Integer.parseInt(wrkStr));
+		}
 		//
 		jPanelField.setLayout(null);
 		jPanelField.setPreferredSize(new Dimension(component.getWidth() + 5, component.getHeight()));
@@ -2150,6 +2169,14 @@ class XF200_Field extends JPanel implements XFScriptableField {
 				this.setValue(value);
 			}
 		}
+		//
+		if (decimalSize > 0) {
+			wrkStr = "<html>" + fieldName + " " + dataSourceName + " (" + dataSize + "," + decimalSize + ")<br>" + fieldRemarks;
+		} else {
+			wrkStr = "<html>" + fieldName + " " + dataSourceName + " (" + dataSize + ")<br>" + fieldRemarks;
+		}
+		this.setToolTipText(wrkStr);
+		component.setToolTipText(wrkStr);
 		//
 		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
 		this.setFocusable(true);
@@ -2254,6 +2281,11 @@ class XF200_Field extends JPanel implements XFScriptableField {
 	public void checkPromptKeyEdit(){
 		if (!XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL").equals("")) {
 			if (xFPromptCallField.hasEditControlledKey()) {
+				this.setEditable(false);
+			}
+		}
+		if (fieldOptionList.contains("PROMPT_LIST")) {
+			if (xFComboBox.hasEditControlledKey()) {
 				this.setEditable(false);
 			}
 		}
@@ -2374,6 +2406,10 @@ class XF200_Field extends JPanel implements XFScriptableField {
 
 	public void setEditable(boolean editable){
 		this.isEditable = editable;
+	}
+
+	public boolean isFocusable() {
+		return component.isFocusable();
 	}
 
 	public boolean isEditable() {
@@ -2694,7 +2730,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 	private ArrayList<String> kubunKeyValueList = new ArrayList<String>();
 	private ArrayList<XFHashMap> tableKeyValuesList = new ArrayList<XFHashMap>();
 	private JTextField jTextField = new JTextField();
-	private JPanel jPanelDummy = new JPanel();
+	//private JPanel jPanelDummy = new JPanel();
 	private JComboBox jComboBox = new JComboBox();
 	private boolean isEditable = true;
 	private ArrayList<String> keyFieldList = new ArrayList<String>();
@@ -2757,7 +2793,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				setupRecordList();
 			}
 		});
-		jPanelDummy.setPreferredSize(new Dimension(17, XFUtility.FIELD_UNIT_HEIGHT));
+		//jPanelDummy.setPreferredSize(new Dimension(17, XFUtility.FIELD_UNIT_HEIGHT));
 		//
 		strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "VALUES");
 		if (!strWrk.equals("")) {
@@ -2776,6 +2812,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 					fieldWidth = metrics.stringWidth(wrk);
 				}
 			}
+			fieldWidth = fieldWidth + 30;
 		} else {
 			strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "KUBUN");
 			if (!strWrk.equals("")) {
@@ -2800,6 +2837,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 						}
 					}
 					result.close();
+					fieldWidth = fieldWidth + 30;
 					//
 					if (jComboBox.getItemCount() == 0) {
 						JOptionPane.showMessageDialog(this, res.getString("FunctionError24") + dataSourceName + res.getString("FunctionError25"));
@@ -2834,7 +2872,8 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			}
 		}
 		//
-		this.setSize(new Dimension(fieldWidth + 30, XFUtility.FIELD_UNIT_HEIGHT));
+		//this.setSize(new Dimension(fieldWidth + 30, XFUtility.FIELD_UNIT_HEIGHT));
+		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(jComboBox, BorderLayout.CENTER);
 		this.addFocusListener(new ComponentFocusListener());
@@ -2898,15 +2937,45 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 		}
 	}
 	
+	public boolean hasEditControlledKey() {
+		boolean anyOfKeysAreEditControlled = false;
+		//
+		for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
+			for (int j = 0; j < dialog_.getFieldList().size(); j++) {
+				if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
+					if (!dialog_.getFieldList().get(j).isEditable() && dialog_.getPrimaryTable().getTableID().equals(dialog_.getFieldList().get(j).getTableAlias())) {
+						anyOfKeysAreEditControlled = true;
+						break;
+					}
+				}
+			}
+		}
+		//
+		return anyOfKeysAreEditControlled;
+	}
+	
 	public void setEditable(boolean editable) {
 		this.removeAll();
 		if (editable) {
 			this.add(jComboBox, BorderLayout.CENTER);
 		} else {
-			this.add(jPanelDummy, BorderLayout.EAST);
+			//this.add(jPanelDummy, BorderLayout.EAST);
 			this.add(jTextField, BorderLayout.CENTER);
 		}
 		isEditable = editable;
+	}
+	
+	public void setWidth(int width) {
+//		jComboBox.setSize(width, jComboBox.getHeight());
+//		//jTextField.setSize(width - 17, jTextField.getHeight());
+//		//this.setSize(new Dimension(width + 30, XFUtility.FIELD_UNIT_HEIGHT));
+//		jTextField.setSize(width, jTextField.getHeight());
+		this.setSize(new Dimension(width, XFUtility.FIELD_UNIT_HEIGHT));
+	}
+	
+	public void setToolTipText(String text) {
+		jComboBox.setToolTipText(text);
+		jTextField.setToolTipText(text);
 	}
 
 	public Object getInternalValue() {
@@ -3177,6 +3246,15 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		}
 		isEditable = editable;
 	}
+	
+	public void setWidth(int width) {
+		xFTextField.setWidth(width - 27);
+	}
+	
+	public void setToolTipText(String text) {
+		jButton.setToolTipText(text);
+		xFTextField.setToolTipText(text);
+	}
 
 	public Object getInternalValue() {
 		return xFTextField.getText();
@@ -3209,7 +3287,6 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 	public void setBackground(Color color) {
 		if (xFTextField != null) {
 			if (color.equals(XFUtility.ACTIVE_COLOR)) {
-				//xFTextField.setBackground(normalColor);
 				if (xFTextField.isEditable()) {
 					xFTextField.setBackground(XFUtility.ACTIVE_COLOR);
 				} else {

@@ -33,6 +33,7 @@ package xeadDriver;
 
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -211,6 +212,27 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		rendererAlignmentCenter.setHorizontalAlignment(SwingConstants.CENTER);
 		rendererAlignmentRight.setHorizontalAlignment(SwingConstants.RIGHT);
 		rendererAlignmentLeft.setHorizontalAlignment(SwingConstants.LEFT);
+		JTableHeader header = new JTableHeader(jTableMain.getColumnModel()) {
+			private static final long serialVersionUID = 1L;
+			public String getToolTipText(MouseEvent e) {
+				String text = "";
+				int c = columnAtPoint(e.getPoint());
+				for (int i = 0; i < columnList.size(); i++) {
+					if (columnList.get(i).isVisibleOnPanel()) {
+						if (columnList.get(i).getColumnIndex() == c) {
+							if (columnList.get(i).getDecimalSize() > 0) {
+								text = "<html>" + columnList.get(i).getFieldName() + " " + columnList.get(i).getDataSourceName() + " (" + columnList.get(i).getDataSize() + "," + columnList.get(i).getDecimalSize() + ")<br>" + columnList.get(i).getFieldRemarks();
+							} else {
+								text = "<html>" + columnList.get(i).getFieldName() + " " + columnList.get(i).getDataSourceName() + " (" + columnList.get(i).getDataSize() + ")<br>" + columnList.get(i).getFieldRemarks();
+							}
+							break;
+						}
+					}
+				}
+				return text;
+			}
+		};
+		jTableMain.setTableHeader(header);
 		jTableMain.getTableHeader().setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		rendererTableHeader = (DefaultTableCellRenderer)jTableMain.getTableHeader().getDefaultRenderer();
 		rendererTableHeader.setHorizontalAlignment(SwingConstants.LEFT);
@@ -430,6 +452,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					column = jTableMain.getColumnModel().getColumn(columnList.get(i).getColumnIndex());
 					column.setPreferredWidth(columnList.get(i).getWidth());
 					column.setCellRenderer(columnList.get(i).getCellRenderer());
+					column.setHeaderRenderer(columnList.get(i).getHeaderRenderer());
 				}
 			}
 			//
@@ -1198,7 +1221,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		 styleHeaderNumber.setBorderTop(HSSFCellStyle.BORDER_THIN);
 		 styleHeaderNumber.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
 		 styleHeaderNumber.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
-		 styleHeaderNumber.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+		 styleHeaderNumber.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
 		 styleHeaderNumber.setFont(fontHeader);
 		 //
 		 HSSFCellStyle styleHeaderSelect = workBook.createCellStyle();
@@ -1248,7 +1271,18 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					 if (i == 1) {
 						 cell.setCellStyle(styleHeaderSelect);
 					 } else {
-						 cell.setCellStyle(styleHeader);
+						 //cell.setCellStyle(styleHeader);
+						 for (int j = 0; j < columnList.size(); j++) {
+							 if (columnList.get(j).getColumnIndex() == i) {
+								 if (columnList.get(j).getBasicType().equals("INTEGER")
+										 || columnList.get(j).getBasicType().equals("FLOAT")) {
+									 cell.setCellStyle(styleHeaderNumber);
+								 } else {
+									 cell.setCellStyle(styleHeader);
+								 }
+								 break;
+							 }
+						 }
 					 }
 				 }
 				 Rectangle rect = jTableMain.getCellRect(0, i, true);
@@ -1604,6 +1638,8 @@ class XF110_Filter extends JPanel {
 	private String tableID = "";
 	private String tableAlias = "";
 	private String fieldID = "";
+	private String fieldName = "";
+	private String fieldRemarks = "";
 	private String fieldCaption = "";
 	private String fieldOptions = "";
 	private ArrayList<String> fieldOptionList;
@@ -1643,13 +1679,15 @@ class XF110_Filter extends JPanel {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(this, tableID + "." + fieldID + res.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
+		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (workElement.getAttribute("Name").equals("")) {
 			fieldCaption = workElement.getAttribute("ID");
 		} else {
-			fieldCaption = workElement.getAttribute("Name");
+			fieldCaption = fieldName;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (dataSize > 50) {
@@ -1927,6 +1965,14 @@ class XF110_Filter extends JPanel {
 		if (fieldOptionList.contains("NON_EDITABLE")) {
 			this.setEditable(false);
 		}
+		//
+		if (decimalSize > 0) {
+			wrkStr = "<html>" + fieldName + " " + tableAlias + "." + fieldID + " (" + dataSize + "," + decimalSize + ")<br>" + fieldRemarks;
+		} else {
+			wrkStr = "<html>" + fieldName + " " + tableAlias + "." + fieldID + " (" + dataSize + ")<br>" + fieldRemarks;
+		}
+		this.setToolTipText(wrkStr);
+		component.setToolTipText(wrkStr);
 		//
 		component.addKeyListener(new XF110_Component_keyAdapter(dialog));
 		jPanelField.add(component);
@@ -2868,6 +2914,10 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 			xFTextField.setText(obj.toString());
 		}
 	}
+	
+	public void setWidth(int width) {
+		xFTextField.setWidth(width - 27);
+	}
 
 	public void setBackground(Color color) {
 		if (xFTextField != null) {
@@ -2939,6 +2989,8 @@ class XF110_Column extends Object implements XFScriptableField {
 	private String dataTypeOptions = "";
 	private ArrayList<String> dataTypeOptionList;
 	private String fieldID = "";
+	private String fieldName = "";
+	private String fieldRemarks = "";
 	private String fieldCaption = "";
 	private String fieldOptions = "";
 	private ArrayList<String> fieldOptionList;
@@ -2985,13 +3037,15 @@ class XF110_Column extends Object implements XFScriptableField {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(null, tableID + "." + fieldID + res.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
+		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (workElement.getAttribute("Name").equals("")) {
 			fieldCaption = workElement.getAttribute("ID");
 		} else {
-			fieldCaption = workElement.getAttribute("Name");
+			fieldCaption = fieldName;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		//if (dataSize > 50) {
@@ -3198,6 +3252,14 @@ class XF110_Column extends Object implements XFScriptableField {
 		return fieldID;
 	}
 
+	public String getFieldName(){
+		return fieldName;
+	}
+
+	public String getFieldRemarks(){
+		return fieldRemarks;
+	}
+
 	public String getFieldIDInScript(){
 		return tableAlias + "_" + fieldID;
 	}
@@ -3208,6 +3270,10 @@ class XF110_Column extends Object implements XFScriptableField {
 
 	public String getTableAlias(){
 		return tableAlias;
+	}
+
+	public int getDataSize(){
+		return dataSize;
 	}
 
 	public int getDecimalSize(){
@@ -3344,6 +3410,16 @@ class XF110_Column extends Object implements XFScriptableField {
 			renderer.setHorizontalAlignment(SwingConstants.LEFT);
 		}
 		//
+		return renderer;
+	}
+
+	public HorizontalAlignmentHeaderRenderer getHeaderRenderer(){
+		HorizontalAlignmentHeaderRenderer renderer = null;
+		if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+			renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.RIGHT);
+		} else {
+			renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.LEFT);
+		}
 		return renderer;
 	}
 

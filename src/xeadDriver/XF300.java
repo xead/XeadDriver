@@ -243,6 +243,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			jTableMainArray[i].addMouseListener(new XF300_jTableMain_mouseAdapter(this));
 			jTableMainArray[i].addFocusListener(new XF300_jTableMain_focusAdapter(this));
 			jTableMainArray[i].setAutoCreateRowSorter(true);
+			WorkingTableHeader header = new WorkingTableHeader(jTableMainArray[i].getColumnModel());
+			jTableMainArray[i].setTableHeader(header);
 			jTableMainArray[i].getTableHeader().setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 			rendererTableHeader = (DefaultTableCellRenderer)jTableMainArray[i].getTableHeader().getDefaultRenderer();
 			rendererTableHeader.setHorizontalAlignment(SwingConstants.LEFT);
@@ -631,6 +633,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						column = jTableMainArray[i].getColumnModel().getColumn(detailColumnListArray[i].get(j).getColumnIndex());
 						column.setPreferredWidth(detailColumnListArray[i].get(j).getWidth());
 						column.setCellRenderer(detailColumnListArray[i].get(j).getCellRenderer());
+						column.setHeaderRenderer(detailColumnListArray[i].get(j).getHeaderRenderer());
 					}
 				}
 				//
@@ -882,6 +885,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						closeFunction();
 						return;
 					}
+					returnMap_.putAll(parmMap_);
 				}
 				//
 				headerTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
@@ -1343,6 +1347,31 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			return index_;
 		}
 	}
+
+	class WorkingTableHeader extends JTableHeader {
+		private static final long serialVersionUID = 1L;
+		public WorkingTableHeader(TableColumnModel model) {
+			super(model);
+		}
+		public String getToolTipText(MouseEvent e) {
+			String text = "";
+			int tabIndex = jTabbedPane.getSelectedIndex();
+			int c = columnAtPoint(e.getPoint());
+			for (int i = 0; i < detailColumnListArray[tabIndex].size(); i++) {
+				if (detailColumnListArray[tabIndex].get(i).isVisibleOnPanel()) {
+					if (detailColumnListArray[tabIndex].get(i).getColumnIndex() == c) {
+						if (detailColumnListArray[tabIndex].get(i).getDecimalSize() > 0) {
+							text = "<html>" + detailColumnListArray[tabIndex].get(i).getFieldName() + " " + detailColumnListArray[tabIndex].get(i).getDataSourceName() + " (" + detailColumnListArray[tabIndex].get(i).getDataSize() + "," + detailColumnListArray[tabIndex].get(i).getDecimalSize() + ")<br>" + detailColumnListArray[tabIndex].get(i).getFieldRemarks();
+						} else {
+							text = "<html>" + detailColumnListArray[tabIndex].get(i).getFieldName() + " " + detailColumnListArray[tabIndex].get(i).getDataSourceName() + " (" + detailColumnListArray[tabIndex].get(i).getDataSize() + ")<br>" + detailColumnListArray[tabIndex].get(i).getFieldRemarks();
+						}
+						break;
+					}
+				}
+			}
+			return text;
+		}
+	}
 		
 	 class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
 		 public int compare(WorkingRow row1, WorkingRow row2){
@@ -1426,7 +1455,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		styleDetailNumberLabel.setBorderTop(HSSFCellStyle.BORDER_THIN);
 		styleDetailNumberLabel.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
 		styleDetailNumberLabel.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
-		styleDetailNumberLabel.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+		styleDetailNumberLabel.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
 		styleDetailNumberLabel.setFont(fontHeader);
 		//
 		HSSFCellStyle styleDataInteger = workBook.createCellStyle();
@@ -1449,7 +1478,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			int columnIndex;
 			//
 			// Header Lines //
-			for (int i = 0; i < headerFieldList.size() && i < 24; i++) {
+			//for (int i = 0; i < headerFieldList.size() && i < 24; i++) {
+			for (int i = 0; i < headerFieldList.size(); i++) {
 				if (headerFieldList.get(i).isVisibleOnPanel()) {
 					for (int j = 0; j < headerFieldList.get(i).getRows(); j++) {
 						//
@@ -1500,7 +1530,18 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				if (i == 0) {
 					cell.setCellStyle(styleDetailNumberLabel);
 				} else {
-					cell.setCellStyle(styleDetailLabel);
+					//cell.setCellStyle(styleDetailLabel);
+					for (int j = 0; j < detailColumnListArray[jTabbedPane.getSelectedIndex()].size(); j++) {
+						if (detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getColumnIndex() == i) {
+							if (detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getBasicType().equals("INTEGER")
+									|| detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getBasicType().equals("FLOAT")) {
+								cell.setCellStyle(styleDetailNumberLabel);
+							} else {
+								cell.setCellStyle(styleDetailLabel);
+							}
+							break;
+						}
+					}
 				}
 				Rectangle rect = jTableMainArray[jTabbedPane.getSelectedIndex()].getCellRect(0, i, true);
 				workSheet.setColumnWidth(i, rect.width * 40);
@@ -2216,6 +2257,8 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 	private String tableID_ = "";
 	private String tableAlias_ = "";
 	private String fieldID_ = "";
+	private String fieldName = "";
+	private String fieldRemarks = "";
 	private String dataType = "";
 	private String dataTypeOptions = "";
 	private ArrayList<String> dataTypeOptionList;
@@ -2295,18 +2338,17 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + res.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
+		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (workElement.getAttribute("Name").equals("")) {
 			fieldCaption = workElement.getAttribute("ID");
 		} else {
-			fieldCaption = workElement.getAttribute("Name");
+			fieldCaption = fieldName;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		//if (dataSize > 50) {
-		//	dataSize = 50;
-		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -2397,7 +2439,7 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 									if (!wrkStr.equals("")) {
 										//
 										String wrk;
-										int fieldWidth = 50;
+										int fieldWidth = 0;
 										JLabel jLabel = new JLabel();
 										metrics = jLabel.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
 										try {
@@ -2428,6 +2470,12 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 			}
 		}
 		fieldRows = component.getRows();
+		//
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "WIDTH");
+		if (!wrkStr.equals("")) {
+			component.setWidth(Integer.parseInt(wrkStr));
+		}
+		//
 		jPanelField.setLayout(null);
 		jPanelField.setPreferredSize(new Dimension(component.getWidth() + 5, component.getHeight()));
 		jPanelField.add((JComponent)component);
@@ -2444,18 +2492,26 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 		//
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
-			jLabelFieldComment.setText(wrkStr);
+			jLabelFieldComment.setText(" " + wrkStr);
 			jLabelFieldComment.setForeground(Color.gray);
 			jLabelFieldComment.setFont(new java.awt.Font("Dialog", 0, 12));
 			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			metrics = jLabelFieldComment.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr), this.getPreferredSize().height));
+			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 5, this.getPreferredSize().height));
 			this.add(jLabelFieldComment, BorderLayout.EAST);
 		}
 		//
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
 		}
+		//
+		if (decimalSize > 0) {
+			wrkStr = "<html>" + fieldName + " " + tableAlias_ + "." + fieldID_ + " (" + dataSize + "," + decimalSize + ")<br>" + fieldRemarks;
+		} else {
+			wrkStr = "<html>" + fieldName + " " + tableAlias_ + "." + fieldID_ + " (" + dataSize + ")<br>" + fieldRemarks;
+		}
+		this.setToolTipText(wrkStr);
+		component.setToolTipText(wrkStr);
 		//
 		dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
 	}
@@ -2753,7 +2809,12 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 				if (this.getBasicType().equals("FLOAT")) {
 					returnObj = Float.parseFloat((String)component.getInternalValue());
 				} else {
-					returnObj = (String)component.getInternalValue();
+					//returnObj = (String)component.getInternalValue();
+					if (component.getInternalValue() == null) {
+						returnObj = "";
+					} else {
+						returnObj = (String)component.getInternalValue();
+					}
 				}
 			}
 		}
@@ -2899,6 +2960,8 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 	private String tableID_ = "";
 	private String tableAlias_ = "";
 	private String fieldID_ = "";
+	private String fieldName = "";
+	private String fieldRemarks = "";
 	private String dataType = "";
 	private int dataSize = 5;
 	private int decimalSize = 0;
@@ -2943,22 +3006,21 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(null, tableID_ + "." + fieldID_ + res.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
+		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (workElement.getAttribute("Name").equals("")) {
 			fieldCaption = workElement.getAttribute("ID");
 		} else {
-			fieldCaption = workElement.getAttribute("Name");
+			fieldCaption = fieldName;
 		}
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
 			fieldCaption = wrkStr;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		//if (dataSize > 50) {
-		//	dataSize = 50;
-		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -3143,6 +3205,14 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 		return fieldID_;
 	}
 
+	public String getFieldName(){
+		return fieldName;
+	}
+
+	public String getFieldRemarks(){
+		return fieldRemarks;
+	}
+
 	public String getFieldIDInScript(){
 		return tableAlias_ + "_" + fieldID_;
 	}
@@ -3153,6 +3223,10 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 
 	public String getDataSourceName(){
 		return tableAlias_ + "." + fieldID_;
+	}
+
+	public int getDataSize(){
+		return dataSize;
 	}
 
 	public int getDecimalSize(){
@@ -3265,6 +3339,16 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 			renderer.setHorizontalAlignment(SwingConstants.RIGHT);
 		} else {
 			renderer.setHorizontalAlignment(SwingConstants.LEFT);
+		}
+		return renderer;
+	}
+
+	public HorizontalAlignmentHeaderRenderer getHeaderRenderer(){
+		HorizontalAlignmentHeaderRenderer renderer = null;
+		if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+			renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.RIGHT);
+		} else {
+			renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.LEFT);
 		}
 		return renderer;
 	}
@@ -3401,6 +3485,8 @@ class XF300_Filter extends JPanel {
 	private String tableID = "";
 	private String tableAlias = "";
 	private String fieldID = "";
+	private String fieldName = "";
+	private String fieldRemarks = "";
 	private String fieldCaption = "";
 	private String fieldOptions = "";
 	private ArrayList<String> fieldOptionList;
@@ -3442,13 +3528,15 @@ class XF300_Filter extends JPanel {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(this, tableID + "." + fieldID + res.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
+		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (workElement.getAttribute("Name").equals("")) {
 			fieldCaption = workElement.getAttribute("ID");
 		} else {
-			fieldCaption = workElement.getAttribute("Name");
+			fieldCaption = fieldName;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (dataSize > 50) {
@@ -3736,6 +3824,14 @@ class XF300_Filter extends JPanel {
 		if (fieldOptionList.contains("NON_EDITABLE")) {
 			this.setEditable(false);
 		}
+		//
+		if (decimalSize > 0) {
+			wrkStr = "<html>" + fieldName + " " + tableAlias + "." + fieldID + " (" + dataSize + "," + decimalSize + ")<br>" + fieldRemarks;
+		} else {
+			wrkStr = "<html>" + fieldName + " " + tableAlias + "." + fieldID + " (" + dataSize + ")<br>" + fieldRemarks;
+		}
+		this.setToolTipText(wrkStr);
+		component.setToolTipText(wrkStr);
 		//
 		component.addKeyListener(new XF300_keyAdapter(dialog));
 		jPanelField.add(component);
@@ -4734,6 +4830,10 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
 			xFTextField.setText(obj.toString());
 		}
 	}
+	
+	public void setWidth(int width) {
+		xFTextField.setWidth(width - 27);
+	}
 
 	public void setBackground(Color color) {
 		if (xFTextField != null) {
@@ -5360,7 +5460,7 @@ class XF300_DetailTable extends Object {
 			if (count > 0) {
 				buf.append(" and ") ;
 			}
-			buf.append(headerKeyFieldIDList.get(i)) ;
+			buf.append(keyFieldIDList.get(i)) ;
 			buf.append("=") ;
 			headerField = dialog_.getHeaderFieldObjectByID(dialog_.getHeaderTable().getTableID(), "", headerKeyFieldIDList.get(i));
 			if (XFUtility.isLiteralRequiredBasicType(headerField.getBasicType())) {

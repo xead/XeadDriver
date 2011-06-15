@@ -2492,6 +2492,9 @@ class XF210_ComboBox extends JPanel implements XFEditableField {
 			jTextField.setText(jComboBox.getSelectedItem().toString());
 		}
 	}
+	
+	public void setWidth(int width) {
+	}
 
 	public void setBackground(Color color) {
 		if (jComboBox != null) {
@@ -2716,6 +2719,9 @@ class XF210_PromptCallField extends JPanel implements XFEditableField {
 		} else {
 			xFTextField.setText(obj.toString());
 		}
+	}
+	
+	public void setWidth(int width) {
 	}
 
 	public void setBackground(Color color) {

@@ -183,6 +183,27 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			}
 		});
 		jTableMain.setAutoCreateRowSorter(true);
+		JTableHeader header = new JTableHeader(jTableMain.getColumnModel()) {
+			private static final long serialVersionUID = 1L;
+			public String getToolTipText(MouseEvent e) {
+				String text = "";
+				int c = columnAtPoint(e.getPoint());
+				for (int i = 0; i < addRowListColumnList.size(); i++) {
+					if (addRowListColumnList.get(i).isVisibleOnPanel()) {
+						if (addRowListColumnList.get(i).getColumnIndex() == c) {
+							if (addRowListColumnList.get(i).getDecimalSize() > 0) {
+								text = "<html>" + addRowListColumnList.get(i).getFieldName() + " " + addRowListColumnList.get(i).getDataSourceName() + " (" + addRowListColumnList.get(i).getDataSize() + "," + addRowListColumnList.get(i).getDecimalSize() + ")<br>" + addRowListColumnList.get(i).getFieldRemarks();
+							} else {
+								text = "<html>" + addRowListColumnList.get(i).getFieldName() + " " + addRowListColumnList.get(i).getDataSourceName() + " (" + addRowListColumnList.get(i).getDataSize() + ")<br>" + addRowListColumnList.get(i).getFieldRemarks();
+							}
+							break;
+						}
+					}
+				}
+				return text;
+			}
+		};
+		jTableMain.setTableHeader(header);
 		jTableMain.getTableHeader().setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		rendererTableHeader = (DefaultTableCellRenderer)jTableMain.getTableHeader().getDefaultRenderer();
 		rendererTableHeader.setHorizontalAlignment(SwingConstants.LEFT);
@@ -305,6 +326,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				column = jTableMain.getColumnModel().getColumn(addRowListColumnList.get(j).getColumnIndex());
 				column.setPreferredWidth(addRowListColumnList.get(j).getWidth());
 				column.setCellRenderer(new DefaultRenderer());
+				column.setHeaderRenderer(addRowListColumnList.get(j).getHeaderRenderer());
 			}
 		}
 		//
@@ -1594,6 +1616,8 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 	private String tableID = "";
 	private String tableAlias = "";
 	private String fieldID = "";
+	private String fieldName = "";
+	private String fieldRemarks = "";
 	private String dataType = "";
 	private int dataSize = 5;
 	private int decimalSize = 0;
@@ -1637,13 +1661,15 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(null, tableID + "." + fieldID + res.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
+		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (workElement.getAttribute("Name").equals("")) {
 			fieldCaption = workElement.getAttribute("ID");
 		} else {
-			fieldCaption = workElement.getAttribute("Name");
+			fieldCaption = fieldName;
 		}
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
@@ -1826,6 +1852,14 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 		return fieldID;
 	}
 
+	public String getFieldName(){
+		return fieldName;
+	}
+
+	public String getFieldRemarks(){
+		return fieldRemarks;
+	}
+
 	public String getFieldIDInScript(){
 		return tableAlias + "_" + fieldID;
 	}
@@ -1968,6 +2002,16 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 		columnIndex = index;
 	}
 
+	public HorizontalAlignmentHeaderRenderer getHeaderRenderer(){
+		HorizontalAlignmentHeaderRenderer renderer = null;
+		if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+			renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.RIGHT);
+		} else {
+			renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.LEFT);
+		}
+		return renderer;
+	}
+
 	public void setValueOfResultSet(ResultSet result) throws SQLException{
 		String basicType = this.getBasicType();
 		this.setColor("");
@@ -2087,6 +2131,36 @@ class XF310_AddRowListCell extends Object {
 		return column_.getForeground();
 	}
 }
+
+
+//class XF310_AddRowListCellRenderer extends DefaultTableCellRenderer {
+//	private static final long serialVersionUID = 1L;
+//	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
+//		XF310_AddRowListCell cell = (XF310_AddRowListCell)value;
+//		//
+//		setText((String)cell.getValue());
+//		setFont(new java.awt.Font("Dialog", 0, 14));
+//		//
+//		if (isSelected) {
+//			setBackground(table.getSelectionBackground());
+//			setForeground(table.getSelectionForeground());
+//		} else {
+//			if (row%2==0) {
+//				setBackground(table.getBackground());
+//			} else {
+//				setBackground(XFUtility.ODD_ROW_COLOR);
+//			}
+//			setForeground(table.getForeground());
+//		}
+//		//
+//		if (!cell.getColor().equals(table.getForeground())) {
+//			setForeground(cell.getColor());
+//		}
+//		//
+//		validate();
+//		return this;
+//	}
+//}
 
 class XF310_AddRowListReferTable extends Object {
 	private static final long serialVersionUID = 1L;

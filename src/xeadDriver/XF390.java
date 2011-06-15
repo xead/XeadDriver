@@ -677,6 +677,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			ResultSet resultOfDetailReferTable;
 			Statement statementForReferTable = connection.createStatement();
 			//
+			workingRowList.clear();
 			int countOfRows = 0;
 			int rowNo = 0;
 			String sql = detailTable_.getSQLToSelect();
@@ -763,31 +764,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 							}
 						}
 					}
-					//
-					boolean isWithTotalHeading = false;
-					wrkInt = 0;
-					for (int i = 0; i < detailColumnList.size(); i++) {
-						if (detailColumnList.get(i).isVisibleColumn()) {
-							wrkInt++;
-							if (detailColumnList.get(i).isWithTotal()) {
-								if (!isWithTotalHeading) {
-									Cell cell=new Cell(new Phrase(res.getString("Total"), fontTableCell));
-									cell.setColspan(wrkInt);
-									cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
-									table.addCell(cell);
-									isWithTotalHeading = true;
-								}
-								Cell cell = new Cell(new Phrase(detailColumnList.get(i).getSummary().toString(), fontTableCellData));
-								cell.setHorizontalAlignment(detailColumnList.get(i).getAlignment());
-								table.addCell(cell);
-							} else {
-								if (isWithTotalHeading) {
-									Cell cell = new Cell(new Phrase(" ", fontTableCellData));
-									table.addCell(cell);
-								}
-							}
-						}
-					}
 				} else {
 					columnValueList = new ArrayList<String>();
 					for (int i = 0; i < detailColumnList.size(); i++) {
@@ -852,28 +828,28 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 						}
 					}
 				}
-				//
-				boolean isWithTotalHeading = false;
-				wrkInt = 0;
-				for (int i = 0; i < detailColumnList.size(); i++) {
-					if (detailColumnList.get(i).isVisibleColumn()) {
-						wrkInt++;
-						if (detailColumnList.get(i).isWithTotal()) {
-							if (!isWithTotalHeading) {
-								Cell cell=new Cell(new Phrase("‡Œv", fontTableCell));
-								cell.setColspan(wrkInt);
-								cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
-								table.addCell(cell);
-								isWithTotalHeading = true;
-							}
-							Cell cell = new Cell(new Phrase(detailColumnList.get(i).getSummary().toString(), fontTableCellData));
-							cell.setHorizontalAlignment(detailColumnList.get(i).getAlignment());
+			}
+			//
+			boolean isWithTotalHeading = false;
+			wrkInt = 0;
+			for (int i = 0; i < detailColumnList.size(); i++) {
+				if (detailColumnList.get(i).isVisibleColumn()) {
+					wrkInt++;
+					if (detailColumnList.get(i).isWithTotal()) {
+						if (!isWithTotalHeading) {
+							Cell cell=new Cell(new Phrase(res.getString("Total"), fontTableCell));
+							cell.setColspan(wrkInt);
+							cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
 							table.addCell(cell);
-						} else {
-							if (isWithTotalHeading) {
-								Cell cell = new Cell(new Phrase(" ", fontTableCellData));
-								table.addCell(cell);
-							}
+							isWithTotalHeading = true;
+						}
+						Cell cell = new Cell(new Phrase(detailColumnList.get(i).getSummary().toString(), fontTableCellData));
+						cell.setHorizontalAlignment(detailColumnList.get(i).getAlignment());
+						table.addCell(cell);
+					} else {
+						if (isWithTotalHeading) {
+							Cell cell = new Cell(new Phrase(" ", fontTableCellData));
+							table.addCell(cell);
 						}
 					}
 				}

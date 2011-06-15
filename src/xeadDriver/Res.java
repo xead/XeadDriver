@@ -203,6 +203,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "SessionError17", "'." },
 		{ "SessionError18", "It failed to access to HELP page for menu of '" },
 		{ "SessionError19", "'.\n" },
+		{ "SessionError20", "This function is rejected to be called as\nreccursive calls are prohibitted any more." },
 		{ "SessionMessage", "* Use Arrow-Keys to select the menu option and enter to execute. Push F1 for HELP, F12 to change the log-in password." },
 		{ "TimerStart", "Start" },
 		{ "TimerStop", "Stop" },

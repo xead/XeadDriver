@@ -209,7 +209,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jTableMain.setRowSelectionAllowed(true);
 		jTableMain.addKeyListener(new XF110_SubListjTableMain_keyAdapter(this));
 		jTableMain.addFocusListener(new XF110_SubListjTableMain_focusAdapter(this));
-		jTableMain.setAutoCreateRowSorter(true);
+		//jTableMain.setAutoCreateRowSorter(true);
 		JTableHeader header = new JTableHeader(jTableMain.getColumnModel()) {
 			private static final long serialVersionUID = 1L;
 			public String getToolTipText(MouseEvent e) {
@@ -1559,7 +1559,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		XF110_SubListDetailCell cellObject = null;
 		//
 		HSSFWorkbook workBook = new HSSFWorkbook();
-		HSSFSheet workSheet = workBook.createSheet(functionElement_.getAttribute("Name"));
+		String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
+		HSSFSheet workSheet = workBook.createSheet(wrkStr);
 		workSheet.setDefaultRowHeight( (short) 300);
 		HSSFFooter workSheetFooter = workSheet.getFooter();
 		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
@@ -1652,7 +1653,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						cellHeader.setCellStyle(styleHeaderLabel);
 						if (j==0) {
 							mergeRowNumberFrom = currentRowNumber;
-							cellHeader.setCellValue(new HSSFRichTextString(batchFieldList.get(i).getCaption()));
+							if (!batchFieldList.get(i).getFieldOptionList().contains("NO_CAPTION")) {
+								cellHeader.setCellValue(new HSSFRichTextString(batchFieldList.get(i).getCaption()));
+							}
 						}
 						rowData.createCell(1).setCellStyle(styleHeaderLabel);
 						//
@@ -1696,7 +1699,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						if (detailColumnList.get(j).getColumnIndex() == i) {
 							if (detailColumnList.get(j).getBasicType().equals("INTEGER")
 									|| detailColumnList.get(j).getBasicType().equals("FLOAT")) {
-								cell.setCellStyle(styleDetailNumberLabel);
+								if (detailColumnList.get(j).getTypeOptionList().contains("MSEQ") || detailColumnList.get(j).getTypeOptionList().contains("FYEAR")) {
+									cell.setCellStyle(styleDetailLabel);
+								} else {
+									cell.setCellStyle(styleDetailNumberLabel);
+								}
 							} else {
 								cell.setCellStyle(styleDetailLabel);
 							}
@@ -1738,7 +1745,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						if (cellObject.getForeground().equals(Color.orange)) {
 							font = fontDataOrange;
 						}
-						setupCellAttributesForDetailColumn(rowData.createCell(columnIndex), workBook, detailColumnList.get(j).getBasicType(), cellObject, font, detailColumnList.get(j).getDecimalSize());
+						setupCellAttributesForDetailColumn(rowData.createCell(columnIndex), workBook, detailColumnList.get(j).getBasicType(), detailColumnList.get(j).getTypeOptionList(), cellObject, font, detailColumnList.get(j).getDecimalSize());
 					}
 				}
 			}
@@ -1778,21 +1785,27 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		//
 		String basicType = object.getBasicType();
 		if (basicType.equals("INTEGER")) {
-			wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
-			if (wrk.equals("")) {
+			if (object.getTypeOptionList().contains("MSEQ") || object.getTypeOptionList().contains("FYEAR")) {
 				cellValue.setCellType(HSSFCell.CELL_TYPE_STRING);
 				cellValue.setCellStyle(style);
-				if (rowIndexInCell==0) {
-					cellValue.setCellValue(new HSSFRichTextString(""));
-				}
+				cellValue.setCellValue(new HSSFRichTextString((String)object.getExternalValue()));
 			} else {
-				cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
-				cellValue.setCellStyle(style);
-				if (rowIndexInCell==0) {
-					cellValue.setCellValue(Double.parseDouble(wrk));
+				wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
+				if (wrk.equals("")) {
+					cellValue.setCellType(HSSFCell.CELL_TYPE_STRING);
+					cellValue.setCellStyle(style);
+					if (rowIndexInCell==0) {
+						cellValue.setCellValue(new HSSFRichTextString(""));
+					}
+				} else {
+					cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+					style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+					style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+					style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+					cellValue.setCellStyle(style);
+					if (rowIndexInCell==0) {
+						cellValue.setCellValue(Double.parseDouble(wrk));
+					}
 				}
 			}
 		} else {
@@ -1902,7 +1915,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		rowData.createCell(6).setCellStyle(style);
 	}
 
-	private void setupCellAttributesForDetailColumn(HSSFCell cell, HSSFWorkbook workBook, String basicType, XF110_SubListDetailCell object, HSSFFont font, int decimalSize) {
+	private void setupCellAttributesForDetailColumn(HSSFCell cell, HSSFWorkbook workBook, String basicType, ArrayList<String> typeOptionList, XF110_SubListDetailCell object, HSSFFont font, int decimalSize) {
 		String wrk;
 		//
 		HSSFCellStyle style = workBook.createCellStyle();
@@ -1918,22 +1931,32 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		//
 		Object value = object.getExternalValue();
 		if (basicType.equals("INTEGER")) {
-			if (value == null) {
-				wrk = "";
-			} else {
-				wrk = XFUtility.getStringNumber(value.toString());
-			}
-			if (wrk.equals("")) {
+			if (typeOptionList.contains("MSEQ") || typeOptionList.contains("FYEAR")) {
 				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-				cell.setCellStyle(style);
-				cell.setCellValue(new HSSFRichTextString(wrk));
-			} else {
-				cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+				cell.setCellValue(new HSSFRichTextString(value.toString()));
+				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
 				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+				style.setWrapText(true);
+				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
 				cell.setCellStyle(style);
-				cell.setCellValue(Double.parseDouble(wrk));
+			} else {
+				if (value == null) {
+					wrk = "";
+				} else {
+					wrk = XFUtility.getStringNumber(value.toString());
+				}
+				if (wrk.equals("")) {
+					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+					cell.setCellStyle(style);
+					cell.setCellValue(new HSSFRichTextString(wrk));
+				} else {
+					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+					style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+					style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+					style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+					cell.setCellStyle(style);
+					cell.setCellValue(Double.parseDouble(wrk));
+				}
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
@@ -2835,6 +2858,14 @@ class XF110_SubListBatchField extends JPanel implements XFScriptableField {
 
 	public String getBasicType(){
 		return XFUtility.getBasicTypeOf(dataType);
+	}
+	
+	public ArrayList<String> getTypeOptionList() {
+		return dataTypeOptionList;
+	}
+	
+	public ArrayList<String> getFieldOptionList() {
+		return fieldOptionList;
 	}
 
 	public boolean isFieldOnBatchTable(){
@@ -4133,6 +4164,11 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 	public void setupRecordList() {
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
 			//
+			String selectedItemValue = "";
+			if (this.getSelectedIndex() >= 0) {
+				selectedItemValue = this.getItemAt(this.getSelectedIndex()).toString();
+			}
+			//
 			detailCell.getTableRowNumber().setValueToDetailColumns();
 			//
 			tableKeyValuesList.clear();
@@ -4164,38 +4200,6 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 				tableKeyValuesList.add(keyValues);
 				this.addItem("");
 			}
-//			boolean anyOfKeysAreNullable = false;
-//			XFHashMap keyValues = new XFHashMap();
-//			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
-//				for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
-//					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
-//						if (dialog_.getDetailTable().getKeyFieldIDList().contains(dialog_.getDetailColumnList().get(j).getFieldID())) {
-//							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getInternalValue());
-//						} else {
-//							//if (dialog_.getDetailColumnList().get(j).isNullable()) {
-//							//	keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
-//							//}
-//							if (referTable_.getWithKeyFieldIDList().size() <= 1) {
-//								if (dialog_.getDetailColumnList().get(j).isNullable()) {
-//									keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
-//								}
-//							} else {
-//								if (i < (referTable_.getWithKeyFieldIDList().size() - 1)) {
-//									keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getInternalValue());
-//								}
-//							}
-//						}
-//						if (dialog_.getDetailColumnList().get(j).isNullable()) {
-//							anyOfKeysAreNullable = true;
-//						}
-//					}
-//				}
-//			}
-//			if (anyOfKeysAreNullable) {
-//				keyValues.addValue(tableAlias + "." + fieldID, "");
-//				tableKeyValueList.add(keyValues);
-//				this.addItem("");
-//			}
 			//
 			try {
 				String wrk = "";
@@ -4225,6 +4229,8 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
 			}
+			//
+			this.setSelectedItem(selectedItemValue);
 		}
 	}
 
@@ -4866,8 +4872,8 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 							//
 							kubunValueList.add(result.getString("KBUSERKUBUN").trim());
 							wrk = result.getString("TXUSERKUBUN").trim();
-							if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
-								fieldWidth = metrics.stringWidth(wrk) + 10;
+							if (metrics.stringWidth(wrk) + 20 > fieldWidth) {
+								fieldWidth = metrics.stringWidth(wrk) + 20;
 							}
 							kubunTextList.add(wrk);
 						}
@@ -5150,6 +5156,10 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 	public String getBasicType(){
 		return XFUtility.getBasicTypeOf(dataType);
 	}
+	
+	public ArrayList<String> getTypeOptionList() {
+		return dataTypeOptionList;
+	}
 
 	public String getTableID(){
 		return tableID_;
@@ -5216,32 +5226,32 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
-				double doubleWrk = 0;
-				if (value_ != null && !value_.toString().equals("")) {
-					doubleWrk = Double.parseDouble(value_.toString());
+				if (value_ == null || value_.toString().equals("")) {
+					value = "";
+				} else {
+					double doubleWrk = Double.parseDouble(value_.toString());
+					if (decimalSize == 0) {
+						value = floatFormat0.format(doubleWrk);
+					}
+					if (decimalSize == 1) {
+						value = floatFormat1.format(doubleWrk);
+					}
+					if (decimalSize == 2) {
+						value = floatFormat2.format(doubleWrk);
+					}
+					if (decimalSize == 3) {
+						value = floatFormat3.format(doubleWrk);
+					}
+					if (decimalSize == 4) {
+						value = floatFormat4.format(doubleWrk);
+					}
+					if (decimalSize == 5) {
+						value = floatFormat5.format(doubleWrk);
+					}
+					if (decimalSize == 6) {
+						value = floatFormat6.format(doubleWrk);
+					}
 				}
-				if (decimalSize == 0) {
-					value = floatFormat0.format(doubleWrk);
-				}
-				if (decimalSize == 1) {
-					value = floatFormat1.format(doubleWrk);
-				}
-				if (decimalSize == 2) {
-					value = floatFormat2.format(doubleWrk);
-				}
-				if (decimalSize == 3) {
-					value = floatFormat3.format(doubleWrk);
-				}
-				if (decimalSize == 4) {
-					value = floatFormat4.format(doubleWrk);
-				}
-				if (decimalSize == 5) {
-					value = floatFormat5.format(doubleWrk);
-				}
-				if (decimalSize == 6) {
-					value = floatFormat6.format(doubleWrk);
-				}
-
 			} else {
 				if (basicType.equals("DATE")) {
 					if (value_ == null || value_.equals("")) {
@@ -7191,9 +7201,9 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 					ArrayList<String> workDataTypeOptionList = XFUtility.getOptionList(workElement.getAttribute("TypeOptions"));
 					int dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 					if (workDataTypeOptionList.contains("KANJI")) {
-						fieldWidth = dataSize * 14 + 10;
+						fieldWidth = dataSize * 14 + 20;
 					} else {
-						fieldWidth = dataSize * 7 + 10;
+						fieldWidth = dataSize * 7 + 20;
 					}
 					if (fieldWidth > 800) {
 						fieldWidth = 800;
@@ -7214,6 +7224,11 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 
 	public void setupRecordList() {
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
+			//
+			String selectedItemValue = "";
+			if (jComboBox.getSelectedIndex() >= 0) {
+				selectedItemValue = jComboBox.getItemAt(jComboBox.getSelectedIndex()).toString();
+			}
 			//
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
@@ -7268,6 +7283,8 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
 			}
+			//
+			jComboBox.setSelectedItem(selectedItemValue);
 		}
 	}
 	

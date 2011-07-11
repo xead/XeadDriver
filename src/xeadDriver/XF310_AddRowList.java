@@ -1729,7 +1729,7 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 				fieldWidth = dataSize * 14 + 5;
 			} else {
 				if (dataTypeOptionList.contains("FYEAR")) {
-					fieldWidth = 80;
+					fieldWidth = 85;
 				} else {
 					if (dataTypeOptionList.contains("YMONTH")) {
 						fieldWidth = 85;
@@ -1893,32 +1893,32 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
-				double doubleWrk = 0;
-				if (value_ != null && !value_.toString().equals("")) {
-					doubleWrk = Double.parseDouble(value_.toString());
+				if (value_ == null || value_.toString().equals("")) {
+					value = "";
+				} else {
+					double doubleWrk = Double.parseDouble(value_.toString());
+					if (decimalSize == 0) {
+						value = floatFormat0.format(doubleWrk);
+					}
+					if (decimalSize == 1) {
+						value = floatFormat1.format(doubleWrk);
+					}
+					if (decimalSize == 2) {
+						value = floatFormat2.format(doubleWrk);
+					}
+					if (decimalSize == 3) {
+						value = floatFormat3.format(doubleWrk);
+					}
+					if (decimalSize == 4) {
+						value = floatFormat4.format(doubleWrk);
+					}
+					if (decimalSize == 5) {
+						value = floatFormat5.format(doubleWrk);
+					}
+					if (decimalSize == 6) {
+						value = floatFormat6.format(doubleWrk);
+					}
 				}
-				if (decimalSize == 0) {
-					value = floatFormat0.format(doubleWrk);
-				}
-				if (decimalSize == 1) {
-					value = floatFormat1.format(doubleWrk);
-				}
-				if (decimalSize == 2) {
-					value = floatFormat2.format(doubleWrk);
-				}
-				if (decimalSize == 3) {
-					value = floatFormat3.format(doubleWrk);
-				}
-				if (decimalSize == 4) {
-					value = floatFormat4.format(doubleWrk);
-				}
-				if (decimalSize == 5) {
-					value = floatFormat5.format(doubleWrk);
-				}
-				if (decimalSize == 6) {
-					value = floatFormat6.format(doubleWrk);
-				}
-
 			} else {
 				if (basicType.equals("DATE")) {
 					if (value_ == null || value_.equals("")) {

@@ -80,8 +80,8 @@ public class Session extends JFrame {
 	private String numberingTable = "";
 	private String calendarTable = "";
 	private String taxTable = "";
-	private String currencyTable = "";
-	private String currencyDetailTable = "";
+	private String exchangeRateAnnualTable = "";
+	private String exchangeRateMonthlyTable = "";
 	private String databaseDisconnect = "";
 	private String menuIDUsing = "";
 	private String imageFileFolder = "";
@@ -246,8 +246,8 @@ public class Session extends JFrame {
 		sessionDetailTable = element.getAttribute("SessionDetailTable");
 		taxTable = element.getAttribute("TaxTable");
 		calendarTable = element.getAttribute("CalendarTable");
-		currencyTable = element.getAttribute("CurrencyTable");
-		currencyDetailTable = element.getAttribute("CurrencyDetailTable");
+		exchangeRateAnnualTable = element.getAttribute("ExchangeRateAnnualTable");
+		exchangeRateMonthlyTable = element.getAttribute("ExchangeRateMonthlyTable");
 
 		loginScript = XFUtility.substringLinesWithTokenOfEOL(element.getAttribute("LoginScript"), "\n");
 		functionList = domDocument.getElementsByTagName("Function");
@@ -912,39 +912,105 @@ public class Session extends JFrame {
 		return floatValue;
 	}
 
-	public float getCurrencyRate(String currencyCode, String date) {
+//	public float getCurrencyRate(String currencyCode, String date) {
+//		float rateReturn = 0;
+//		float rateAnnual = 0;
+//		ResultSet result;
+//		//
+//		try {
+//			Statement statement = this.getConnection().createStatement();
+//			result = statement.executeQuery("select * from " + 
+//						currencyTable + " where CDCURRENCY = '" + currencyCode + "'");
+//			if (result.next()) {
+//				rateAnnual = result.getFloat("VLANNUALRATE");
+//			}
+//			result.close();
+//			//
+//			if (date.equals("")) {
+//				rateReturn = rateAnnual;
+//			} else {
+//				date = date.replaceAll("-", "");
+//				if (date.length() == 8) {
+//					String yyyymm = date.substring(0, 6);
+//					result = statement.executeQuery("select * from " +
+//							currencyDetailTable + " where CDCURRENCY = '" + currencyCode + "' and DTYYYYMM = '" + yyyymm + "'");
+//					if (result.next()) {
+//						rateReturn = result.getFloat("VLMONTHLYRATE");
+//					}
+//					result.close();
+//				}
+//				if (rateReturn == 0) {
+//					rateReturn = rateAnnual;
+//				}
+//			}
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//		}
+//		//
+//		return rateReturn;
+//	}
+
+	public float getAnnualExchangeRate(String currencyCode, int fYear, String type) {
 		float rateReturn = 0;
-		float rateAnnual = 0;
 		ResultSet result;
 		//
-		try {
-			Statement statement = this.getConnection().createStatement();
-			result = statement.executeQuery("select * from " + 
-						currencyTable + " where CDCURRENCY = '" + currencyCode + "'");
-			if (result.next()) {
-				rateAnnual = result.getFloat("VLANNUALRATE");
-			}
-			result.close();
-			//
-			if (date.equals("")) {
-				rateReturn = rateAnnual;
-			} else {
-				date = date.replaceAll("-", "");
-				if (date.length() == 8) {
-					String yyyymm = date.substring(0, 6);
-					result = statement.executeQuery("select * from " +
-							currencyDetailTable + " where CDCURRENCY = '" + currencyCode + "' and DTYYYYMM = '" + yyyymm + "'");
-					if (result.next()) {
-						rateReturn = result.getFloat("VLMONTHLYRATE");
+		if (currencyCode.equals(getSystemVariantString("SYSTEM_CURRENCY"))) {
+			rateReturn = 1;
+		} else {
+			try {
+				Statement statement = this.getConnection().createStatement();
+				result = statement.executeQuery("select * from " + exchangeRateAnnualTable +
+						" where KBCURRENCY = '" + currencyCode + 
+						"' and DTNEND = " + fYear);
+				if (result.next()) {
+					rateReturn = result.getFloat("VLRATEM");
+					if (type.equals("TTB")) {
+						rateReturn = result.getFloat("VLRATEB");
 					}
-					result.close();
+					if (type.equals("TTS")) {
+						rateReturn = result.getFloat("VLRATES");
+					}
 				}
-				if (rateReturn == 0) {
-					rateReturn = rateAnnual;
-				}
+				result.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
-		} catch (SQLException e) {
-			e.printStackTrace();
+		}
+		//
+		return rateReturn;
+	}
+	
+	public float getMonthlyExchangeRate(String currencyCode, int fYear, int mSeq, String type) {
+		float rateReturn = 0;
+		ResultSet result;
+		//
+		if (currencyCode.equals(getSystemVariantString("SYSTEM_CURRENCY"))) {
+			rateReturn = 1;
+		} else {
+			try {
+				Statement statement = this.getConnection().createStatement();
+				result = statement.executeQuery("select * from " + exchangeRateMonthlyTable +
+						" where KBCURRENCY = '" + currencyCode + 
+						"' and DTNEND = " + fYear +
+						" and DTMSEQ = " + mSeq);
+				if (result.next()) {
+					rateReturn = result.getFloat("VLRATEM");
+					if (type.equals("TTB")) {
+						rateReturn = result.getFloat("VLRATEB");
+					}
+					if (type.equals("TTS")) {
+						rateReturn = result.getFloat("VLRATES");
+					}
+				}
+				result.close();
+				//
+				// return annual rate if monthly rate not found //
+				if (rateReturn == 0) {
+					rateReturn = getAnnualExchangeRate(currencyCode, fYear, type);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		//
 		return rateReturn;
@@ -1046,7 +1112,7 @@ public class Session extends JFrame {
 	public int getFYearOfDate(String parmDate) {
 		int fYear = 0;
 		int mSeq = 0;
-		if (!parmDate.equals("")) {
+		if (!parmDate.equals("") && parmDate != null) {
 			int month, date;
 			parmDate = parmDate.replaceAll("-", "").trim();
 			parmDate = parmDate.replaceAll("/", "");

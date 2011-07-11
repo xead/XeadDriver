@@ -1524,6 +1524,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					messageList.add(returnMap.get("RETURN_MESSAGE").toString());
 				}
+				returnMap_.put("RETURN_CODE", returnMap.get("RETURN_CODE").toString());
+				if (returnMap_.get("RETURN_CODE").toString().equals("10")
+						|| returnMap_.get("RETURN_CODE").toString().equals("20")) {
+					fetchTableRecord();
+				}
 			}
 		}
 	}
@@ -1535,7 +1540,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		HSSFFont font = null;
 		//
 		HSSFWorkbook workBook = new HSSFWorkbook();
-		HSSFSheet workSheet = workBook.createSheet(functionElement_.getAttribute("Name"));
+		String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
+		HSSFSheet workSheet = workBook.createSheet(wrkStr);
 		workSheet.setDefaultRowHeight((short)1000);
 		HSSFFooter workSheetFooter = workSheet.getFooter();
 		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
@@ -1596,7 +1602,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						cellHeader.setCellStyle(styleHeader);
 						if (j==0) {
 							mergeRowNumberFrom = currentRowNumber;
-							cellHeader.setCellValue(new HSSFRichTextString(fieldList.get(i).getCaption()));
+							if (!fieldList.get(i).getFieldOptionList().contains("NO_CAPTION")) {
+								cellHeader.setCellValue(new HSSFRichTextString(fieldList.get(i).getCaption()));
+							}
 						}
 						rowData.createCell(1).setCellStyle(styleHeader);
 						//
@@ -1656,15 +1664,20 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		HSSFCell cellValue = rowData.createCell(2);
 		//
 		if (object.getBasicType().equals("INTEGER")) {
-			cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-			style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-			style.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
-			style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
-			cellValue.setCellStyle(style);
-			if (rowIndexInCell==0) {
-				//cellValue.setCellValue((Integer)object.getInternalValue());
-				wrkStr = object.getInternalValue().toString().replace(",", "");
-				cellValue.setCellValue(Integer.parseInt(wrkStr));
+			if (object.getTypeOptionList().contains("MSEQ") || object.getTypeOptionList().contains("FYEAR")) {
+				cellValue.setCellType(HSSFCell.CELL_TYPE_STRING);
+				cellValue.setCellStyle(style);
+				cellValue.setCellValue(new HSSFRichTextString((String)object.getExternalValue()));
+			} else {
+				cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
+				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+				cellValue.setCellStyle(style);
+				if (rowIndexInCell==0) {
+					wrkStr = object.getInternalValue().toString().replace(",", "");
+					cellValue.setCellValue(Integer.parseInt(wrkStr));
+				}
 			}
 		} else {
 			if (object.getBasicType().equals("FLOAT")) {
@@ -2374,6 +2387,14 @@ class XF200_Field extends JPanel implements XFScriptableField {
 	public String getBasicType(){
 		return XFUtility.getBasicTypeOf(dataType);
 	}
+	
+	public ArrayList<String> getTypeOptionList() {
+		return dataTypeOptionList;
+	}
+	
+	public ArrayList<String> getFieldOptionList() {
+		return fieldOptionList;
+	}
 
 	public boolean isFieldOnPrimaryTable(){
 		return isFieldOnPrimaryTable;
@@ -2826,7 +2847,8 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				//
 				try {
 					Statement statement = dialog_.getSession().getConnection().createStatement();
-					ResultSet result = statement.executeQuery("select KBUSERKUBUN,TXUSERKUBUN  from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST");
+					String sql = "select KBUSERKUBUN,TXUSERKUBUN  from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST";
+					ResultSet result = statement.executeQuery(sql);
 					while (result.next()) {
 						//
 						kubunKeyValueList.add(result.getString("KBUSERKUBUN").trim());
@@ -2861,9 +2883,9 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 					ArrayList<String> workDataTypeOptionList = XFUtility.getOptionList(workElement.getAttribute("TypeOptions"));
 					int dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 					if (workDataTypeOptionList.contains("KANJI")) {
-						fieldWidth = dataSize * 14 + 10;
+						fieldWidth = dataSize * 14 + 20;
 					} else {
-						fieldWidth = dataSize * 7 + 10;
+						fieldWidth = dataSize * 7 + 20;
 					}
 					if (fieldWidth > 800) {
 						fieldWidth = 800;
@@ -2881,6 +2903,11 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 
 	public void setupRecordList() {
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
+			//
+			String selectedItemValue = "";
+			if (jComboBox.getSelectedIndex() >= 0) {
+				selectedItemValue = jComboBox.getItemAt(jComboBox.getSelectedIndex()).toString();
+			}
 			//
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
@@ -2934,6 +2961,8 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
 			}
+			//
+			jComboBox.setSelectedItem(selectedItemValue);
 		}
 	}
 	

@@ -208,7 +208,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		jTableMain.addKeyListener(new XF110_jTableMain_keyAdapter(this));
 		jTableMain.addMouseListener(new XF110_jTableMain_mouseAdapter(this));
 		jTableMain.addFocusListener(new XF110_jTableMain_focusAdapter(this));
-		jTableMain.setAutoCreateRowSorter(true);
+		//jTableMain.setAutoCreateRowSorter(true);
 		rendererAlignmentCenter.setHorizontalAlignment(SwingConstants.CENTER);
 		rendererAlignmentRight.setHorizontalAlignment(SwingConstants.RIGHT);
 		rendererAlignmentLeft.setHorizontalAlignment(SwingConstants.LEFT);
@@ -1174,7 +1174,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		 FileOutputStream fileOutputStream = null;
 		 //
 		 HSSFWorkbook workBook = new HSSFWorkbook();
-		 HSSFSheet workSheet = workBook.createSheet(functionElement_.getAttribute("Name"));
+		 String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
+		 HSSFSheet workSheet = workBook.createSheet(wrkStr);
 		 workSheet.setDefaultRowHeight( (short) 300);
 		 HSSFFooter workSheetFooter = workSheet.getFooter();
 		 workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
@@ -1271,12 +1272,15 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					 if (i == 1) {
 						 cell.setCellStyle(styleHeaderSelect);
 					 } else {
-						 //cell.setCellStyle(styleHeader);
 						 for (int j = 0; j < columnList.size(); j++) {
 							 if (columnList.get(j).getColumnIndex() == i) {
 								 if (columnList.get(j).getBasicType().equals("INTEGER")
 										 || columnList.get(j).getBasicType().equals("FLOAT")) {
-									 cell.setCellStyle(styleHeaderNumber);
+									if (columnList.get(j).getTypeOptionList().contains("MSEQ") || columnList.get(j).getTypeOptionList().contains("FYEAR")) {
+										cell.setCellStyle(styleHeader);
+									} else {
+										cell.setCellStyle(styleHeaderNumber);
+									}
 								 } else {
 									 cell.setCellStyle(styleHeader);
 								 }
@@ -1332,7 +1336,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 						 if (cellObject.getColor().equals(Color.orange)) {
 							 font = fontDetailOrange;
 						 }
-						 setupCellAttributes(rowData.createCell(columnIndex), workBook, columnList.get(j).getBasicType(), (XF110_Cell)tableModelMain.getValueAt(i,columnIndex), font, columnList.get(j).getDecimalSize());
+						 setupCellAttributes(rowData.createCell(columnIndex), workBook, columnList.get(j).getBasicType(), columnList.get(j).getTypeOptionList(), (XF110_Cell)tableModelMain.getValueAt(i,columnIndex), font, columnList.get(j).getDecimalSize());
 					 }
 				 }
 			 }
@@ -1368,7 +1372,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		 return xlsFile.toURI();
 	 }
 
-	 private void setupCellAttributes(HSSFCell cell, HSSFWorkbook workbook, String basicType, XF110_Cell object, HSSFFont font, int decimalSize) {
+	 private void setupCellAttributes(HSSFCell cell, HSSFWorkbook workbook, String basicType, ArrayList<String> typeOptionList, XF110_Cell object, HSSFFont font, int decimalSize) {
 		 String wrk;
 		 //
 		 Color color = object.getColor();
@@ -1393,23 +1397,33 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		 style.setBorderTop(HSSFCellStyle.BORDER_THIN);
 		 //
 		 if (basicType.equals("INTEGER")) {
-			 if (object.getValue() == null) {
-				 wrk = "";
-			 } else {
-				 wrk = XFUtility.getStringNumber(object.getValue().toString());
-			 }
-			 if (wrk.equals("")) {
-				 cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-				 cell.setCellValue(new HSSFRichTextString(wrk));
-			 } else {
-				 cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-				 cell.setCellValue(Double.parseDouble(wrk));
-			 }
-			 //
-			 style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-			 style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-			 style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
-			 cell.setCellStyle(style);
+			if (typeOptionList.contains("MSEQ") || typeOptionList.contains("FYEAR")) {
+				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+				cell.setCellValue(new HSSFRichTextString(object.getValue().toString()));
+				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+				style.setWrapText(true);
+				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
+				cell.setCellStyle(style);
+			} else {
+				if (object.getValue() == null) {
+					wrk = "";
+				} else {
+					wrk = XFUtility.getStringNumber(object.getValue().toString());
+				}
+				if (wrk.equals("")) {
+					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+					cell.setCellValue(new HSSFRichTextString(wrk));
+				} else {
+					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+					cell.setCellValue(Double.parseDouble(wrk));
+				}
+				//
+				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+				cell.setCellStyle(style);
+			}
 		 } else {
 			 if (basicType.equals("FLOAT")) {
 				 if (object.getValue() == null) {
@@ -3089,8 +3103,8 @@ class XF110_Column extends Object implements XFScriptableField {
 					//
 					kubunValueList.add(result.getString("KBUSERKUBUN").trim());
 					wrk = result.getString("TXUSERKUBUN").trim();
-					if (metrics.stringWidth(wrk) > fieldWidth) {
-						fieldWidth = metrics.stringWidth(wrk) + 3;
+					if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
+						fieldWidth = metrics.stringWidth(wrk) + 10;
 					}
 					kubunTextList.add(wrk);
 				}
@@ -3104,7 +3118,7 @@ class XF110_Column extends Object implements XFScriptableField {
 				fieldWidth = dataSize * 14 + 5;
 			} else {
 				if (dataTypeOptionList.contains("FYEAR")) {
-					fieldWidth = 60;
+					fieldWidth = 85;
 				} else {
 					if (dataTypeOptionList.contains("YMONTH")) {
 						fieldWidth = 85;
@@ -3243,6 +3257,10 @@ class XF110_Column extends Object implements XFScriptableField {
 	public String getBasicType(){
 		return XFUtility.getBasicTypeOf(dataType);
 	}
+	
+	public ArrayList<String> getTypeOptionList() {
+		return dataTypeOptionList;
+	}
 
 	public String getTableID(){
 		return tableID;
@@ -3301,30 +3319,31 @@ class XF110_Column extends Object implements XFScriptableField {
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
-				double doubleWrk = 0;
-				if (value_ != null && !value_.toString().equals("")) {
-					doubleWrk = Double.parseDouble(value_.toString());
-				}
-				if (decimalSize == 0) {
-					value = floatFormat0.format(doubleWrk);
-				}
-				if (decimalSize == 1) {
-					value = floatFormat1.format(doubleWrk);
-				}
-				if (decimalSize == 2) {
-					value = floatFormat2.format(doubleWrk);
-				}
-				if (decimalSize == 3) {
-					value = floatFormat3.format(doubleWrk);
-				}
-				if (decimalSize == 4) {
-					value = floatFormat4.format(doubleWrk);
-				}
-				if (decimalSize == 5) {
-					value = floatFormat5.format(doubleWrk);
-				}
-				if (decimalSize == 6) {
-					value = floatFormat6.format(doubleWrk);
+				if (value_ == null || value_.toString().equals("")) {
+					value = "";
+				} else {
+					double doubleWrk = Double.parseDouble(value_.toString());
+					if (decimalSize == 0) {
+						value = floatFormat0.format(doubleWrk);
+					}
+					if (decimalSize == 1) {
+						value = floatFormat1.format(doubleWrk);
+					}
+					if (decimalSize == 2) {
+						value = floatFormat2.format(doubleWrk);
+					}
+					if (decimalSize == 3) {
+						value = floatFormat3.format(doubleWrk);
+					}
+					if (decimalSize == 4) {
+						value = floatFormat4.format(doubleWrk);
+					}
+					if (decimalSize == 5) {
+						value = floatFormat5.format(doubleWrk);
+					}
+					if (decimalSize == 6) {
+						value = floatFormat6.format(doubleWrk);
+					}
 				}
 			} else {
 				if (basicType.equals("DATE")) {

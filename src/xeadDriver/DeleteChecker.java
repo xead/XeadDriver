@@ -34,8 +34,6 @@ package xeadDriver;
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import javax.swing.JOptionPane;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;

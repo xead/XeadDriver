@@ -263,9 +263,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				}
 			}
 
-			//////////////////////////////////////////////////
-			// Fetch the record and set values on the panel //
-			//////////////////////////////////////////////////
 			fetchHeaderTableRecord();
 
 			if (!this.isToBeCanceled) {
@@ -500,14 +497,14 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			//Add Footer block//
 			addParagraphToDocument(pdfDoc, "FOOTER", cb);
 			//
-			pdfDoc.close();
-			//
 		} catch (DocumentException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			pdfDoc.close();
 		}
 		//
 		return pdfFile.toURI();
@@ -619,6 +616,11 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		String wrkStr;
 		int wrkInt;
 		//
+		ResultSet resultOfDetailTable = null;
+		Statement statementForDetailTable = null;
+		ResultSet resultOfDetailReferTable = null;
+		Statement statementForDetailReferTable = null;
+		//
 		try {
 			//
 			fontTableCell = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.BOLD);
@@ -672,10 +674,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			table.setPadding(2);
 			table.setSpacing(0);
 			//
-			ResultSet resultOfDetailTable;
-			Statement statementForDetailTable = connection.createStatement();
-			ResultSet resultOfDetailReferTable;
-			Statement statementForReferTable = connection.createStatement();
+			statementForDetailTable = connection.createStatement();
+			statementForDetailReferTable = connection.createStatement();
 			//
 			workingRowList.clear();
 			int countOfRows = 0;
@@ -704,22 +704,20 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 						//
 						sql = detailReferTableList.get(i).getSelectSQL();
 						XFUtility.appendLog(sql, processLog);
-						resultOfDetailReferTable = statementForReferTable.executeQuery(sql);
+						resultOfDetailReferTable = statementForDetailReferTable.executeQuery(sql);
 						while (resultOfDetailReferTable.next()) {
 							//
 							if (detailReferTableList.get(i).isRecordToBeSelected(resultOfDetailReferTable)) {
-							//
-							for (int j = 0; j < detailColumnList.size(); j++) {
-								if (detailColumnList.get(j).getTableAlias().equals(detailReferTableList.get(i).getTableAlias())) {
-									detailColumnList.get(j).setValueOfResultSet(resultOfDetailReferTable);
+								//
+								for (int j = 0; j < detailColumnList.size(); j++) {
+									if (detailColumnList.get(j).getTableAlias().equals(detailReferTableList.get(i).getTableAlias())) {
+										detailColumnList.get(j).setValueOfResultSet(resultOfDetailReferTable);
+									}
 								}
-							}
-							//
-							detailTable_.runScript("AR", "AR(" + detailReferTableList.get(i).getTableAlias() + ")"); /* Script to be run AFTER READ */
+								//
+								detailTable_.runScript("AR", "AR(" + detailReferTableList.get(i).getTableAlias() + ")"); /* Script to be run AFTER READ */
 							}
 						}
-						//
-						resultOfDetailReferTable.close();
 					}
 				}
 				//
@@ -787,8 +785,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				//
 				countOfRows++;
 			}
-			//
-			resultOfDetailTable.close();
 			//
 			if (!detailTable_.hasOrderByAsItsOwnFields()) {
 				WorkingRow[] workingRowArray = workingRowList.toArray(new WorkingRow[0]);
@@ -866,6 +862,23 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
+		} finally {
+			try {
+				if (resultOfDetailTable != null) {
+					resultOfDetailTable.close();
+				}
+				if (resultOfDetailTable != null) {
+					resultOfDetailTable.close();
+				}
+				if (statementForDetailReferTable != null) {
+					statementForDetailReferTable.close();
+				}
+				if (statementForDetailReferTable != null) {
+					statementForDetailReferTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace(exceptionStream);
+			}
 		}
 	}
 
@@ -943,6 +956,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	}
 	
 	void fetchHeaderTableRecord() {
+		Statement statementForHeaderTable = null;
+		ResultSet resultOfHeaderTable = null;
 		try {
 			//
 			for (int i = 0; i < headerFieldList.size(); i++) {
@@ -955,10 +970,10 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			//
 			headerTable_.runScript("BR", "");
 			//
-			Statement statementForPrimaryTable = connection.createStatement();
+			statementForHeaderTable = connection.createStatement();
 			String sql = headerTable_.getSQLToSelect();
 			XFUtility.appendLog(sql, processLog);
-			ResultSet resultOfHeaderTable = statementForPrimaryTable.executeQuery(sql);
+			resultOfHeaderTable = statementForHeaderTable.executeQuery(sql);
 			if (resultOfHeaderTable.next()) {
 				//
 				for (int i = 0; i < headerFieldList.size(); i++) {
@@ -975,8 +990,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				isToBeCanceled = true;
 			}
 			//
-			resultOfHeaderTable.close();
-			//
 		} catch (SQLException e) {
 			JOptionPane.showMessageDialog(null, res.getString("FunctionError6"));
 			e.printStackTrace(exceptionStream);
@@ -986,16 +999,28 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
+		} finally {
+			try {
+				if (resultOfHeaderTable != null) {
+					resultOfHeaderTable.close();
+				}
+				if (statementForHeaderTable != null) {
+					statementForHeaderTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace(exceptionStream);
+			}
 		}
 	}
 
 	protected void fetchReferTableRecords(String event, String specificReferTable) {
-		ResultSet resultOfReferTable = null;
 		String sql = "";
+		ResultSet resultOfReferTable = null;
+		Statement statementForReferTable = null;
 		//
 		try {
 			//
-			Statement statementForReferTable = connection.createStatement();
+			statementForReferTable = connection.createStatement();
 			//
 			headerTable_.runScript(event, "BR()");
 			//
@@ -1024,8 +1049,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 									headerTable_.runScript(event, "AR(" + headerReferTableList.get(i).getTableAlias() + ")");
 								}
 							}
-							//
-							resultOfReferTable.close();
 						}
 					}
 				}
@@ -1042,6 +1065,17 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
+		} finally {
+			try {
+				if (resultOfReferTable != null) {
+					resultOfReferTable.close();
+				}
+				if (statementForReferTable != null) {
+					statementForReferTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace(exceptionStream);
+			}
 		}
 	}
 
@@ -1269,7 +1303,10 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		}
 		for (int i = 0; i < headerFieldList.size(); i++) {
 			if (headerFieldList.get(i).getDataSourceName().equals(wrkStr)) {
-				if (headerFieldList.get(i).isKubunField()) {
+				if (headerFieldList.get(i).isKubunField()
+						  || headerFieldList.get(i).getDataTypeOptionList().contains("MSEQ")
+						  || headerFieldList.get(i).getDataTypeOptionList().contains("YMONTH")
+						  || headerFieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
 					value = headerFieldList.get(i).getExternalValue().toString();
 				} else {
 					value = headerFieldList.get(i).getInternalValue().toString();
@@ -1282,10 +1319,12 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(value)), fmt, false);
 					}
 					if (basicType.equals("INTEGER")) {
-						value = XFUtility.getEditValueOfInteger(Integer.parseInt(value), fmt, headerFieldList.get(i).getDataSize());
+						//value = XFUtility.getEditValueOfInteger(Integer.parseInt(value), fmt, headerFieldList.get(i).getDataSize());
+						value = XFUtility.getEditValueOfLong(Long.parseLong(value), fmt, headerFieldList.get(i).getDataSize());
 					}
 					if (basicType.equals("FLOAT")) {
-						value = XFUtility.getEditValueOfFloat(Float.parseFloat(value), fmt, headerFieldList.get(i).getDecimalSize());
+						//value = XFUtility.getEditValueOfFloat(Float.parseFloat(value), fmt, headerFieldList.get(i).getDecimalSize());
+						value = XFUtility.getEditValueOfDouble(Double.parseDouble(value), fmt, headerFieldList.get(i).getDecimalSize());
 					}
 					if (headerFieldList.get(i).getDataTypeOptionList().contains("YMONTH") || headerFieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
 						if (fmt.equals("")) {
@@ -1445,21 +1484,33 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 		//
 		String wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 		if (!wrkStr.equals("")) {
+			String wrk = "";
+			Statement statement = null;
+			ResultSet result = null;
 			try {
 				isKubunField = true;
-				String wrk = "";
-				Statement statement = dialog_.getSession().getConnection().createStatement();
-				ResultSet result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
+				statement = dialog_.getSession().getConnection().createStatement();
+				result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
 				while (result.next()) {
 					//
 					kubunValueList.add(result.getString("KBUSERKUBUN").trim());
 					wrk = result.getString("TXUSERKUBUN").trim();
 					kubunTextList.add(wrk);
 				}
-				result.close();
 			} catch (SQLException e) {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
+			} finally {
+				try {
+					if (result != null) {
+						result.close();
+					}
+					if (statement != null) {
+						statement.close();
+					}
+				} catch (SQLException e) {
+					e.printStackTrace(dialog_.getExceptionStream());
+				}
 			}
 		}
 		//
@@ -1564,16 +1615,17 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 			} else {
 				String basicType = this.getBasicType();
 				//
-				if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-					String value = result.getString(this.getFieldID());
-					if (this.isFieldOnPrimaryTable) {
-						if (value == null) {
-							component.setValue("0");
-						} else {
-							component.setValue(result.getString(this.getFieldID()));
-						}
-					} else {
+				//if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
+					//String value = result.getString(this.getFieldID());
+					//if (this.isFieldOnPrimaryTable) {
+					//	if (value == null) {
+					//		component.setValue("0");
+					//	} else {
+					//		component.setValue(result.getString(this.getFieldID()));
+					//	}
+					//} else {
 						if (basicType.equals("INTEGER")) {
+							String value = result.getString(this.getFieldID());
 							if (value == null || value.equals("")) {
 								component.setValue("");
 							} else {
@@ -1581,18 +1633,21 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 								if (pos >= 0) {
 									value = value.substring(0, pos);
 								}
-								component.setValue(Integer.parseInt(value));
+								//component.setValue(Integer.parseInt(value));
+								component.setValue(Long.parseLong(value));
 							}
 						}
 						if (basicType.equals("FLOAT")) {
+							String value = result.getString(this.getFieldID());
 							if (value == null || value.equals("")) {
 								component.setValue("");
 							} else {
-								component.setValue(Float.parseFloat(value));
+								//component.setValue(Float.parseFloat(value));
+								component.setValue(Double.parseDouble(value));
 							}
 						}
-					}
-				}
+					//}
+				//}
 				//
 				if (basicType.equals("STRING") || basicType.equals("TIME") || basicType.equals("DATETIME")) {
 					String value = result.getString(this.getFieldID());
@@ -1670,10 +1725,12 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 		Object returnObj = null;
 		//
 		if (this.getBasicType().equals("INTEGER")) {
-			returnObj = Integer.parseInt((String)component.getInternalValue());
+			//returnObj = Integer.parseInt((String)component.getInternalValue());
+			returnObj = Long.parseLong((String)component.getInternalValue());
 		} else {
 			if (this.getBasicType().equals("FLOAT")) {
-				returnObj = Float.parseFloat((String)component.getInternalValue());
+				//returnObj = Float.parseFloat((String)component.getInternalValue());
+				returnObj = Double.parseDouble((String)component.getInternalValue());
 			} else {
 				if (component.getInternalValue() == null) {
 					returnObj = "";
@@ -1691,6 +1748,10 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 
 	public Object getOldValue() {
 		return getValue();
+	}
+	
+	public boolean isValueChanged() {
+		return !this.getValue().equals(this.getOldValue());
 	}
 
 	public boolean isEditable() {
@@ -2531,7 +2592,8 @@ class XF390_DetailTable extends Object {
 	public Object convertToTableOperationValue(String basicType, Object value){
 		Object returnValue = null;
 		if (basicType.equals("INTEGER")) {
-			returnValue = Integer.parseInt(value.toString());
+			//returnValue = Integer.parseInt(value.toString());
+			returnValue = Long.parseLong(value.toString());
 		}
 		if (basicType.equals("FLOAT")) {
 			returnValue = Double.parseDouble(value.toString());
@@ -2673,8 +2735,8 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 	private ArrayList<String> kubunValueList = new ArrayList<String>();
 	private ArrayList<String> kubunTextList = new ArrayList<String>();
 	private Object value_ = null;
-	private int summaryInt = 0;
-	private float summaryFloat = 0f;
+	private long summaryLong = 0;
+	private double summaryDouble = 0d;
 
 	public XF390_DetailColumn(org.w3c.dom.Element functionColumnElement, XF390 dialog){
 		super();
@@ -2743,21 +2805,33 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 		//
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 		if (!wrkStr.equals("")) {
+			String wrk = "";
+			Statement statement = null;
+			ResultSet result = null;
 			try {
 				isKubunField = true;
-				String wrk = "";
-				Statement statement = dialog_.getSession().getConnection().createStatement();
-				ResultSet result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
+				statement = dialog_.getSession().getConnection().createStatement();
+				result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
 				while (result.next()) {
 					//
 					kubunValueList.add(result.getString("KBUSERKUBUN").trim());
 					wrk = result.getString("TXUSERKUBUN").trim();
 					kubunTextList.add(wrk);
 				}
-				result.close();
 			} catch (SQLException e) {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
+			} finally {
+				try {
+					if (result != null) {
+						result.close();
+					}
+					if (statement != null) {
+						statement.close();
+					}
+				} catch (SQLException e) {
+					e.printStackTrace(dialog_.getExceptionStream());
+				}
 			}
 		}
 		//
@@ -2850,10 +2924,10 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 	public void summarize() {
 		String basicType = this.getBasicType();
 		if (basicType.equals("INTEGER")) {
-			summaryInt = summaryInt + (Integer)value_;
+			summaryLong = summaryLong + (Long)value_;
 		}
 		if (basicType.equals("FLOAT")) {
-			summaryFloat = summaryFloat + (Float)value_;
+			summaryDouble = summaryDouble + (Double)value_;
 		}
 	}
 
@@ -2862,10 +2936,12 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 		//
 		String basicType = this.getBasicType();
 		if (basicType.equals("INTEGER")) {
-			value = XFUtility.getEditValueOfInteger(summaryInt, editCode, dataSize);
+			//value = XFUtility.getEditValueOfInteger(summaryInt, editCode, dataSize);
+			value = XFUtility.getEditValueOfLong(summaryLong, editCode, dataSize);
 		}
 		if (basicType.equals("FLOAT")) {
-			value = XFUtility.getEditValueOfFloat(summaryFloat, editCode, decimalSize);
+			//value = XFUtility.getEditValueOfFloat(summaryFloat, editCode, decimalSize);
+			value = XFUtility.getEditValueOfDouble(summaryDouble, editCode, decimalSize);
 		}
 		//
 		return value;
@@ -2950,10 +3026,23 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 		String basicType = this.getBasicType();
 		//
 		if (basicType.equals("INTEGER")) {
-			value = XFUtility.getEditValueOfInteger((Integer)value_, editCode, dataSize);
+			if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
+				if (editCode.equals("")) {
+					editCode = dialog_.getSession().getDateFormat();
+				}
+				value = XFUtility.getUserExpressionOfYearMonth(value_.toString(), editCode);
+			} else {
+				if (dataTypeOptionList.contains("MSEQ")) {
+					value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(value_.toString()), dialog_.getSession());
+				} else {
+					//value = XFUtility.getEditValueOfInteger((Integer)value_, editCode, dataSize);
+					value = XFUtility.getEditValueOfLong((Long)value_, editCode, dataSize);
+				}
+			}
 		} else {
 			if (basicType.equals("FLOAT")) {
-				value = XFUtility.getEditValueOfFloat((Float)value_, editCode, decimalSize);
+				//value = XFUtility.getEditValueOfFloat((Float)value_, editCode, decimalSize);
+				value = XFUtility.getEditValueOfDouble((Double)value_, editCode, decimalSize);
 			} else {
 				if (basicType.equals("DATE")) {
 					if (value_ == null || value_.equals("")) {
@@ -2987,19 +3076,6 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 								value = "";
 							} else {
 								value = value_.toString().trim();
-								//
-								if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
-									if (editCode.equals("")) {
-										editCode = dialog_.getSession().getDateFormat();
-									}
-									value = XFUtility.getUserExpressionOfYearMonth(value_.toString(), editCode);
-								}
-								if (dataTypeOptionList.contains("MSEQ")) {
-									String wrkStr = (String)value.toString();
-									if (!wrkStr.equals("")) {
-										value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(wrkStr), dialog_.getSession());
-									}
-								}
 							}
 						}
 					}
@@ -3078,17 +3154,19 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 							if (pos >= 0) {
 								wrkStr = wrkStr.substring(0, pos);
 							}
-							value_ = Integer.parseInt(wrkStr);
+							//value_ = Integer.parseInt(wrkStr);
+							value_ = Long.parseLong(wrkStr);
 						}
 					} else {
 						if (basicType.equals("FLOAT")) {
 							if (value == null || value.equals("")) {
 								value_ = "";
 							} else {
-								value_ = Float.parseFloat(value.toString());
+								//value_ = Float.parseFloat(value.toString());
+								value_ = Double.parseDouble(value.toString());
 							}
 						} else {
-							if (result == null) {
+							if (value == null) {
 								value_ = "";
 							} else {
 								String stringValue = result.getString(this.getFieldID());
@@ -3126,6 +3204,10 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 
 	public Object getOldValue() {
 		return getInternalValue();
+	}
+	
+	public boolean isValueChanged() {
+		return !this.getValue().equals(this.getOldValue());
 	}
 
 	public boolean isEditable() {

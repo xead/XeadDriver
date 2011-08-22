@@ -159,7 +159,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private PrintStream exceptionStream;
 	private String exceptionHeader = "";
 	private boolean lastFocusedWasDetailColumn = false;
-	private int detailRowNoLastValue = 0;
+	private long detailRowNoLastValue = 0;
 	private boolean isAbleToSetupKeysOfNewRecord;
 	private String addRowListTitle = "";
 	private KeyStroke keyStrokeToUpdate = null;
@@ -749,6 +749,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				////////////////
 				if (parmMap_.containsKey("INITIAL_MESSAGE")) {
 					jTextAreaMessages.setText((String)parmMap_.get("INITIAL_MESSAGE"));
+					parmMap_.remove("INITIAL_MESSAGE");
 				} else {
 					if (initialMsg.equals("")) {
 						jTextAreaMessages.setText(res.getString("FunctionMessage7") + buttonUpdateCaption + res.getString("FunctionMessage8"));
@@ -832,9 +833,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void fetchHeaderRecord() {
+		ResultSet resultOfHeaderTable = null;
+		Statement statementForHeaderTable = null;
 		try {
-			ResultSet resultOfHeaderTable;
-			Statement statementForHeaderTable = connection.createStatement();
+			statementForHeaderTable = connection.createStatement();
 			//
 			boolean recordNotFound = true;
 			String inputDialogMessage = "";
@@ -885,11 +887,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					//
 					headerTable.setUpdateCounterValue(resultOfHeaderTable);
 					//
-					resultOfHeaderTable.close();
-					//
 				} else {
-					//
-					resultOfHeaderTable.close();
 					//
 					if (keyInputRequired) {
 						inputDialogMessage = res.getString("FunctionError37");
@@ -916,17 +914,29 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			ex.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
+		} finally {
+			try {
+				if (resultOfHeaderTable != null) {
+					resultOfHeaderTable.close();
+				}
+				if (statementForHeaderTable != null) {
+					statementForHeaderTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace(exceptionStream);
+			}
 		}
 	}
 	
 	int fetchHeaderReferRecords(String event, boolean toBeChecked, String specificReferTable) {
 		int countOfErrors = 0;
 		boolean recordNotFound;
-		ResultSet resultOfReferTable;
+		ResultSet resultOfReferTable = null;
+		Statement statementForReferTable = null;
 		String sql;
 		//
 		try {
-			Statement statementForReferTable = connection.createStatement();
+			statementForReferTable = connection.createStatement();
 			//
 			countOfErrors = countOfErrors + headerTable.runScript(event, "BR()"); /* Script to be run BEFORE READ */
 			//
@@ -964,8 +974,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 								countOfErrors++;
 								headerReferTableList.get(i).setErrorOnRelatedFields();
 							}
-							//
-							resultOfReferTable.close();
 						}
 					}
 				}
@@ -987,6 +995,17 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			ex.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
+		} finally {
+			try {
+				if (resultOfReferTable != null) {
+					resultOfReferTable.close();
+				}
+				if (statementForReferTable != null) {
+					statementForReferTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace(exceptionStream);
+			}
 		}
 		//
 		return countOfErrors;
@@ -995,11 +1014,12 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	int fetchDetailReferRecords(String event, boolean toBeChecked, String specificReferTable, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap) {
 		int countOfErrors = 0;
 		boolean recordNotFound;
-		ResultSet resultOfDetailReferTable;
+		ResultSet resultOfDetailReferTable = null;
+		Statement statementForDetailReferTable = null;
 		String sql;
 		//
 		try {
-			Statement statementForReferTable = connection.createStatement();
+			statementForDetailReferTable = connection.createStatement();
 			//
 			countOfErrors = countOfErrors + detailTable.runScript(event, "BR()", columnValueMap, columnOldValueMap); /* Script to be run AFTER READ primary table */
 			//
@@ -1017,7 +1037,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							sql = detailReferTableList.get(i).getSelectSQL(false);
 							if (!sql.equals("")) {
 								XFUtility.appendLog(sql, processLog);
-								resultOfDetailReferTable = statementForReferTable.executeQuery(sql);
+								resultOfDetailReferTable = statementForDetailReferTable.executeQuery(sql);
 								while (resultOfDetailReferTable.next()) {
 									//
 									if (detailReferTableList.get(i).isRecordToBeSelected(resultOfDetailReferTable)) {
@@ -1034,8 +1054,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 										countOfErrors = countOfErrors + detailTable.runScript(event, "AR(" + detailReferTableList.get(i).getTableAlias() + ")", columnValueMap, columnOldValueMap); /* Script to be run AFTER READ */
 									}
 								}
-								//
-								resultOfDetailReferTable.close();
 							}
 							//
 							if (recordNotFound && toBeChecked && !detailReferTableList.get(i).isOptional()) {
@@ -1062,6 +1080,17 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			ex.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
+		} finally {
+			try {
+				if (resultOfDetailReferTable != null) {
+					resultOfDetailReferTable.close();
+				}
+				if (statementForDetailReferTable != null) {
+					statementForDetailReferTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace(exceptionStream);
+			}
 		}
 		//
 		return countOfErrors;
@@ -1119,6 +1148,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		ArrayList<Object> orderByValueList;
 		String workStr;
 		// 
+		ResultSet resultOfDetailTable = null;
+		Statement statementForDetailTable = null;
 		try {
 			//
 			int rowCount = tableModelMain.getRowCount();
@@ -1127,8 +1158,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			tableRowList.clear();
 			//
-			ResultSet resultOfDetailTable;
-			Statement statementForDetailTable = connection.createStatement();
+			statementForDetailTable = connection.createStatement();
 			//
 			int countOfRows = 0;
 			String sql = detailTable.getSQLToSelect();
@@ -1144,7 +1174,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				detailTable.runScript("BR", "", null, null); /* Detail Table Script to be run BEFORE READ */
 				//
 				for (int i = 0; i < detailColumnList.size(); i++) {
-					//detailColumnList.get(i).initValue();
 					if (detailColumnList.get(i).getTableID().equals(detailTable.getTableID())) {
 						detailColumnList.get(i).setValueOfResultSet(resultOfDetailTable);
 					}
@@ -1200,8 +1229,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				countOfRows++;
 			}
 			//
-			resultOfDetailTable.close();
-			//
 			headerTable.runScript("BU", "AS()"); /* Header Table Script to be run BEFORE UPDATE and AFTER SUMMARY */
 			//
 			if (!detailTable.hasOrderByAsItsOwnFields()) {
@@ -1233,6 +1260,17 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			ex.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
+		} finally {
+			try {
+				if (resultOfDetailTable != null) {
+					resultOfDetailTable.close();
+				}
+				if (statementForDetailTable != null) {
+					statementForDetailTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace(exceptionStream);
+			}
 		}
 	}
 
@@ -1429,12 +1467,13 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		boolean hasNoError = true;
 		ArrayList<String> uniqueKeyList = new ArrayList<String>();
 		ArrayList<String> keyFieldList = new ArrayList<String>();
-		ResultSet resultOfPrimaryTable = null;
+		ResultSet result = null;
+		Statement statement = null;
 		StringTokenizer workTokenizer;
 		String sql = "";
 		//
 		try {
-			Statement statement = connection.createStatement();
+			statement = connection.createStatement();
 			//
 			if (headerTable.hasPrimaryKeyValueAltered()) {
 				hasNoError = false;
@@ -1456,8 +1495,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					}
 					sql = headerTable.getSQLToCheckSKDuplication(keyFieldList);
 					XFUtility.appendLog(sql, processLog);
-					resultOfPrimaryTable = statement.executeQuery(sql);
-					if (resultOfPrimaryTable.next()) {
+					result = statement.executeQuery(sql);
+					if (result.next()) {
 						hasNoError = false;
 						messageList.add(res.getString("FunctionError22"));
 						for (int j = 0; j < headerFieldList.size(); j++) {
@@ -1495,8 +1534,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							sql = detailTable.getSQLToCheckSKDuplication(tableRowNumber, keyFieldList, false);
 						}
 						XFUtility.appendLog(sql, processLog);
-						resultOfPrimaryTable = statement.executeQuery(sql);
-						if (resultOfPrimaryTable.next()) {
+						result = statement.executeQuery(sql);
+						if (result.next()) {
 							hasNoError = false;
 							messageList.add(res.getString("FunctionError28") + rowNumber + res.getString("FunctionError29"));
 						}
@@ -1515,8 +1554,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			setErrorAndCloseFunction();
 		} finally {
 			try {
-				if (resultOfPrimaryTable != null) {
-					resultOfPrimaryTable.close();
+				if (result != null) {
+					result.close();
+				}
+				if (statement != null) {
+					statement.close();
 				}
 			} catch (SQLException e) {
 				e.printStackTrace(exceptionStream);
@@ -1542,7 +1584,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					int rowNumber = jTableMain.convertRowIndexToModel(i);
 					if (rowNumber > -1) {
 						XF310_DetailRowNumber tableRowNumber = (XF310_DetailRowNumber)tableModelMain.getValueAt(rowNumber,0);
-						int rowNoValue = (Integer)tableRowNumber.getKeyValueMap().get(detailTable.getDetailRowNoID());
+						long rowNoValue = (Long)tableRowNumber.getKeyValueMap().get(detailTable.getDetailRowNoID());
 						if (rowNoValue > detailRowNoLastValue) {
 							detailRowNoLastValue = rowNoValue;
 						}
@@ -2099,17 +2141,17 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			//
 			workBook.write(fileOutputStream);
-			fileOutputStream.close();
 			//
 			messageList.add(res.getString("XLSComment1"));
 			//
-		} catch (Exception e1) {
+		} catch (Exception e) {
 			messageList.add(res.getString("XLSErrorMessage"));
-			e1.printStackTrace(exceptionStream);
+			e.printStackTrace(exceptionStream);
+		} finally {
 			try {
 				fileOutputStream.close();
-			} catch (Exception e2) {
-				e2.printStackTrace(exceptionStream);
+			} catch (Exception e) {
+				e.printStackTrace(exceptionStream);
 			}
 		}
 		return xlsFile.toURI();
@@ -3184,7 +3226,8 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 		boolean isNullError = false;
 		//
 		if (basicType.equals("INTEGER")) {
-			int value = Integer.parseInt((String)component.getInternalValue());
+			//int value = Integer.parseInt((String)component.getInternalValue());
+			long value = Long.parseLong((String)component.getInternalValue());
 			if (!this.isNullable) {
 				if (value == 0) {
 					isNullError = true;
@@ -3248,17 +3291,19 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 						if (pos >= 0) {
 							wrkStr = wrkStr.substring(0, pos);
 						}
-						component.setValue(Integer.parseInt(wrkStr));
+						//component.setValue(Integer.parseInt(wrkStr));
+						component.setValue(Long.parseLong(wrkStr));
 					}
 				} else {
 					if (this.getBasicType().equals("FLOAT")) {
 						if (value == null || value.equals("")) {
 							component.setValue("");
 						} else {
-							component.setValue(Float.parseFloat(value.toString()));
+							//component.setValue(Float.parseFloat(value.toString()));
+							component.setValue(Double.parseDouble(value.toString()));
 						}
 					} else {
-						if (result == null) {
+						if (value == null) {
 							component.setValue("");
 						} else {
 							String stringValue = result.getString(this.getFieldID());
@@ -3300,10 +3345,12 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 		Object returnObj = null;
 		//
 		if (this.getBasicType().equals("INTEGER")) {
-			returnObj = Integer.parseInt((String)component.getOldValue());
+			//returnObj = Integer.parseInt((String)component.getOldValue());
+			returnObj = Long.parseLong((String)component.getOldValue());
 		} else {
 			if (this.getBasicType().equals("FLOAT")) {
-				returnObj = Float.parseFloat((String)component.getOldValue());
+				//returnObj = Float.parseFloat((String)component.getOldValue());
+				returnObj = Double.parseDouble((String)component.getOldValue());
 			} else {
 				if (component.getOldValue() == null) {
 					returnObj = "";
@@ -3315,15 +3362,21 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 		//
 		return returnObj;
 	}
+	
+	public boolean isValueChanged() {
+		return !this.getValue().equals(this.getOldValue());
+	}
 
 	public Object getValueForScript(){
 		Object returnObj = null;
 		//
 		if (this.getBasicType().equals("INTEGER")) {
-			returnObj = Integer.parseInt((String)component.getInternalValue());
+			//returnObj = Integer.parseInt((String)component.getInternalValue());
+			returnObj = Long.parseLong((String)component.getInternalValue());
 		} else {
 			if (this.getBasicType().equals("FLOAT")) {
-				returnObj = Float.parseFloat((String)component.getInternalValue());
+				//returnObj = Float.parseFloat((String)component.getInternalValue());
+				returnObj = Double.parseDouble((String)component.getInternalValue());
 			} else {
 				returnObj = (String)component.getInternalValue();
 			}
@@ -3345,10 +3398,12 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 		Object returnObj = null;
 		//
 		if (this.getBasicType().equals("INTEGER")) {
-			returnObj = Integer.parseInt((String)component.getInternalValue());
+			//returnObj = Integer.parseInt((String)component.getInternalValue());
+			returnObj = Long.parseLong((String)component.getInternalValue());
 		} else {
 			if (this.getBasicType().equals("FLOAT")) {
-				returnObj = Float.parseFloat((String)component.getInternalValue());
+				//returnObj = Float.parseFloat((String)component.getInternalValue());
+				returnObj = Double.parseDouble((String)component.getInternalValue());
 			} else {
 				if (component.getInternalValue() == null) {
 					returnObj = "";
@@ -4300,23 +4355,36 @@ class XF310_DetailCellEditorWithComboBox extends JComboBox implements XFTableCel
 					this.addItem("");
 				}
 				//
+				Statement statement = null;
+				ResultSet result = null;
 				try {
-					Statement statement = dialog_.getSession().getConnection().createStatement();
-					ResultSet result = statement.executeQuery("select KBUSERKUBUN,TXUSERKUBUN  from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST");
+					statement = dialog_.getSession().getConnection().createStatement();
+					result = statement.executeQuery("select KBUSERKUBUN,TXUSERKUBUN  from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST");
 					while (result.next()) {
 						//
 						kubunKeyValueList.add(result.getString("KBUSERKUBUN").trim());
 						wrk = result.getString("TXUSERKUBUN").trim();
 						this.addItem(wrk);
 					}
-					result.close();
 					//
 					if (this.getItemCount() == 0) {
 						JOptionPane.showMessageDialog(null, res.getString("FunctionError24") + dataSourceName + res.getString("FunctionError25"));
 					}
+					//
 				} catch (SQLException e) {
 					e.printStackTrace(dialog_.getExceptionStream());
 					dialog_.setErrorAndCloseFunction();
+				} finally {
+					try {
+						if (result != null) {
+							result.close();
+						}
+						if (statement != null) {
+							statement.close();
+						}
+					} catch (SQLException e) {
+						e.printStackTrace(dialog_.getExceptionStream());
+					}
 				}
 			} else {
 				//
@@ -4486,13 +4554,14 @@ class XF310_DetailCellEditorWithComboBox extends JComboBox implements XFTableCel
 				this.addItem("");
 			}
 			//
+			String wrk, sql;
+			Statement statement = null;
+			ResultSet result = null;
 			try {
-				String wrk = "";
-				String sql = referTable_.getSelectSQL(true);
-				//XFUtility.appendLog(sql, dialog_.getProcessLog());
+				sql = referTable_.getSelectSQL(true);
 				dialog_.setProcessLog(sql);
-				Statement statement = dialog_.getSession().getConnection().createStatement();
-				ResultSet result = statement.executeQuery(sql);
+				statement = dialog_.getSession().getConnection().createStatement();
+				result = statement.executeQuery(sql);
 				while (result.next()) {
 					keyValues = new XFHashMap();
 					//
@@ -4505,11 +4574,21 @@ class XF310_DetailCellEditorWithComboBox extends JComboBox implements XFTableCel
 					tableKeyValuesList.add(keyValues);
 					this.addItem(wrk);
 				}
-				result.close();
 				//
 			} catch (SQLException e) {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
+			} finally {
+				try {
+					if (result != null) {
+						result.close();
+					}
+					if (statement != null) {
+						statement.close();
+					}
+				} catch (SQLException e) {
+					e.printStackTrace(dialog_.getExceptionStream());
+				}
 			}
 			//
 			this.setSelectedItem(selectedItemValue);
@@ -5165,10 +5244,12 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 			} else {
 				wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 				if (!wrkStr.equals("")) {
+					String wrk = "";
+					Statement statement = null;
+					ResultSet result = null;
 					try {
-						String wrk = "";
-						Statement statement = dialog_.getSession().getConnection().createStatement();
-						ResultSet result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
+						statement = dialog_.getSession().getConnection().createStatement();
+						result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
 						while (result.next()) {
 							//
 							kubunValueList.add(result.getString("KBUSERKUBUN").trim());
@@ -5178,13 +5259,24 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 							}
 							kubunTextList.add(wrk);
 						}
-						result.close();
+						//
 						if (!isNonEditableField) {
 							editor = new XF310_DetailCellEditorWithComboBox(functionColumnElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
 						}
 					} catch (SQLException e) {
 						e.printStackTrace(dialog_.getExceptionStream());
 						dialog_.setErrorAndCloseFunction();
+					} finally {
+						try {
+							if (result != null) {
+								result.close();
+							}
+							if (statement != null) {
+								statement.close();
+							}
+						} catch (SQLException e) {
+							e.printStackTrace(dialog_.getExceptionStream());
+						}
 					}
 				} else {
 					if (dataTypeOptionList.contains("KANJI")) {
@@ -5254,16 +5346,23 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 		//
 		renderer = new XF310_DetailCellRenderer();
 		if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-			renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+			if (this.getTypeOptionList().contains("MSEQ") || this.getTypeOptionList().contains("FYEAR")) {
+				renderer.setHorizontalAlignment(SwingConstants.LEFT);
+				headerRenderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.LEFT);
+			} else {
+				renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+				headerRenderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.RIGHT);
+			}
 		} else {
 			renderer.setHorizontalAlignment(SwingConstants.LEFT);
-		}
-		//
-		if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-			headerRenderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.RIGHT);
-		} else {
 			headerRenderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.LEFT);
 		}
+		//
+		//if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+		//	headerRenderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.RIGHT);
+		//} else {
+		//	headerRenderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.LEFT);
+		//}
 		//
 		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
 			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
@@ -5374,7 +5473,8 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 			if (object.equals("")) {
 				object = "0";
 			}
-			int value = Integer.parseInt(object.toString());
+			//int value = Integer.parseInt(object.toString());
+			long value = Long.parseLong(object.toString());
 			if (!this.isNullable) {
 				if (value == 0) {
 					isNullError = true;
@@ -5525,7 +5625,8 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 				if (pos >= 0) {
 					wrkStr = wrkStr.substring(0, pos);
 				}
-				value = integerFormat.format(Integer.parseInt(wrkStr));
+				//value = integerFormat.format(Integer.parseInt(wrkStr));
+				value = integerFormat.format(Long.parseLong(wrkStr));
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
@@ -5701,18 +5802,19 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 							if (pos >= 0) {
 								wrkStr = wrkStr.substring(0, pos);
 							}
-							value_ = Integer.parseInt(wrkStr);
+							//value_ = Integer.parseInt(wrkStr);
+							value_ = Long.parseLong(wrkStr);
 						}
 					} else {
 						if (basicType.equals("FLOAT")) {
 							if (value == null || value.equals("")) {
 								value_ = "";
 							} else {
-								value_ = Float.parseFloat(value.toString());
+								//value_ = Float.parseFloat(value.toString());
+								value_ = Double.parseDouble(value.toString());
 							}
 						} else {
-							//value_ = value;
-							if (result == null) {
+							if (value == null) {
 								value_ = "";
 							} else {
 								String stringValue = result.getString(this.getFieldID());
@@ -5757,6 +5859,10 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 		} else {
 			return oldValue_;
 		}
+	}
+	
+	public boolean isValueChanged() {
+		return !this.getValue().equals(this.getOldValue());
 	}
 
 	public boolean isEditable() {
@@ -6978,7 +7084,8 @@ class XF310_DetailTable extends Object {
 		Object returnValue = null;
 		if (basicType.equals("INTEGER")) {
 			String wrkStr = value.toString().replace(".0", "");
-			returnValue = Integer.parseInt(wrkStr);
+			//returnValue = Integer.parseInt(wrkStr);
+			returnValue = Long.parseLong(wrkStr);
 		}
 		if (basicType.equals("FLOAT")) {
 			returnValue = Double.parseDouble(value.toString());
@@ -7680,9 +7787,11 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 					jComboBox.addItem("");
 				}
 				//
+				Statement statement = null;
+				ResultSet result = null;
 				try {
-					Statement statement = dialog_.getSession().getConnection().createStatement();
-					ResultSet result = statement.executeQuery("select KBUSERKUBUN,TXUSERKUBUN  from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST");
+					statement = dialog_.getSession().getConnection().createStatement();
+					result = statement.executeQuery("select KBUSERKUBUN,TXUSERKUBUN  from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST");
 					while (result.next()) {
 						//
 						kubunKeyValueList.add(result.getString("KBUSERKUBUN").trim());
@@ -7692,7 +7801,6 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 							fieldWidth = metrics.stringWidth(wrk);
 						}
 					}
-					result.close();
 					fieldWidth = fieldWidth + 30;
 					//
 					if (jComboBox.getItemCount() == 0) {
@@ -7701,6 +7809,17 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 				} catch (SQLException e) {
 					e.printStackTrace(dialog_.getExceptionStream());
 					dialog_.setErrorAndCloseFunction();
+				} finally {
+					try {
+						if (result != null) {
+							result.close();
+						}
+						if (statement != null) {
+							statement.close();
+						}
+					} catch (SQLException e) {
+						e.printStackTrace(dialog_.getExceptionStream());
+					}
 				}
 			} else {
 				//
@@ -7771,11 +7890,13 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 				jComboBox.addItem("");
 			}
 			//
+			String wrk, sql;
+			Statement statement = null;
+			ResultSet result = null;
 			try {
-				String wrk = "";
-				String sql = referTable_.getSelectSQL(true);
-				Statement statement = dialog_.getSession().getConnection().createStatement();
-				ResultSet result = statement.executeQuery(sql);
+				sql = referTable_.getSelectSQL(true);
+				statement = dialog_.getSession().getConnection().createStatement();
+				result = statement.executeQuery(sql);
 				while (result.next()) {
 					if (referTable_.isRecordToBeSelected(result)) {
 						//
@@ -7789,10 +7910,20 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 						jComboBox.addItem(wrk);
 					}
 				}
-				result.close();
 			} catch (SQLException e) {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
+			} finally {
+				try {
+					if (result != null) {
+						result.close();
+					}
+					if (statement != null) {
+						statement.close();
+					}
+				} catch (SQLException e) {
+					e.printStackTrace(dialog_.getExceptionStream());
+				}
 			}
 			//
 			jComboBox.setSelectedItem(selectedItemValue);

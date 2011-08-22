@@ -2008,6 +2008,10 @@ class XF210_Field extends JPanel implements XFScriptableField {
 		//
 		return returnObj;
 	}
+	
+	public boolean isValueChanged() {
+		return !this.getValue().equals(this.getOldValue());
+	}
 
 	public Object getExternalValue(){
 		Object returnObj = null;

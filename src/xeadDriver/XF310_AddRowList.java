@@ -40,7 +40,6 @@ import java.awt.FontMetrics;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -61,7 +60,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
-
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -90,7 +88,6 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
-
 import org.w3c.dom.NodeList;
 
 class XF310_AddRowList extends JDialog implements XFScriptable {
@@ -136,6 +133,10 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			dialog_.getSession().browseHelp();
 		}
 	};
+	private ResultSet resultOfDetailTable = null;
+	private Statement statementForDetailTable = null;
+	private ResultSet resultOfReferTable = null;
+	private Statement statementForReferTable = null;
 	
 	public XF310_AddRowList(XF310 dialog) throws Exception {
 		super(dialog, "", true);
@@ -325,7 +326,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			if (addRowListColumnList.get(j).isVisibleOnPanel()) {
 				column = jTableMain.getColumnModel().getColumn(addRowListColumnList.get(j).getColumnIndex());
 				column.setPreferredWidth(addRowListColumnList.get(j).getWidth());
-				column.setCellRenderer(new DefaultRenderer());
+				//column.setCellRenderer(new DefaultRenderer());
+				column.setCellRenderer(addRowListColumnList.get(j).getCellRenderer());
 				column.setHeaderRenderer(addRowListColumnList.get(j).getHeaderRenderer());
 			}
 		}
@@ -432,7 +434,9 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		this.pack();
 	}
 	
-	public int requestSelection() throws Exception, SQLException, ScriptException {
+	//public int requestSelection() throws Exception, SQLException, ScriptException {
+	public int requestSelection() {
+		try {
 		//
 		if (isFirstTimeToSelect) {
 			selectDetailRecordsAndSetupTableRows();
@@ -469,6 +473,31 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		//
 		this.setVisible(true);
 		//
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} catch (ScriptException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (resultOfDetailTable != null) {
+					resultOfDetailTable.close();
+				}
+				if (resultOfReferTable != null) {
+					resultOfReferTable.close();
+				}
+				if (statementForDetailTable != null) {
+					statementForDetailTable.close();
+				}
+				if (statementForReferTable != null) {
+					statementForReferTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		//
 		return result;
 	}
 	
@@ -476,8 +505,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		int columnIndex;
 		String workStr;
 		HashMap<String, Object> columnValueMap, returnFieldMap;
-		ResultSet resultOfDetailTable;
-		Statement statementForDetailTable = dialog_.getSession().getConnection().createStatement();
+		statementForDetailTable = dialog_.getSession().getConnection().createStatement();
 		//
 		int rowCount = tableModelMain.getRowCount();
 		for (int i = 0; i < rowCount; i++) {
@@ -488,8 +516,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		ArrayList<WorkingRow> tableRowList = new ArrayList<WorkingRow>();
 		int countOfRows = 0;
 		int workIndex;
+		//
 		String sql = addRowListTable.getSQLToSelect();
-		//XFUtility.appendLog(sql, dialog_.getProcessLog());
 		dialog_.setProcessLog(sql);
 		resultOfDetailTable = statementForDetailTable.executeQuery(sql);
 		while (resultOfDetailTable.next()) {
@@ -550,8 +578,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				countOfRows++;
 			}
 		}
-		//
-		resultOfDetailTable.close();
 		//
 		if (!addRowListTable.isOrderByInSelectSQL()) {
 			WorkingRow[] workingRowArray = tableRowList.toArray(new WorkingRow[0]);
@@ -789,10 +815,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	} 
 	
 	private void fetchAddRowListReferRecords(String event, String specificReferTable, HashMap<String, Object> columnValueMap) throws SQLException, ScriptException {
-		ResultSet resultOfDetailReferTable;
 		String sql;
-		//
-		Statement statementForReferTable = dialog_.getSession().getConnection().createStatement();
+		statementForReferTable = dialog_.getSession().getConnection().createStatement();
 		//
 		addRowListTable.runScript(event, "BR()", columnValueMap); /* Script to be run AFTER READ primary table BEFORE READ any join tables */
 		//
@@ -807,16 +831,15 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 						//
 						sql = addRowListReferTableList.get(i).getSelectSQL();
 						if (!sql.equals("")) {
-							//XFUtility.appendLog(sql, dialog_.getProcessLog());
 							dialog_.setProcessLog(sql);
-							resultOfDetailReferTable = statementForReferTable.executeQuery(sql);
-							while (resultOfDetailReferTable.next()) {
+							resultOfReferTable = statementForReferTable.executeQuery(sql);
+							while (resultOfReferTable.next()) {
 								//
-								if (addRowListReferTableList.get(i).isRecordToBeSelected(resultOfDetailReferTable)) {
+								if (addRowListReferTableList.get(i).isRecordToBeSelected(resultOfReferTable)) {
 									//
 									for (int j = 0; j < addRowListColumnList.size(); j++) {
 										if (addRowListColumnList.get(j).getTableAlias().equals(addRowListReferTableList.get(i).getTableAlias())) {
-											addRowListColumnList.get(j).setValueOfResultSet(resultOfDetailReferTable);
+											addRowListColumnList.get(j).setValueOfResultSet(resultOfReferTable);
 											columnValueMap.put(addRowListColumnList.get(j).getDataSourceName(), addRowListColumnList.get(j).getInternalValue());
 										}
 									}
@@ -825,8 +848,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 									//
 								}
 							}
-							//
-							resultOfDetailReferTable.close();
 						}
 					}
 				}
@@ -1045,6 +1066,23 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
+			try {
+				if (resultOfDetailTable != null) {
+					resultOfDetailTable.close();
+				}
+				if (resultOfReferTable != null) {
+					resultOfReferTable.close();
+				}
+				if (statementForDetailTable != null) {
+					statementForDetailTable.close();
+				}
+				if (statementForReferTable != null) {
+					statementForReferTable.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			//
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
@@ -1706,10 +1744,12 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 		//
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 		if (!wrkStr.equals("")) {
+			String wrk = "";
+			Statement statement = null;
+			ResultSet result = null;
 			try {
-				String wrk = "";
-				Statement statement = dialog_.getSession().getConnection().createStatement();
-				ResultSet result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
+				statement = dialog_.getSession().getConnection().createStatement();
+				result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
 				while (result.next()) {
 					//
 					kubunValueList.add(result.getString("KBUSERKUBUN").trim());
@@ -1719,10 +1759,20 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 					}
 					kubunTextList.add(wrk);
 				}
-				result.close();
 			} catch (SQLException e) {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
+			} finally {
+				try {
+					if (result != null) {
+						result.close();
+					}
+					if (statement != null) {
+						statement.close();
+					}
+				} catch (SQLException e) {
+					e.printStackTrace(dialog_.getExceptionStream());
+				}
 			}
 		} else {
 			if (dataTypeOptionList.contains("KANJI")) {
@@ -1973,6 +2023,10 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 	public String getDataTypeOptions() {
 		return dataTypeOptions;
 	}
+	
+	public ArrayList<String> getTypeOptionList() {
+		return dataTypeOptionList;
+	}
 
 	public String getFieldOptions() {
 		return fieldOptions;
@@ -2002,10 +2056,28 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 		columnIndex = index;
 	}
 
+	public XF310_AddRowListCellRenderer getCellRenderer(){
+		XF310_AddRowListCellRenderer renderer = new XF310_AddRowListCellRenderer();
+		if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+			if (this.getTypeOptionList().contains("MSEQ") || this.getTypeOptionList().contains("FYEAR")) {
+				renderer.setHorizontalAlignment(SwingConstants.LEFT);
+			} else {
+				renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+			}
+		} else {
+			renderer.setHorizontalAlignment(SwingConstants.LEFT);
+		}
+		return renderer;
+	}
+
 	public HorizontalAlignmentHeaderRenderer getHeaderRenderer(){
 		HorizontalAlignmentHeaderRenderer renderer = null;
 		if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-			renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.RIGHT);
+			if (this.getTypeOptionList().contains("MSEQ") || this.getTypeOptionList().contains("FYEAR")) {
+				renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.LEFT);
+			} else {
+				renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.RIGHT);
+			}
 		} else {
 			renderer = new HorizontalAlignmentHeaderRenderer(SwingConstants.LEFT);
 		}
@@ -2043,7 +2115,7 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 						value_ = Float.parseFloat(value.toString());
 					}
 				} else {
-					if (result == null) {
+					if (value == null) {
 						value_ = "";
 					} else {
 						String stringValue = result.getString(this.getFieldID());
@@ -2075,6 +2147,10 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 
 	public Object getOldValue() {
 		return getInternalValue();
+	}
+	
+	public boolean isValueChanged() {
+		return !this.getValue().equals(this.getOldValue());
 	}
 
 	public void setEditable(boolean editable){
@@ -2132,35 +2208,30 @@ class XF310_AddRowListCell extends Object {
 	}
 }
 
-
-//class XF310_AddRowListCellRenderer extends DefaultTableCellRenderer {
-//	private static final long serialVersionUID = 1L;
-//	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
-//		XF310_AddRowListCell cell = (XF310_AddRowListCell)value;
-//		//
-//		setText((String)cell.getValue());
-//		setFont(new java.awt.Font("Dialog", 0, 14));
-//		//
-//		if (isSelected) {
-//			setBackground(table.getSelectionBackground());
-//			setForeground(table.getSelectionForeground());
-//		} else {
-//			if (row%2==0) {
-//				setBackground(table.getBackground());
-//			} else {
-//				setBackground(XFUtility.ODD_ROW_COLOR);
-//			}
-//			setForeground(table.getForeground());
-//		}
-//		//
-//		if (!cell.getColor().equals(table.getForeground())) {
-//			setForeground(cell.getColor());
-//		}
-//		//
-//		validate();
-//		return this;
-//	}
-//}
+class XF310_AddRowListCellRenderer extends DefaultTableCellRenderer {
+	private static final long serialVersionUID = 1L;
+	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
+		XF310_AddRowListCell cell = (XF310_AddRowListCell)value;
+		//
+		setText((String)cell.getExternalValue());
+		setFont(new java.awt.Font("Dialog", 0, 14));
+		//
+		if (isSelected) {
+			setBackground(table.getSelectionBackground());
+			setForeground(table.getSelectionForeground());
+		} else {
+			if (row%2==0) {
+				setBackground(table.getBackground());
+			} else {
+				setBackground(XFUtility.ODD_ROW_COLOR);
+			}
+			setForeground(table.getForeground());
+		}
+		//
+		validate();
+		return this;
+	}
+}
 
 class XF310_AddRowListReferTable extends Object {
 	private static final long serialVersionUID = 1L;

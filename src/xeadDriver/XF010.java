@@ -852,6 +852,10 @@ class XF010_Field extends Object implements XFScriptableField {
 	public Object getOldValue() {
 		return value_;
 	}
+	
+	public boolean isValueChanged() {
+		return !this.getValue().equals(this.getOldValue());
+	}
 
 	public void setOldValue(Object object){
 	}

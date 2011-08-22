@@ -49,6 +49,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -95,6 +96,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	private Timer timer;
 	private TimerTaskScript task = null;
 	private boolean alreadyRun = false;
+	private boolean errorHasOccured = false;
 	private GridLayout gridLayoutInfo = new GridLayout();
 	private JLabel jLabelFunctionID = new JLabel();
 	private JLabel jLabelSessionID = new JLabel();
@@ -206,7 +208,10 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jButtonExit.setBounds(new Rectangle(5, 2, 100, 32));
 		jButtonExit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				setVisible(false);
+				if (timer != null) {
+					stopTimer();
+				}
+				closeFunction();
 			}
 		});
 		jButtonStart.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
@@ -222,7 +227,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jButtonStop.setBounds(new Rectangle(295, 2, 100, 32));
 		jButtonStop.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				stopTimer();
+				if (timer != null) {
+					stopTimer();
+				}
 			}
 		});
 		jButtonIconify.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
@@ -256,9 +263,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
 		try {
 
-			///////////////////
-			// Process parms //
-			///////////////////
+			////////////////////////
+			// Process parameters //
+			////////////////////////
 			parmMap_ = parmMap;
 			if (parmMap_ == null) {
 				parmMap_ = new HashMap<String, Object>();
@@ -271,6 +278,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			// Initialize variants //
 			/////////////////////////
 			instanceIsAvailable_ = false;
+			errorHasOccured = false;
 			exceptionLog = new ByteArrayOutputStream();
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
@@ -349,17 +357,69 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	protected void processWindowEvent(WindowEvent e) {
 		super.processWindowEvent(e);
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-			stopTimer();
+			if (timer != null) {
+				stopTimer();
+			}
 			closeFunction();
 		}
 	}
 
+	public void callFunction(String functionID) {
+		try {
+			if (this.isVisible()) {
+				jTextAreaMessages.setText(getNewMessage(session_.getFunctionName(functionID) + "(" + functionID + ")", res.getString("FunctionMessage38")));
+				jScrollPaneMessages.validate();
+				jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
+			}
+			//
+			returnMap_ = XFUtility.callFunction(session_, functionID, parmMap_);
+			if (returnMap_.get("RETURN_MESSAGE") != null && !returnMap_.get("RETURN_MESSAGE").equals("")) {
+				jTextAreaMessages.setText(getNewMessage(returnMap_.get("RETURN_MESSAGE").toString(), ""));
+				jScrollPaneMessages.validate();
+				jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
+			}
+			if (returnMap_.get("RETURN_CODE").equals("99")) {
+				errorHasOccured = true;
+			}
+			//
+		} catch (Exception e) {
+			String message = res.getString("FunctionError9") + functionID + res.getString("FunctionError10");
+			JOptionPane.showMessageDialog(null,message);
+			if (this.isVisible()) {
+				jTextAreaMessages.setText(getNewMessage(message, ""));
+			}
+			exceptionHeader = message;
+			setErrorAndCloseFunction();
+		}
+	}
+	
+	public void cancelWithMessage(String message) {
+		if (!message.equals("")) {
+			JOptionPane.showMessageDialog(null, message);
+			returnMap_.put("RETURN_MESSAGE", message);
+		}
+		errorHasOccured = true;
+	}
+
 	void setErrorAndCloseFunction() {
-		returnMap_.put("RETURN_CODE", "99");
+		errorHasOccured = true;
 		closeFunction();
 	}
 
 	void closeFunction() {
+		if (errorHasOccured) {
+			try {
+				returnMap_.put("RETURN_CODE", "99");
+				session_.getConnection().rollback();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		//
+		if (returnMap_.get("RETURN_MESSAGE") != null && !returnMap_.get("RETURN_MESSAGE").equals("")) {
+			setProcessLog(returnMap_.get("RETURN_MESSAGE").toString());
+		}
+		//
 		instanceIsAvailable_ = true;
 		//
 		String wrkStr;
@@ -373,39 +433,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		wrkStr = wrkStr.replace("'", "\"");
 		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
-	}
-	
-	public void cancelWithMessage(String message) {
-		if (!message.equals("")) {
-			JOptionPane.showMessageDialog(null, message);
-			if (this.isVisible()) {
-				jTextAreaMessages.setText(getNewMessage(message, ""));
-			}
-		}
-		if (returnMap_.get("RETURN_CODE").equals("00")) {
-			returnMap_.put("RETURN_CODE", "01");
-		}
-	}
-
-	public void callFunction(String functionID) {
-		try {
-			//
-			if (this.isVisible()) {
-				jTextAreaMessages.setText(getNewMessage(session_.getFunctionName(functionID) + "(" + functionID + ")", res.getString("FunctionMessage38")));
-				jScrollPaneMessages.validate();
-				jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
-			}
-			//
-			returnMap_ = XFUtility.callFunction(session_, functionID, parmMap_);
-			//
-		} catch (Exception e) {
-			String message = res.getString("FunctionError9") + functionID + res.getString("FunctionError10");
-			JOptionPane.showMessageDialog(null,message);
-			if (this.isVisible()) {
-				jTextAreaMessages.setText(getNewMessage(message, ""));
-			}
-			exceptionHeader = message;
-			setErrorAndCloseFunction();
+		//
+		if (this.isVisible()) {
+			this.setVisible(false);
 		}
 	}
 
@@ -424,10 +454,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	public HashMap<String, Object> getReturnMap() {
 		return returnMap_;
 	}
-
-	//public StringBuffer getProcessLog() {
-	//	return processLog;
-	//}
 
 	public Session getSession() {
 		return session_;
@@ -453,22 +479,21 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage47"), ""));
 			runScript();
 			jButtonStart.setEnabled(false);
-			jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), "") + "\n");
+			if (errorHasOccured) {
+				jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage51"), "") + "\n");
+			} else {
+				jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), "") + "\n");
+			}
 			//
 		} catch(ScriptException e) {
 			JOptionPane.showMessageDialog(null, res.getString("FunctionError12"));
 			exceptionHeader = "'Script error in the function'\n";
 			e.printStackTrace(exceptionStream);
-			jTextAreaMessages.setText(getNewMessage(exceptionHeader, res.getString("FunctionMessage46")));
-			jButtonStart.setEnabled(true);
-			jButtonStop.setEnabled(false);
-			jButtonExit.setEnabled(true);
+			setErrorAndCloseFunction();
 		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, res.getString("FunctionError5"));
 			e.printStackTrace(exceptionStream);
-			jTextAreaMessages.setText(getNewMessage(res.getString("FunctionError5"), res.getString("FunctionMessage46")));
-			jButtonStart.setEnabled(true);
-			jButtonStop.setEnabled(false);
-			jButtonExit.setEnabled(true);
+			setErrorAndCloseFunction();
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
@@ -572,7 +597,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				runScript();
 				//
 				jButtonStart.setEnabled(false);
-				jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), ""));
+				if (errorHasOccured) {
+					jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage51"), "") + "\n");
+				} else {
+					jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), "") + "\n");
+				}
 				//
 				if (jCheckBoxRepeat.isSelected()) {
 					startTimer();
@@ -584,16 +613,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				JOptionPane.showMessageDialog(null, res.getString("FunctionError12"));
 				exceptionHeader = "'Script error in the function'\n";
 				e.printStackTrace(exceptionStream);
-				jTextAreaMessages.setText(getNewMessage(exceptionHeader, res.getString("FunctionMessage46")));
-				jButtonStart.setEnabled(true);
-				jButtonStop.setEnabled(false);
-				jButtonExit.setEnabled(true);
+				setErrorAndCloseFunction();
 			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, res.getString("FunctionError5"));
 				e.printStackTrace(exceptionStream);
-				jTextAreaMessages.setText(getNewMessage(res.getString("FunctionError5"), res.getString("FunctionMessage46")));
-				jButtonStart.setEnabled(true);
-				jButtonStop.setEnabled(false);
-				jButtonExit.setEnabled(true);
+				setErrorAndCloseFunction();
 			} finally {
 				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}

@@ -192,6 +192,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		jTextAreaMessages.setFocusable(false);
 		jTextAreaMessages.setLineWrap(true);
+		jTextAreaMessages.setWrapStyleWord(true);
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
 		jSplitPaneCenter.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		jSplitPaneCenter.add(jPanelCenter, JSplitPane.TOP);

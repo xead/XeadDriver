@@ -214,6 +214,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		jTextAreaMessages.setFocusable(false);
 		jTextAreaMessages.setLineWrap(true);
+		jTextAreaMessages.setWrapStyleWord(true);
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
 		jScrollPaneMessages.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));

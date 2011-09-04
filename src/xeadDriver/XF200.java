@@ -197,6 +197,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		jTextAreaMessages.setFocusable(false);
 		jTextAreaMessages.setLineWrap(true);
+		jTextAreaMessages.setWrapStyleWord(true);
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
 		//
 		jSplitPaneMain.setOrientation(JSplitPane.VERTICAL_SPLIT);
@@ -2193,7 +2194,7 @@ class XF200_Field extends JPanel implements XFScriptableField {
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
 			jLabelFieldComment.setText(" " + wrkStr);
-			jLabelFieldComment.setForeground(Color.gray);
+			jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font("Dialog", 0, 12));
 			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			metrics = jLabelFieldComment.getFontMetrics(new java.awt.Font("Dialog", 0, 12));

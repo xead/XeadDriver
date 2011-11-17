@@ -1106,7 +1106,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText);
+			scriptEngine.eval(scriptText + session_.getScriptFunctions());
 		}
 	}
 
@@ -1120,6 +1120,10 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	
 	public void setProcessLog(String text) {
 		XFUtility.appendLog(text, processLog);
+	}
+
+	public XFTableOperator createTableOperator(String oparation, String tableID) {
+		return new XFTableOperator(session_, processLog, oparation, tableID);
 	}
 
 	public HashMap<String, Object> getReturnMap() {

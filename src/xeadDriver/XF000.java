@@ -496,6 +496,10 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		XFUtility.appendLog(text, processLog);
 	}
 
+	public XFTableOperator createTableOperator(String oparation, String tableID) {
+		return new XFTableOperator(session_, processLog, oparation, tableID);
+	}
+
 	public HashMap<String, Object> getReturnMap() {
 		return returnMap_;
 	}
@@ -514,7 +518,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		String scriptText = XFUtility.substringLinesWithTokenOfEOL(functionElement_.getAttribute("Script"), "\n");
 		if (!scriptText.equals("")) {
-			scriptEngine.eval(scriptText);
+			scriptEngine.eval(scriptText + session_.getScriptFunctions());
 		}
 	}
 

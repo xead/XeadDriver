@@ -1,5 +1,5 @@
 Manifest-Version: 1.0 
 Sealed: true 
 Main-Class: xeadDriver.Application
-Class-Path: ./derby.jar ./derbyclient.jar ./xercesImpl.jar ./poi-3.2-FINAL-20081019.jar ./iText-2.1.7.jar ./iTextAsian.jar
+Class-Path: ./derby.jar ./derbyclient.jar ./xercesImpl.jar ./poi-3.2-FINAL-20081019.jar ./iText-2.1.7.jar ./iTextAsian.jar ./commons-codec-1.4.jar ./commons-logging-1.1.1.jar ./httpclient-4.1.2.jar ./httpclient-cache-4.1.2.jar ./httpcore-4.1.2.jar ./httpmime-4.1.2.jar
 

@@ -9,5 +9,11 @@
 	<classpathentry kind="lib" path="C:/Program Files/Sun/JavaDB/lib/derbyclient.jar"/>
 	<classpathentry kind="lib" path="D:/iText/iText-2.1.7.jar"/>
 	<classpathentry kind="lib" path="D:/iText/iTextAsian.jar"/>
+	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/httpmime-4.1.2.jar"/>
+	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/httpclient-4.1.2.jar"/>
+	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/httpclient-cache-4.1.2.jar"/>
+	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/httpcore-4.1.2.jar"/>
+	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/commons-codec-1.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

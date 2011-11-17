@@ -629,6 +629,10 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		dialog_.setProcessLog(text);
 	}
 
+	public XFTableOperator createTableOperator(String oparation, String tableID) {
+		return dialog_.createTableOperator(oparation, tableID);
+	}
+
 	public HashMap<String, Object> getReturnMap() {
 		return dialog_.getReturnMap();
 	}
@@ -858,38 +862,38 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		addRowListTable.runScript(event, "AR()", columnValueMap); /* Script to be run AFTER READ all join tables */
 	}
 
-	class DefaultRenderer extends DefaultTableCellRenderer {
-		private static final long serialVersionUID = 1L;
-		private Color oddRowColor = new Color(240, 240, 255);
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
-			XF310_AddRowListCell cell = (XF310_AddRowListCell)value;
-			//
-			setText((String)cell.getExternalValue());
-			setFont(new java.awt.Font("SansSerif", 0, 14));
-			//
-			if (isSelected) {
-				setBackground(table.getSelectionBackground());
-				setForeground(table.getSelectionForeground());
-			} else {
-				if (row%2==0) {
-					setBackground(table.getBackground());
-				} else {
-					setBackground(oddRowColor);
-				}
-				setForeground(cell.getForeground());
-			}
-			//
-			setFocusable(false);
-			//
-			if (cell.getDetailColumn().getBasicType().equals("INTEGER") || cell.getDetailColumn().getBasicType().equals("FLOAT")) {
-				setHorizontalAlignment(SwingConstants.RIGHT);
-			}
-			//
-			validate();
-			//
-			return this;
-		}
-	}
+//	class DefaultRenderer extends DefaultTableCellRenderer {
+//		private static final long serialVersionUID = 1L;
+//		private Color oddRowColor = new Color(240, 240, 255);
+//		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
+//			XF310_AddRowListCell cell = (XF310_AddRowListCell)value;
+//			//
+//			setText((String)cell.getExternalValue());
+//			setFont(new java.awt.Font("SansSerif", 0, 14));
+//			//
+//			if (isSelected) {
+//				setBackground(table.getSelectionBackground());
+//				setForeground(table.getSelectionForeground());
+//			} else {
+//				if (row%2==0) {
+//					setBackground(table.getBackground());
+//				} else {
+//					setBackground(oddRowColor);
+//				}
+//				setForeground(cell.getForeground());
+//			}
+//			//
+//			setFocusable(false);
+//			//
+//			if (cell.getDetailColumn().getBasicType().equals("INTEGER") || cell.getDetailColumn().getBasicType().equals("FLOAT")) {
+//				setHorizontalAlignment(SwingConstants.RIGHT);
+//			}
+//			//
+//			validate();
+//			//
+//			return this;
+//		}
+//	}
 
 	class RowNoRenderer extends DefaultTableCellRenderer {
 		private static final long serialVersionUID = 1L;
@@ -2057,17 +2061,27 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 		columnIndex = index;
 	}
 
-	public XF310_AddRowListCellRenderer getCellRenderer(){
-		XF310_AddRowListCellRenderer renderer = new XF310_AddRowListCellRenderer();
-		if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-			if (this.getTypeOptionList().contains("MSEQ") || this.getTypeOptionList().contains("FYEAR")) {
-				renderer.setHorizontalAlignment(SwingConstants.LEFT);
+	public TableCellRenderer getCellRenderer(){
+		TableCellRenderer renderer = null;
+		//
+		String wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN");
+		if (wrkStr.equals("")) {
+			renderer = new XF310_AddRowListCellRenderer();
+			if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+				if (this.getTypeOptionList().contains("MSEQ") || this.getTypeOptionList().contains("FYEAR")) {
+					((XF310_AddRowListCellRenderer)renderer).setHorizontalAlignment(SwingConstants.LEFT);
+				} else {
+					((XF310_AddRowListCellRenderer)renderer).setHorizontalAlignment(SwingConstants.RIGHT);
+				}
 			} else {
-				renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+				((XF310_AddRowListCellRenderer)renderer).setHorizontalAlignment(SwingConstants.LEFT);
 			}
 		} else {
-			renderer.setHorizontalAlignment(SwingConstants.LEFT);
+			renderer = new XF310_AddRowListCellRendererWithCheckBox(dataTypeOptions);
+			((XF310_AddRowListCellRendererWithCheckBox)renderer).setHorizontalAlignment(SwingConstants.CENTER);
+			((XF310_AddRowListCellRendererWithCheckBox)renderer).setEditable(false);
 		}
+		//
 		return renderer;
 	}
 
@@ -2213,10 +2227,8 @@ class XF310_AddRowListCellRenderer extends DefaultTableCellRenderer {
 	private static final long serialVersionUID = 1L;
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
 		XF310_AddRowListCell cell = (XF310_AddRowListCell)value;
-		//
 		setText((String)cell.getExternalValue());
 		setFont(new java.awt.Font("Dialog", 0, 14));
-		//
 		if (isSelected) {
 			setBackground(table.getSelectionBackground());
 			setForeground(table.getSelectionForeground());
@@ -2228,7 +2240,29 @@ class XF310_AddRowListCellRenderer extends DefaultTableCellRenderer {
 			}
 			setForeground(table.getForeground());
 		}
-		//
+		validate();
+		return this;
+	}
+}
+
+class XF310_AddRowListCellRendererWithCheckBox extends XFCheckBox implements TableCellRenderer {
+	private static final long serialVersionUID = 1L;
+	public XF310_AddRowListCellRendererWithCheckBox(String dataTypeOptions) {
+		super(dataTypeOptions);
+	}
+	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
+		XF310_AddRowListCell cell = (XF310_AddRowListCell)value;
+		this.setValue((String)cell.getInternalValue());
+		this.setOpaque(true);
+		if (isSelected) {
+			this.setBackground(table.getSelectionBackground());
+		} else {
+			if (row%2==0) {
+				this.setBackground(table.getBackground());
+			} else {
+				this.setBackground(XFUtility.ODD_ROW_COLOR);
+			}
+		}
 		validate();
 		return this;
 	}

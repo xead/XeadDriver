@@ -58,6 +58,10 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import java.security.*;
+import org.apache.http.*;
+import org.apache.http.client.*;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 public class Session extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -91,6 +95,7 @@ public class Session extends JFrame {
 	private int sqProgram = 0;
 	private String currentFolder = "";
 	private String loginScript = "";
+	private String scriptFunctions = "";
 
 	private Image imageTitle;
 	private Dimension screenSize = new Dimension(0,0);
@@ -100,7 +105,7 @@ public class Session extends JFrame {
 	private String[] menuIDArray = new String[20];
 	private String[] menuCaptionArray = new String[20];
 	private String[] helpURLArray = new String[20];
-	private int[] lastSelectedOptionIndexArray = new int[20];
+	//private int[] lastSelectedOptionIndexArray = new int[20];
 	private MenuOption[][] menuOptionArray = new MenuOption[20][20];
 	private JButton[] jButtonMenuOptionArray = new JButton[20];
 
@@ -124,9 +129,7 @@ public class Session extends JFrame {
 	private ImageIcon imageIcon = null;
 	private JTextArea jTextAreaMessages = new JTextArea();
 	private JScrollPane jScrollPaneMessages = new JScrollPane();
-	//private XFCalendar xFCalendar;
 	private Calendar calendar = GregorianCalendar.getInstance();
-
 	private org.w3c.dom.Document domDocument;
 	private Desktop desktop = Desktop.getDesktop();
 	private DigestAdapter digestAdapter = null;
@@ -139,9 +142,13 @@ public class Session extends JFrame {
 	private ArrayList<String> offDateList = new ArrayList<String>();
 	private HashMap<String, BaseFont> baseFontMap = new HashMap<String, BaseFont>();
 	private HashMap<String, String> attributeMap = new HashMap<String, String>();
-
 	private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 	private Bindings globalScriptBindings = scriptEngineManager.getBindings();
+    private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
+    private HttpClient httpClient = new DefaultHttpClient();
+	private DOMParser responseDocParser = new DOMParser();
+	private org.w3c.dom.Document responseDoc = null;
+	private HttpGet httpGet = new HttpGet();
 
 	public Session(String[] args) {
 		String fileName = "";
@@ -251,6 +258,7 @@ public class Session extends JFrame {
 		exchangeRateMonthlyTable = element.getAttribute("ExchangeRateMonthlyTable");
 
 		loginScript = XFUtility.substringLinesWithTokenOfEOL(element.getAttribute("LoginScript"), "\n");
+		scriptFunctions = XFUtility.substringLinesWithTokenOfEOL(element.getAttribute("ScriptFunctions"), "\n");
 		functionList = domDocument.getElementsByTagName("Function");
 		tableList = domDocument.getElementsByTagName("Table");
 
@@ -367,7 +375,7 @@ public class Session extends JFrame {
 			jButtonMenuOptionArray[i].setFont(new java.awt.Font("SansSerif", 0, 16));
 			jButtonMenuOptionArray[i].addActionListener(new Session_jButton_actionAdapter(this));
 			jButtonMenuOptionArray[i].addKeyListener(new Session_keyAdapter(this));
-			jButtonMenuOptionArray[i].addFocusListener(new Session_jButton_FocusListener(this));
+			//jButtonMenuOptionArray[i].addFocusListener(new Session_jButton_FocusListener(this));
 		}
 		jPanelMenuCenter.add(jButtonMenuOptionArray[0]);
 		jPanelMenuCenter.add(jButtonMenuOptionArray[10]);
@@ -417,7 +425,7 @@ public class Session extends JFrame {
 	    jSplitPane1.setDividerLocation(screenSize.height - 120);
 
 	    for (int i = 0; i < 20; i++) {
-	    	lastSelectedOptionIndexArray[i] = 0;
+	    	//lastSelectedOptionIndexArray[i] = -1;
 			for (int j = 0; j < 20; j++) {
 		    	menuOptionArray[i][j] = null;
 			}
@@ -586,16 +594,17 @@ public class Session extends JFrame {
 	void setupOptionsOfMenuWithTabNo(int tabNumber) {
 		if (tabNumber > -1) {
 			menuIDUsing = menuIDArray[tabNumber];
-			jButtonMenuOptionArray[0].requestFocus();
+			//jButtonMenuOptionArray[0].requestFocus();
+			jTabbedPaneMenu.requestFocus();
 			for (int i = 0; i < 20; i++) {
 				if (menuOptionArray[tabNumber][i] == null) {
 					jButtonMenuOptionArray[i].setVisible(false);
 				} else {
 					jButtonMenuOptionArray[i].setText(menuOptionArray[tabNumber][i].getMenuOptionName());
 					jButtonMenuOptionArray[i].setVisible(true);
-					if (i == lastSelectedOptionIndexArray[tabNumber]) {
-						jButtonMenuOptionArray[i].requestFocus();
-					}
+					//if (i == lastSelectedOptionIndexArray[tabNumber]) {
+					//	jButtonMenuOptionArray[i].requestFocus();
+					//}
 				}
 			}
 		}
@@ -1334,6 +1343,7 @@ public class Session extends JFrame {
 				if (!databaseDisconnect.equals("")) {
 					DriverManager.getConnection(databaseDisconnect);
 				}
+				httpClient.getConnectionManager().shutdown();
 			} catch (SQLException e) {
 				if (e.getSQLState() != null && !e.getSQLState().equals("XJ015")) {
 					e.printStackTrace();
@@ -1396,15 +1406,15 @@ public class Session extends JFrame {
 		}
 	}
 
-	void jButtonMenu_focusGained(FocusEvent e){
-		Component com = (Component)e.getSource();
-		for (int i = 0; i < 20; i++) {
-			if (com.equals(jButtonMenuOptionArray[i])) {
-				lastSelectedOptionIndexArray[jTabbedPaneMenu.getSelectedIndex()] = i;
-				break;
-			}
-		}
-	}
+	//void jButtonMenu_focusGained(FocusEvent e){
+	//	Component com = (Component)e.getSource();
+	//	for (int i = 0; i < 20; i++) {
+	//		if (com.equals(jButtonMenuOptionArray[i])) {
+	//			lastSelectedOptionIndexArray[jTabbedPaneMenu.getSelectedIndex()] = i;
+	//			break;
+	//		}
+	//	}
+	//}
 
 	int writeLogOfFunctionStarted(String functionID, String functionName) {
 		Statement statement = null;
@@ -1461,12 +1471,17 @@ public class Session extends JFrame {
 		if (e.getKeyCode() == KeyEvent.VK_F1) {
 			browseHelp();
 		}
+		if (((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
+		  && e.getKeyCode() == KeyEvent.VK_T) {
+			jTabbedPaneMenu.requestFocus();
+		}
 		if (e.getKeyCode() == KeyEvent.VK_F12) {
 			boolean modified = modifyPasswordDialog.passwordModified();
 			if (modified) {
 				jTextAreaMessages.setText(res.getString("PasswordModified"));
 			}
 		}
+		//
 		if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 			Component com = getFocusOwner();
 			for (int i = 0; i < 20; i++) {
@@ -1508,14 +1523,10 @@ public class Session extends JFrame {
 			if (com.equals(jButtonMenuOptionArray[10])) {
 				jTabbedPaneMenu.requestFocus();
 			} else {
-				if (com.equals(jButtonMenuOptionArray[0])) {
-					jTabbedPaneMenu.requestFocus();
-				} else {
-					for (int i = 0; i < 20; i++) {
-						if (com.equals(jButtonMenuOptionArray[i])) {
-							setFocusOnNextVisibleButton(i, "UP");
-							break;
-						}
+				for (int i = 0; i < 20; i++) {
+					if (com.equals(jButtonMenuOptionArray[i])) {
+						setFocusOnNextVisibleButton(i, "UP");
+						break;
 					}
 				}
 			}
@@ -1524,6 +1535,7 @@ public class Session extends JFrame {
 	
 	void setFocusOnNextVisibleButton(int index, String direction) {
 		int i= index;
+		boolean anyFound = false;
 		//
 		if (direction.equals("RIGHT")) {
 			if (i >= 0 && i <= 9) {
@@ -1535,7 +1547,18 @@ public class Session extends JFrame {
 						i = i + 1;
 						if (jButtonMenuOptionArray[i].isVisible()) {
 							jButtonMenuOptionArray[i].requestFocus();
+							anyFound = true;
 							break;
+						}
+					}
+					if (!anyFound) {
+						i = index + 10;
+						while (i >= 9) {
+							i = i - 1;
+							if (jButtonMenuOptionArray[i].isVisible()) {
+								jButtonMenuOptionArray[i].requestFocus();
+								break;
+							}
 						}
 					}
 				}
@@ -1552,7 +1575,18 @@ public class Session extends JFrame {
 						i = i - 1;
 						if (jButtonMenuOptionArray[i].isVisible()) {
 							jButtonMenuOptionArray[i].requestFocus();
+							anyFound = true;
 							break;
+						}
+					}
+					if (!anyFound) {
+						i = index - 10;
+						while (i <= 9) {
+							i = i + 1;
+							if (jButtonMenuOptionArray[i].isVisible()) {
+								jButtonMenuOptionArray[i].requestFocus();
+								break;
+							}
 						}
 					}
 				}
@@ -1574,17 +1608,22 @@ public class Session extends JFrame {
 				i = i - 1;
 				if (jButtonMenuOptionArray[i].isVisible()) {
 					jButtonMenuOptionArray[i].requestFocus();
+					anyFound = true;
 					break;
 				} else {
 					if (index > 10 && i ==10) {
 						i = i - 1;
 						if (jButtonMenuOptionArray[i].isVisible()) {
 							jButtonMenuOptionArray[i].requestFocus();
+							anyFound = true;
 							break;
 						}
 					}
-					
+
 				}
+			}
+			if (!anyFound) {
+				jTabbedPaneMenu.requestFocus();
 			}
 		}
 	}
@@ -1595,11 +1634,11 @@ public class Session extends JFrame {
 
 	class Function extends Object {
 		private XF000[] xF000 = new XF000[10];
-		private XF010[] xF010 = new XF010[10];
+		//private XF010[] xF010 = new XF010[10];
 		private XF100[] xF100 = new XF100[10];
 		private XF110[] xF110 = new XF110[10];
 		private XF200[] xF200 = new XF200[10];
-		private XF210[] xF210 = new XF210[10];
+		//private XF210[] xF210 = new XF210[10];
 		private XF290[] xF290 = new XF290[10];
 		private XF300[] xF300 = new XF300[10];
 		private XF310[] xF310 = new XF310[10];
@@ -1609,11 +1648,11 @@ public class Session extends JFrame {
 		//
 		public Function(Session session) {
 			xF000[0] = new XF000(session, 0);
-			xF010[0] = new XF010(session, 0);
+			//xF010[0] = new XF010(session, 0);
 			xF100[0] = new XF100(session, 0);
 			xF110[0] = new XF110(session, 0);
 			xF200[0] = new XF200(session, 0);
-			xF210[0] = new XF210(session, 0);
+			//xF210[0] = new XF210(session, 0);
 			xF290[0] = new XF290(session, 0);
 			xF300[0] = new XF300(session, 0);
 			xF310[0] = new XF310(session, 0);
@@ -1652,28 +1691,28 @@ public class Session extends JFrame {
 							}
 						}
 					}
-					if (functionElement.getAttribute("Type").equals("XF010")) {
-						if (xF010[i] == null) {
-							xF010[i] = new XF010(session_, i);
-							returnMap = xF010[i].execute(functionElement, parmMap);
-							break;
-						} else {
-							if (xF010[i].isAvailable()) {
-								returnMap = xF010[i].execute(functionElement, parmMap);
-								break;
-							} else {
-								if (xF010[i].getFunctionID().equals(functionID)) {
-									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
-										returnMap.put("RETURN_CODE", "01");
-										break;
-									} else {
-										countOfRuccursiveCalls++;
-									}
-								}
-							}
-						}
-					}
+//					if (functionElement.getAttribute("Type").equals("XF010")) {
+//						if (xF010[i] == null) {
+//							xF010[i] = new XF010(session_, i);
+//							returnMap = xF010[i].execute(functionElement, parmMap);
+//							break;
+//						} else {
+//							if (xF010[i].isAvailable()) {
+//								returnMap = xF010[i].execute(functionElement, parmMap);
+//								break;
+//							} else {
+//								if (xF010[i].getFunctionID().equals(functionID)) {
+//									if (countOfRuccursiveCalls >= 1) {
+//										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+//										returnMap.put("RETURN_CODE", "01");
+//										break;
+//									} else {
+//										countOfRuccursiveCalls++;
+//									}
+//								}
+//							}
+//						}
+//					}
 					if (functionElement.getAttribute("Type").equals("XF100")) {
 						if (xF100[i] == null) {
 							xF100[i] = new XF100(session_, i);
@@ -1740,28 +1779,28 @@ public class Session extends JFrame {
 							}
 						}
 					}
-					if (functionElement.getAttribute("Type").equals("XF210")) {
-						if (xF210[i] == null) {
-							xF210[i] = new XF210(session_, i);
-							returnMap = xF210[i].execute(functionElement, parmMap);
-							break;
-						} else {
-							if (xF210[i].isAvailable()) {
-								returnMap = xF210[i].execute(functionElement, parmMap);
-								break;
-							} else {
-								if (xF210[i].getFunctionID().equals(functionID)) {
-									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
-										returnMap.put("RETURN_CODE", "01");
-										break;
-									} else {
-										countOfRuccursiveCalls++;
-									}
-								}
-							}
-						}
-					}
+//					if (functionElement.getAttribute("Type").equals("XF210")) {
+//						if (xF210[i] == null) {
+//							xF210[i] = new XF210(session_, i);
+//							returnMap = xF210[i].execute(functionElement, parmMap);
+//							break;
+//						} else {
+//							if (xF210[i].isAvailable()) {
+//								returnMap = xF210[i].execute(functionElement, parmMap);
+//								break;
+//							} else {
+//								if (xF210[i].getFunctionID().equals(functionID)) {
+//									if (countOfRuccursiveCalls >= 1) {
+//										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+//										returnMap.put("RETURN_CODE", "01");
+//										break;
+//									} else {
+//										countOfRuccursiveCalls++;
+//									}
+//								}
+//							}
+//						}
+//					}
 					if (functionElement.getAttribute("Type").equals("XF290")) {
 						if (xF290[i] == null) {
 							xF290[i] = new XF290(session_, i);
@@ -1917,6 +1956,40 @@ public class Session extends JFrame {
 	
 	public Connection getConnection() {
 		return connectionToCommit;
+	}
+	
+	public String getAddressFromZipNo(String zipNo) {
+		String value = "";
+        HttpResponse response = null;
+    	InputStream inputStream = null;
+		try {
+			httpGet.setURI(new URI(ZIP_URL + "zipcode=" + zipNo + "&format=xml"));
+	        response = httpClient.execute(httpGet);  
+	        if (response.getStatusLine().getStatusCode() < 400){
+	        	inputStream = response.getEntity().getContent();
+	        	responseDocParser.parse(new InputSource(inputStream));
+    			responseDoc = responseDocParser.getDocument();
+    			org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("groovewebservice").item(0);
+    			if (rootNode.getElementsByTagName("address").getLength() == 0) {
+    				JOptionPane.showMessageDialog(null, res.getString("FunctionMessage54") + "\n" + zipNo);
+    			} else {
+    				org.w3c.dom.Element addressNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("address").item(0);
+    				org.w3c.dom.Element prefectureNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("prefecture").item(0);
+    				org.w3c.dom.Element cityNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("city").item(0);
+    				org.w3c.dom.Element townNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("town").item(0);
+    				value = prefectureNode.getTextContent() + cityNode.getTextContent() + townNode.getTextContent();
+    			}
+	        }  
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(null, res.getString("FunctionMessage53") + "\n" + ex.getMessage());
+		} finally {
+			try {
+				if (inputStream != null) {
+					inputStream.close();
+				}
+            } catch(IOException e) {}
+		}
+		return value;
 	}
 	
 	public String getDateFormat() {
@@ -2128,6 +2201,10 @@ public class Session extends JFrame {
 		return functionList;
 	}
 
+	public String getScriptFunctions() {
+		return scriptFunctions;
+	}
+
 	public String getFunctionName(String functionID) {
 		org.w3c.dom.Element workElement;
 		String functionName = "";
@@ -2254,17 +2331,17 @@ class Session_jButton_actionAdapter implements java.awt.event.ActionListener {
 	  }
 }
 
-class Session_jButton_FocusListener implements FocusListener{
-	  Session adaptee;
-	  Session_jButton_FocusListener(Session adaptee) {
-	    this.adaptee = adaptee;
-	  }
-		public void focusGained(FocusEvent e){
-		    adaptee.jButtonMenu_focusGained(e);
-		}
-		public void focusLost(FocusEvent e){
-		}
-}
+//class Session_jButton_FocusListener implements FocusListener{
+//	  Session adaptee;
+//	  Session_jButton_FocusListener(Session adaptee) {
+//	    this.adaptee = adaptee;
+//	  }
+//		public void focusGained(FocusEvent e){
+//		    adaptee.jButtonMenu_focusGained(e);
+//		}
+//		public void focusLost(FocusEvent e){
+//		}
+//}
 
 class Session_jEditorPane_actionAdapter implements javax.swing.event.HyperlinkListener {
 	  Session adaptee;

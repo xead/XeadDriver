@@ -47,10 +47,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ResourceBundle;
@@ -66,6 +62,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private HashMap<String, Object> parmMap_ = null;
 	private HashMap<String, Object> returnMap_ = new HashMap<String, Object>();
 	private XF200_PrimaryTable primaryTable_ = null;
+	private ReferChecker referChecker = null;
 	private Session session_ = null;
 	private boolean instanceIsAvailable_ = true;
 	private boolean hasAutoNumberField = false;
@@ -140,7 +137,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private JButton buttonToCopy = null;
 	private JButton buttonToDelete = null;
 	private String[] actionDefinitionArray = new String[7];
-	private Connection connection = null;
 	private ScriptEngine scriptEngine;
 	private Bindings engineScriptBindings;
 	private String scriptNameRunning = "";
@@ -152,7 +148,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private String exceptionHeader = "";
 	private String functionAfterInsert = "";
 	private int firstErrorTabIndex = -1;
-
+	private HashMap<String, Object> columnValueMap = new HashMap<String, Object>();
+	
 	public XF200(Session session, int instanceArrayIndex) {
 		super(session, "", true);
 		try {
@@ -273,7 +270,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			functionElement_ = functionElement;
 			processLog.delete(0, processLog.length());
 			messageList.clear();
-			connection = session_.getConnection();
 			functionAfterInsert = functionElement_.getAttribute("FunctionAfterInsert");
 			initialMsg = functionElement_.getAttribute("InitialMsg");
 			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
@@ -327,6 +323,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			} else {
 				dataName = functionElement_.getAttribute("DataName");
 			}
+			referChecker = new ReferChecker(session_, primaryTable_.getTableElement(), this);
 
 			/////////////////////////////
 			// Initializing panel mode //
@@ -771,13 +768,20 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 
 	public void callFunction(String functionID) {
 		try {
-			returnMap_ = XFUtility.callFunction(session_, functionID, parmMap_);
+			returnMap_ = session_.executeFunction(functionID, parmMap_);
 		} catch (Exception e) {
-			String message = res.getString("FunctionError9") + functionID + res.getString("FunctionError10");
-			JOptionPane.showMessageDialog(null,message);
-			exceptionHeader = message;
+			JOptionPane.showMessageDialog(null, e.getMessage());
+			exceptionHeader = e.getMessage();
 			setErrorAndCloseFunction();
 		}
+	}
+	
+	public void commit() {
+		session_.commit(true, processLog);
+	}
+	
+	public void rollback() {
+		session_.commit(false, processLog);
 	}
 
 	public HashMap<String, Object> getParmMap() {
@@ -790,6 +794,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
 		return new XFTableOperator(session_, processLog, oparation, tableID);
+	}
+
+	public XFTableOperator createTableOperator(String sqlText) {
+		return new XFTableOperator(session_, processLog, sqlText);
 	}
 
 	public HashMap<String, Object> getReturnMap() {
@@ -892,8 +900,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void fetchTableRecord() {
-		ResultSet resultOfPrimaryTable = null;
-		Statement statementForPrimaryTable = null;
 		try {
 			//
 			for (int i = 0; i < fieldList.size(); i++) {
@@ -906,21 +912,18 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			//
 			primaryTable_.runScript("BR", "");
 			//
-			statementForPrimaryTable = connection.createStatement();
-			String sql = primaryTable_.getSQLToSelect();
-			XFUtility.appendLog(sql, processLog);
-			resultOfPrimaryTable = statementForPrimaryTable.executeQuery(sql);
-			if (resultOfPrimaryTable.next()) {
+			XFTableOperator operatorPrimary = createTableOperator(primaryTable_.getSQLToSelect());
+			if (operatorPrimary.next()) {
 				//
 				for (int i = 0; i < fieldList.size(); i++) {
 					if (fieldList.get(i).getTableID().equals(primaryTable_.getTableID())) {
-						fieldList.get(i).setValueOfResultSet(resultOfPrimaryTable);
+						fieldList.get(i).setValueOfResultSet(operatorPrimary);
 					}
 				}
 				//
 				fetchReferTableRecords("AR", false, "");
 				//
-				primaryTable_.setUpdateCounterValue(resultOfPrimaryTable);
+				primaryTable_.setUpdateCounterValue(operatorPrimary);
 				//
 			} else {
 				JOptionPane.showMessageDialog(this, res.getString("FunctionError30"));
@@ -928,26 +931,15 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				isToBeCanceled = true;
 			}
 			//
-		} catch(SQLException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError6"));
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
 		} catch(ScriptException e) {
 			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
-		} finally {
-			try {
-				if (resultOfPrimaryTable != null) {
-					resultOfPrimaryTable.close();
-				}
-				if (statementForPrimaryTable != null) {
-					statementForPrimaryTable.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace(exceptionStream);
-			}
+		} catch(Exception e) {
+			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
 		}
 	}
 
@@ -983,8 +975,12 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void resetFieldError() {
+		columnValueMap.clear();
 		for (int i = 0; i < fieldList.size(); i++) {
 			fieldList.get(i).setError(false);
+			if (fieldList.get(i).getTableID().equals(primaryTable_.getTableID())) {
+				columnValueMap.put(fieldList.get(i).getFieldID(), fieldList.get(i).getInternalValue());
+			}
 		}
 		firstErrorTabIndex = -1;
 	}
@@ -1010,28 +1006,21 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	int checkDeleteErrors() {
 		int countOfErrors = fetchReferTableRecords("BD", true, "");
 		if (countOfErrors == 0) {
-			//
-			DeleteChecker deleteChecker = new DeleteChecker(session_, primaryTable_.getTableElement(), parmMap_, scriptEngine);
-			ArrayList<String> errorMsgList = deleteChecker.getDeleteErrors();
+			ArrayList<String> errorMsgList = referChecker.getOperationErrors("DELETE", columnValueMap);
 			for (int i = 0; i < errorMsgList.size(); i++) {
 				messageList.add(errorMsgList.get(i));
 			}
 			countOfErrors = errorMsgList.size();
 		}
-		//
 		return countOfErrors;
 	}
 
 	protected int fetchReferTableRecords(String event, boolean toBeChecked, String specificReferTable) {
 		int countOfErrors = 0;
-		ResultSet resultOfReferTable = null;
-		Statement statementForReferTable = null;
 		boolean recordNotFound;
-		String sql = "";
+		XFTableOperator operator;
 		//
 		try {
-			statementForReferTable = connection.createStatement();
-			//
 			countOfErrors = countOfErrors + primaryTable_.runScript(event, "BR()");
 			//
 			for (int i = 0; i < referTableList.size(); i++) {
@@ -1051,18 +1040,16 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						if (!referTableList.get(i).isKeyNullable() || !referTableList.get(i).isKeyNull()) {
 							recordNotFound = true;
 							//
-							sql = referTableList.get(i).getSelectSQL(false);
-							XFUtility.appendLog(sql, processLog);
-							resultOfReferTable = statementForReferTable.executeQuery(sql);
-							while (resultOfReferTable.next()) {
+							operator = createTableOperator(referTableList.get(i).getSelectSQL(false));
+							while (operator.next()) {
 								//
-								if (referTableList.get(i).isRecordToBeSelected(resultOfReferTable)) {
+								if (referTableList.get(i).isRecordToBeSelected(operator)) {
 									//
 									recordNotFound = false;
 									//
 									for (int j = 0; j < fieldList.size(); j++) {
 										if (fieldList.get(j).getTableAlias().equals(referTableList.get(i).getTableAlias())) {
-											fieldList.get(j).setValueOfResultSet(resultOfReferTable);
+											fieldList.get(j).setValueOfResultSet(operator);
 										}
 									}
 									//
@@ -1091,26 +1078,15 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				fieldList.get(i).checkPromptKeyEdit();
 			}
 			//
-		} catch(SQLException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError6"));
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
 		} catch(ScriptException e) {
 			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
-		} finally {
-			try {
-				if (resultOfReferTable != null) {
-					resultOfReferTable.close();
-				}
-				if (statementForReferTable != null) {
-					statementForReferTable.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace(exceptionStream);
-			}
+		} catch(Exception e) {
+			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
 		}
 		//
 		if (toBeChecked) {
@@ -1120,22 +1096,17 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 	
-	boolean hasNoErrorWithKey(String type) {
+	boolean hasNoErrorWithKey(String operation) {
 		boolean hasNoError = true;
 		ArrayList<String> uniqueKeyList = new ArrayList<String>();
 		ArrayList<String> keyFieldList = new ArrayList<String>();
-		Statement statementForPrimaryTable = null;
-		ResultSet resultOfPrimaryTable = null;
 		String sql = "";
+		XFTableOperator operator;
 		//
 		try {
-			statementForPrimaryTable = connection.createStatement();
-			//
-			if (type.equals("INSERT") && !this.hasAutoNumberField) {
-				sql = primaryTable_.getSQLToCheckPKDuplication();
-				XFUtility.appendLog(sql, processLog);
-				resultOfPrimaryTable = statementForPrimaryTable.executeQuery(sql);
-				if (resultOfPrimaryTable.next()) {
+			if (operation.equals("INSERT") && !this.hasAutoNumberField) {
+				operator = createTableOperator(primaryTable_.getSQLToCheckPKDuplication());
+				if (operator.next()) {
 					hasNoError = false;
 					for (int i = 0; i < fieldList.size(); i++) {
 						if (fieldList.get(i).isKey()) {
@@ -1145,7 +1116,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 			//
-			if (type.equals("UPDATE") && primaryTable_.hasPrimaryKeyValueAltered()) {
+			if (operation.equals("UPDATE") && primaryTable_.hasPrimaryKeyValueAltered()) {
 				hasNoError = false;
 				for (int i = 0; i < fieldList.size(); i++) {
 					if (fieldList.get(i).isKey() && !fieldList.get(i).isError()) {
@@ -1163,15 +1134,14 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					while (workTokenizer.hasMoreTokens()) {
 						keyFieldList.add(workTokenizer.nextToken());
 					}
-					if (type.equals("UPDATE")) {
+					if (operation.equals("UPDATE")) {
 						sql = primaryTable_.getSQLToCheckSKDuplication(keyFieldList, true);
 					} else {
 						sql = primaryTable_.getSQLToCheckSKDuplication(keyFieldList, false);
 					}
 					if (!sql.equals("")) {
-						XFUtility.appendLog(sql, processLog);
-						resultOfPrimaryTable = statementForPrimaryTable.executeQuery(sql);
-						if (resultOfPrimaryTable.next()) {
+						operator = createTableOperator(sql);
+						if (operator.next()) {
 							hasNoError = false;
 							for (int j = 0; j < fieldList.size(); j++) {
 								if (keyFieldList.contains(fieldList.get(j).getFieldID()) && !fieldList.get(i).isError()) {
@@ -1182,21 +1152,18 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			}
-		} catch(SQLException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError6"));
+			//
+			if (hasNoError) {
+				ArrayList<String> errorMsgList = referChecker.getOperationErrors(operation, columnValueMap);
+				for (int i = 0; i < errorMsgList.size(); i++) {
+					hasNoError = false;
+					messageList.add(errorMsgList.get(i));
+				}
+			}
+		} catch(Exception e) {
+			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
-		} finally {
-			try {
-				if (resultOfPrimaryTable != null) {
-					resultOfPrimaryTable.close();
-				}
-				if (statementForPrimaryTable != null) {
-					statementForPrimaryTable.close();
-				}
-			} catch(SQLException e) {
-				e.printStackTrace(exceptionStream);
-			}
 		}
 		//
 		return hasNoError;
@@ -1311,9 +1278,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	void doButtonActionInsert() {
-		String sql = "";
-		Statement statement = null;
-		ResultSet resultOfLastDetailRowNumber = null;
+		XFTableOperator operator;
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 			//
@@ -1328,19 +1293,15 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						messageList.add(res.getString("FunctionMessage16"));
 					} else {
 						//
-						statement = connection.createStatement();
-						//
 						for (int i = 0; i < fieldList.size(); i++) {
 							if (fieldList.get(i).isAutoNumberField()) {
 								fieldList.get(i).setValue(fieldList.get(i).getAutoNumber());
 							}
 							if (fieldList.get(i).isAutoDetailRowNumber()) {
 								int lastNumber = 0;
-								sql = primaryTable_.getSQLToGetLastDetailRowNumberValue();
-								XFUtility.appendLog(sql, processLog);
-								resultOfLastDetailRowNumber = statement.executeQuery(sql);
-								if (resultOfLastDetailRowNumber.next()) {
-									lastNumber = resultOfLastDetailRowNumber.getInt("1");
+								operator = createTableOperator(primaryTable_.getSQLToGetLastDetailRowNumberValue());
+								if (operator.next()) {
+									lastNumber = Integer.parseInt(operator.getValueOf("1").toString());
 								}
 								fieldList.get(i).setValue(lastNumber + 1);
 							}
@@ -1349,17 +1310,16 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 							}
 						}
 						//
-						sql = primaryTable_.getSQLToInsert();
-						XFUtility.appendLog(sql, processLog);
-						int recordCount = statement.executeUpdate(sql);
+						operator = createTableOperator(primaryTable_.getSQLToInsert());
+						int recordCount = operator.execute();
 						if (recordCount == 1) {
 							//
 							primaryTable_.runScript("AC", "");
 							//
 							if (this.isToBeCanceled) {
-								connection.rollback();
+								this.rollback();
 							} else {
-								connection.commit();
+								this.commit();
 								//
 								if (functionAfterInsert.equals("")) {
 									//
@@ -1387,31 +1347,23 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 									}
 									//
 								} else {
-									org.w3c.dom.Element workElement1, elementOfFunction = null;
-									NodeList functionList = session_.getFunctionList();
-									for (int k = 0; k < functionList.getLength(); k++) {
-										workElement1 = (org.w3c.dom.Element)functionList.item(k);
-										if (workElement1.getAttribute("ID").equals(functionAfterInsert)) {
-											elementOfFunction = workElement1;
-											break;
+									messageList.clear();
+									//
+									HashMap<String, Object> map = new HashMap<String, Object>();
+									for (int i = 0; i < fieldList.size(); i++) {
+										if (fieldList.get(i).isKey()) {
+											map.put(fieldList.get(i).getFieldID(), fieldList.get(i).getInternalValue());
 										}
 									}
 									//
-									if (elementOfFunction == null) {
-										JOptionPane.showMessageDialog(this, res.getString("FunctionMessage20") + functionAfterInsert + res.getString("FunctionMessage21"));
-									} else {
-										messageList.clear();
-										//
-										HashMap<String, Object> map = new HashMap<String, Object>();
-										for (int i = 0; i < fieldList.size(); i++) {
-											if (fieldList.get(i).isKey()) {
-												map.put(fieldList.get(i).getFieldID(), fieldList.get(i).getInternalValue());
-											}
-										}
-										session_.getFunction().execute(elementOfFunction, map);
+									try {
+										session_.executeFunction(functionAfterInsert, map);
+									} catch(Exception e) {
+										JOptionPane.showMessageDialog(this, e.getMessage());
+										e.printStackTrace(exceptionStream);
 									}
+									//
 									returnMap_.put("RETURN_CODE", "10");
-									//
 									closeFunction();
 								}
 							}
@@ -1420,39 +1372,19 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						}
 					}
 				}
-				//
 			}
-			//
-		} catch(SQLException e1) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError6"));
-			e1.printStackTrace(exceptionStream);
-			try {
-				connection.rollback();
-			} catch(SQLException e2) {
-				e2.printStackTrace(exceptionStream);
-			}
-			setErrorAndCloseFunction();
 		} catch(ScriptException e1) {
 			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
 			e1.printStackTrace(exceptionStream);
-			try {
-				connection.rollback();
-			} catch(SQLException e2) {
-				e2.printStackTrace(exceptionStream);
-			}
+			this.rollback();
+			setErrorAndCloseFunction();
+		} catch(Exception e) {
+			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "" + e.getMessage());
+			e.printStackTrace(exceptionStream);
+			this.rollback();
 			setErrorAndCloseFunction();
 		} finally {
-			try {
-				if (resultOfLastDetailRowNumber != null) {
-					resultOfLastDetailRowNumber.close();
-				}
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace(exceptionStream);
-			}
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
@@ -1471,53 +1403,38 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					if (this.isCheckOnly) {
 						messageList.add(res.getString("FunctionMessage9"));
 					} else {
-						Statement statement = connection.createStatement();
-						String sql = primaryTable_.getSQLToUpdate();
-						XFUtility.appendLog(sql, processLog);
-						int recordCount = statement.executeUpdate(sql);
+						XFTableOperator operator = createTableOperator(primaryTable_.getSQLToUpdate());
+						int recordCount = operator.execute();
 						if (recordCount == 1) {
 							primaryTable_.runScript("AU", "");
 							//
 							if (this.isToBeCanceled) {
-								connection.rollback();
+								this.rollback();
 							} else {
-								connection.commit();
+								this.commit();
 								returnMap_.put("RETURN_CODE", "20");
 							}
 						} else {
 							String errorMessage = res.getString("FunctionError19");
 							JOptionPane.showMessageDialog(jPanelMain, errorMessage);
 							exceptionHeader = errorMessage;
-							try {
-								connection.rollback();
-							} catch(SQLException e) {
-								e.printStackTrace(exceptionStream);
-							}
+							this.rollback();
 							setErrorAndCloseFunction();
 						}
 						closeFunction();
 					}
 				}
 			}
-		} catch(SQLException e1) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError6"));
-			e1.printStackTrace(exceptionStream);
-			try {
-				connection.rollback();
-			} catch(SQLException e2) {
-				e2.printStackTrace(exceptionStream);
-			}
-			setErrorAndCloseFunction();
-			//
-		} catch(ScriptException e1) {
+		} catch(ScriptException e) {
 			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-			e1.printStackTrace(exceptionStream);
-			try {
-				connection.rollback();
-			} catch(SQLException e2) {
-				e2.printStackTrace(exceptionStream);
-			}
+			e.printStackTrace(exceptionStream);
+			this.rollback();
+			setErrorAndCloseFunction();
+		} catch(Exception e) {
+			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+			e.printStackTrace(exceptionStream);
+			this.rollback();
 			setErrorAndCloseFunction();
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -1588,57 +1505,38 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				int countOfErrors = checkDeleteErrors();
 				if (countOfErrors == 0) {
 					//
-					Statement statement = connection.createStatement();
-					String sql = primaryTable_.getSQLToDelete();
-					XFUtility.appendLog(sql, processLog);
-					int recordCount = statement.executeUpdate(sql);
+					XFTableOperator operator = createTableOperator(primaryTable_.getSQLToDelete());
+					int recordCount = operator.execute();
 					if (recordCount == 1) {
 						primaryTable_.runScript("AD", "");
 						//
 						if (this.isToBeCanceled) {
-							connection.rollback();
+							this.rollback();
 						} else {
-							connection.commit();
+							this.commit();
 							returnMap_.put("RETURN_CODE", "30");
 						}
 					} else {
 						String errorMessage = res.getString("FunctionError33");
 						JOptionPane.showMessageDialog(jPanelMain, errorMessage);
 						exceptionHeader = errorMessage;
-						try {
-							connection.rollback();
-						} catch(SQLException e) {
-							e.printStackTrace(exceptionStream);
-						}
+						this.rollback();
 						setErrorAndCloseFunction();
 					}
 					//
 					closeFunction();
 					//
 				}
-			} catch(SQLException e1) {
-				if (e1.getErrorCode() == 30000) {
-					JOptionPane.showMessageDialog(jPanelMain, res.getString("FunctionError34"));
-				} else {
-					JOptionPane.showMessageDialog(jPanelMain, res.getString("FunctionError6"));
-				}
-				e1.printStackTrace(exceptionStream);
-				try {
-					connection.rollback();
-				} catch(SQLException e2) {
-					e2.printStackTrace(exceptionStream);
-				}
-				setErrorAndCloseFunction();
-				//
-			} catch(ScriptException e1) {
+			} catch(ScriptException e) {
 				JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
 				exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-				e1.printStackTrace(exceptionStream);
-				try {
-					connection.rollback();
-				} catch(SQLException e2) {
-					e2.printStackTrace(exceptionStream);
-				}
+				e.printStackTrace(exceptionStream);
+				this.rollback();
+				setErrorAndCloseFunction();
+			} catch(Exception e) {
+				JOptionPane.showMessageDialog(jPanelMain, res.getString("FunctionError5") + "\n" + e.getMessage());
+				e.printStackTrace(exceptionStream);
+				this.rollback();
 				setErrorAndCloseFunction();
 			} finally {
 				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -1651,24 +1549,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		if (pos1 >= 0) {
 			int pos2 = action.indexOf(")", pos1);
 			String functionID = action.substring(pos1+5, pos2);
-			//
-			org.w3c.dom.Element workElement1, elementOfFunction = null;
-			NodeList functionList = session_.getFunctionList();
-			for (int k = 0; k < functionList.getLength(); k++) {
-				workElement1 = (org.w3c.dom.Element)functionList.item(k);
-				if (workElement1.getAttribute("ID").equals(functionID)) {
-					elementOfFunction = workElement1;
-					break;
-				}
-			}
-			//
-			if (elementOfFunction == null) {
-				JOptionPane.showMessageDialog(this, res.getString("FunctionError17") + functionID + res.getString("FunctionError18"));
-				messageList.clear();
-				messageList.add(res.getString("FunctionError15"));
-			} else {
-				messageList.clear();
-				HashMap<String, Object> returnMap = session_.getFunction().execute(elementOfFunction, parmMap_);
+			messageList.clear();
+			try {
+				HashMap<String, Object> returnMap = session_.executeFunction(functionID, parmMap_);
 				if (returnMap.get("RETURN_MESSAGE") == null) {
 					messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
 				} else {
@@ -1679,6 +1562,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						|| returnMap_.get("RETURN_CODE").toString().equals("20")) {
 					fetchTableRecord();
 				}
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, e.getMessage());
 			}
 		}
 	}
@@ -1826,7 +1711,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				cellValue.setCellStyle(style);
 				if (rowIndexInCell==0) {
 					wrkStr = object.getInternalValue().toString().replace(",", "");
-					//cellValue.setCellValue(Integer.parseInt(wrkStr));
 					cellValue.setCellValue(Long.parseLong(wrkStr));
 				}
 			}
@@ -1838,7 +1722,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				style.setDataFormat(XFUtility.getFloatFormat(workBook, object.getDecimalSize()));
 				cellValue.setCellStyle(style);
 				if (rowIndexInCell==0) {
-					//cellValue.setCellValue((Double)object.getInternalValue());
 					wrkStr = object.getInternalValue().toString().replace(",", "");
 					cellValue.setCellValue(Double.parseDouble(wrkStr));
 				}
@@ -1973,6 +1856,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		return primaryTable_;
 	}
 
+	public StringBuffer getProcessLog() {
+		return processLog;
+	}
+
 	public ArrayList<XF200_Field> getFieldList() {
 		return fieldList;
 	}
@@ -2077,7 +1964,6 @@ class XF200_Field extends JPanel implements XFScriptableField {
 	private boolean isEditable = true;
 	private boolean isAutoDetailRowNumber = false;
 	private int positionMargin = 0;
-	private org.w3c.dom.Element promptFunctionElement_ = null;
 	private Color foreground = Color.black;
 	private XF200 dialog_;
 	
@@ -2191,7 +2077,6 @@ class XF200_Field extends JPanel implements XFScriptableField {
 		//
 		if (fieldOptionList.contains("PROMPT_LIST")) {
 			isEditable = true;
-			//
 			XF200_ReferTable referTable = null;
 			ArrayList<XF200_ReferTable> referTableList = dialog_.getReferTableList();
 			for (int i = 0; i < referTableList.size(); i++) {
@@ -2202,27 +2087,17 @@ class XF200_Field extends JPanel implements XFScriptableField {
 					}
 				}
 			}
-			//
 			component = new XF200_ComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, referTable, isNullable);
 			component.setLocation(5, 0);
 		} else {
 			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 			if (!wrkStr.equals("")) {
 				isEditable = true;
-				NodeList functionList = dialog_.getSession().getFunctionList();
-				for (int k = 0; k < functionList.getLength(); k++) {
-					workElement = (org.w3c.dom.Element)functionList.item(k);
-					if (workElement.getAttribute("ID").equals(wrkStr)) {
-						promptFunctionElement_ = workElement;
-						break;
-					}
-				}
-				//
 				boolean isEditableInEditMode = false;
 				if (this.isFieldOnPrimaryTable) {
 					isEditableInEditMode = true;
 				}
-				component = new XF200_PromptCallField(functionFieldElement_, promptFunctionElement_, isEditableInEditMode, dialog_);
+				component = new XF200_PromptCallField(functionFieldElement_, wrkStr, isEditableInEditMode, dialog_);
 				component.setLocation(5, 0);
 			} else {
 				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("") || !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
@@ -2315,7 +2190,6 @@ class XF200_Field extends JPanel implements XFScriptableField {
 			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			metrics = jLabelFieldComment.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 6, this.getPreferredSize().height));
-			//this.add(jLabelFieldComment, BorderLayout.EAST);
 		}
 		//
 		if (dataTypeOptionList.contains("ZIPADRS")) {
@@ -2680,16 +2554,16 @@ class XF200_Field extends JPanel implements XFScriptableField {
 		}
 	}
 
-	public void setValueOfResultSet(ResultSet result){
+	public void setValueOfResultSet(XFTableOperator operator){
 		try {
 			if (this.isVirtualField) {
 				if (this.isRangeKeyFieldExpire()) {
-					component.setValue(XFUtility.calculateExpireValue(this.getTableElement(), result, dialog_.getSession()));
+					component.setValue(XFUtility.calculateExpireValue(this.getTableElement(), operator, dialog_.getSession(), dialog_.getProcessLog()));
 				}
 			} else {
 				String basicType = this.getBasicType();
 				if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-					String value = result.getString(this.getFieldID());
+					String value = operator.getValueOf(this.getFieldID()).toString();
 					if (this.isFieldOnPrimaryTable) {
 						if (value == null) {
 							component.setValue("0");
@@ -2705,7 +2579,6 @@ class XF200_Field extends JPanel implements XFScriptableField {
 								if (pos >= 0) {
 									value = value.substring(0, pos);
 								}
-								//component.setValue(Integer.parseInt(value));
 								component.setValue(Long.parseLong(value));
 							}
 						}
@@ -2713,7 +2586,6 @@ class XF200_Field extends JPanel implements XFScriptableField {
 							if (value == null || value.equals("")) {
 								component.setValue("");
 							} else {
-								//component.setValue(Float.parseFloat(value));
 								component.setValue(Double.parseDouble(value));
 							}
 						}
@@ -2721,21 +2593,21 @@ class XF200_Field extends JPanel implements XFScriptableField {
 				}
 				//
 				if (basicType.equals("STRING") || basicType.equals("TIME") || basicType.equals("DATETIME")) {
-					String value = result.getString(this.getFieldID());
+					Object value = operator.getValueOf(this.getFieldID());
 					if (value == null) {
 						component.setValue("");
 					} else {
-						component.setValue(value.trim());
+						component.setValue(value.toString().trim());
 					}
 				}
 				//
 				if (basicType.equals("DATE")) {
-					component.setValue(result.getDate(this.getFieldID()));
+					component.setValue(operator.getValueOf(this.getFieldID()));
 				}
 				//
 				component.setOldValue(component.getInternalValue());
 			}
-		} catch(SQLException e) {
+		} catch(Exception e) {
 			e.printStackTrace(dialog_.getExceptionStream());
 			dialog_.setErrorAndCloseFunction();
 		}
@@ -2852,7 +2724,6 @@ class XF200_Field extends JPanel implements XFScriptableField {
 			if (mode.equals("EDIT") || mode.equals("ADD") || mode.equals("COPY")) {
 				//
 				if (basicType.equals("INTEGER")) {
-					//int value = Integer.parseInt((String)component.getInternalValue());
 					long value = Long.parseLong((String)component.getInternalValue());
 					if (!this.isNullable) {
 						if (value == 0) {
@@ -3044,58 +2915,35 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 		} else {
 			strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "KUBUN");
 			if (!strWrk.equals("")) {
-				//
 				listType = "KUBUN_LIST";
-				//
 				if (isNullable) {
 					kubunKeyValueList.add("");
 					jComboBox.addItem("");
 				}
-				//
-				String sql;
-				Statement statement = null;
-				ResultSet result = null;
 				try {
-					statement = dialog_.getSession().getConnection().createStatement();
-					sql = "select KBUSERKUBUN,TXUSERKUBUN  from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST";
-					result = statement.executeQuery(sql);
-					while (result.next()) {
-						//
-						kubunKeyValueList.add(result.getString("KBUSERKUBUN").trim());
-						wrk = result.getString("TXUSERKUBUN").trim();
+					XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
+					operator.addKeyValue("IDUSERKUBUN", strWrk);
+					operator.setOrderBy("SQLIST");
+					while (operator.next()) {
+						kubunKeyValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+						wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
 						jComboBox.addItem(wrk);
 						if (metrics.stringWidth(wrk) > fieldWidth) {
 							fieldWidth = metrics.stringWidth(wrk);
 						}
 					}
 					fieldWidth = fieldWidth + 30;
-					//
 					if (jComboBox.getItemCount() == 0) {
 						JOptionPane.showMessageDialog(this, res.getString("FunctionError24") + dataSourceName + res.getString("FunctionError25"));
 					}
-				} catch(SQLException e) {
+				} catch(Exception e) {
 					e.printStackTrace(dialog_.getExceptionStream());
 					dialog_.setErrorAndCloseFunction();
-				} finally {
-					try {
-						if (result != null) {
-							result.close();
-						}
-						if (statement != null) {
-							statement.close();
-						}
-					} catch (SQLException e) {
-						e.printStackTrace(dialog_.getExceptionStream());
-					}
 				}
 			} else {
-				//
 				if (referTable_ != null) {
-					//
 					listType = "RECORDS_LIST";
-					//
 					keyFieldList = referTable_.getKeyFieldIDList();
-					//
 					workElement = dialog_.getSession().getFieldElement(tableID, fieldID);
 					if (workElement == null) {
 						JOptionPane.showMessageDialog(this, tableID + "." + fieldID + res.getString("FunctionError11"));
@@ -3156,39 +3004,21 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				jComboBox.addItem("");
 			}
 			//
-			String sql;
-			Statement statement = null;
-			ResultSet result = null;
 			try {
-				sql = referTable_.getSelectSQL(true);
-				statement = dialog_.getSession().getConnection().createStatement();
-				result = statement.executeQuery(sql);
-				while (result.next()) {
-					if (referTable_.isRecordToBeSelected(result)) {
-						//
+				XFTableOperator operator = dialog_.createTableOperator(referTable_.getSelectSQL(true));
+				while (operator.next()) {
+					if (referTable_.isRecordToBeSelected(operator)) {
 						keyValues = new XFHashMap();
 						for (int i = 0; i < keyFieldList.size(); i++) {
-							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), result.getString(keyFieldList.get(i)));
+							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), operator.getValueOf(keyFieldList.get(i)).toString());
 						}
 						tableKeyValuesList.add(keyValues);
-						//
-						jComboBox.addItem(result.getString(fieldID).trim());
+						jComboBox.addItem(operator.getValueOf(fieldID).toString().trim());
 					}
 				}
-			} catch(SQLException e) {
+			} catch(Exception e) {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
-			} finally {
-				try {
-					if (result != null) {
-						result.close();
-					}
-					if (statement != null) {
-						statement.close();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace(dialog_.getExceptionStream());
-				}
 			}
 			//
 			jComboBox.setSelectedItem(selectedItemValue);
@@ -3342,7 +3172,7 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 	private boolean isEditable = true;
 	private boolean isEditableInEditMode_ = false;
     private XF200 dialog_;
-    private org.w3c.dom.Element functionElement_;
+    private String functionID_;
     private org.w3c.dom.Element fieldElement_;
     private ArrayList<XF200_ReferTable> referTableList_;
     private String oldValue = "";
@@ -3351,12 +3181,12 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
 
-	public XF200_PromptCallField(org.w3c.dom.Element fieldElement, org.w3c.dom.Element functionElement, boolean isEditableInEditMode, XF200 dialog){
+	public XF200_PromptCallField(org.w3c.dom.Element fieldElement, String functionID, boolean isEditableInEditMode, XF200 dialog){
 		//
 		super();
 		//
 		fieldElement_ = fieldElement;
-		functionElement_ = functionElement;
+		functionID_ = functionID;
 		isEditableInEditMode_ = isEditableInEditMode;
 		dialog_ = dialog;
 		//
@@ -3436,21 +3266,25 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 					}
 				}
 				//
-				HashMap<String, Object> returnMap = dialog_.getSession().getFunction().execute(functionElement_, fieldValuesMap);
-				if (!returnMap.get("RETURN_CODE").equals("99")) {
-					HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
-					for (int i = 0; i < fieldsToGetList_.size(); i++) {
-						value = returnMap.get(fieldsToGetList_.get(i));
-						if (value != null) {
-							fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+				try {
+					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
+					if (!returnMap.get("RETURN_CODE").equals("99")) {
+						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
+						for (int i = 0; i < fieldsToGetList_.size(); i++) {
+							value = returnMap.get(fieldsToGetList_.get(i));
+							if (value != null) {
+								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+							}
+						}
+						for (int i = 0; i < dialog_.getFieldList().size(); i++) {
+							value = fieldsToGetMap.get(dialog_.getFieldList().get(i).getDataSourceName());
+							if (value != null) {
+								dialog_.getFieldList().get(i).setValue(value);
+							}
 						}
 					}
-					for (int i = 0; i < dialog_.getFieldList().size(); i++) {
-						value = fieldsToGetMap.get(dialog_.getFieldList().get(i).getDataSourceName());
-						if (value != null) {
-							dialog_.getFieldList().get(i).setValue(value);
-						}
-					}
+				} catch (Exception ex) {
+					JOptionPane.showMessageDialog(null, ex.getMessage());
 				}
 			}
 		});
@@ -3672,14 +3506,9 @@ class XF200_PrimaryTable extends Object {
 	public String getDetailRowNoID() {
 		return detailRowNoID;
 	}
-	
-	public void setUpdateCounterValue(ResultSet result) {
-		try {
-			updateCounterValue = result.getInt(updateCounterID);
-		} catch(SQLException e) {
-			e.printStackTrace(dialog_.getExceptionStream());
-			dialog_.setErrorAndCloseFunction();
-		}
+
+	public void setUpdateCounterValue(XFTableOperator operator) {
+		updateCounterValue = Integer.parseInt(operator.getValueOf(updateCounterID).toString());
 	}
 	
 	public String getSQLToSelect(){
@@ -4442,9 +4271,7 @@ class XF200_ReferTable extends Object {
 						&& dialog_.getFieldList().get(j).isEditable()
 						&& dialog_.getFieldList().get(j).getDataSourceName().equals(withKeyFieldIDList.get(i))
 						&& !dialog_.getFieldList().get(j).isError()) {
-					//dialog_.getFieldList().get(j).setError(dialog_.getFieldList().get(j).getCaption() + res.getString("Colon") + tableElement.getAttribute("Name") + res.getString("FunctionError45"));
 					dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + res.getString("FunctionError45"));
-					//dialog_.getMessageList().add(dialog_.getFieldList().get(j).getCaption() + res.getString("Colon") + dialog_.getFieldList().get(j).getError());
 					noneOfKeyFieldsWereSetError = false;
 					break;
 				}
@@ -4496,7 +4323,7 @@ class XF200_ReferTable extends Object {
 		return isToBeExecuted;
 	}
 	
-	public boolean isRecordToBeSelected(ResultSet result){
+	public boolean isRecordToBeSelected(XFTableOperator operator){
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {
@@ -4504,39 +4331,33 @@ class XF200_ReferTable extends Object {
 		}
 		//
 		if (rangeKeyType == 1) {
-			try {
-				if (!rangeValidated) {
-					// Note that result set is ordered by rangeKeyFieldValue DESC //
-					Object valueKey = dialog_.getValueOfFieldByName((rangeKeyFieldSearch));
-					Object valueFrom = result.getObject(rangeKeyFieldValid);
-					int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-					if (comp1 >= 0) {
-						returnValue = true;
-						rangeValidated = true;
-					}
+			if (!rangeValidated) {
+				// Note that result set is ordered by rangeKeyFieldValue DESC //
+				Object valueKey = dialog_.getValueOfFieldByName((rangeKeyFieldSearch));
+				Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
+				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
+				if (comp1 >= 0) {
+					returnValue = true;
+					rangeValidated = true;
 				}
-			} catch(SQLException e) {
-				e.printStackTrace(dialog_.getExceptionStream());
-				dialog_.setErrorAndCloseFunction();
 			}
 		}
 		//
 		if (rangeKeyType == 2) {
-			try {
-				Object valueKey = dialog_.getValueOfFieldByName((rangeKeyFieldSearch));
-				Object valueFrom = result.getObject(rangeKeyFieldValid);
-				Object valueThru = result.getObject(rangeKeyFieldExpire);
-				if (valueThru == null) {
-					valueThru = "9999-12-31";
+			Object valueKey = dialog_.getValueOfFieldByName((rangeKeyFieldSearch));
+			Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
+			Object valueThru = operator.getValueOf(rangeKeyFieldExpire);
+			if (valueThru == null) {
+				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
+				if (comp1 >= 0) {
+					returnValue = true;
 				}
+			} else {
 				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
 				int comp2 = valueKey.toString().compareTo(valueThru.toString());
 				if (comp1 >= 0 && comp2 < 0) {
 					returnValue = true;
 				}
-			} catch(SQLException e) {
-				e.printStackTrace(dialog_.getExceptionStream());
-				dialog_.setErrorAndCloseFunction();
 			}
 		}
 		//

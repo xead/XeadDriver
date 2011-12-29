@@ -36,7 +36,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
-
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -44,10 +43,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ResourceBundle;
@@ -72,7 +67,6 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	private ArrayList<XF290_Phrase> paragraphList = new ArrayList<XF290_Phrase>();
 	private ArrayList<XF290_ReferTable> referTableList = new ArrayList<XF290_ReferTable>();
 	private ArrayList<XF290_Field> fieldList = new ArrayList<XF290_Field>();
-	private Connection connection = null;
 	private ScriptEngine scriptEngine;
 	private Bindings engineScriptBindings;
 	private String scriptNameRunning = "";
@@ -129,7 +123,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			exceptionHeader = "";
 			functionElement_ = functionElement;
 			processLog.delete(0, processLog.length());
-			connection = session_.getConnection();
+			//connection = session_.getConnection();
 			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 			//////////////////////////////////////
@@ -253,14 +247,8 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 				}
 			}
 
-			//////////////////////////////////////////////////
-			// Fetch the record and set values on the panel //
-			//////////////////////////////////////////////////
 			fetchTableRecord();
 
-			//////////////////////////////////
-			// Generate and browse PDF file //
-			//////////////////////////////////
 			if (!this.isToBeCanceled) {
 				session_.browseFile(createPDFFileAndGetURI());
 			}
@@ -283,10 +271,15 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 
 	void setErrorAndCloseFunction() {
 		returnMap_.put("RETURN_CODE", "99");
+		this.rollback();
 		closeFunction();
 	}
 
 	void closeFunction() {
+		if (!returnMap_.get("RETURN_CODE").equals("99")) {
+			this.commit();
+		}
+		//
 		instanceIsAvailable_ = true;
 		//
 		String wrkStr;
@@ -307,15 +300,25 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		isToBeCanceled = true;
 	}
 
+	//////////////////////////////////////////////////////////////////////////////////////
+	// Function calling without committing as this is the method used by 'Table-Script' //
+	//////////////////////////////////////////////////////////////////////////////////////
 	public void callFunction(String functionID) {
 		try {
-			returnMap_ = XFUtility.callFunction(session_, functionID, parmMap_);
+			returnMap_ = session_.executeFunction(functionID, parmMap_);
 		} catch (Exception e) {
-			String message = res.getString("FunctionError9") + functionID + res.getString("FunctionError10");
-			JOptionPane.showMessageDialog(null,message);
-			exceptionHeader = message;
+			JOptionPane.showMessageDialog(null, e.getMessage());
+			exceptionHeader = e.getMessage();
 			setErrorAndCloseFunction();
 		}
+	}
+	
+	public void commit() {
+		session_.commit(true, processLog);
+	}
+	
+	public void rollback() {
+		session_.commit(false, processLog);
 	}
 
 	private URI createPDFFileAndGetURI() {
@@ -420,15 +423,14 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 					pdfDoc.add(paragraph);
 				}
 			}
-			//
-			pdfDoc.close();
-			//
 		} catch (DocumentException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			pdfDoc.close();
 		}
 		//
 		return pdfFile.toURI();
@@ -509,7 +511,6 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	
 	void fetchTableRecord() {
 		try {
-			//
 			for (int i = 0; i < fieldList.size(); i++) {
 				if (parmMap_.containsKey(fieldList.get(i).getFieldID())) {
 					fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getFieldID()));
@@ -518,47 +519,35 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			//
 			primaryTable_.runScript("BR", "");
 			//
-			Statement statementForPrimaryTable = connection.createStatement();
-			String sql = primaryTable_.getSQLToSelect();
-			XFUtility.appendLog(sql, processLog);
-			ResultSet resultOfPrimaryTable = statementForPrimaryTable.executeQuery(sql);
-			if (resultOfPrimaryTable.next()) {
-				//
+			XFTableOperator operator = createTableOperator(primaryTable_.getSQLToSelect());
+			if (operator.next()) {
 				for (int i = 0; i < fieldList.size(); i++) {
 					if (fieldList.get(i).getTableID().equals(primaryTable_.getTableID())) {
-						fieldList.get(i).setValueOfResultSet(resultOfPrimaryTable);
+						fieldList.get(i).setValueOfResultSet(operator);
 					}
 				}
-				//
 				fetchReferTableRecords("AR", "");
-				//
 			} else {
 				JOptionPane.showMessageDialog(null, res.getString("FunctionError30"));
 				returnMap_.put("RETURN_CODE", "01");
 				isToBeCanceled = true;
 			}
 			//
-			resultOfPrimaryTable.close();
-			//
-		} catch (SQLException e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError6"));
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
 		} catch(ScriptException e) {
 			JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, res.getString("FunctionError5") + "\n" + e.getMessage());
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
 		}
 	}
 
 	protected void fetchReferTableRecords(String event, String specificReferTable) {
-		ResultSet resultOfReferTable = null;
-		String sql = "";
-		//
+		XFTableOperator operator;
 		try {
-			//
-			Statement statementForReferTable = connection.createStatement();
 			//
 			primaryTable_.runScript(event, "BR()");
 			//
@@ -577,24 +566,20 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 						//
 						if (!referTableList.get(i).isKeyNullable() || !referTableList.get(i).isKeyNull()) {
 							//
-							sql = referTableList.get(i).getSelectSQL(false);
-							XFUtility.appendLog(sql, processLog);
-							resultOfReferTable = statementForReferTable.executeQuery(sql);
-							while (resultOfReferTable.next()) {
+							operator = createTableOperator(referTableList.get(i).getSelectSQL(false));
+							while (operator.next()) {
 								//
-								if (referTableList.get(i).isRecordToBeSelected(resultOfReferTable)) {
+								if (referTableList.get(i).isRecordToBeSelected(operator)) {
 									//
 									for (int j = 0; j < fieldList.size(); j++) {
 										if (fieldList.get(j).getTableAlias().equals(referTableList.get(i).getTableAlias())) {
-											fieldList.get(j).setValueOfResultSet(resultOfReferTable);
+											fieldList.get(j).setValueOfResultSet(operator);
 										}
 									}
 									//
 									primaryTable_.runScript(event, "AR(" + referTableList.get(i).getTableAlias() + ")");
 								}
 							}
-							//
-							resultOfReferTable.close();
 						}
 					}
 				}
@@ -602,13 +587,13 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			//
 			primaryTable_.runScript(event, "AR()");
 			//
-		} catch (SQLException e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError6"));
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
 		} catch(ScriptException e) {
 			JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
 			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, res.getString("FunctionError5") + "\n" + e.getMessage());
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
 		}
@@ -625,6 +610,18 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	public void setProcessLog(String text) {
 		XFUtility.appendLog(text, processLog);
 	}
+	
+	public StringBuffer getProcessLog() {
+		return processLog;
+	}
+
+	public XFTableOperator createTableOperator(String oparation, String tableID) {
+		return new XFTableOperator(session_, processLog, oparation, tableID);
+	}
+
+	public XFTableOperator createTableOperator(String sqlText) {
+		return new XFTableOperator(session_, processLog, sqlText);
+	}
 
 	public HashMap<String, Object> getReturnMap() {
 		return returnMap_;
@@ -633,10 +630,6 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	public String getScriptNameRunning() {
 		return scriptNameRunning;
 	}
-
-	//public StringBuffer getProcessLog() {
-	//	return processLog;
-	//}
 
 	public Session getSession() {
 		return session_;
@@ -653,7 +646,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText);
+			scriptEngine.eval(scriptText + session_.getScriptFunctions());
 		}
 	}
 
@@ -741,7 +734,10 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		}
 		for (int i = 0; i < fieldList.size(); i++) {
 			if (fieldList.get(i).getDataSourceName().equals(wrkStr)) {
-				if (fieldList.get(i).isKubunField()) {
+				if (fieldList.get(i).isKubunField()
+				  || fieldList.get(i).getDataTypeOptionList().contains("MSEQ")
+				  || fieldList.get(i).getDataTypeOptionList().contains("YMONTH")
+				  || fieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
 					value = fieldList.get(i).getExternalValue().toString();
 				} else {
 					value = fieldList.get(i).getInternalValue().toString();
@@ -754,10 +750,10 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(value)), fmt, false);
 					}
 					if (basicType.equals("INTEGER")) {
-						value = XFUtility.getEditValueOfInteger(Integer.parseInt(value), fmt, fieldList.get(i).getDataSize());
+						value = XFUtility.getEditValueOfLong(Long.parseLong(value), fmt, fieldList.get(i).getDataSize());
 					}
 					if (basicType.equals("FLOAT")) {
-						value = XFUtility.getEditValueOfFloat(Float.parseFloat(value), fmt, fieldList.get(i).getDecimalSize());
+						value = XFUtility.getEditValueOfDouble(Double.parseDouble(value), fmt, fieldList.get(i).getDecimalSize());
 					}
 					if (fieldList.get(i).getDataTypeOptionList().contains("YMONTH") || fieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
 						if (fmt.equals("")) {
@@ -766,7 +762,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 						value = XFUtility.getUserExpressionOfYearMonth(value.toString(), fmt);
 					}
 					if (fieldList.get(i).getDataTypeOptionList().contains("MSEQ")) {
-						wrkStr = (String)value.toString();
+						wrkStr = value.toString();
 						if (!wrkStr.equals("")) {
 							value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(wrkStr), session_);
 						}
@@ -883,17 +879,14 @@ class XF290_Field extends Object implements XFScriptableField {
 		if (!wrkStr.equals("")) {
 			try {
 				isKubunField = true;
-				String wrk = "";
-				Statement statement = dialog_.getSession().getConnection().createStatement();
-				ResultSet result = statement.executeQuery("select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "'");
-				while (result.next()) {
-					//
-					kubunValueList.add(result.getString("KBUSERKUBUN").trim());
-					wrk = result.getString("TXUSERKUBUN").trim();
-					kubunTextList.add(wrk);
+				XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
+				operator.addKeyValue("IDUSERKUBUN", wrkStr);
+				operator.setOrderBy("SQLIST");
+				while (operator.next()) {
+					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+					kubunTextList.add(operator.getValueOf("TXUSERKUBUN").toString().trim());
 				}
-				result.close();
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
 			}
@@ -991,61 +984,51 @@ class XF290_Field extends Object implements XFScriptableField {
 		return isKubunField;
 	}
 
-	public void setValueOfResultSet(ResultSet result){
+	public void setValueOfResultSet(XFTableOperator operator){
 		try {
 			if (this.isVirtualField) {
 				if (this.isRangeKeyFieldExpire()) {
-					component.setValue(XFUtility.calculateExpireValue(this.getTableElement(), result, dialog_.getSession()));
+					component.setValue(XFUtility.calculateExpireValue(this.getTableElement(), operator, dialog_.getSession(), dialog_.getProcessLog()));
 				}
 			} else {
 				String basicType = this.getBasicType();
-				//
-				if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-					String value = result.getString(this.getFieldID());
-					if (this.isFieldOnPrimaryTable) {
-						if (value == null) {
-							component.setValue("0");
-						} else {
-							component.setValue(result.getString(this.getFieldID()));
-						}
+				if (basicType.equals("INTEGER")) {
+					String value = operator.getValueOf(this.getFieldID()).toString();
+					if (value == null || value.equals("")) {
+						component.setValue("");
 					} else {
-						if (basicType.equals("INTEGER")) {
-							if (value == null || value.equals("")) {
-								component.setValue("");
-							} else {
-								int pos = value.indexOf(".");
-								if (pos >= 0) {
-									value = value.substring(0, pos);
-								}
-								component.setValue(Integer.parseInt(value));
-							}
+						int pos = value.indexOf(".");
+						if (pos >= 0) {
+							value = value.substring(0, pos);
 						}
-						if (basicType.equals("FLOAT")) {
-							if (value == null || value.equals("")) {
-								component.setValue("");
-							} else {
-								component.setValue(Float.parseFloat(value));
-							}
-						}
+						component.setValue(Long.parseLong(value));
+					}
+				}
+				if (basicType.equals("FLOAT")) {
+					String value = operator.getValueOf(this.getFieldID()).toString();
+					if (value == null || value.equals("")) {
+						component.setValue("");
+					} else {
+						component.setValue(Double.parseDouble(value));
 					}
 				}
 				//
 				if (basicType.equals("STRING") || basicType.equals("TIME") || basicType.equals("DATETIME")) {
-					String value = result.getString(this.getFieldID());
+					Object value = operator.getValueOf(this.getFieldID());
 					if (value == null) {
 						component.setValue("");
 					} else {
-						component.setValue(value.trim());
+						component.setValue(value.toString().trim());
 					}
 				}
 				//
 				if (basicType.equals("DATE")) {
-					component.setValue(result.getDate(this.getFieldID()));
+					component.setValue(operator.getValueOf(this.getFieldID()));
 				}
 				//
 				component.setOldValue(component.getInternalValue());
 			}
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace(dialog_.getExceptionStream());
 			dialog_.setErrorAndCloseFunction();
 		}
@@ -1113,10 +1096,10 @@ class XF290_Field extends Object implements XFScriptableField {
 		Object returnObj = null;
 		//
 		if (this.getBasicType().equals("INTEGER")) {
-			returnObj = Integer.parseInt((String)component.getInternalValue());
+			returnObj = Long.parseLong((String)component.getInternalValue());
 		} else {
 			if (this.getBasicType().equals("FLOAT")) {
-				returnObj = Float.parseFloat((String)component.getInternalValue());
+				returnObj = Double.parseDouble((String)component.getInternalValue());
 			} else {
 				if (component.getInternalValue() == null) {
 					returnObj = "";
@@ -1134,6 +1117,10 @@ class XF290_Field extends Object implements XFScriptableField {
 
 	public Object getOldValue() {
 		return getValue();
+	}
+	
+	public boolean isValueChanged() {
+		return !this.getValue().equals(this.getOldValue());
 	}
 
 	public boolean isEditable() {
@@ -1786,8 +1773,8 @@ class XF290_ReferTable extends Object {
 	public boolean isToBeExecuted(){
 		return isToBeExecuted;
 	}
-	
-	public boolean isRecordToBeSelected(ResultSet result){
+
+	public boolean isRecordToBeSelected(XFTableOperator operator){
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {
@@ -1795,39 +1782,33 @@ class XF290_ReferTable extends Object {
 		}
 		//
 		if (rangeKeyType == 1) {
-			try {
-				if (!rangeValidated) { 
-					// Note that result set is ordered by rangeKeyFieldValue DESC //
-					Object valueKey = dialog_.getInternalValueOfFieldByName((rangeKeyFieldSearch));
-					Object valueFrom = result.getObject(rangeKeyFieldValid);
-					int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-					if (comp1 >= 0) {
-						returnValue = true;
-						rangeValidated = true;
-					}
+			if (!rangeValidated) { 
+				// Note that result set is ordered by rangeKeyFieldValue DESC //
+				Object valueKey = dialog_.getInternalValueOfFieldByName((rangeKeyFieldSearch));
+				Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
+				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
+				if (comp1 >= 0) {
+					returnValue = true;
+					rangeValidated = true;
 				}
-			} catch (SQLException e) {
-				e.printStackTrace(dialog_.getExceptionStream());
-				dialog_.setErrorAndCloseFunction();
 			}
 		}
 		//
 		if (rangeKeyType == 2) {
-			try {
-				Object valueKey = dialog_.getInternalValueOfFieldByName((rangeKeyFieldSearch));
-				Object valueFrom = result.getObject(rangeKeyFieldValid);
-				Object valueThru = result.getObject(rangeKeyFieldExpire);
-				if (valueThru == null) {
-					valueThru = "9999-12-31";
+			Object valueKey = dialog_.getInternalValueOfFieldByName((rangeKeyFieldSearch));
+			Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
+			Object valueThru = operator.getValueOf(rangeKeyFieldExpire);
+			if (valueThru == null) {
+				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
+				if (comp1 >= 0) {
+					returnValue = true;
 				}
+			} else {
 				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
 				int comp2 = valueKey.toString().compareTo(valueThru.toString());
 				if (comp1 >= 0 && comp2 < 0) {
 					returnValue = true;
 				}
-			} catch (SQLException e) {
-				e.printStackTrace(dialog_.getExceptionStream());
-				dialog_.setErrorAndCloseFunction();
 			}
 		}
 		//

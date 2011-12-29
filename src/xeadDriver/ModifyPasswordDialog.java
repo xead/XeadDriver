@@ -37,9 +37,9 @@ import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.PlainDocument;
 import java.awt.event.*;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+//import java.sql.Connection;
+//import java.sql.SQLException;
+//import java.sql.Statement;
 import java.util.ResourceBundle;
 
 public class ModifyPasswordDialog extends JDialog {
@@ -57,8 +57,8 @@ public class ModifyPasswordDialog extends JDialog {
 	private JPasswordField jPasswordNew = new JPasswordField();
 	private Session session = null;
 	private String userID = "";
-	private Connection connection = null;
-	private Statement statement = null;
+	//private Connection connection = null;
+	//private Statement statement = null;
 	private boolean modified = false;
 	private Image imageTitle;
 	private About about;
@@ -70,7 +70,7 @@ public class ModifyPasswordDialog extends JDialog {
 		 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.ModifyPasswordDialog.class.getResource("ikey.png"));
 		 	this.setIconImage(imageTitle);
 			this.session = session;
-			this.connection = session.getConnection();
+			//this.connection = session.getConnection();
 			this.setTitle(res.getString("ModifyPassword"));
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
 			jPanelMain.setPreferredSize(new Dimension(290, 163));
@@ -190,19 +190,26 @@ public class ModifyPasswordDialog extends JDialog {
 				statementBuf.append("' and TXPASSWORD = '") ;
 				statementBuf.append(passwordCurrentDigested);
 				statementBuf.append("'") ;
-				String sql = statementBuf.toString();
 				//
-				statement = connection.createStatement();
-				int count = statement.executeUpdate(sql);
+				XFTableOperator operator = new XFTableOperator(session, null, statementBuf.toString(), true);
+				int count = operator.execute();
 				if (count == 1) {
 					validated = true;
 				} else {
 					JOptionPane.showMessageDialog(this, res.getString("ModifyPasswordError2"));
 				}
+//				String sql = statementBuf.toString();
+//				statement = connection.createStatement();
+//				int count = statement.executeUpdate(sql);
+//				if (count == 1) {
+//					validated = true;
+//				} else {
+//					JOptionPane.showMessageDialog(this, res.getString("ModifyPasswordError2"));
+//				}
+//				//
+//				connection.commit();
 				//
-				connection.commit();
-				//
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}

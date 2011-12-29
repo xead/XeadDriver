@@ -36,10 +36,6 @@ import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.PlainDocument;
 import java.awt.event.*;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Date;
 import java.util.ResourceBundle;
 
@@ -50,7 +46,7 @@ public class LoginDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	public static final String APPLICATION_NAME  = "XEAD Driver 1.0";
-	public static final String FULL_VERSION  = "V1.R0.M13";
+	public static final String FULL_VERSION  = "V1.R0.M14";
 	public static final String FORMAT_VERSION  = "1.0";
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
 	public static final String COPYRIGHT = "Copyright 2011 DBC,Ltd.";
@@ -68,9 +64,6 @@ public class LoginDialog extends JDialog {
 	private JPasswordField jPasswordField = new JPasswordField();
 	private Session session = null;
 	private String userID, userName, userEmployeeNo, userMenus = "";
-	private Connection connection = null;
-	private Statement statement = null;
-	private ResultSet result = null;
 	private boolean validated = false;
 	private About about;
 
@@ -81,7 +74,6 @@ public class LoginDialog extends JDialog {
 			int fieldSize;
 			//
 			this.session = session;
-			this.connection = session.getConnection();
 			this.setTitle(session.getSystemName() + " " + session.getVersion());
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
 			jPanelMain.setPreferredSize(new Dimension(290, 130));
@@ -137,7 +129,7 @@ public class LoginDialog extends JDialog {
 		}
 	}
 
-	public boolean userIsValidated() {
+	public boolean userIsValidated() throws Exception {
 		jPanelMain.getRootPane().setDefaultButton(jButtonOK);
 		Dimension dlgSize = this.getPreferredSize();
 		Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -154,7 +146,7 @@ public class LoginDialog extends JDialog {
 		return validated;
 	}
 
-	void jButtonOK_actionPerformed(ActionEvent e) {
+	void jButtonOK_actionPerformed(ActionEvent e) throws Exception {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 			if (checkUserAndPassword(jTextFieldUserID.getText(), new String(jPasswordField.getPassword()))) {
@@ -170,66 +162,46 @@ public class LoginDialog extends JDialog {
 		about.request();
 	}
 
-	boolean checkUserAndPassword(String userID, String password) {
+	boolean checkUserAndPassword(String userID, String password) throws Exception {
 		if (userID.equals("") || password.equals("")) {
-			//
 			JOptionPane.showMessageDialog(this, res.getString("LogInComment"));
-			//
 		} else {
-			//
-			try {
+			if (!session.getSystemVariantString("LOGIN_PERMITTED").equals("F")) {
+				String passwordDigested = session.getDigestAdapter().digest(password);
+				StringBuffer statementBuf = new StringBuffer();
+				statementBuf.append("select * from ");
+				statementBuf.append(session.getTableNameOfUser());
+				statementBuf.append(" where IDUSER = '") ;
+				statementBuf.append(userID) ;
+				statementBuf.append("' and TXPASSWORD = '") ;
+				statementBuf.append(passwordDigested);
+				statementBuf.append("'") ;
 				//
-				boolean isLoginPermitted = true;
-				if (session.getSystemVariantString("LOGIN_PERMITTED").equals("F")) {
-					isLoginPermitted = false;
-				}
-				//
-				if (isLoginPermitted) {
-					String passwordDigested = session.getDigestAdapter().digest(password);
-					StringBuffer statementBuf = new StringBuffer();
-					statementBuf.append("select * from ");
-					statementBuf.append(session.getTableNameOfUser());
-					statementBuf.append(" where IDUSER = '") ;
-					statementBuf.append(userID) ;
-					statementBuf.append("' and TXPASSWORD = '") ;
-					statementBuf.append(passwordDigested);
-					statementBuf.append("'") ;
-					String sql = statementBuf.toString();
-					//
-					statement = connection.createStatement();
-					result = statement.executeQuery(sql);
-					if (result.next()) {
-						Date resultDateFrom = null;
-						Date resultDateThru = null;
-						Date today = new Date();
-						try {
-							resultDateFrom = result.getDate("DTVALID");
-							resultDateThru = result.getDate("DTEXPIRE");
-						} catch (SQLException e) {
-							e.printStackTrace();
-						}
-						if (today.after(resultDateFrom)) {
-							if (resultDateThru == null || today.before(resultDateThru)) {
-								this.userID = jTextFieldUserID.getText();
-								this.userName = result.getString("TXNAME").trim();
-								this.userEmployeeNo = result.getString("NREMPLOYEE").trim();
-								this.userMenus = result.getString("TXMENUS").trim();
-								validated = true;
-							} else {
-								JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
-							}
+				XFTableOperator operator = new XFTableOperator(session, null, statementBuf.toString(), true);
+				if (operator.next()) {
+					Date resultDateFrom = null;
+					Date resultDateThru = null;
+					Date today = new Date();
+					resultDateFrom = (java.util.Date)operator.getValueOf("DTVALID");
+					resultDateThru = (java.util.Date)operator.getValueOf("DTEXPIRE");
+					if (today.after(resultDateFrom)) {
+						if (resultDateThru == null || today.before(resultDateThru)) {
+							this.userID = jTextFieldUserID.getText();
+							this.userName = operator.getValueOf("TXNAME").toString().trim();
+							this.userEmployeeNo = operator.getValueOf("NREMPLOYEE").toString().trim();
+							this.userMenus = operator.getValueOf("TXMENUS").toString().trim();
+							validated = true;
+						} else {
+							JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
 						}
 					} else {
-						JOptionPane.showMessageDialog(this, res.getString("LogInError2"));
+						JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
 					}
-					result.close();
-					//
 				} else {
-					JOptionPane.showMessageDialog(this, res.getString("LogInError3"));
+					JOptionPane.showMessageDialog(this, res.getString("LogInError2"));
 				}
-				//
-			} catch (SQLException e) {
-				e.printStackTrace();
+			} else {
+				JOptionPane.showMessageDialog(this, res.getString("LogInError3"));
 			}
 		}
 		return validated;
@@ -275,12 +247,17 @@ public class LoginDialog extends JDialog {
 
 class LoginDialog_jButtonOK_actionAdapter implements java.awt.event.ActionListener {
 	LoginDialog adaptee;
+	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	LoginDialog_jButtonOK_actionAdapter(LoginDialog adaptee) {
-    this.adaptee = adaptee;
-  }
-  public void actionPerformed(ActionEvent e) {
-    adaptee.jButtonOK_actionPerformed(e);
-  }
+		this.adaptee = adaptee;
+	}
+	public void actionPerformed(ActionEvent e) {
+		try {
+			adaptee.jButtonOK_actionPerformed(e);
+		} catch(Exception ex) {
+			JOptionPane.showMessageDialog(null, res.getString("LogInError3") + "\n" + ex.getMessage());
+		}
+	}
 }
 
 class LoginDialog_jButtonClose_actionAdapter implements java.awt.event.ActionListener {

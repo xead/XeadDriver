@@ -39,29 +39,35 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
+import java.security.*;
+import java.net.URI;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.html.HTMLEditorKit;
-import java.net.URI;
-import org.apache.xerces.parsers.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
-import com.lowagie.text.pdf.BaseFont;
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.security.*;
+import org.apache.xerces.parsers.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
+
+import com.lowagie.text.pdf.BaseFont;
+
 import org.apache.http.*;
 import org.apache.http.client.*;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 public class Session extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -72,6 +78,7 @@ public class Session extends JFrame {
 	private String sessionStatus = "";
 	private boolean noErrorsOccured = true;
 	private String databaseUser = "";
+	private String appServerName = "";
 	private String userID = "";
 	private String userName = "";
 	private String userEmployeeNo = "";
@@ -99,13 +106,12 @@ public class Session extends JFrame {
 
 	private Image imageTitle;
 	private Dimension screenSize = new Dimension(0,0);
-	private Connection connectionToCommit = null;
+	private Connection connectionManualCommit = null;
 	private Connection connectionAutoCommit = null;
 	private DatabaseMetaData databaseMetaData = null;
 	private String[] menuIDArray = new String[20];
 	private String[] menuCaptionArray = new String[20];
 	private String[] helpURLArray = new String[20];
-	//private int[] lastSelectedOptionIndexArray = new int[20];
 	private MenuOption[][] menuOptionArray = new MenuOption[20][20];
 	private JButton[] jButtonMenuOptionArray = new JButton[20];
 
@@ -135,7 +141,7 @@ public class Session extends JFrame {
 	private DigestAdapter digestAdapter = null;
 	private LoginDialog loginDialog = null;
 	private ModifyPasswordDialog modifyPasswordDialog = null;
-	private Function function = new Function(this);
+	private FunctionLauncher functionLauncher = new FunctionLauncher(this);
 	private SortableDomElementListModel sortingList;
 	private NodeList functionList = null;
 	private NodeList tableList = null;
@@ -185,7 +191,8 @@ public class Session extends JFrame {
 						//
 						this.setVisible(true);
 					}else {
-						closeSession();
+						//JOptionPane.showMessageDialog(null, res.getString("LogInError2"));
+						closeSession(false);
 						System.exit(0);
 					}
 				}
@@ -193,12 +200,12 @@ public class Session extends JFrame {
 		} catch(ScriptException e) {
 			JOptionPane.showMessageDialog(null, res.getString("FunctionError0") + "\n" + e.getMessage());
 			noErrorsOccured = false;
-			closeSession();
+			closeSession(false);
 			System.exit(0);
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(null, "Login failed. " + e.getMessage());
+			JOptionPane.showMessageDialog(null, res.getString("LogInError3") + "\n" + e.getMessage());
 			noErrorsOccured = false;
-			closeSession();
+			closeSession(false);
 			System.exit(0);
 		}
 	}
@@ -261,27 +268,36 @@ public class Session extends JFrame {
 		scriptFunctions = XFUtility.substringLinesWithTokenOfEOL(element.getAttribute("ScriptFunctions"), "\n");
 		functionList = domDocument.getElementsByTagName("Function");
 		tableList = domDocument.getElementsByTagName("Table");
+		
+		
 
 		databaseUser = element.getAttribute("DatabaseUser");
 		String databaseName = element.getAttribute("DatabaseName");
 		if (databaseName.contains("<CURRENT>")) {
 			databaseName = databaseName.replace("<CURRENT>", currentFolder);
 		}
-		try {
-			connectionToCommit = DriverManager.getConnection(databaseName, databaseUser, element.getAttribute("DatabasePassword"));
-			connectionToCommit.setAutoCommit(false);
-			connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, element.getAttribute("DatabasePassword"));
-			connectionAutoCommit.setAutoCommit(true);
-		} catch (Exception e) {
-			if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("jdbc:derby://")) {
-				JOptionPane.showMessageDialog(this, res.getString("SessionError4") + systemName + res.getString("SessionError5"));
-			} else {
-				JOptionPane.showMessageDialog(this, res.getString("SessionError6") + databaseName + res.getString("SessionError7") + e.getMessage());
+		if (!element.getAttribute("AppServerName").equals("")) {
+			appServerName = "http://" + element.getAttribute("AppServerName") + "/XeadServer/DBMethod";
+		}
+		if (appServerName.equals("")) {
+			try {
+				connectionManualCommit = DriverManager.getConnection(databaseName, databaseUser, element.getAttribute("DatabasePassword"));
+				connectionManualCommit.setAutoCommit(false);
+				//connectionToCommit.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED); // Default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
+				connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, element.getAttribute("DatabasePassword"));
+				connectionAutoCommit.setAutoCommit(true);
+				//connectionAutoCommit.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED); // Default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
+				databaseMetaData = connectionManualCommit.getMetaData();
+			} catch (Exception e) {
+				if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("jdbc:derby://")) {
+					JOptionPane.showMessageDialog(this, res.getString("SessionError4") + systemName + res.getString("SessionError5"));
+				} else {
+					JOptionPane.showMessageDialog(this, res.getString("SessionError6") + databaseName + res.getString("SessionError7") + e.getMessage());
+				}
+				return null;
 			}
-			return null;
 		}
 		databaseDisconnect = element.getAttribute("DatabaseDisconnect");
-		databaseMetaData = connectionToCommit.getMetaData();
 
 		org.w3c.dom.Element fontElement;
 		BaseFont baseFont;
@@ -375,7 +391,6 @@ public class Session extends JFrame {
 			jButtonMenuOptionArray[i].setFont(new java.awt.Font("SansSerif", 0, 16));
 			jButtonMenuOptionArray[i].addActionListener(new Session_jButton_actionAdapter(this));
 			jButtonMenuOptionArray[i].addKeyListener(new Session_keyAdapter(this));
-			//jButtonMenuOptionArray[i].addFocusListener(new Session_jButton_FocusListener(this));
 		}
 		jPanelMenuCenter.add(jButtonMenuOptionArray[0]);
 		jPanelMenuCenter.add(jButtonMenuOptionArray[10]);
@@ -425,7 +440,6 @@ public class Session extends JFrame {
 	    jSplitPane1.setDividerLocation(screenSize.height - 120);
 
 	    for (int i = 0; i < 20; i++) {
-	    	//lastSelectedOptionIndexArray[i] = -1;
 			for (int j = 0; j < 20; j++) {
 		    	menuOptionArray[i][j] = null;
 			}
@@ -445,35 +459,16 @@ public class Session extends JFrame {
 		sessionStatus = "ACT";
 		InetAddress ip = InetAddress.getLocalHost();
 		//
-		Statement statement = null;
-		ResultSet result = null;
-		String sql;
-		try {
-			statement = connectionAutoCommit.createStatement();
-			sql = "insert into " + sessionTable
-			+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, KBSESSIONSTATUS) values ("
-			+ "'" + sessionID + "'," + "'" + userID + "'," + "CURRENT_TIMESTAMP," + "'" + ip.toString() + "','" + sessionStatus + "')";
-			statement.executeUpdate(sql);
-			//connection.commit();
-			//
-			sql = "select * from " + calendarTable;
-			result = statement.executeQuery(sql);
-			while (result.next()) {
-				offDateList.add(result.getString("DTOFF"));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (result != null) {
-					result.close();
-				}
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+		String sql = "insert into " + sessionTable
+		+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, KBSESSIONSTATUS) values ("
+		+ "'" + sessionID + "'," + "'" + userID + "'," + "CURRENT_TIMESTAMP,"
+		+ "'" + ip.toString() + "','" + sessionStatus + "')";
+		XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+		operator.execute();
+		//
+		operator = new XFTableOperator(this, null, "select * from " + calendarTable, true);
+		while (operator.next()) {
+			offDateList.add(operator.getValueOf("DTOFF").toString());
 		}
 		//
 		jLabelUser.setText("User " + userName);
@@ -551,10 +546,8 @@ public class Session extends JFrame {
 							break;
 						}
 					}
-					//menuOptionArray[menuIndex][optionNo] = new MenuOption(functionElement, optionElement.getAttribute("OptionName"), optionElement.getAttribute("Parameters"));
 					menuOptionArray[menuIndex][optionNo] = new MenuOption(functionElement, optionElement.getAttribute("OptionName"));
 				}
-				//menuOptionArray[menuIndex][19] = new MenuOption(null, "LOGOUT", "");
 				menuOptionArray[menuIndex][19] = new MenuOption(null, "LOGOUT");
 				//
 				if (!id.equals("")) {
@@ -594,7 +587,6 @@ public class Session extends JFrame {
 	void setupOptionsOfMenuWithTabNo(int tabNumber) {
 		if (tabNumber > -1) {
 			menuIDUsing = menuIDArray[tabNumber];
-			//jButtonMenuOptionArray[0].requestFocus();
 			jTabbedPaneMenu.requestFocus();
 			for (int i = 0; i < 20; i++) {
 				if (menuOptionArray[tabNumber][i] == null) {
@@ -602,17 +594,10 @@ public class Session extends JFrame {
 				} else {
 					jButtonMenuOptionArray[i].setText(menuOptionArray[tabNumber][i].getMenuOptionName());
 					jButtonMenuOptionArray[i].setVisible(true);
-					//if (i == lastSelectedOptionIndexArray[tabNumber]) {
-					//	jButtonMenuOptionArray[i].requestFocus();
-					//}
 				}
 			}
 		}
 	}
-
-	//public java.util.Date getDateOnCalendar(Component compo, java.util.Date defaultDate) {
-	//	return xFCalendar.getDateOnCalendar(compo, defaultDate);
-	//}
 
 	public String getTimeStamp() {
 		return XFUtility.getUserExpressionOfUtilDate(null, "", true);
@@ -792,141 +777,116 @@ public class Session extends JFrame {
 	}
 
 	public String getNextNumber(String numberID) {
-		String wrkStr, nextNumber = "";
-		int wrkInt, wrkSum, count;
-		//
-		Statement statement = null;
-		ResultSet result = null;
+		String nextNumber = "";
+		/////////////////////////////////////////////////////////////
+		// Getting next number and updating number with counted-up //
+		/////////////////////////////////////////////////////////////
 		try {
-			//
-			statement = connectionAutoCommit.createStatement();
-			String fetchSQL = "select * from " + numberingTable + " where IDNUMBER = '" + numberID + "'";
-			//
-			count = 0;
-			while (count == 0) {
-				//
-				result = statement.executeQuery(fetchSQL);
-				if (result.next()) {
-					//
-					// Format Number Value //
-					DecimalFormat decimalFormat = new DecimalFormat();
-					StringBuffer buf = new StringBuffer();
-					for (int i = 0; i < result.getInt("NRNUMDIGIT"); i++) {
-						buf.append("0");
-					}
-					decimalFormat.applyPattern(buf.toString());
-					int number = result.getInt("NRCURRENT");
-					String outputdata = decimalFormat.format(number);
-					if (result.getString("FGWITHCD").equals("T")) {
-						wrkSum = 0;
-						for (int i = 0; i < outputdata.length(); i++) {
-							wrkStr = outputdata.substring(i, i+1);
-							wrkInt = Integer.parseInt(wrkStr);
-							if ((wrkInt % 2) == 1) {
-								wrkInt = wrkInt * 3;
-							}
-							wrkSum = wrkSum + wrkInt;
-						}
-						wrkInt = wrkSum % 10;
-						wrkInt = 10 - wrkInt; //Check Digit with Modulus 10//
-						nextNumber = result.getString("TXPREFIX").trim() + outputdata + wrkInt;
-					} else {
-						nextNumber = result.getString("TXPREFIX").trim() + outputdata;
-					}
-					//
-					// Update Numbering table record //
-					number++;
-					if (result.getInt("NRNUMDIGIT") == 1 && number == 10) {
-						number = 0;
-					}
-					if (result.getInt("NRNUMDIGIT") == 2 && number == 100) {
-						number = 10;
-					}
-					if (result.getInt("NRNUMDIGIT") == 3 && number == 1000) {
-						number = 100;
-					}
-					if (result.getInt("NRNUMDIGIT") == 4 && number == 10000) {
-						number = 1000;
-					}
-					if (result.getInt("NRNUMDIGIT") == 5 && number == 100000) {
-						number = 10000;
-					}
-					if (result.getInt("NRNUMDIGIT") == 6 && number == 1000000) {
-						number = 100000;
-					}
-					if (result.getInt("NRNUMDIGIT") == 7 && number == 10000000) {
-						number = 1000000;
-					}
-					if (result.getInt("NRNUMDIGIT") == 8 && number == 100000000) {
-						number = 10000000;
-					}
-					if (result.getInt("NRNUMDIGIT") == 9 && number == 1000000000) {
-						number = 100000000;
-					}
-					//
-					String updateSQL = "update " + numberingTable + 
-					" set NRCURRENT = " + number +
-					", UPDCOUNTER = " + (result.getInt("UPDCOUNTER") + 1) +
-					" where IDNUMBER = '" + numberID + "'" +
-					" and UPDCOUNTER = " + result.getInt("UPDCOUNTER");
-					//
-					count = statement.executeUpdate(updateSQL); //Auto commit connection //
-					if (count == 0) {
-						// Set thread asleep for a while(10-110 milisec) to avoid update emulation.//
-						wrkInt = (int)(Math.random() * 100.0) % 10;
-						Thread.sleep(10 + wrkInt * 10);
-					}
-				} else {
-					JOptionPane.showMessageDialog(null, res.getString("SessionError13") + numberID + res.getString("SessionError14"));
-					break;
-				}
+			String sql = "select * from " + numberingTable + " where IDNUMBER = '" + numberID + "'";
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			if (operator.next()) {
+				nextNumber = getFormattedNextNumber(
+						Integer.parseInt(operator.getValueOf("NRCURRENT").toString()),
+						Integer.parseInt(operator.getValueOf("NRNUMDIGIT").toString()),
+						operator.getValueOf("TXPREFIX").toString().trim(),
+						operator.getValueOf("FGWITHCD").toString());
+				int number = countUpNumber(
+						Integer.parseInt(operator.getValueOf("NRCURRENT").toString()),
+						Integer.parseInt(operator.getValueOf("NRNUMDIGIT").toString()));
+				sql = "update " + numberingTable + 
+				" set NRCURRENT = " + number +
+				", UPDCOUNTER = " + (Integer.parseInt(operator.getValueOf("UPDCOUNTER").toString()) + 1) +
+				" where IDNUMBER = '" + numberID + "'" +
+				" and UPDCOUNTER = " + Integer.parseInt(operator.getValueOf("UPDCOUNTER").toString());
+				operator = new XFTableOperator(this, null, sql, true);
+				operator.execute();
+			} else {
+				JOptionPane.showMessageDialog(null, res.getString("SessionError13") + numberID + res.getString("SessionError14"));
 			}
-			//
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (result != null) {
-					result.close();
-				}
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		return nextNumber;
 	}
 	
+	private String getFormattedNextNumber(int number, int digit, String prefix, String withCD) {
+		String wrkStr;
+		String nextNumber = "";
+		int wrkInt, wrkSum;
+		//
+		DecimalFormat decimalFormat = new DecimalFormat();
+		StringBuffer buf = new StringBuffer();
+		for (int i = 0; i < digit; i++) {
+			buf.append("0");
+		}
+		decimalFormat.applyPattern(buf.toString());
+		String outputdata = decimalFormat.format(number);
+		//
+		if (withCD.equals("T")) {
+			wrkSum = 0;
+			for (int i = 0; i < outputdata.length(); i++) {
+				wrkStr = outputdata.substring(i, i+1);
+				wrkInt = Integer.parseInt(wrkStr);
+				if ((wrkInt % 2) == 1) {
+					wrkInt = wrkInt * 3;
+				}
+				wrkSum = wrkSum + wrkInt;
+			}
+			wrkInt = wrkSum % 10;
+			wrkInt = 10 - wrkInt; //Check Digit with Modulus 10//
+			nextNumber = prefix + outputdata + wrkInt;
+		} else {
+			nextNumber = prefix + outputdata;
+		}
+		//
+		return nextNumber;
+	}
+		
+	private int countUpNumber(int number, int digit) {
+		number++;
+		if (digit == 1 && number == 10) {
+			number = 0;
+		}
+		if (digit == 2 && number == 100) {
+			number = 10;
+		}
+		if (digit == 3 && number == 1000) {
+			number = 100;
+		}
+		if (digit == 4 && number == 10000) {
+			number = 1000;
+		}
+		if (digit == 5 && number == 100000) {
+			number = 10000;
+		}
+		if (digit == 6 && number == 1000000) {
+			number = 100000;
+		}
+		if (digit == 7 && number == 10000000) {
+			number = 1000000;
+		}
+		if (digit == 8 && number == 100000000) {
+			number = 10000000;
+		}
+		if (digit == 9 && number == 1000000000) {
+			number = 100000000;
+		}
+		return number;
+	}
+	
 	public String getSystemVariantString(String itemID) {
 		String strValue = "";
-		Statement statement = null;
-		ResultSet result = null;
 		try {
-			statement = this.getConnection().createStatement();
-			result = statement.executeQuery("select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'");
-			if (result.next()) {
-				strValue = result.getString("TXVALUE").trim();
+			String sql = "select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'";
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			if (operator.next()) {
+				strValue = operator.getValueOf("TXVALUE").toString().trim();
 				if (strValue.contains("<CURRENT>")) {
 					strValue = strValue.replace("<CURRENT>", currentFolder);
 				}
 			}
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			try {
-				if (result != null) {
-					result.close();
-				}
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		return strValue;
 	}
@@ -934,30 +894,19 @@ public class Session extends JFrame {
 	public int getSystemVariantInteger(String itemID) {
 		String strValue = "";
 		int intValue = 0;
-		Statement statement = null;
-		ResultSet result = null;
 		try {
-			statement = this.getConnection().createStatement();
-			result = statement.executeQuery("select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'");
-			if (result.next()) {
-				strValue = result.getString("TXVALUE").trim();
-				if (result.getString("TXTYPE").trim().equals("NUMBER")) {
+			String sql = "select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'";
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			if (operator.next()) {
+				strValue = operator.getValueOf("TXVALUE").toString().trim();
+				if (operator.getValueOf("TXTYPE").toString().trim().equals("NUMBER")) {
 					intValue = Integer.parseInt(strValue);
+				} else {
+					JOptionPane.showMessageDialog(null, "Value of system Variant with ID '" + itemID + "' is not number.");
 				}
 			}
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			try {
-				if (result != null) {
-					result.close();
-				}
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		return intValue;
 	}
@@ -965,71 +914,22 @@ public class Session extends JFrame {
 	public float getSystemVariantFloat(String itemID) {
 		String strValue = "";
 		float floatValue = (float)0.0;
-		Statement statement = null;
-		ResultSet result = null;
 		try {
-			statement = this.getConnection().createStatement();
-			result = statement.executeQuery("select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'");
-			if (result.next()) {
-				strValue = result.getString("TXVALUE").trim();
-				if (result.getString("TXTYPE").trim().equals("NUMBER")) {
+			String sql = "select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'";
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			if (operator.next()) {
+				strValue = operator.getValueOf("TXVALUE").toString().trim();
+				if (operator.getValueOf("TXTYPE").toString().trim().equals("NUMBER")) {
 					floatValue = Float.parseFloat(strValue);
+				} else {
+					JOptionPane.showMessageDialog(null, "Value of system Variant with ID '" + itemID + "' is not number.");
 				}
 			}
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			try {
-				if (result != null) {
-					result.close();
-				}
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
 		return floatValue;
 	}
-
-//	public float getCurrencyRate(String currencyCode, String date) {
-//		float rateReturn = 0;
-//		float rateAnnual = 0;
-//		ResultSet result;
-//		//
-//		try {
-//			Statement statement = this.getConnection().createStatement();
-//			result = statement.executeQuery("select * from " + 
-//						currencyTable + " where CDCURRENCY = '" + currencyCode + "'");
-//			if (result.next()) {
-//				rateAnnual = result.getFloat("VLANNUALRATE");
-//			}
-//			result.close();
-//			//
-//			if (date.equals("")) {
-//				rateReturn = rateAnnual;
-//			} else {
-//				date = date.replaceAll("-", "");
-//				if (date.length() == 8) {
-//					String yyyymm = date.substring(0, 6);
-//					result = statement.executeQuery("select * from " +
-//							currencyDetailTable + " where CDCURRENCY = '" + currencyCode + "' and DTYYYYMM = '" + yyyymm + "'");
-//					if (result.next()) {
-//						rateReturn = result.getFloat("VLMONTHLYRATE");
-//					}
-//					result.close();
-//				}
-//				if (rateReturn == 0) {
-//					rateReturn = rateAnnual;
-//				}
-//			}
-//		} catch (SQLException e) {
-//			e.printStackTrace();
-//		}
-//		//
-//		return rateReturn;
-//	}
 
 	public float getAnnualExchangeRate(String currencyCode, int fYear, String type) {
 		float rateReturn = 0;
@@ -1037,35 +937,24 @@ public class Session extends JFrame {
 		if (currencyCode.equals(getSystemVariantString("SYSTEM_CURRENCY"))) {
 			rateReturn = 1;
 		} else {
-			Statement statement = null;
-			ResultSet result = null;
 			try {
-				statement = this.getConnection().createStatement();
-				result = statement.executeQuery("select * from " + exchangeRateAnnualTable +
-						" where KBCURRENCY = '" + currencyCode + 
-						"' and DTNEND = " + fYear);
-				if (result.next()) {
-					rateReturn = result.getFloat("VLRATEM");
+				String sql = "select * from " + exchangeRateAnnualTable
+					+ " where KBCURRENCY = '" + currencyCode
+					+ "' and DTNEND = " + fYear;
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				if (operator.next()) {
+					rateReturn = Float.parseFloat(operator.getValueOf("VLRATEM").toString());
 					if (type.equals("TTB")) {
-						rateReturn = result.getFloat("VLRATEB");
+						rateReturn = Float.parseFloat(operator.getValueOf("VLRATEB").toString());
 					}
 					if (type.equals("TTS")) {
-						rateReturn = result.getFloat("VLRATES");
+						rateReturn = Float.parseFloat(operator.getValueOf("VLRATES").toString());
 					}
+				} else {
+					JOptionPane.showMessageDialog(null, "Annual exchange rate not found for '" + currencyCode + "'," + fYear + ".");
 				}
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {
-				try {
-					if (result != null) {
-						result.close();
-					}
-					if (statement != null) {
-						statement.close();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
 			}
 		}
 		//
@@ -1078,41 +967,26 @@ public class Session extends JFrame {
 		if (currencyCode.equals(getSystemVariantString("SYSTEM_CURRENCY"))) {
 			rateReturn = 1;
 		} else {
-			Statement statement = null;
-			ResultSet result = null;
 			try {
-				statement = this.getConnection().createStatement();
-				result = statement.executeQuery("select * from " + exchangeRateMonthlyTable +
-						" where KBCURRENCY = '" + currencyCode + 
-						"' and DTNEND = " + fYear +
-						" and DTMSEQ = " + mSeq);
-				if (result.next()) {
-					rateReturn = result.getFloat("VLRATEM");
+				String sql = "select * from " + exchangeRateMonthlyTable
+					+ " where KBCURRENCY = '" + currencyCode
+					+ "' and DTNEND = " + fYear
+					+ " and DTMSEQ = " + mSeq;
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				if (operator.next()) {
+					rateReturn = Float.parseFloat(operator.getValueOf("VLRATEM").toString());
 					if (type.equals("TTB")) {
-						rateReturn = result.getFloat("VLRATEB");
+						rateReturn = Float.parseFloat(operator.getValueOf("VLRATEB").toString());
 					}
 					if (type.equals("TTS")) {
-						rateReturn = result.getFloat("VLRATES");
+						rateReturn = Float.parseFloat(operator.getValueOf("VLRATES").toString());
 					}
 				}
-				//
-				// return annual rate if monthly rate not found //
 				if (rateReturn == 0) {
 					rateReturn = getAnnualExchangeRate(currencyCode, fYear, type);
 				}
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {
-				try {
-					if (result != null) {
-						result.close();
-					}
-					if (statement != null) {
-						statement.close();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
 			}
 		}
 		//
@@ -1124,36 +998,22 @@ public class Session extends JFrame {
 		int taxAmount = 0;
 		//
 		if (!date.equals("") && date != null) {
-			int targetDate = Integer.parseInt(date.replaceAll("-", ""));
+			int targetDate = Integer.parseInt(date.replaceAll("-", "").replaceAll("/", ""));
 			float rate = 0;
 			//
-			Statement statement = null;
-			ResultSet result = null;
 			try {
-				statement = this.getConnection().createStatement();
-				result = statement.executeQuery("select * from " + taxTable + " order by DTSTART");
-				while (result.next()) {
-					fromDate = Integer.parseInt(result.getString("DTSTART").replaceAll("-", ""));
+				String sql = "select * from " + taxTable + " order by DTSTART";
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				while (operator.next()) {
+					fromDate = Integer.parseInt(operator.getValueOf("DTSTART").toString().replaceAll("-", ""));
 					if (targetDate >= fromDate) {
-						rate = result.getFloat("VLTAXRATE");
+						rate = Float.parseFloat(operator.getValueOf("VLTAXRATE").toString());
+						break;
 					}
 				}
-				//
 				taxAmount = (int)Math.floor(amount * rate);
-				//
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
-			} finally {
-				try {
-					if (result != null) {
-						result.close();
-					}
-					if (statement != null) {
-						statement.close();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
 			}
 		}
 		//
@@ -1313,49 +1173,49 @@ public class Session extends JFrame {
 		return resultYear + resultMonth;
 	}
 
-	void closeSession() {
-		Statement statement = null;
-		try {
-			//
+	void closeSession(boolean isToWriteLogAndClose) {
+		//
+		if (isToWriteLogAndClose) {
 			if (noErrorsOccured) {
 				sessionStatus = "END";
 			} else {
 				sessionStatus = "ERR";
 			}
 			//
-			statement = connectionAutoCommit.createStatement();
-			String updateSQL = "update " + sessionTable
-			+ " set DTLOGOUT=CURRENT_TIMESTAMP, KBSESSIONSTATUS='" + sessionStatus + "' where " + "NRSESSION='" + sessionID + "'";
-			statement.executeUpdate(updateSQL);
-			//
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
 			try {
-				if (statement != null) {
-					statement.close();
-				}
-				connectionToCommit.commit();
-				connectionToCommit.close();
+				String sql = "update " + sessionTable
+				+ " set DTLOGOUT=CURRENT_TIMESTAMP, KBSESSIONSTATUS='"
+				+ sessionStatus + "' where " + "NRSESSION='" + sessionID + "'";
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				operator.execute();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		//
+		this.commit(true, null);
+		//
+		if (appServerName.equals("")) {
+			try {
+				connectionManualCommit.close();
 				connectionAutoCommit.close();
 				if (!databaseDisconnect.equals("")) {
 					DriverManager.getConnection(databaseDisconnect);
 				}
-				httpClient.getConnectionManager().shutdown();
 			} catch (SQLException e) {
 				if (e.getSQLState() != null && !e.getSQLState().equals("XJ015")) {
 					e.printStackTrace();
 				}
 			}
 		}
+		//
+		httpClient.getConnectionManager().shutdown();
 	}
 
 	protected void processWindowEvent(WindowEvent e) {
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
 			super.processWindowEvent(e);
-			closeSession();
+			closeSession(true);
 			System.exit(0);
 		} else {
 			super.processWindowEvent(e);
@@ -1385,7 +1245,7 @@ public class Session extends JFrame {
 			for (int i = 0; i < 20; i++) {
 				if (com.equals(jButtonMenuOptionArray[i])) {
 					if (menuOptionArray[jTabbedPaneMenu.getSelectedIndex()][i].isLogoutOption) {
-						this.closeSession();
+						this.closeSession(true);
 						this.setVisible(false);
 						System.exit(0);
 					} else {
@@ -1406,64 +1266,41 @@ public class Session extends JFrame {
 		}
 	}
 
-	//void jButtonMenu_focusGained(FocusEvent e){
-	//	Component com = (Component)e.getSource();
-	//	for (int i = 0; i < 20; i++) {
-	//		if (com.equals(jButtonMenuOptionArray[i])) {
-	//			lastSelectedOptionIndexArray[jTabbedPaneMenu.getSelectedIndex()] = i;
-	//			break;
-	//		}
-	//	}
-	//}
-
 	int writeLogOfFunctionStarted(String functionID, String functionName) {
-		Statement statement = null;
+		sqProgram++;
+		//
 		try {
-			sqProgram++;
-			statement = connectionAutoCommit.createStatement();
-			String insertSQL = "insert into " + sessionDetailTable
-			+ " (NRSESSION, SQPROGRAM, IDMENU, IDPROGRAM, TXPROGRAM, DTSTART, KBPROGRAMSTATUS) values ("
-			+ "'" + this.getSessionID() + "'," + sqProgram + "," + "'" + this.getMenuID() + "'," + "'" + functionID + "'," + "'" + functionName + "'," + "CURRENT_TIMESTAMP,'')";
-			statement.executeUpdate(insertSQL);
-			//
-		} catch (SQLException e) {
+			String sql = "insert into " + sessionDetailTable
+				+ " (NRSESSION, SQPROGRAM, IDMENU, IDPROGRAM, TXPROGRAM, DTSTART, KBPROGRAMSTATUS) values ("
+				+ "'" + this.getSessionID() + "'," + sqProgram + "," + "'" + this.getMenuID() + "'," + "'" + functionID + "'," + "'" + functionName + "'," + "CURRENT_TIMESTAMP,'')";
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			operator.execute();
+		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			try {
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
+		//
 		return sqProgram;
 	}
 
 	void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String errorLog) {
-		Statement statement = null;
+		if (errorLog.length() > 20000) {
+			errorLog = errorLog.substring(0, 20000) + "...";
+		}
+		if (programStatus.equals("99")) {
+			noErrorsOccured = false;
+		}
+		//
 		try {
-			if (errorLog.length() > 20000) {
-				errorLog = errorLog.substring(0, 20000) + "...";
-			}
-			if (programStatus.equals("99")) {
-				noErrorsOccured = false;
-			}
-			statement = connectionAutoCommit.createStatement();
-			String updateSQL = "update " + sessionDetailTable
-			+ " set DTEND=CURRENT_TIMESTAMP, KBPROGRAMSTATUS='" + programStatus + "', TXERRORLOG='" + errorLog + "' where " + "NRSESSION='" + this.getSessionID() + "' and " + "SQPROGRAM=" + sqProgramOfFunction;
-			statement.executeUpdate(updateSQL);
-			//
-		} catch (SQLException ex) {
-			ex.printStackTrace();
-		} finally {
-			try {
-				if (statement != null) {
-					statement.close();
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
+			String sql = "update " + sessionDetailTable
+				+ " set DTEND=CURRENT_TIMESTAMP, KBPROGRAMSTATUS='"
+				+ programStatus + "', TXERRORLOG='"
+				+ errorLog + "' where " + "NRSESSION='"
+				+ this.getSessionID() + "' and "
+				+ "SQPROGRAM=" + sqProgramOfFunction;
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			operator.execute();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -1632,27 +1469,22 @@ public class Session extends JFrame {
 		setupOptionsOfMenuWithTabNo(jTabbedPaneMenu.getSelectedIndex());
 	}
 
-	class Function extends Object {
+	class FunctionLauncher extends Object {
 		private XF000[] xF000 = new XF000[10];
-		//private XF010[] xF010 = new XF010[10];
 		private XF100[] xF100 = new XF100[10];
 		private XF110[] xF110 = new XF110[10];
 		private XF200[] xF200 = new XF200[10];
-		//private XF210[] xF210 = new XF210[10];
 		private XF290[] xF290 = new XF290[10];
 		private XF300[] xF300 = new XF300[10];
 		private XF310[] xF310 = new XF310[10];
 		private XF390[] xF390 = new XF390[10];
 		private Session session_ = null;
-		//private StringBuffer processLog_ = null;
 		//
-		public Function(Session session) {
+		public FunctionLauncher(Session session) {
 			xF000[0] = new XF000(session, 0);
-			//xF010[0] = new XF010(session, 0);
 			xF100[0] = new XF100(session, 0);
 			xF110[0] = new XF110(session, 0);
 			xF200[0] = new XF200(session, 0);
-			//xF210[0] = new XF210(session, 0);
 			xF290[0] = new XF290(session, 0);
 			xF300[0] = new XF300(session, 0);
 			xF310[0] = new XF310(session, 0);
@@ -1691,28 +1523,6 @@ public class Session extends JFrame {
 							}
 						}
 					}
-//					if (functionElement.getAttribute("Type").equals("XF010")) {
-//						if (xF010[i] == null) {
-//							xF010[i] = new XF010(session_, i);
-//							returnMap = xF010[i].execute(functionElement, parmMap);
-//							break;
-//						} else {
-//							if (xF010[i].isAvailable()) {
-//								returnMap = xF010[i].execute(functionElement, parmMap);
-//								break;
-//							} else {
-//								if (xF010[i].getFunctionID().equals(functionID)) {
-//									if (countOfRuccursiveCalls >= 1) {
-//										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
-//										returnMap.put("RETURN_CODE", "01");
-//										break;
-//									} else {
-//										countOfRuccursiveCalls++;
-//									}
-//								}
-//							}
-//						}
-//					}
 					if (functionElement.getAttribute("Type").equals("XF100")) {
 						if (xF100[i] == null) {
 							xF100[i] = new XF100(session_, i);
@@ -1779,28 +1589,6 @@ public class Session extends JFrame {
 							}
 						}
 					}
-//					if (functionElement.getAttribute("Type").equals("XF210")) {
-//						if (xF210[i] == null) {
-//							xF210[i] = new XF210(session_, i);
-//							returnMap = xF210[i].execute(functionElement, parmMap);
-//							break;
-//						} else {
-//							if (xF210[i].isAvailable()) {
-//								returnMap = xF210[i].execute(functionElement, parmMap);
-//								break;
-//							} else {
-//								if (xF210[i].getFunctionID().equals(functionID)) {
-//									if (countOfRuccursiveCalls >= 1) {
-//										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
-//										returnMap.put("RETURN_CODE", "01");
-//										break;
-//									} else {
-//										countOfRuccursiveCalls++;
-//									}
-//								}
-//							}
-//						}
-//					}
 					if (functionElement.getAttribute("Type").equals("XF290")) {
 						if (xF290[i] == null) {
 							xF290[i] = new XF290(session_, i);
@@ -1900,9 +1688,7 @@ public class Session extends JFrame {
 		private org.w3c.dom.Element functionElement_ = null;
 		private String optionName_;
 		private boolean isLogoutOption = false;
-		//private HashMap<String, Object> parmMap_;
 		//
-		//public MenuOption(org.w3c.dom.Element functionElement, String optionName, String parms) {
 		public MenuOption(org.w3c.dom.Element functionElement, String optionName) {
 			//
 			functionElement_ = functionElement;
@@ -1919,25 +1705,11 @@ public class Session extends JFrame {
 					optionName_ = optionName;
 				}
 			}
-			//
-//			String wrkStr;
-//			int pos1, pos2;
-//			StringTokenizer workTokenizer = new StringTokenizer(parms, "," );
-//			while (workTokenizer.hasMoreTokens()) {
-//				wrkStr = workTokenizer.nextToken();
-//				pos1 = wrkStr.indexOf("(");
-//				pos2 = wrkStr.indexOf(")");
-//				parmMap_.put(wrkStr.substring(0, pos1), wrkStr.substring(pos1, pos2));
-//			}
 		}
 		//
 		public String getMenuOptionName() {
 			return optionName_;
 		}
-		//
-//		public HashMap<String, Object> getParamMap() {
-//			  return parmMap_;
-//		}
 		//
 		public boolean isLogoutOption() {
 			return isLogoutOption;
@@ -1947,15 +1719,76 @@ public class Session extends JFrame {
 			if (isLogoutOption) {
 				return null;
 			} else {
-				//parmMap_ = new HashMap<String, Object>();
-				//return function.execute(functionElement_, parmMap_);
-				return function.execute(functionElement_, new HashMap<String, Object>());
+				return functionLauncher.execute(functionElement_, new HashMap<String, Object>());
 			}
 		}
 	}
 	
+	public String getAppServerName() {
+		return appServerName;
+	}
+	
 	public Connection getConnection() {
-		return connectionToCommit;
+		return connectionManualCommit;
+	}
+	
+	public Connection getConnectionAutoCommit() {
+		return connectionAutoCommit;
+	}
+	
+	public void commit(boolean isCommit, StringBuffer logBuf) {
+		if (appServerName.equals("")) {
+			try {
+				if (isCommit) {
+					connectionManualCommit.commit();
+					XFUtility.appendLog("Local-commit succeeded.", logBuf);
+				} else {
+					connectionManualCommit.rollback();
+			     	XFUtility.appendLog("Local-rollback succeeded.", logBuf);
+				}
+			} catch (SQLException e) {
+				JOptionPane.showMessageDialog(null, e.getMessage());
+		     	XFUtility.appendLog(e.getMessage(), logBuf);
+			}
+		} else {
+	        HttpPost httpPost = null;
+			try {
+				httpPost = new HttpPost(appServerName);
+				List<NameValuePair> objValuePairs = new ArrayList<NameValuePair>(2);
+				objValuePairs.add(new BasicNameValuePair("SESSION", sessionID));
+				if (isCommit) {
+					objValuePairs.add(new BasicNameValuePair("METHOD", "COMMIT"));
+				} else {
+					objValuePairs.add(new BasicNameValuePair("METHOD", "ROLLBACK"));
+				}
+				httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
+				//
+				HttpResponse response = httpClient.execute(httpPost);
+				HttpEntity responseEntity = response.getEntity();
+				if (responseEntity == null) {
+					XFUtility.appendLog("Response is NULL.", logBuf);
+				} else {
+			     	XFUtility.appendLog(EntityUtils.toString(responseEntity), logBuf);
+				}
+			} catch (Exception e) {
+				String msg = "";
+				if (isCommit) {
+					msg = "Connection failed to commit with the servlet '" + appServerName + "'";
+				} else {
+					msg = "Connection failed to rollback with the servlet '" + appServerName + "'";
+				}
+				JOptionPane.showMessageDialog(null, msg);
+		     	XFUtility.appendLog(e.getMessage(), logBuf);
+			} finally {
+				if (httpPost != null) {
+					httpPost.abort();
+				}
+			}
+		}
+	}
+	
+	public HttpClient getHttpClient() {
+		return httpClient;
 	}
 	
 	public String getAddressFromZipNo(String zipNo) {
@@ -1998,8 +1831,6 @@ public class Session extends JFrame {
 	
 	public void executeProgram(String pgmName) {
 		try {
-			//setProcessLog("execute " + pgmName);
-			//
 			Runtime rt = Runtime.getRuntime();
 			Process p = rt.exec(pgmName);
 			if (p != null) {
@@ -2023,14 +1854,13 @@ public class Session extends JFrame {
 	}
 	
 	public void browseFile(String fileName) {
-			File file = new File(fileName);
-			browseFile(file.toURI());
+		File file = new File(fileName);
+		browseFile(file.toURI());
 	}
 	
 	public void browseFile(URI uri) {
 		try {
 			desktop.browse(uri);
-			//
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(null, ex.getMessage());
@@ -2039,11 +1869,8 @@ public class Session extends JFrame {
 	
 	public void editFile(String fileName) {
 		try {
-			//setProcessLog("edit " + fileName);
-			//
 			File file = new File(fileName);
 			desktop.edit(file);
-			//
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(null, ex.getMessage());
@@ -2081,13 +1908,26 @@ public class Session extends JFrame {
 		return domDocument;
 	}
 
-	public Function getFunction() {
-		return function;
+	public HashMap<String, Object> executeFunction(String functionID, HashMap<String, Object> parmMap) throws Exception {
+		HashMap<String, Object> returnMap = null;
+		org.w3c.dom.Element element, elementOfFunction = null;
+		//
+		for (int k = 0; k < functionList.getLength(); k++) {
+			element = (org.w3c.dom.Element)functionList.item(k);
+			if (element.getAttribute("ID").equals(functionID)) {
+				elementOfFunction = element;
+				break;
+			}
+		}
+		//
+		if (elementOfFunction == null) {
+			throw new Exception(res.getString("FunctionError9") + functionID + res.getString("FunctionError10"));
+		} else {
+			returnMap = functionLauncher.execute(elementOfFunction, parmMap);
+		}
+		//
+		return returnMap;
 	}
-
-	//public void setProcessLog(String text) {
-	//	function.setProcessLog(text);
-	//}
 
 	Desktop getDesktop() {
 		return desktop;
@@ -2134,13 +1974,19 @@ public class Session extends JFrame {
 		return databaseUser;
 	}
 	
-	public void compressTable(String tableID) {
+	public void compressTable(String tableID) throws Exception {
 		StringBuffer statementBuf;
 		org.w3c.dom.Element element;
 		Statement statement = null;
+		HttpPost httpPost = null;
+		String msg = "";
 		//
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
+			//
+			if (appServerName.equals("")) {
+				statement = connectionManualCommit.createStatement();
+			}
 			//
 			for (int i = 0; i < tableList.getLength(); i++) {
 				//
@@ -2148,27 +1994,54 @@ public class Session extends JFrame {
 				if (element.getAttribute("ID").startsWith(tableID) || tableID.equals("")) {
 					//
 					statementBuf = new StringBuffer();
-					statementBuf.append("call SYSCS_UTIL.SYSCS_COMPRESS_TABLE('");
+					statementBuf.append("CALL SYSCS_UTIL.SYSCS_COMPRESS_TABLE('");
 					statementBuf.append(databaseUser);
 					statementBuf.append("', '") ;
 					statementBuf.append(element.getAttribute("ID"));
 					statementBuf.append("', 1)") ;
 					//
-					statement = connectionToCommit.createStatement();
-					statement.executeUpdate(statementBuf.toString());
+					//////////////////////////////////////
+					// Execute procedure by auto-commit //
+					//////////////////////////////////////
+					if (appServerName.equals("")) {
+						statement.executeUpdate(statementBuf.toString());
+					} else {
+						try {
+							httpPost = new HttpPost(appServerName);
+							List<NameValuePair> objValuePairs = new ArrayList<NameValuePair>(1);
+							objValuePairs.add(new BasicNameValuePair("METHOD", statementBuf.toString()));
+							httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
+							HttpResponse response = httpClient.execute(httpPost);
+							HttpEntity responseEntity = response.getEntity();
+							if (responseEntity == null) {
+								msg = "Compressing table " + element.getAttribute("ID") + " failed.";
+								JOptionPane.showMessageDialog(null, msg);
+								throw new Exception(msg);
+							}
+						} finally {
+							if (httpPost != null) {
+								httpPost.abort();
+							}
+						}
+					}
 				}
 			}
 		} catch (SQLException e) {
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Compressing table " + tableID + " failed.\n" + e.getMessage());
+			throw new Exception(e.getMessage());
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Compressing table " + tableID + " failed.\n" + e.getMessage());
+			throw new Exception(e.getMessage());
 		} finally {
-			try {
-				if (statement != null) {
-					statement.close();
+			if (appServerName.equals("")) {
+				try {
+					if (statement != null) {
+						statement.close();
+					}
+				} catch (SQLException e) {
+					e.printStackTrace();
 				}
-			} catch (SQLException e) {
-				e.printStackTrace();
 			}
-			//
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
@@ -2330,18 +2203,6 @@ class Session_jButton_actionAdapter implements java.awt.event.ActionListener {
 	    adaptee.jButtonMenu_actionPerformed(e);
 	  }
 }
-
-//class Session_jButton_FocusListener implements FocusListener{
-//	  Session adaptee;
-//	  Session_jButton_FocusListener(Session adaptee) {
-//	    this.adaptee = adaptee;
-//	  }
-//		public void focusGained(FocusEvent e){
-//		    adaptee.jButtonMenu_focusGained(e);
-//		}
-//		public void focusLost(FocusEvent e){
-//		}
-//}
 
 class Session_jEditorPane_actionAdapter implements javax.swing.event.HyperlinkListener {
 	  Session adaptee;

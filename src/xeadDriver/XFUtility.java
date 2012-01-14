@@ -459,11 +459,15 @@ public class XFUtility {
 			returnValue = "'" + value.toString() + "'";
 		}
 		if (basicType.equals("DATE")) {
-			String strDate = value.toString();
-			if (strDate == null || strDate.equals("")) {
+			if (value == null) {
 				returnValue = "NULL";
 			} else {
-				returnValue = "'" + strDate + "'";
+				String strDate = value.toString();
+				if (strDate == null || strDate.equals("")) {
+					returnValue = "NULL";
+				} else {
+					returnValue = "'" + strDate + "'";
+				}
 			}
 		}
 		if (basicType.equals("DATETIME")) {
@@ -1105,8 +1109,10 @@ public class XFUtility {
 			image.scalePercent(percent);
 		} catch (BadElementException e) {
 			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, e.getMessage() + "\n" + fileName);
 		} catch (IOException e) {
 			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, e.getMessage() + "\n" + fileName);
 		}
 		//
 		return image;
@@ -1665,10 +1671,6 @@ public class XFUtility {
 		//
 		return colorConverted;
 	}
-
-	
-	
-	
 	
 	static SortableDomElementListModel getSortedListModel(NodeList list, String attName) {
 		SortableDomElementListModel sortableDomElementListModel = new SortableDomElementListModel(attName);
@@ -2283,6 +2285,10 @@ class XFDateField extends JPanel implements XFEditableField {
 	
 	public void addActionListener(ActionListener listener) {
 		jButton.addActionListener(listener);
+	}
+	
+	public void addKeyListener(KeyAdapter adapter) {
+		jButton.addKeyListener(adapter);
 	}
 
 	public void setEditable(boolean editable) {

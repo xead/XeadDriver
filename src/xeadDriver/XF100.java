@@ -786,6 +786,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 									}
 								}
 								tableModelMain.addRow(Cell);
+								jTableMain.paintImmediately(new Rectangle(0,0, jTableMain.getWidth(), jTableMain.getHeight()));
 							} else {
 								columnValueList = new ArrayList<Object>();
 								for (int i = 0; i < columnList.size(); i++) {
@@ -833,6 +834,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 						Cell[j+1] = workingRowArray[i].getColumnValueList().get(j);
 					}
 					tableModelMain.addRow(Cell);
+					jTableMain.paintImmediately(new Rectangle(0,0, jTableMain.getWidth(), jTableMain.getHeight()));
 				}
 			}
 			//

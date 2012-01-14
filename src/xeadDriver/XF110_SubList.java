@@ -1277,6 +1277,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					}
 					//
 					if (hasNoError) {
+						while (!dialog_.isReadyAtReferChecker()) {
+							Thread.sleep(500);
+						}
 						ArrayList<String> errorMsgList = dialog_.getReferChecker().getOperationErrors("UPDATE", tableRowNumber.getColumnValueMapWithFieldID(), rowNumber);
 						for (int i = 0; i < errorMsgList.size(); i++) {
 							hasNoError = false;
@@ -6423,7 +6426,9 @@ class XF110_SubListDetailTable extends Object {
 		}
 		statementBuf.append(updateCounterID);
 		statementBuf.append("=");
-		statementBuf.append((Integer)rowNumber.getColumnValueMap().get(updateCounterID) + 1);
+		//statementBuf.append((Integer)rowNumber.getColumnValueMap().get(updateCounterID) + 1);
+		statementBuf.append((Long)rowNumber.getColumnValueMap().get(updateCounterID) + 1);
+		
 		//
 		statementBuf.append(" where ") ;
 		//
@@ -6522,7 +6527,8 @@ class XF110_SubListDetailTable extends Object {
 						statementBuf.append(dialog_.getDetailColumnList().get(j).getFieldID()) ;
 						statementBuf.append("=") ;
 						//statementBuf.append(convertToTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
-						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
+						//statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
+						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getColumnValueMap().get(dialog_.getDetailColumnList().get(j).getDataSourceName())));
 						firstField = false;
 					}
 				}

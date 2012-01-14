@@ -93,7 +93,8 @@ public class Session extends JFrame {
 	private String taxTable = "";
 	private String exchangeRateAnnualTable = "";
 	private String exchangeRateMonthlyTable = "";
-	private String databaseDisconnect = "";
+	private String databaseName = "";
+	//private String databaseDisconnect = "";
 	private String menuIDUsing = "";
 	private String imageFileFolder = "";
 	private File outputFolder = null;
@@ -268,11 +269,9 @@ public class Session extends JFrame {
 		scriptFunctions = XFUtility.substringLinesWithTokenOfEOL(element.getAttribute("ScriptFunctions"), "\n");
 		functionList = domDocument.getElementsByTagName("Function");
 		tableList = domDocument.getElementsByTagName("Table");
-		
-		
 
 		databaseUser = element.getAttribute("DatabaseUser");
-		String databaseName = element.getAttribute("DatabaseName");
+		databaseName = element.getAttribute("DatabaseName");
 		if (databaseName.contains("<CURRENT>")) {
 			databaseName = databaseName.replace("<CURRENT>", currentFolder);
 		}
@@ -297,7 +296,7 @@ public class Session extends JFrame {
 				return null;
 			}
 		}
-		databaseDisconnect = element.getAttribute("DatabaseDisconnect");
+		//databaseDisconnect = element.getAttribute("DatabaseDisconnect");
 
 		org.w3c.dom.Element fontElement;
 		BaseFont baseFont;
@@ -876,8 +875,9 @@ public class Session extends JFrame {
 	
 	public String getSystemVariantString(String itemID) {
 		String strValue = "";
+		String sql = "";
 		try {
-			String sql = "select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'";
+			sql = "select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'";
 			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 			if (operator.next()) {
 				strValue = operator.getValueOf("TXVALUE").toString().trim();
@@ -1199,11 +1199,17 @@ public class Session extends JFrame {
 			try {
 				connectionManualCommit.close();
 				connectionAutoCommit.close();
-				if (!databaseDisconnect.equals("")) {
-					DriverManager.getConnection(databaseDisconnect);
+				//if (!databaseDisconnect.equals("")) {
+				//	DriverManager.getConnection(databaseDisconnect);
+				//}
+				if (databaseName.contains("jdbc:derby")) {
+					DriverManager.getConnection("jdbc:derby:;shutdown=true");
 				}
 			} catch (SQLException e) {
-				if (e.getSQLState() != null && !e.getSQLState().equals("XJ015")) {
+				//if (e.getSQLState() != null && !e.getSQLState().equals("XJ015")) {
+				if (databaseName.contains("jdbc:derby")
+						&& e.getSQLState() != null
+						&& !e.getSQLState().equals("XJ015")) {
 					e.printStackTrace();
 				}
 			}
@@ -1957,6 +1963,10 @@ public class Session extends JFrame {
 		return userVariantsTable;
 	}
 
+	String getTableNameOfNumbering() {
+		return numberingTable;
+	}
+
 	String getTableNameOfCalendar() {
 		return calendarTable;
 	}
@@ -1981,68 +1991,70 @@ public class Session extends JFrame {
 		HttpPost httpPost = null;
 		String msg = "";
 		//
-		try {
-			setCursor(new Cursor(Cursor.WAIT_CURSOR));
-			//
-			if (appServerName.equals("")) {
-				statement = connectionManualCommit.createStatement();
-			}
-			//
-			for (int i = 0; i < tableList.getLength(); i++) {
+		if (databaseName.contains("jdbc:derby:")) {
+			try {
+				//setCursor(new Cursor(Cursor.WAIT_CURSOR));
 				//
-				element = (org.w3c.dom.Element)tableList.item(i);
-				if (element.getAttribute("ID").startsWith(tableID) || tableID.equals("")) {
+				if (appServerName.equals("")) {
+					statement = connectionManualCommit.createStatement();
+				}
+				//
+				for (int i = 0; i < tableList.getLength(); i++) {
 					//
-					statementBuf = new StringBuffer();
-					statementBuf.append("CALL SYSCS_UTIL.SYSCS_COMPRESS_TABLE('");
-					statementBuf.append(databaseUser);
-					statementBuf.append("', '") ;
-					statementBuf.append(element.getAttribute("ID"));
-					statementBuf.append("', 1)") ;
-					//
-					//////////////////////////////////////
-					// Execute procedure by auto-commit //
-					//////////////////////////////////////
-					if (appServerName.equals("")) {
-						statement.executeUpdate(statementBuf.toString());
-					} else {
-						try {
-							httpPost = new HttpPost(appServerName);
-							List<NameValuePair> objValuePairs = new ArrayList<NameValuePair>(1);
-							objValuePairs.add(new BasicNameValuePair("METHOD", statementBuf.toString()));
-							httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
-							HttpResponse response = httpClient.execute(httpPost);
-							HttpEntity responseEntity = response.getEntity();
-							if (responseEntity == null) {
-								msg = "Compressing table " + element.getAttribute("ID") + " failed.";
-								JOptionPane.showMessageDialog(null, msg);
-								throw new Exception(msg);
-							}
-						} finally {
-							if (httpPost != null) {
-								httpPost.abort();
+					element = (org.w3c.dom.Element)tableList.item(i);
+					if (element.getAttribute("ID").startsWith(tableID) || tableID.equals("")) {
+						//
+						statementBuf = new StringBuffer();
+						statementBuf.append("CALL SYSCS_UTIL.SYSCS_COMPRESS_TABLE('");
+						statementBuf.append(databaseUser);
+						statementBuf.append("', '") ;
+						statementBuf.append(element.getAttribute("ID"));
+						statementBuf.append("', 1)") ;
+						//
+						//////////////////////////////////////
+						// Execute procedure by auto-commit //
+						//////////////////////////////////////
+						if (appServerName.equals("")) {
+							statement.executeUpdate(statementBuf.toString());
+						} else {
+							try {
+								httpPost = new HttpPost(appServerName);
+								List<NameValuePair> objValuePairs = new ArrayList<NameValuePair>(1);
+								objValuePairs.add(new BasicNameValuePair("METHOD", statementBuf.toString()));
+								httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
+								HttpResponse response = httpClient.execute(httpPost);
+								HttpEntity responseEntity = response.getEntity();
+								if (responseEntity == null) {
+									msg = "Compressing table " + element.getAttribute("ID") + " failed.";
+									JOptionPane.showMessageDialog(null, msg);
+									throw new Exception(msg);
+								}
+							} finally {
+								if (httpPost != null) {
+									httpPost.abort();
+								}
 							}
 						}
 					}
 				}
-			}
-		} catch (SQLException e) {
-			JOptionPane.showMessageDialog(null, "Compressing table " + tableID + " failed.\n" + e.getMessage());
-			throw new Exception(e.getMessage());
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "Compressing table " + tableID + " failed.\n" + e.getMessage());
-			throw new Exception(e.getMessage());
-		} finally {
-			if (appServerName.equals("")) {
-				try {
-					if (statement != null) {
-						statement.close();
+			} catch (SQLException e) {
+				JOptionPane.showMessageDialog(null, "Compressing table " + tableID + " failed.\n" + e.getMessage());
+				throw new Exception(e.getMessage());
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, "Compressing table " + tableID + " failed.\n" + e.getMessage());
+				throw new Exception(e.getMessage());
+			} finally {
+				if (appServerName.equals("")) {
+					try {
+						if (statement != null) {
+							statement.close();
+						}
+					} catch (SQLException e) {
+						e.printStackTrace();
 					}
-				} catch (SQLException e) {
-					e.printStackTrace();
 				}
+				//setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}
-			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
 

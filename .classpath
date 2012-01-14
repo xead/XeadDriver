@@ -16,5 +16,7 @@
 	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/commons-codec-1.4.jar"/>
 	<classpathentry kind="lib" path="D:/GitRepos/XeadServer/jar/xeadsrv.jar"/>
+	<classpathentry kind="lib" path="C:/XeadFramework/lib/mysql-connector-java-5.1.18-bin.jar"/>
+	<classpathentry kind="lib" path="C:/XeadFramework/lib/postgresql-9.1-901.jdbc3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

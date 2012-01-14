@@ -88,6 +88,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private JScrollPane jScrollPaneHeaderFields = new JScrollPane();
 	private XF310_HeaderTable headerTable;
 	private ReferChecker headerReferChecker = null;
+	private boolean isReadyAtHeaderReferChecker;
 	private XF310_HeaderField firstEditableHeaderField = null;
 	private HashMap<String, Object> parmMap_ = null;
 	private HashMap<String, Object> returnMap_ = new HashMap<String, Object>();
@@ -96,6 +97,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private NodeList headerReferElementList;
 	private XF310_DetailTable detailTable;
 	private ReferChecker detailReferChecker = null;
+	private boolean isReadyAtDetailReferChecker;
 	private ArrayList<XF310_DetailColumn> detailColumnList = new ArrayList<XF310_DetailColumn>();
 	private ArrayList<XF310_DetailReferTable> detailReferTableList = new ArrayList<XF310_DetailReferTable>();
 	private ArrayList<XF310_DetailRowNumber> deleteRowNumberList = new ArrayList<XF310_DetailRowNumber>();
@@ -401,7 +403,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < sortingList1.getSize(); i++) {
 				headerReferTableList.add(new XF310_HeaderReferTable((org.w3c.dom.Element)sortingList1.getElementAt(i), this));
 			}
-			headerReferChecker = new ReferChecker(session_, headerTable.getTableElement(), this);
+			//headerReferChecker = new ReferChecker(session_, headerTable.getTableElement(), this);
+			XF310_HeaderReferCheckerConstructor headerConstructor = new XF310_HeaderReferCheckerConstructor(this);
+	        Thread headerConstructorThread = new Thread(headerConstructor);
+	        headerConstructorThread.start();
 
 			/////////////////////////////////////////////////
 			// Setup Header Fields and Fetch Header Record //
@@ -571,7 +576,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				// Setup information of detail table //
 				///////////////////////////////////////
 				detailTable = new XF310_DetailTable(functionElement_, this);
-				detailReferChecker = new ReferChecker(session_, detailTable.getTableElement(), this);
+				//detailReferChecker = new ReferChecker(session_, detailTable.getTableElement(), this);
+				XF310_DetailReferCheckerConstructor detailConstructor = new XF310_DetailReferCheckerConstructor(this);
+		        Thread detailConstructorThread = new Thread(detailConstructor);
+		        detailConstructorThread.start();
 				detailReferTableList.clear();
 				detailReferElementList = detailTable.getTableElement().getElementsByTagName("Refer");
 				sortingList2 = XFUtility.getSortedListModel(detailReferElementList, "Order");
@@ -829,6 +837,18 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionHeader = e.getMessage();
 			setErrorAndCloseFunction();
 		}
+	}
+	
+	public void setHeaderReferChecker(ReferChecker checker) {
+		isReadyAtHeaderReferChecker = false;
+		headerReferChecker = checker;
+		isReadyAtHeaderReferChecker = true;
+	}
+	
+	public void setDetailReferChecker(ReferChecker checker) {
+		isReadyAtDetailReferChecker = false;
+		detailReferChecker = checker;
+		isReadyAtDetailReferChecker = true;
 	}
 	
 	public void commit() {
@@ -1123,7 +1143,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						keyValueMap.put(detailColumnList.get(i).getFieldID(), detailColumnList.get(i).getInternalValue());
 					}
 				}
-				columnValueMap.put(detailTable.getUpdateCounterID(), Integer.parseInt(operator.getValueOf(detailTable.getUpdateCounterID()).toString()));
+				columnValueMap.put(detailTable.getUpdateCounterID(), Long.parseLong(operator.getValueOf(detailTable.getUpdateCounterID()).toString()));
 				//
 				fetchDetailReferRecords("AR", false, "", columnValueMap, null);
 				//
@@ -1249,6 +1269,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						for (int i = 0; i < deleteRowNumberList.size(); i++) {
 							tableRowNumber = (XF310_DetailRowNumber)deleteRowNumberList.get(i);
 							tableRowNumber.setValueToDetailColumns();
+							while (!isReadyAtDetailReferChecker) {
+								Thread.sleep(500);
+							}
 							ArrayList<String> errorMsgList = detailReferChecker.getOperationErrors("DELETE", tableRowNumber.getColumnValueMapWithFieldID());
 							if (errorMsgList.size() > 0) {
 								StringBuffer buf = new StringBuffer();
@@ -1264,7 +1287,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 								setErrorAndCloseFunction();
 							}
 							//
-							operator = createTableOperator(detailTable.getSQLToDelete(deleteRowNumberList.get(i).getKeyValueMap(), (Integer)deleteRowNumberList.get(i).getColumnValueMap().get(detailTable.getUpdateCounterID())));
+							operator = createTableOperator(detailTable.getSQLToDelete(deleteRowNumberList.get(i).getKeyValueMap(), (Long)deleteRowNumberList.get(i).getColumnValueMap().get(detailTable.getUpdateCounterID())));
 							recordCount = operator.execute();
 							if (recordCount == 1) {
 								detailTable.runScript("AD", "", deleteRowNumberList.get(i).getColumnValueMap(), deleteRowNumberList.get(i).getColumnOldValueMap());
@@ -1394,6 +1417,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			//
 			if (hasNoError) {
+				while (!isReadyAtHeaderReferChecker) {
+					Thread.sleep(500);
+				}
 				errorMsgList = headerReferChecker.getOperationErrors("UPDATE", headerFieldValueMap);
 				for (int i = 0; i < errorMsgList.size(); i++) {
 					hasNoError = false;
@@ -1440,6 +1466,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 				//
 				if (hasNoError) {
+					while (!isReadyAtDetailReferChecker) {
+						Thread.sleep(500);
+					}
 					if (tableRowNumber.getRecordType().equals("CURRENT")) {
 						errorMsgList = detailReferChecker.getOperationErrors("UPDATE", tableRowNumber.getColumnValueMapWithFieldID(), rowNumber);
 					} else {
@@ -1668,6 +1697,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					} else {
 						//
 						if (rowNumber.getRecordType().equals("CURRENT")) {
+							while (!isReadyAtDetailReferChecker) {
+								Thread.sleep(500);
+							}
 							ArrayList<String> errorMsgList = detailReferChecker.getOperationErrors("DELETE", rowNumber.getColumnValueMapWithFieldID());
 							for (int i = 0; i < errorMsgList.size(); i++) {
 								messageList.add(errorMsgList.get(i));
@@ -5951,7 +5983,7 @@ class XF310_HeaderTable extends Object {
 	private XF310 dialog_;
 	private StringTokenizer workTokenizer;
 	private String updateCounterID = "";
-	private int updateCounterValue = 0;
+	private long updateCounterValue = 0;
 
 	public XF310_HeaderTable(org.w3c.dom.Element functionElement, XF310 dialog){
 		super();
@@ -6009,7 +6041,7 @@ class XF310_HeaderTable extends Object {
 	}
 	
 	public void setUpdateCounterValue(XFTableOperator operator) {
-		updateCounterValue = Integer.parseInt(operator.getValueOf(updateCounterID).toString());
+		updateCounterValue = Long.parseLong(operator.getValueOf(updateCounterID).toString());
 	}
 
 	public String getSQLToSelect(){
@@ -6934,7 +6966,7 @@ class XF310_DetailTable extends Object {
 		statementBuf.append(", ");
 		statementBuf.append(updateCounterID);
 		statementBuf.append("=");
-		statementBuf.append((Integer)rowNumber.getColumnValueMap().get(updateCounterID) + 1);
+		statementBuf.append((Long)rowNumber.getColumnValueMap().get(updateCounterID) + 1);
 		//
 		statementBuf.append(" where ") ;
 		//
@@ -7006,7 +7038,7 @@ class XF310_DetailTable extends Object {
 		return statementBuf.toString();
 	}
 
-	String getSQLToDelete(HashMap<String, Object> keyMap, int updateCounterValue) {
+	String getSQLToDelete(HashMap<String, Object> keyMap, long updateCounterValue) {
 		StringBuffer statementBuf = new StringBuffer();
 		//
 		if (updateValueToInactivate.equals("")) {
@@ -7086,7 +7118,8 @@ class XF310_DetailTable extends Object {
 						statementBuf.append(dialog_.getDetailColumnList().get(j).getFieldID()) ;
 						statementBuf.append("=") ;
 						//statementBuf.append(convertToTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
-						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
+						//statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
+						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getColumnValueMap().get(dialog_.getDetailColumnList().get(j).getDataSourceName())));
 						firstField = false;
 					}
 				}
@@ -8472,6 +8505,26 @@ class XF310_KeyInputDialog extends JDialog {
 		this.setVisible(true);
 		//
 		return keyMap_;
+	}
+}
+
+class XF310_HeaderReferCheckerConstructor implements Runnable {
+	XF310 adaptee;
+	XF310_HeaderReferCheckerConstructor(XF310 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void run() {
+		adaptee.setHeaderReferChecker(new ReferChecker(adaptee.getSession(), adaptee.getHeaderTable().getTableElement(), adaptee));
+	}
+}
+
+class XF310_DetailReferCheckerConstructor implements Runnable {
+	XF310 adaptee;
+	XF310_DetailReferCheckerConstructor(XF310 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void run() {
+		adaptee.setDetailReferChecker(new ReferChecker(adaptee.getSession(), adaptee.getDetailTable().getTableElement(), adaptee));
 	}
 }
 

@@ -84,6 +84,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	private JPanel jPanelFilter = new JPanel();
 	private XF110_PrimaryTable primaryTable_;
 	private ReferChecker referChecker = null;
+	private boolean isReadyAtReferChecker;
 	private ArrayList<XFTableOperator> referOperatorList = new ArrayList<XFTableOperator>();
 	private ArrayList<XF110_Filter> filterList = new ArrayList<XF110_Filter>();
 	private ArrayList<XF110_Column> columnList = new ArrayList<XF110_Column>();
@@ -352,7 +353,10 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < sortingList.getSize(); i++) {
 				referTableList.add(new XF110_ReferTable((org.w3c.dom.Element)sortingList.getElementAt(i), this));
 			}
-			referChecker = new ReferChecker(session_, primaryTable_.getTableElement(), this);
+			//referChecker = new ReferChecker(session_, primaryTable_.getTableElement(), this);
+			XF110_ReferCheckerConstructor constructor = new XF110_ReferCheckerConstructor(this);
+	        Thread constructorThread = new Thread(constructor);
+	        constructorThread.start();
 
 			///////////////////////////
 			// Setup Filter fields ////
@@ -624,6 +628,16 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 	
+	public void setReferChecker(ReferChecker checker) {
+		isReadyAtReferChecker = false;
+		referChecker = checker;
+		isReadyAtReferChecker = true;
+	}
+	
+	public boolean isReadyAtReferChecker() {
+		return isReadyAtReferChecker;
+	}
+	
 	public void commit() {
 		session_.commit(true, processLog);
 	}
@@ -797,6 +811,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 									}
 								}
 								tableModelMain.addRow(Cell);
+								jTableMain.paintImmediately(new Rectangle(0,0, jTableMain.getWidth(), jTableMain.getHeight()));
 							} else {
 								columnValueList = new ArrayList<Object>();
 								for (int i = 0; i < columnList.size(); i++) {
@@ -845,6 +860,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 						Cell[j+2] = workingRowArray[i].getColumnValueList().get(j);
 					}
 					tableModelMain.addRow(Cell);
+					jTableMain.paintImmediately(new Rectangle(0,0, jTableMain.getWidth(), jTableMain.getHeight()));
 				}
 			}
 			//
@@ -1654,6 +1670,10 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 
 	public String getPrimaryTableID() {
 		return primaryTable_.getTableID();
+	}
+
+	public org.w3c.dom.Element getPrimaryTableElement() {
+		return primaryTable_.getTableElement();
 	}
 
 	public StringBuffer getProcessLog() {
@@ -4306,6 +4326,16 @@ class XF110_ReferTable extends Object {
 		}
 		//
 		return returnValue;
+	}
+}
+
+class XF110_ReferCheckerConstructor implements Runnable {
+	XF110 adaptee;
+	XF110_ReferCheckerConstructor(XF110 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void run() {
+		adaptee.setReferChecker(new ReferChecker(adaptee.getSession(), adaptee.getPrimaryTableElement(), adaptee));
 	}
 }
 

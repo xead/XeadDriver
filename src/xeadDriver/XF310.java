@@ -38,6 +38,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -1295,7 +1296,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							} else {
 								String errorMessage = res.getString("FunctionError33");
 								JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-								exceptionHeader = errorMessage;
+								exceptionHeader = errorMessage.replace("\n", " ");
 								this.rollback();
 								setErrorAndCloseFunction();
 							}
@@ -1325,7 +1326,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 										} else {
 											String errorMessage = res.getString("FunctionError19");
 											JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-											exceptionHeader = errorMessage;
+											exceptionHeader = errorMessage.replace("\n", " ");
 											this.rollback();
 											setErrorAndCloseFunction();
 										}
@@ -1335,6 +1336,12 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 										recordCount = operator.execute();
 										if (recordCount == 1) {
 											detailTable.runScript("AC", "", tableRowNumber.getColumnValueMap(), tableRowNumber.getColumnOldValueMap());
+										} else {
+											String errorMessage = res.getString("FunctionError50");
+											JOptionPane.showMessageDialog(jPanelMain, errorMessage);
+											exceptionHeader = errorMessage;
+											this.rollback();
+											setErrorAndCloseFunction();
 										}
 									}
 								}
@@ -1344,7 +1351,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						} else {
 							String errorMessage = res.getString("FunctionError19");
 							JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-							exceptionHeader = errorMessage;
+							exceptionHeader = errorMessage.replace("\n", " ");
 							this.rollback();
 							setErrorAndCloseFunction();
 						}

@@ -3986,6 +3986,8 @@ class XFTableOperator {
     private Relation relation_ = null;
     private String operation_ = "";
     private String tableID_ = "";
+    private String dbID = "";
+    private String dbName = "";
     private String selectFields_ = "";
     private String orderBy_ = "";
     private String sqlText_ = "";
@@ -4007,6 +4009,13 @@ class XFTableOperator {
         operation_ = operation;
     	tableID_ = tableID;
     	isAutoCommit_ = isAutoCommit;
+    	//
+		dbID = session_.getTableElement(tableID_).getAttribute("DB");
+		if (dbID.equals("")) {
+			dbName = session_.getDatabaseName();
+		} else {
+			dbName = session_.getSubDBName(dbID);
+		}
 	}
 
 	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText) {
@@ -4061,6 +4070,17 @@ class XFTableOperator {
 			tableID_ = sqlText_.substring(pos1, pos2);
 		}
     	isAutoCommit_ = isAutoCommit;
+    	//
+		dbID = session_.getTableElement(tableID_).getAttribute("DB");
+		if (dbID.equals("")) {
+			dbName = session_.getDatabaseName();
+		} else {
+			dbName = session_.getSubDBName(dbID);
+		}
+		//
+		if (dbName.contains("jdbc:mysql:")) {
+			sqlText_ = sqlText_.replaceAll("\\\\", "\\\\\\\\");
+		}
 	}
 
     public void setSelectFields(String fields) {
@@ -4300,6 +4320,9 @@ class XFTableOperator {
         	}
         	//
         	sqlText_ = bf.toString();
+    		if (dbName.contains("jdbc:mysql:")) {
+    			sqlText_ = sqlText_.replaceAll("\\\\", "\\\\\\\\");
+    		}
         }
         //
         return sqlText_;
@@ -4326,37 +4349,45 @@ class XFTableOperator {
 		Connection connection = null;
 		Statement statement = null;
         //
-    	try {
-    		if (isAutoCommit_) {
-    			connection = session_.getConnectionAutoCommit();
-    		} else {
-    			connection = session_.getConnection(); //Manual-Commit Connection//
-    		}
-    		if (connection != null) {
-    			statement = connection.createStatement();
-    			if (operation_.toUpperCase().equals("SELECT")) {
-    				ResultSet result = statement.executeQuery(this.getSqlText());
-    				relation_ = new Relation(result);
-    				count = relation_.getRowCount();
-    				result.close();
-    			} else {
-    				if (operation_.toUpperCase().equals("COUNT")) {
-    					ResultSet result = statement.executeQuery(this.getSqlText());
-    					if (result.next()) {
-    						count = result.getInt(1);
-    					}
-    					result.close();
-    				} else {
-    					count = statement.executeUpdate(this.getSqlText());
-    				}
-    			}
-    			statement.close();
-    		}
-		} catch (SQLException e) {
-	        if (logBuf_ != null) {
-	        	XFUtility.appendLog(e.getMessage(), logBuf_);
-	        }
-        	throw new Exception(e.getMessage());
+		if (!dbID.equals("") && !operation_.toUpperCase().equals("SELECT") && !operation_.toUpperCase().equals("COUNT")) {
+			//JOptionPane.showMessageDialog(null, "Update/Insert/Delete are not permitted to the read-only database.");
+		} else {
+			try {
+				if (dbID.equals("")) {
+					if (isAutoCommit_) {
+						connection = session_.getConnectionAutoCommit();
+					} else {
+						connection = session_.getConnectionManualCommit();
+					}
+				} else {
+					connection = session_.getConnectionReadOnly(dbID);
+				}
+				if (connection != null) {
+					statement = connection.createStatement();
+					if (operation_.toUpperCase().equals("SELECT")) {
+						ResultSet result = statement.executeQuery(this.getSqlText());
+						relation_ = new Relation(result);
+						count = relation_.getRowCount();
+						result.close();
+					} else {
+						if (operation_.toUpperCase().equals("COUNT")) {
+							ResultSet result = statement.executeQuery(this.getSqlText());
+							if (result.next()) {
+								count = result.getInt(1);
+							}
+							result.close();
+						} else {
+							count = statement.executeUpdate(this.getSqlText());
+						}
+					}
+					statement.close();
+				}
+			} catch (SQLException e) {
+				if (logBuf_ != null) {
+					XFUtility.appendLog(e.getMessage(), logBuf_);
+				}
+				throw new Exception(e.getMessage());
+			}
 		}
 		//
     	return count;
@@ -4367,52 +4398,58 @@ class XFTableOperator {
         HttpPost httpPost = null;
 		List<NameValuePair> objValuePairs = null;
         //
-    	if (!isAutoCommit_ && session_.getSessionID().equals("")) {
-    		throw new Exception("Manual-commit transaction is not allowed with blank session ID.");
-    	} else {
-    		try {
-    			httpPost = new HttpPost(session_.getAppServerName());
-    			if (!isAutoCommit_) {
-        			objValuePairs = new ArrayList<NameValuePair>(2);
-    				objValuePairs.add(new BasicNameValuePair("SESSION", session_.getSessionID()));
-        			objValuePairs.add(new BasicNameValuePair("METHOD", this.getSqlText()));
-    			} else {
-        			objValuePairs = new ArrayList<NameValuePair>(1);
-        			objValuePairs.add(new BasicNameValuePair("METHOD", this.getSqlText()));
-    			}
-    			httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
-    			//
-    			HttpResponse response = session_.getHttpClient().execute(httpPost);
-    			HttpEntity responseEntity = response.getEntity();
-    			if (responseEntity == null) {
-    				if (logBuf_ != null) {
-    					XFUtility.appendLog("Response is NULL.", logBuf_);
-    				}
-    			} else {
-    				if (operation_.toUpperCase().equals("SELECT")) {
-    					ObjectInputStream ois = new ObjectInputStream(responseEntity.getContent());
-    					relation_ = (Relation)ois.readObject();
-    					count = relation_.getRowCount();
-    				} else {
-    					count = Integer.parseInt(EntityUtils.toString(responseEntity));
-    				}
-    			}
-    		} catch(SocketException ex) {
-    	        if (logBuf_ != null) {
-    	        	XFUtility.appendLog(ex.getMessage(), logBuf_);
-    	        }
-        		throw new Exception("Communication error with the application server.\n" + ex.getMessage());
-    		} catch(Exception ex) {
-    	        if (logBuf_ != null) {
-    	        	XFUtility.appendLog(ex.getMessage(), logBuf_);
-    	        }
-        		throw ex;
-    		} finally {
-    			if (httpPost != null) {
-    				httpPost.abort();
-    			}
-    		}
-    	}
+		if (!dbID.equals("") && !operation_.toUpperCase().equals("SELECT") && !operation_.toUpperCase().equals("COUNT")) {
+			//JOptionPane.showMessageDialog(null, "Update/Insert/Delete are not permitted to the read-only database.");
+		} else {
+			if (!isAutoCommit_ && session_.getSessionID().equals("")) {
+				throw new Exception("Manual-commit transaction is not allowed with blank session ID.");
+			} else {
+				try {
+					httpPost = new HttpPost(session_.getAppServerName());
+					if (!isAutoCommit_) {
+						objValuePairs = new ArrayList<NameValuePair>(3);
+						objValuePairs.add(new BasicNameValuePair("SESSION", session_.getSessionID()));
+						objValuePairs.add(new BasicNameValuePair("METHOD", this.getSqlText()));
+						objValuePairs.add(new BasicNameValuePair("DB", dbID));
+					} else {
+						objValuePairs = new ArrayList<NameValuePair>(2);
+						objValuePairs.add(new BasicNameValuePair("METHOD", this.getSqlText()));
+						objValuePairs.add(new BasicNameValuePair("DB", dbID));
+					}
+					httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
+					//
+					HttpResponse response = session_.getHttpClient().execute(httpPost);
+					HttpEntity responseEntity = response.getEntity();
+					if (responseEntity == null) {
+						if (logBuf_ != null) {
+							XFUtility.appendLog("Response is NULL.", logBuf_);
+						}
+					} else {
+						if (operation_.toUpperCase().equals("SELECT")) {
+							ObjectInputStream ois = new ObjectInputStream(responseEntity.getContent());
+							relation_ = (Relation)ois.readObject();
+							count = relation_.getRowCount();
+						} else {
+							count = Integer.parseInt(EntityUtils.toString(responseEntity));
+						}
+					}
+				} catch(SocketException ex) {
+					if (logBuf_ != null) {
+						XFUtility.appendLog(ex.getMessage(), logBuf_);
+					}
+					throw new Exception("Communication error with the application server.\n" + ex.getMessage());
+				} catch(Exception ex) {
+					if (logBuf_ != null) {
+						XFUtility.appendLog(ex.getMessage(), logBuf_);
+					}
+					throw ex;
+				} finally {
+					if (httpPost != null) {
+						httpPost.abort();
+					}
+				}
+			}
+		}
 		//
     	return count;
     }

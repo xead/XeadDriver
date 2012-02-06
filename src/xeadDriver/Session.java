@@ -37,7 +37,6 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -77,7 +76,9 @@ public class Session extends JFrame {
 	private String sessionID = "";
 	private String sessionStatus = "";
 	private boolean noErrorsOccured = true;
+	private String databaseName = "";
 	private String databaseUser = "";
+	private String databasePassword = "";
 	private String appServerName = "";
 	private String userID = "";
 	private String userName = "";
@@ -93,8 +94,6 @@ public class Session extends JFrame {
 	private String taxTable = "";
 	private String exchangeRateAnnualTable = "";
 	private String exchangeRateMonthlyTable = "";
-	private String databaseName = "";
-	//private String databaseDisconnect = "";
 	private String menuIDUsing = "";
 	private String imageFileFolder = "";
 	private File outputFolder = null;
@@ -109,7 +108,12 @@ public class Session extends JFrame {
 	private Dimension screenSize = new Dimension(0,0);
 	private Connection connectionManualCommit = null;
 	private Connection connectionAutoCommit = null;
-	private DatabaseMetaData databaseMetaData = null;
+	//private DatabaseMetaData databaseMetaData = null;
+	private ArrayList<String> subDBIDList = new ArrayList<String>();
+	private ArrayList<String> subDBNameList = new ArrayList<String>();
+	private ArrayList<String> subDBUserList = new ArrayList<String>();
+	private ArrayList<String> subDBPasswordList = new ArrayList<String>();
+	private ArrayList<Connection> subDBConnectionList = new ArrayList<Connection>();
 	private String[] menuIDArray = new String[20];
 	private String[] menuCaptionArray = new String[20];
 	private String[] helpURLArray = new String[20];
@@ -270,23 +274,51 @@ public class Session extends JFrame {
 		functionList = domDocument.getElementsByTagName("Function");
 		tableList = domDocument.getElementsByTagName("Table");
 
-		databaseUser = element.getAttribute("DatabaseUser");
 		databaseName = element.getAttribute("DatabaseName");
 		if (databaseName.contains("<CURRENT>")) {
 			databaseName = databaseName.replace("<CURRENT>", currentFolder);
 		}
+		databaseUser = element.getAttribute("DatabaseUser");
+		databasePassword = element.getAttribute("DatabasePassword");
+
+		org.w3c.dom.Element subDBElement;
+		Connection subDBConnection;
+		NodeList subDBList = domDocument.getElementsByTagName("SubDB");
+		for (int i = 0; i < subDBList.getLength(); i++) {
+			subDBElement = (org.w3c.dom.Element)subDBList.item(i);
+			subDBIDList.add(subDBElement.getAttribute("ID"));
+			subDBUserList.add(subDBElement.getAttribute("User"));
+			subDBPasswordList.add(subDBElement.getAttribute("Password"));
+			wrkStr = subDBElement.getAttribute("Name");
+			if (wrkStr.contains("<CURRENT>")) {
+				wrkStr = wrkStr.replace("<CURRENT>", currentFolder);
+			}
+			subDBNameList.add(wrkStr);
+		}
+		
 		if (!element.getAttribute("AppServerName").equals("")) {
 			appServerName = "http://" + element.getAttribute("AppServerName") + "/XeadServer/DBMethod";
 		}
 		if (appServerName.equals("")) {
 			try {
-				connectionManualCommit = DriverManager.getConnection(databaseName, databaseUser, element.getAttribute("DatabasePassword"));
+				///////////////////////////////////////////////////////////////////////////////
+				// Setup committing connections.                                             //
+				// Note that default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
+				///////////////////////////////////////////////////////////////////////////////
+				connectionManualCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
 				connectionManualCommit.setAutoCommit(false);
-				//connectionToCommit.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED); // Default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
-				connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, element.getAttribute("DatabasePassword"));
+				connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
 				connectionAutoCommit.setAutoCommit(true);
-				//connectionAutoCommit.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED); // Default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
-				databaseMetaData = connectionManualCommit.getMetaData();
+				//databaseMetaData = connectionManualCommit.getMetaData();
+
+				////////////////////////////////////////////////////////
+				// Setup read-only connections for Sub-DB definitions //
+				////////////////////////////////////////////////////////
+				for (int i = 0; i < subDBIDList.size(); i++) {
+					subDBConnection = DriverManager.getConnection(subDBNameList.get(i), subDBUserList.get(i), subDBPasswordList.get(i));
+					subDBConnection.setReadOnly(true);
+					subDBConnectionList.add(subDBConnection);
+				}
 			} catch (Exception e) {
 				if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("jdbc:derby://")) {
 					JOptionPane.showMessageDialog(this, res.getString("SessionError4") + systemName + res.getString("SessionError5"));
@@ -1734,12 +1766,20 @@ public class Session extends JFrame {
 		return appServerName;
 	}
 	
-	public Connection getConnection() {
+	public String getSubDBName(String id) {
+		return subDBNameList.get(subDBIDList.indexOf(id));
+	}
+	
+	public Connection getConnectionManualCommit() {
 		return connectionManualCommit;
 	}
 	
 	public Connection getConnectionAutoCommit() {
 		return connectionAutoCommit;
+	}
+
+	public Connection getConnectionReadOnly(String id) {
+		return subDBConnectionList.get(subDBIDList.indexOf(id));
 	}
 	
 	public void commit(boolean isCommit, StringBuffer logBuf) {
@@ -1906,9 +1946,19 @@ public class Session extends JFrame {
 		return tempFile;
 	}
 
-	DatabaseMetaData getDatabaseMetaData() {
-		return databaseMetaData;
-	}
+	//DatabaseMetaData getDatabaseMetaData() {
+	//	return databaseMetaData;
+	//}
+
+	//DatabaseMetaData getDatabaseMetaData(String id) {
+	//	DatabaseMetaData metadata;
+	//	if (id.equals("")) {
+	//		metadata = databaseMetaData;
+	//	} else {
+	//		metadata = subDBDatabaseMetaDataList.get(subDBIDList.indexOf(id));
+	//	}
+	//	return metadata;
+	//}
 
 	org.w3c.dom.Document getDomDocument() {
 		return domDocument;
@@ -1978,6 +2028,10 @@ public class Session extends JFrame {
 	int getNextSQPROGRAM() {
 		sqProgram++;
 		return sqProgram;
+	}
+
+	public String getDatabaseName() {
+		return databaseName;
 	}
 
 	public String getDatabaseUser() {

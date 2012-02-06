@@ -1412,7 +1412,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 								}
 							}
 						} else {
-							closeFunction();
+							String message = res.getString("FunctionError50");
+							JOptionPane.showMessageDialog(this, message);
+							exceptionHeader = message;
+							this.rollback();
+							setErrorAndCloseFunction();
 						}
 					}
 				}
@@ -1461,7 +1465,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						} else {
 							String errorMessage = res.getString("FunctionError19");
 							JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-							exceptionHeader = errorMessage;
+							exceptionHeader = errorMessage.replace("\n", " ");
 							this.rollback();
 							setErrorAndCloseFunction();
 						}
@@ -1563,7 +1567,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					} else {
 						String errorMessage = res.getString("FunctionError33");
 						JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-						exceptionHeader = errorMessage;
+						exceptionHeader = errorMessage.replace("\n", " ");
 						this.rollback();
 						setErrorAndCloseFunction();
 					}

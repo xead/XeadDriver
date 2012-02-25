@@ -628,6 +628,15 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		}
 	}
 	
+	public void startProgress(int maxValue) {
+	}
+	
+	public void incrementProgress() {
+	}
+	
+	public void stopProgress() {
+	}
+	
 	public void commit() {
 		dialog_.commit();
 	}

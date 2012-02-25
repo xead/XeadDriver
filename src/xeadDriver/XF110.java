@@ -33,6 +33,7 @@ package xeadDriver;
 
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -83,8 +84,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	private JPanel jPanelTopWestMargin = new JPanel();
 	private JPanel jPanelFilter = new JPanel();
 	private XF110_PrimaryTable primaryTable_;
-	private ReferChecker referChecker = null;
-	private boolean isReadyAtReferChecker;
 	private ArrayList<XFTableOperator> referOperatorList = new ArrayList<XFTableOperator>();
 	private ArrayList<XF110_Filter> filterList = new ArrayList<XF110_Filter>();
 	private ArrayList<XF110_Column> columnList = new ArrayList<XF110_Column>();
@@ -353,10 +352,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < sortingList.getSize(); i++) {
 				referTableList.add(new XF110_ReferTable((org.w3c.dom.Element)sortingList.getElementAt(i), this));
 			}
-			//referChecker = new ReferChecker(session_, primaryTable_.getTableElement(), this);
-			XF110_ReferCheckerConstructor constructor = new XF110_ReferCheckerConstructor(this);
-	        Thread constructorThread = new Thread(constructor);
-	        constructorThread.start();
 
 			///////////////////////////
 			// Setup Filter fields ////
@@ -628,14 +623,13 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 	
-	public void setReferChecker(ReferChecker checker) {
-		isReadyAtReferChecker = false;
-		referChecker = checker;
-		isReadyAtReferChecker = true;
+	public void startProgress(int maxValue) {
 	}
 	
-	public boolean isReadyAtReferChecker() {
-		return isReadyAtReferChecker;
+	public void incrementProgress() {
+	}
+	
+	public void stopProgress() {
 	}
 	
 	public void commit() {
@@ -747,18 +741,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 							//
 							sql = referTableList.get(i).getSelectSQL();
 							if (!sql.equals("")) {
-//								referTableOp = createTableOperator(sql);
-								referTableOp = null;
-								for (int k = 0; k < referOperatorList.size(); k++) {
-									if (referOperatorList.get(k).getSqlText().equals(sql)) {
-										referTableOp = referOperatorList.get(k);
-										referTableOp.resetCursor();
-									}
-								}
-								if (referTableOp == null ) {
-									referTableOp = createTableOperator(sql);
-									referOperatorList.add(referTableOp);
-								}
+								referTableOp = getReferOperator(sql);
 								while (referTableOp.next()) {
 									//
 									if (referTableList.get(i).isRecordToBeSelected(referTableOp)) {
@@ -887,6 +870,21 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
+	}
+	
+	public XFTableOperator getReferOperator(String sql) {
+		XFTableOperator referTableOp = null;
+		for (int k = 0; k < referOperatorList.size(); k++) {
+			if (referOperatorList.get(k).getSqlText().equals(sql)) {
+				referTableOp = referOperatorList.get(k);
+				referTableOp.resetCursor();
+			}
+		}
+		if (referTableOp == null ) {
+			referTableOp = createTableOperator(sql);
+			referOperatorList.add(referTableOp);
+		}
+		return referTableOp;
 	}
 	
 	void jFunctionButton_actionPerformed(ActionEvent e) {
@@ -1586,10 +1584,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		XFUtility.appendLog(text, processLog);
 	}
 
-	public ReferChecker getReferChecker() {
-		return referChecker;
-	}
-
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
 		return new XFTableOperator(session_, processLog, oparation, tableID);
 	}
@@ -1857,9 +1851,9 @@ class XF110_Filter extends JPanel {
 						jComboBox.addItem("");
 					}
 					try {
-						XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-						operator.addKeyValue("IDUSERKUBUN", wrkStr);
-						operator.setOrderBy("SQLIST");
+						String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+						String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+						XFTableOperator operator = dialog_.getReferOperator(sql);
 						while (operator.next()) {
 							valueIndex++;
 							wrkKey = operator.getValueOf("KBUSERKUBUN").toString().trim();
@@ -3242,9 +3236,9 @@ class XF110_Column extends Object implements XFScriptableField {
 		if (!wrkStr.equals("")) {
 			try {
 				String wrk = "";
-				XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-				operator.addKeyValue("IDUSERKUBUN", wrkStr);
-				operator.setOrderBy("SQLIST");
+				String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+				String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+				XFTableOperator operator = dialog_.getReferOperator(sql);
 				while (operator.next()) {
 					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
 					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
@@ -3346,9 +3340,9 @@ class XF110_Column extends Object implements XFScriptableField {
 		if (!wrkStr.equals("")) {
 			try {
 				String wrk = "";
-				XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-				operator.addKeyValue("IDUSERKUBUN", wrkStr);
-				operator.setOrderBy("SQLIST");
+				String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+				String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+				XFTableOperator operator = dialog_.getReferOperator(sql);
 				while (operator.next()) {
 					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
 					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
@@ -4326,16 +4320,6 @@ class XF110_ReferTable extends Object {
 		}
 		//
 		return returnValue;
-	}
-}
-
-class XF110_ReferCheckerConstructor implements Runnable {
-	XF110 adaptee;
-	XF110_ReferCheckerConstructor(XF110 adaptee) {
-		this.adaptee = adaptee;
-	}
-	public void run() {
-		adaptee.setReferChecker(new ReferChecker(adaptee.getSession(), adaptee.getPrimaryTableElement(), adaptee));
 	}
 }
 

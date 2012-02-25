@@ -62,13 +62,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private HashMap<String, Object> parmMap_ = null;
 	private HashMap<String, Object> returnMap_ = new HashMap<String, Object>();
 	private XF200_PrimaryTable primaryTable_ = null;
-	private ReferChecker referChecker = null;
-	private boolean isReadyAtReferChecker;
 	private Session session_ = null;
 	private boolean instanceIsAvailable_ = true;
 	private boolean hasAutoNumberField = false;
 	private boolean isToBeCanceled = false;
 	private boolean isCheckOnly = true;
+	private ReferChecker referChecker = null;
+	private Thread threadToSetupReferChecker = null;
 	private int instanceArrayIndex_ = -1;
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
@@ -95,6 +95,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private ArrayList<String> messageList = new ArrayList<String>();
 	private JLabel jLabelFunctionID = new JLabel();
 	private JLabel jLabelSessionID = new JLabel();
+	private JProgressBar jProgressBar = new JProgressBar();
 	private JButton[] jButtonArray = new JButton[7];
 	private Action checkAction = new AbstractAction(){
 		private static final long serialVersionUID = 1L;
@@ -151,6 +152,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private String functionAfterInsert = "";
 	private int firstErrorTabIndex = -1;
 	private HashMap<String, Object> columnValueMap = new HashMap<String, Object>();
+	private HashMap<String, Object> columnOldValueMap = new HashMap<String, Object>();
 	
 	public XF200(Session session, int instanceArrayIndex) {
 		super(session, "", true);
@@ -192,6 +194,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelInfo.setLayout(gridLayoutInfo);
 		jPanelInfo.add(jLabelSessionID);
 		jPanelInfo.add(jLabelFunctionID);
+		jProgressBar.setStringPainted(true);
+		jProgressBar.setString(res.getString("ChrossCheck"));
 		gridLayoutButtons.setColumns(7);
 		gridLayoutButtons.setRows(1);
 		gridLayoutButtons.setHgap(2);
@@ -326,10 +330,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			} else {
 				dataName = functionElement_.getAttribute("DataName");
 			}
-			//referChecker = new ReferChecker(session_, primaryTable_.getTableElement(), this);
-			XF200_ReferCheckerConstructor constructor = new XF200_ReferCheckerConstructor(this);
-	        Thread constructorThread = new Thread(constructor);
-	        constructorThread.start();
 	        
 			/////////////////////////////
 			// Initializing panel mode //
@@ -682,6 +682,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				fetchReferTableRecords("BC", false, "");
 				resetFieldError();
 			}
+			
+			////////////////////////
+			// Setup referChecker //
+			////////////////////////
+			XF200_ReferCheckerConstructor constructor = new XF200_ReferCheckerConstructor(this);
+	        threadToSetupReferChecker = new Thread(constructor);
+	        threadToSetupReferChecker.start();
 
 			//////////////////////////////////////////////
 			// Setup function-keys and function-buttons //
@@ -733,9 +740,14 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void closeFunction() {
+		String wrkStr;
 		instanceIsAvailable_ = true;
 		messageList.clear();
-		//
+		try {
+			threadToSetupReferChecker.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		if (returnMap_.get("RETURN_CODE").equals("00")) {
 			if (panelMode_.equals("EDIT")) {
 				returnMap_.put("RETURN_CODE", "21");
@@ -744,8 +756,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				returnMap_.put("RETURN_CODE", "11");
 			}
 		}
-		//
-		String wrkStr;
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
 			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
 		} else {
@@ -753,7 +763,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		wrkStr = wrkStr.replace("'", "\"");
 		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
-		//
 		this.setVisible(false);
 	}
 	
@@ -782,11 +791,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			setErrorAndCloseFunction();
 		}
 	}
-	
+
 	public void setReferChecker(ReferChecker checker) {
-		isReadyAtReferChecker = false;
 		referChecker = checker;
-		isReadyAtReferChecker = true;
 	}
 	
 	public void commit() {
@@ -803,6 +810,27 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	
 	public void setProcessLog(String text) {
 		XFUtility.appendLog(text, processLog);
+	}
+	
+	public void startProgress(int maxValue) {
+		jProgressBar.setMaximum(maxValue);
+		jProgressBar.setValue(0);
+		jPanelBottom.remove(jPanelInfo);
+		jProgressBar.setPreferredSize(jPanelInfo.getPreferredSize());
+		jPanelBottom.add(jProgressBar, BorderLayout.EAST);
+		this.pack();
+	}
+	
+	public void incrementProgress() {
+		jProgressBar.setValue(jProgressBar.getValue() + 1);
+		jProgressBar.paintImmediately(0,0,jProgressBar.getWidth(), jProgressBar.getHeight());
+	}
+	
+	public void stopProgress() {
+		jPanelBottom.remove(jProgressBar);
+		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
+		this.pack();
+		jPanelBottom.repaint();
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
@@ -920,9 +948,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 		if (panelMode_.equals("EDIT")) {
-			//if (buttonToEdit != null) {
-			//	buttonToEdit.setVisible(true);
-			//}
 			if (buttonToCopy != null) {
 				buttonToCopy.setVisible(false);
 			}
@@ -962,6 +987,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				JOptionPane.showMessageDialog(this, res.getString("FunctionError30"));
 				returnMap_.put("RETURN_CODE", "01");
 				isToBeCanceled = true;
+			}
+			//
+			columnOldValueMap.clear();
+			for (int i = 0; i < fieldList.size(); i++) {
+				if (fieldList.get(i).getTableID().equals(primaryTable_.getTableID())) {
+					columnOldValueMap.put(fieldList.get(i).getFieldID(), fieldList.get(i).getInternalValue());
+				}
 			}
 			//
 		} catch(ScriptException e) {
@@ -1036,21 +1068,19 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		return countOfErrors;
 	}
 	
-	int checkDeleteErrors() {
+	synchronized int checkDeleteErrors() {
 		int countOfErrors = fetchReferTableRecords("BD", true, "");
 		if (countOfErrors == 0) {
 			try {
-				while (!isReadyAtReferChecker) {
-					Thread.sleep(500);
-				}
-				ArrayList<String> errorMsgList = referChecker.getOperationErrors("DELETE", columnValueMap);
-				for (int i = 0; i < errorMsgList.size(); i++) {
-					messageList.add(errorMsgList.get(i));
-				}
-				countOfErrors = errorMsgList.size();
+				threadToSetupReferChecker.join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			ArrayList<String> errorMsgList = referChecker.getOperationErrors("DELETE", columnValueMap, columnOldValueMap);
+			for (int i = 0; i < errorMsgList.size(); i++) {
+				messageList.add(errorMsgList.get(i));
+			}
+			countOfErrors = errorMsgList.size();
 		}
 		return countOfErrors;
 	}
@@ -1136,7 +1166,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 	
-	boolean hasNoErrorWithKey(String operation) {
+	synchronized boolean hasNoErrorWithKey(String operation) {
 		boolean hasNoError = true;
 		ArrayList<String> uniqueKeyList = new ArrayList<String>();
 		ArrayList<String> keyFieldList = new ArrayList<String>();
@@ -1193,11 +1223,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 			//
-			if (hasNoError) {
-				while (!isReadyAtReferChecker) {
-					Thread.sleep(500);
-				}
-				ArrayList<String> errorMsgList = referChecker.getOperationErrors(operation, columnValueMap);
+			if (hasNoError && !this.isCheckOnly) {
+				threadToSetupReferChecker.join();
+				ArrayList<String> errorMsgList = referChecker.getOperationErrors(operation, columnValueMap, columnOldValueMap);
 				for (int i = 0; i < errorMsgList.size(); i++) {
 					hasNoError = false;
 					messageList.add(errorMsgList.get(i));
@@ -1322,6 +1350,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	
 	void doButtonActionInsert() {
 		XFTableOperator operator;
+		//
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 			//
@@ -1344,7 +1373,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 								int lastNumber = 0;
 								operator = createTableOperator(primaryTable_.getSQLToGetLastDetailRowNumberValue());
 								if (operator.next()) {
-									//lastNumber = Integer.parseInt(operator.getValueOf("1").toString());
 									lastNumber = Integer.parseInt(operator.getValueOf(primaryTable_.getDetailRowNoID()).toString());
 								}
 								fieldList.get(i).setValue(lastNumber + 1);
@@ -1445,9 +1473,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			//
 			int countOfErrors = checkFieldValueErrors("BU");
 			if (countOfErrors == 0) {
-				//
 				if (hasNoErrorWithKey("UPDATE")) {
-					//
 					if (this.isCheckOnly) {
 						messageList.add(res.getString("FunctionMessage9"));
 					} else {
@@ -4425,7 +4451,8 @@ class XF200_ReferCheckerConstructor implements Runnable {
 		this.adaptee = adaptee;
 	}
 	public void run() {
-		adaptee.setReferChecker(new ReferChecker(adaptee.getSession(), adaptee.getPrimaryTable().getTableElement(), adaptee));
+		ReferChecker checker = adaptee.getSession().createReferChecker(adaptee.getPrimaryTable().getTableID(), adaptee);
+		adaptee.setReferChecker(checker);
 	}
 }
 

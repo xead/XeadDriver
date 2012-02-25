@@ -38,6 +38,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -116,6 +117,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private ArrayList<String> messageList = new ArrayList<String>();
 	private JLabel jLabelFunctionID = new JLabel();
 	private JLabel jLabelSessionID = new JLabel();
+	private JProgressBar jProgressBar = new JProgressBar();
 	private JSplitPane jSplitPaneMain = new JSplitPane();
 	private JScrollPane jScrollPaneTable = new JScrollPane();
 	private JScrollPane jScrollPaneMessages = new JScrollPane();
@@ -150,6 +152,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private KeyStroke keyStrokeToUpdate = null;
 	private JCheckBox jCheckBoxToExecuteBatchFunction = new JCheckBox();
 	private XFTableCellEditor activeCellEditor = null;
+	private ReferChecker referChecker = null;
+	private Thread threadToSetupReferChecker = null;
 
 	public XF110_SubList(XF110 dialog) {
 		super(dialog, "", true);
@@ -297,6 +301,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jPanelInfo.add(jLabelSessionID);
 		jPanelInfo.add(jLabelFunctionID);
 		jPanelInfo.setFocusable(false);
+		jProgressBar.setStringPainted(true);
+		jProgressBar.setString(res.getString("ChrossCheck"));
 		gridLayoutButtons.setColumns(7);
 		gridLayoutButtons.setRows(1);
 		gridLayoutButtons.setHgap(2);
@@ -318,16 +324,14 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		jPanelBottom.add(jPanelButtons, BorderLayout.CENTER);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		//
-		///////////////////////////
+
 		// Initializing variants //
-		///////////////////////////
 		functionElement_ = dialog_.getFunctionElement();
 		session_ = dialog_.getSession();
 		scriptEngine = dialog_.getScriptEngine();
 		engineScriptBindings = scriptEngine.createBindings();
 		engineScriptBindings.put("instance", (XFScriptable)this);
-		//
+
 		// Set panel configurations //
 		jLabelSessionID.setText(session_.getSessionID());
 		jLabelFunctionID.setText(dialog_.jLabelFunctionID.getText());
@@ -337,16 +341,16 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		this.setPreferredSize(new Dimension(dialog_.getPreferredSize().width, dialog_.getPreferredSize().height));
 		this.setLocation(dialog_.getLocation().x, dialog_.getLocation().y);
 		initialMsg = functionElement_.getAttribute("InitialMsg");
-		//
+
 		// Setup information of Batch Table//
 		if (functionElement_.getAttribute("BatchTable").equals("")) {
 			batchTable = null;
 		} else {
 			setupBatchTableAndFieldsConfiguration();
 		}
-		//
+
 		this.pack();
-		//
+
 		// Setup information of detail table //
 		detailTable = new XF110_SubListDetailTable(functionElement_, this);
 		detailReferTableList.clear();
@@ -355,13 +359,13 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		for (int j = 0; j < sortingList2.getSize(); j++) {
 			detailReferTableList.add(new XF110_SubListDetailReferTable((org.w3c.dom.Element)sortingList2.getElementAt(j), this));
 		}
-		//
+
 		// Setup components for JTable of Detail //
 		tableModelMain = new TableModelEditableList();
 		jTableMain.setModel(tableModelMain);
 		TableColumn column = null;
 		detailColumnList.clear();
-		//
+
 		// Add Column on table model //
 		tableModelMain.addColumn("NO."); //column index:0 //
 		int columnIndex = 0;
@@ -375,7 +379,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				tableModelMain.addColumn(detailColumnList.get(j).getCaption());
 			}
 		}
-		//
+
 		// Set attributes to each column //
 		column = jTableMain.getColumnModel().getColumn(0);
 		column.setPreferredWidth(38);
@@ -388,14 +392,14 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				column.setCellEditor(detailColumnList.get(j).getCellEditor());
 			}
 		}
-		//
+
 		// Add detail table key fields as HIDDEN column if they are not on detail field list //
 		for (int j = 0; j < detailTable.getKeyFieldIDList().size(); j++) {
 			if (!containsDetailField(detailTable.getTableID(), "", detailTable.getKeyFieldIDList().get(j))) {
 				detailColumnList.add(new XF110_SubListDetailColumn(detailTable.getTableID(), "", detailTable.getKeyFieldIDList().get(j), this));
 			}
 		}
-		//
+
 		// Add Batch with Key fields as HIDDEN column if they are not on detail field list //
 		workTokenizer = new StringTokenizer(functionElement_.getAttribute("BatchWithKeyFields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
@@ -409,7 +413,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				detailColumnList.add(new XF110_SubListDetailColumn(workTableID, workAlias, workFieldID, this));
 			}
 		}
-		//
+
 		// Add unique key fields of detail table as HIDDEN column if they are not on the column list //
 		for (int i = 0; i < detailTable.getUniqueKeyList().size(); i++) {
 			workTokenizer = new StringTokenizer(detailTable.getUniqueKeyList().get(i), ";" );
@@ -420,7 +424,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
 			}
 		}
-		//
+
 		// Analyze fields in script and add them as HIDDEN columns if necessary //
 		for (int j = 0; j < detailTable.getScriptList().size(); j++) {
 			if	(detailTable.getScriptList().get(j).isToBeRunAtEvent("BR", "")
@@ -448,7 +452,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
 			}
 		}
-		//
+
 		// Analyze detail refer tables and add their fields as HIDDEN columns if necessary //
 		for (int j = detailReferTableList.size()-1; j > -1; j--) {
 			for (int k = 0; k < detailReferTableList.get(j).getFieldIDList().size(); k++) {
@@ -485,8 +489,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
 			}
 		}
-		//
-		// Setup Function Keys and Buttons //
+
 		setupFunctionKeysAndButtons();
 	}
 	
@@ -682,26 +685,29 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	public String request() {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
-			//
+
 			reply_ = "";
 			readyToShowDialog = true;
-			//
+
 			selectDetailRecordsAndSetupTableRows();
-			//
 			if (batchFieldList.size() > 0) {
 				setBatchFieldValues();
 			}
-			//
+			
+			////////////////////////
+			// Setup referChecker //
+			////////////////////////
+			XF110_SubListReferCheckerConstructor constructor = new XF110_SubListReferCheckerConstructor(this);
+	        threadToSetupReferChecker = new Thread(constructor);
+	        threadToSetupReferChecker.start();
+
 			messageList.clear();
-			//
 			if (initialMsg.equals("")) {
 				jTextAreaMessages.setText(res.getString("FunctionMessage7") + buttonUpdateCaption + res.getString("FunctionMessage8"));
 			} else {
 				jTextAreaMessages.setText(initialMsg);
 			}
-			//
 			jSplitPaneMain.setDividerLocation(this.getHeight() - 40 - 80);
-			//
         	if (firstEditableBatchField != null) {
         		firstEditableBatchField.requestFocus();
         	}
@@ -778,6 +784,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	}
 
 	void closeFunction(String code) {
+		try {
+			threadToSetupReferChecker.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		reply_ = code;
 		this.setVisible(false);
 	}
@@ -796,6 +807,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 
 	public XFTableOperator createTableOperator(String sqlText) {
 		return dialog_.createTableOperator(sqlText);
+	}
+
+	public XFTableOperator getReferOperator(String sqlText) {
+		return dialog_.getReferOperator(sqlText);
 	}
 
 	public HashMap<String, Object> getReturnMap() {
@@ -821,7 +836,32 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			setErrorAndCloseFunction();
 		}
 	}
+
+	public void setReferChecker(ReferChecker checker) {
+		referChecker = checker;
+	}
 	
+	public void startProgress(int maxValue) {
+		jProgressBar.setMaximum(maxValue);
+		jProgressBar.setValue(0);
+		jPanelBottom.remove(jPanelInfo);
+		jProgressBar.setPreferredSize(jPanelInfo.getPreferredSize());
+		jPanelBottom.add(jProgressBar, BorderLayout.EAST);
+		this.pack();
+	}
+	
+	public void incrementProgress() {
+		jProgressBar.setValue(jProgressBar.getValue() + 1);
+		jProgressBar.paintImmediately(0,0,jProgressBar.getWidth(), jProgressBar.getHeight());
+	}
+	
+	public void stopProgress() {
+		jPanelBottom.remove(jProgressBar);
+		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
+		this.pack();
+		jPanelBottom.repaint();
+	}
+
 	public void commit() {
 		dialog_.commit();
 	}
@@ -1132,7 +1172,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			//
 			if (countOfErrors == 0) {
 				//
-				if (this.hasNoErrorWithKey()) {
+				if (this.hasNoErrorWithKey(checkOnly)) {
 					//
 					if (checkOnly) {
 						messageList.add(res.getString("FunctionMessage9"));
@@ -1220,7 +1260,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		}
 	}
 
-	boolean hasNoErrorWithKey() {
+	boolean hasNoErrorWithKey(boolean isCheckOnly) {
 		boolean hasNoError = true;
 		ArrayList<String> uniqueKeyList = new ArrayList<String>();
 		ArrayList<String> keyFieldList = new ArrayList<String>();
@@ -1247,6 +1287,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 					}
 				}
+			}
+			//
+			if (!isCheckOnly) {
+				threadToSetupReferChecker.join();
 			}
 			//
 			uniqueKeyList = detailTable.getUniqueKeyList();
@@ -1276,11 +1320,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 					}
 					//
-					if (hasNoError) {
-						while (!dialog_.isReadyAtReferChecker()) {
-							Thread.sleep(500);
-						}
-						ArrayList<String> errorMsgList = dialog_.getReferChecker().getOperationErrors("UPDATE", tableRowNumber.getColumnValueMapWithFieldID(), rowNumber);
+					if (hasNoError && !isCheckOnly) {
+						ArrayList<String> errorMsgList = referChecker.getOperationErrors("UPDATE", tableRowNumber.getColumnValueMapWithFieldID(), tableRowNumber.getColumnOldValueMapWithFieldID(), rowNumber);
 						for (int i = 0; i < errorMsgList.size(); i++) {
 							hasNoError = false;
 							messageList.add(errorMsgList.get(i));
@@ -1387,6 +1428,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	}
 	
 	void returnToMainList() {
+		try {
+			threadToSetupReferChecker.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		reply_ = "PREV";
 		this.setVisible(false);
 	}
@@ -4087,9 +4133,9 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 					this.addItem("");
 				}
 				try {
-					XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-					operator.addKeyValue("IDUSERKUBUN", strWrk);
-					operator.setOrderBy("SQLIST");
+					String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+					String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST";
+					XFTableOperator operator = dialog_.getReferOperator(sql);
 					while (operator.next()) {
 						kubunKeyValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
 						wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
@@ -4623,6 +4669,18 @@ class XF110_SubListDetailRowNumber extends Object {
 	public HashMap<String, Object> getColumnOldValueMap() {
 		return columnOldValueMapWithDataSourceName_;
 	}
+
+	public HashMap<String, Object> getColumnOldValueMapWithFieldID() {
+		HashMap<String, Object> oldValueMapWithFieldID = new HashMap<String, Object>();
+		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+			if (dialog_.getDetailColumnList().get(i).getTableAlias().equals(dialog_.getPrimaryTableID())) {
+				if (columnOldValueMapWithDataSourceName_.containsKey(dialog_.getDetailColumnList().get(i).getDataSourceName())) {
+					oldValueMapWithFieldID.put(dialog_.getDetailColumnList().get(i).getFieldID(), columnOldValueMapWithDataSourceName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
+				}
+			}
+		}
+		return oldValueMapWithFieldID;
+	}
 	
 	public void setValueToDetailColumns() {
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
@@ -4939,9 +4997,9 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 					if (!wrkStr.equals("")) {
 						try {
 							String wrk = "";
-							XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-							operator.addKeyValue("IDUSERKUBUN", wrkStr);
-							operator.setOrderBy("SQLIST");
+							String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+							String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+							XFTableOperator operator = dialog_.getReferOperator(sql);
 							while (operator.next()) {
 								kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
 								wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
@@ -7205,9 +7263,9 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 					jComboBox.addItem("");
 				}
 				try {
-					XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-					operator.addKeyValue("IDUSERKUBUN", strWrk);
-					operator.setOrderBy("SQLIST");
+					String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+					String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST";
+					XFTableOperator operator = dialog_.getReferOperator(sql);
 					while (operator.next()) {
 						kubunKeyValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
 						wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
@@ -7721,5 +7779,16 @@ class XF110_SubListComponent_keyAdapter extends java.awt.event.KeyAdapter {
 	}
 	public void keyPressed(KeyEvent e) {
 		adaptee.component_keyPressed(e);
+	}
+}
+
+class XF110_SubListReferCheckerConstructor implements Runnable {
+	XF110_SubList adaptee;
+	XF110_SubListReferCheckerConstructor(XF110_SubList adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void run() {
+		ReferChecker checker = adaptee.getSession().createReferChecker(adaptee.getPrimaryTableID(), adaptee);
+		adaptee.setReferChecker(checker);
 	}
 }

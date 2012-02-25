@@ -36,6 +36,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
+
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -420,6 +421,15 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			exceptionHeader = e.getMessage();
 			setErrorAndCloseFunction();
 		}
+	}
+	
+	public void startProgress(int maxValue) {
+	}
+	
+	public void incrementProgress() {
+	}
+	
+	public void stopProgress() {
 	}
 	
 	public void commit() {

@@ -36,6 +36,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -446,6 +447,15 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	
 	public void rollback() {
 		session_.commit(false, processLog);
+	}
+	
+	public void startProgress(int maxValue) {
+	}
+	
+	public void incrementProgress() {
+	}
+	
+	public void stopProgress() {
 	}
 	
 	public void cancelWithMessage(String message) {

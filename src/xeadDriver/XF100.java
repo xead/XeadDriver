@@ -33,6 +33,7 @@ package xeadDriver;
 
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -615,6 +616,15 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 	
+	public void startProgress(int maxValue) {
+	}
+	
+	public void incrementProgress() {
+	}
+	
+	public void stopProgress() {
+	}
+	
 	public void commit() {
 		session_.commit(true, processLog);
 	}
@@ -717,17 +727,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 							//
 							sql = referTableList.get(i).getSelectSQL();
 							if (!sql.equals("")) {
-								referTableOp = null;
-								for (int k = 0; k < referOperatorList.size(); k++) {
-									if (referOperatorList.get(k).getSqlText().equals(sql)) {
-										referTableOp = referOperatorList.get(k);
-										referTableOp.resetCursor();
-									}
-								}
-								if (referTableOp == null ) {
-									referTableOp = createTableOperator(sql);
-									referOperatorList.add(referTableOp);
-								}
+								referTableOp = getReferOperator(sql);
 								while (referTableOp.next()) {
 									//
 									if (referTableList.get(i).isRecordToBeSelected(referTableOp)) {
@@ -865,6 +865,21 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
+	}
+	
+	public XFTableOperator getReferOperator(String sql) {
+		XFTableOperator referTableOp = null;
+		for (int k = 0; k < referOperatorList.size(); k++) {
+			if (referOperatorList.get(k).getSqlText().equals(sql)) {
+				referTableOp = referOperatorList.get(k);
+				referTableOp.resetCursor();
+			}
+		}
+		if (referTableOp == null ) {
+			referTableOp = createTableOperator(sql);
+			referOperatorList.add(referTableOp);
+		}
+		return referTableOp;
 	}
 	
 	void jFunctionButton_actionPerformed(ActionEvent e) {
@@ -1754,9 +1769,9 @@ class XF100_Filter extends JPanel {
 						keyValueList.add("");
 						jComboBox.addItem("");
 					}
-					XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-					operator.addKeyValue("IDUSERKUBUN", wrkStr);
-					operator.setOrderBy("SQLIST");
+					String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+					String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+					XFTableOperator operator = dialog_.getReferOperator(sql);
 					while (operator.next()) {
 						valueIndex++;
 						wrkKey = operator.getValueOf("KBUSERKUBUN").toString().trim();
@@ -3136,9 +3151,9 @@ class XF100_Column extends Object implements XFScriptableField {
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 		if (!wrkStr.equals("")) {
 			String wrk = "";
-			XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-			operator.addKeyValue("IDUSERKUBUN", wrkStr);
-			operator.setOrderBy("SQLIST");
+			String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+			String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+			XFTableOperator operator = dialog_.getReferOperator(sql);
 			while (operator.next()) {
 				kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
 				wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
@@ -3234,9 +3249,9 @@ class XF100_Column extends Object implements XFScriptableField {
 		//
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 		if (!wrkStr.equals("")) {
-			XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-			operator.addKeyValue("IDUSERKUBUN", wrkStr);
-			operator.setOrderBy("SQLIST");
+			String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+			String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+			XFTableOperator operator = dialog_.getReferOperator(sql);
 			while (operator.next()) {
 				kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
 				kubunTextList.add(operator.getValueOf("TXUSERKUBUN").toString().trim());

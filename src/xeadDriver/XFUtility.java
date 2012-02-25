@@ -122,6 +122,7 @@ public class XFUtility {
 	static ImageIcon ICON_CHECK_1D = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1D.PNG")));
 	static ImageIcon ICON_CHECK_0R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0R.PNG")));
 	static ImageIcon ICON_CHECK_1R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1R.PNG")));
+	public static final Color SELECTED_ACTIVE_COLOR = new Color(49,106,197);
 	
 	static String getStringNumber(String text) {
 		char[] numberDigit = {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
@@ -1978,6 +1979,9 @@ interface XFScriptable {
 	public HashMap<String, Object> getReturnMap();
 	public void setProcessLog(String value);
 	public StringBuffer getProcessLog();
+	public void startProgress(int maxValue);
+	public void incrementProgress();
+	public void stopProgress();
 	public XFTableOperator createTableOperator(String oparation, String tableID);
 	public XFTableOperator createTableOperator(String sqlText);
 }
@@ -4363,20 +4367,25 @@ class XFTableOperator {
 					connection = session_.getConnectionReadOnly(dbID);
 				}
 				if (connection != null) {
-					statement = connection.createStatement();
 					if (operation_.toUpperCase().equals("SELECT")) {
+						connection.setReadOnly(true);
+						statement = connection.createStatement();
 						ResultSet result = statement.executeQuery(this.getSqlText());
 						relation_ = new Relation(result);
 						count = relation_.getRowCount();
 						result.close();
 					} else {
 						if (operation_.toUpperCase().equals("COUNT")) {
+							connection.setReadOnly(true);
+							statement = connection.createStatement();
 							ResultSet result = statement.executeQuery(this.getSqlText());
 							if (result.next()) {
 								count = result.getInt(1);
 							}
 							result.close();
 						} else {
+							connection.setReadOnly(false);
+							statement = connection.createStatement();
 							count = statement.executeUpdate(this.getSqlText());
 						}
 					}
@@ -4394,7 +4403,8 @@ class XFTableOperator {
     }
 
     private int executeOnServer() throws Exception {
-    	int count = -1;
+    	int rowCount = -1;
+		int retryCount = -1;
         HttpPost httpPost = null;
 		List<NameValuePair> objValuePairs = null;
         //
@@ -4418,26 +4428,36 @@ class XFTableOperator {
 					}
 					httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
 					//
-					HttpResponse response = session_.getHttpClient().execute(httpPost);
-					HttpEntity responseEntity = response.getEntity();
-					if (responseEntity == null) {
-						if (logBuf_ != null) {
-							XFUtility.appendLog("Response is NULL.", logBuf_);
-						}
-					} else {
-						if (operation_.toUpperCase().equals("SELECT")) {
-							ObjectInputStream ois = new ObjectInputStream(responseEntity.getContent());
-							relation_ = (Relation)ois.readObject();
-							count = relation_.getRowCount();
-						} else {
-							count = Integer.parseInt(EntityUtils.toString(responseEntity));
+					while (retryCount < 3) {
+						try {
+							retryCount++;
+							HttpResponse response = session_.getHttpClient().execute(httpPost);
+							HttpEntity responseEntity = response.getEntity();
+							if (responseEntity == null) {
+								if (logBuf_ != null) {
+									XFUtility.appendLog("Response is NULL.", logBuf_);
+								}
+							} else {
+								if (operation_.toUpperCase().equals("SELECT")) {
+									ObjectInputStream ois = new ObjectInputStream(responseEntity.getContent());
+									relation_ = (Relation)ois.readObject();
+									rowCount = relation_.getRowCount();
+								} else {
+									rowCount = Integer.parseInt(EntityUtils.toString(responseEntity));
+								}
+							}
+							retryCount = 3;
+						} catch(SocketException ex) {
+							if (retryCount < 3) {
+								Thread.sleep(500);
+							} else {
+								if (logBuf_ != null) {
+									XFUtility.appendLog(ex.getMessage(), logBuf_);
+								}
+								throw new Exception("Communication error with the application server.\n" + ex.getMessage());
+							}
 						}
 					}
-				} catch(SocketException ex) {
-					if (logBuf_ != null) {
-						XFUtility.appendLog(ex.getMessage(), logBuf_);
-					}
-					throw new Exception("Communication error with the application server.\n" + ex.getMessage());
 				} catch(Exception ex) {
 					if (logBuf_ != null) {
 						XFUtility.appendLog(ex.getMessage(), logBuf_);
@@ -4451,7 +4471,7 @@ class XFTableOperator {
 			}
 		}
 		//
-    	return count;
+    	return rowCount;
     }
     
     public void resetCursor() {

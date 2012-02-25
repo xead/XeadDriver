@@ -160,6 +160,7 @@ public class Session extends JFrame {
 	private DOMParser responseDocParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
+	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
 
 	public Session(String[] args) {
 		String fileName = "";
@@ -1322,8 +1323,22 @@ public class Session extends JFrame {
 
 	void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String errorLog) {
 		if (errorLog.length() > 20000) {
-			errorLog = errorLog.substring(0, 20000) + "...";
+			//errorLog = errorLog.substring(0, 20000) + "...";
+			String logFileName = "";
+			try {
+				File logFile = createTempFile(sessionID, ".log");
+				logFileName = logFile.getPath();
+				FileWriter fileWriter = new FileWriter(logFileName);
+				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+				bufferedWriter.write(errorLog);
+				bufferedWriter.flush();
+				bufferedWriter.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			errorLog = "Log data is too big. Refer to the log file(" + logFileName + ")";
 		}
+		//
 		if (programStatus.equals("99")) {
 			noErrorsOccured = false;
 		}
@@ -1837,6 +1852,21 @@ public class Session extends JFrame {
 		return httpClient;
 	}
 	
+	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
+		ReferChecker checker = null;
+		for (int i = 0; i < referCheckerList.size(); i++) {
+			if (referCheckerList.get(i).getTargetTableID().equals(tableID)
+					&& referCheckerList.get(i).getFunction().getFunctionID().equals(function.getFunctionID())) {
+				checker = referCheckerList.get(i);
+			}
+		}
+		if (checker == null) {
+			checker = new ReferChecker(this, tableID, function);
+			referCheckerList.add(checker);
+		}
+		return checker;
+	}
+	
 	public String getAddressFromZipNo(String zipNo) {
 		String value = "";
         HttpResponse response = null;
@@ -1935,6 +1965,9 @@ public class Session extends JFrame {
 		}
 		if (extension.equals(".xls")) {
 			header = "XLS_" + header;
+		}
+		if (extension.equals(".log")) {
+			header = "LOG_" + header;
 		}
 		//
 		File tempFile = File.createTempFile(header + functionID + "_", extension, outputFolder);

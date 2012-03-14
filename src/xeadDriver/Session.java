@@ -2058,6 +2058,10 @@ public class Session extends JFrame {
 		return menuIDUsing;
 	}
 
+	Rectangle getMenuRectangle() {
+		return new Rectangle(this.getLocation().x, this.getLocation().y, this.getWidth(), this.getHeight());
+	}
+
 	int getNextSQPROGRAM() {
 		sqProgram++;
 		return sqProgram;

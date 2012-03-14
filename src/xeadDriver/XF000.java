@@ -455,9 +455,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	public void incrementProgress() {
 	}
 	
-	public void stopProgress() {
-	}
-	
 	public void cancelWithMessage(String message) {
 		if (!message.equals("")) {
 			JOptionPane.showMessageDialog(null, message);

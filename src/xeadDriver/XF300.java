@@ -172,12 +172,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private final int FIELD_HORIZONTAL_MARGIN = 1;
 	private final int FIELD_VERTICAL_MARGIN = 5;
 	private final int FONT_SIZE = 14;
-	private final int ROW_HEIGHT = 18;
+	//private final int ROW_HEIGHT = 18;
 	private ByteArrayOutputStream exceptionLog;
 	private PrintStream exceptionStream;
 	private String exceptionHeader = "";
 	private String lastFunctionID = "";
-
+	private HSSFPatriarch patriarch = null;
+	
 	public XF300(Session session, int instanceArrayIndex) {
 		super(session, "", true);
 		try {
@@ -257,7 +258,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			jTableMainArray[i] = new JTable();
 			jTableMainArray[i].setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 			jTableMainArray[i].setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-			jTableMainArray[i].setRowHeight(ROW_HEIGHT);
+			//jTableMainArray[i].setRowHeight(ROW_HEIGHT);
 			jTableMainArray[i].setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			jTableMainArray[i].setRowSelectionAllowed(true);
 			jTableMainArray[i].setSelectionBackground(selectionColorWithoutFocus);
@@ -394,7 +395,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 				jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 				this.setTitle(functionElement_.getAttribute("Name"));
-				Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+				//Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+		        Rectangle screenRect = session_.getMenuRectangle();
 				if (functionElement_.getAttribute("Size").equals("")) {
 					this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
 					this.setLocation(screenRect.x, screenRect.y);
@@ -646,6 +648,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					///////////////////////////////////////////
 					tableModelMainArray[i] = new TableModelReadOnly();
 					jTableMainArray[i].setModel(tableModelMainArray[i]);
+					jTableMainArray[i].setRowHeight(XFUtility.ROW_HEIGHT_WITHOUT_IMAGE);
 					TableColumn column = null;
 					detailColumnListArray[i].clear();
 					//
@@ -660,6 +663,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							columnIndex++;
 							detailColumnListArray[i].get(j).setColumnIndex(columnIndex);
 							tableModelMainArray[i].addColumn(detailColumnListArray[i].get(j).getCaption());
+						}
+						if (detailColumnListArray[i].get(j).isImage()) {
+							jTableMainArray[i].setRowHeight(XFUtility.ROW_HEIGHT_WITH_IMAGE);
 						}
 					}
 					//
@@ -895,9 +901,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	
 	public void incrementProgress() {
 	}
-	
-	public void stopProgress() {
-	}
 
 	public void commit() {
 		session_.commit(true, processLog);
@@ -931,6 +934,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				} else {
 					headerFieldList.get(i).setValue(headerFieldList.get(i).getNullValue());
+					headerFieldList.get(i).setColor("black");
 				}
 			}
 
@@ -1543,12 +1547,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		 }
 	 }
 
-	URI getExcellBookURI() {
+	private URI getExcellBookURI() {
 		File xlsFile = null;
 		String xlsFileName = "";
 		FileOutputStream fileOutputStream = null;
 		HSSFFont font = null;
 		TableCellReadOnly cellObject = null;
+		String imageFileName = "";
 		//
 		HSSFWorkbook workBook = new HSSFWorkbook();
 		String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
@@ -1556,6 +1561,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		workSheet.setDefaultRowHeight( (short) 300);
 		HSSFFooter workSheetFooter = workSheet.getFooter();
 		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
+		patriarch = workSheet.createDrawingPatriarch();
 		//
 		HSSFFont fontHeader = workBook.createFont();
 		fontHeader = workBook.createFont();
@@ -1738,6 +1744,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							font = fontDataOrange;
 						}
 						setupCellAttributesForDetailColumn(rowData.createCell(columnIndex), workBook, detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getBasicType(), detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getTypeOptionList(), cellObject, font, detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getDecimalSize());
+						if (cellObject.isImage() && !cellObject.getInternalValue().equals("")) {
+							imageFileName = session_.getImageFileFolder() + cellObject.getInternalValue();
+							XFUtility.setupImageCellForDetailColumn(workBook, workSheet, currentRowNumber, columnIndex, imageFileName, patriarch);
+						}
 					}
 				}
 			}
@@ -1826,7 +1836,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
 							style.setVerticalAlignment(HSSFCellStyle.VERTICAL_BOTTOM);
 							style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
-							HSSFPatriarch patriarch = workSheet.createDrawingPatriarch();
 							HSSFClientAnchor anchor = null;
 							cellValue.setCellStyle(style);
 							cellValue.setCellValue(new HSSFRichTextString((String)object.getInternalValue()));
@@ -1848,24 +1857,23 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 									FileInputStream fis = null;
 									ByteArrayOutputStream bos = null;
 									try {
-										// read in the image file //
+										// read in the image file and copy the image bytes into the ByteArrayOutputStream//
 										fis = new FileInputStream(imageFile);
-										bos = new ByteArrayOutputStream( );
+										bos = new ByteArrayOutputStream();
 										int c;
-										// copy the image bytes into the ByteArrayOutputStream //
 										while ((c = fis.read()) != -1) {
 											bos.write(c);
 										}
 										// add the image bytes to the workbook //
 										pictureIndex = workBook.addPicture( bos.toByteArray(), imageType);
-										anchor = new HSSFClientAnchor(0,0,0,0,(short)2,currentRowNumber,(short)6,currentRowNumber + object.getRows());
+										anchor = new HSSFClientAnchor(0,0,0,0,
+												(short)2, currentRowNumber, (short)6, currentRowNumber + object.getRows());
 										anchor.setAnchorType(0);
 										anchor.setDx1(30);
 										anchor.setDy1(30);
 										anchor.setDx2(-30);
 										anchor.setDy2(-250);
 										patriarch.createPicture(anchor, pictureIndex);
-										//
 									} catch(Exception e) {
 										e.printStackTrace(exceptionStream);
 									} finally {
@@ -1919,11 +1927,11 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		style.setWrapText(true);
 		style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
 		//
-		Object value = object.getValue();
+		Object value = object.getExternalValue();
 		if (basicType.equals("INTEGER")) {
 			if (typeOptionList.contains("MSEQ") || typeOptionList.contains("FYEAR")) {
 				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-				cell.setCellValue(new HSSFRichTextString(object.getValue().toString()));
+				cell.setCellValue(new HSSFRichTextString(object.getExternalValue().toString()));
 				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
 				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
 				style.setWrapText(true);
@@ -1970,7 +1978,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			} else {
 				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
 				cell.setCellStyle(style);
-				if (value == null) {
+				if (value == null || object.isImage()) {
 					wrk = "";
 				} else {
 					wrk = value.toString();
@@ -3125,6 +3133,7 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 	private boolean isRangeKeyFieldValid = false;
 	private boolean isRangeKeyFieldExpire = false;
 	private boolean isReadyToValidate = false;
+	private boolean isImage = false;
 	private DecimalFormat integerFormat = new DecimalFormat("#,##0");
 	private DecimalFormat floatFormat0 = new DecimalFormat("#,##0");
 	private DecimalFormat floatFormat1 = new DecimalFormat("#,##0.0");
@@ -3231,7 +3240,12 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 								if (basicType.equals("DATE")) {
 									fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat());
 								} else {
-									fieldWidth = dataSize * 7 + 15;
+									if (dataTypeOptionList.contains("IMAGE")) {
+										isImage = true;
+										fieldWidth = 60;
+									} else {
+										fieldWidth = dataSize * 7 + 15;
+									}
 								}
 							}
 						}
@@ -3450,20 +3464,22 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 								}
 							}
 						} else {
-							if (value_ != null) {
-								value = value_.toString().trim();
-								//
-								if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
-									String wrkStr = value.toString();
-									if (!wrkStr.equals("")) {
-										value = XFUtility.getUserExpressionOfYearMonth(wrkStr, dialog_.getSession().getDateFormat());
+							if (this.isImage()) {
+								value = XFUtility.createSmallIcon(dialog_.getSession().getImageFileFolder() + value_.toString().trim());
+							} else {
+								if (value_ != null) {
+									value = value_.toString().trim();
+									if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
+										String wrkStr = value.toString();
+										if (!wrkStr.equals("")) {
+											value = XFUtility.getUserExpressionOfYearMonth(wrkStr, dialog_.getSession().getDateFormat());
+										}
 									}
-								}
-								//
-								if (dataTypeOptionList.contains("MSEQ")) {
-									String wrkStr = value.toString();
-									if (!wrkStr.equals("")) {
-										value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(wrkStr), dialog_.getSession());
+									if (dataTypeOptionList.contains("MSEQ")) {
+										String wrkStr = value.toString();
+										if (!wrkStr.equals("")) {
+											value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(wrkStr), dialog_.getSession());
+										}
 									}
 								}
 							}
@@ -3475,9 +3491,13 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 		//
 		return value;
 	}
+	
+	public boolean isImage() {
+		return isImage;
+	}
 
 	public TableCellReadOnly getCellObject() {
-		return new TableCellReadOnly(this.getExternalValue(), this.getForeground());
+		return new TableCellReadOnly(this.getInternalValue(), this.getExternalValue(), this.getForeground(), isImage);
 	}
 
 	public TableCellRenderer getCellRenderer(){

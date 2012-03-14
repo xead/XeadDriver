@@ -320,9 +320,6 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	public void incrementProgress() {
 	}
 	
-	public void stopProgress() {
-	}
-	
 	public void commit() {
 		session_.commit(true, processLog);
 	}
@@ -335,7 +332,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		File pdfFile = null;
 		String pdfFileName = "";
 		FileOutputStream fileOutputStream = null;
-		com.lowagie.text.Font font;
+		com.lowagie.text.Font font, chunkFont;
 		Chunk chunk;
 		Phrase phrase;
 		//
@@ -373,7 +370,8 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 				font = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhrase.getFontID()), headerPhrase.getFontSize(), headerPhrase.getFontStyle());
 				phrase = new Phrase("", font);
 				for (int i = 0; i < headerPhrase.getValueKeywordList().size(); i++) {
-					chunk = getChunkForKeyword(headerPhrase.getValueKeywordList().get(i), null);
+					chunkFont = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhrase.getFontID()), headerPhrase.getFontSize(), headerPhrase.getFontStyle());
+					chunk = getChunkForKeyword(headerPhrase.getValueKeywordList().get(i), null, chunkFont);
 					if (chunk != null) {
 						phrase.add(chunk);
 					}
@@ -385,8 +383,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			//
 			//Add page-number-footer to the document//
 			if (functionElement_.getAttribute("WithPageNumber").equals("T")) {
-				HeaderFooter footer = new HeaderFooter(
-						new Phrase("--"), new Phrase("--"));
+				HeaderFooter footer = new HeaderFooter(new Phrase("--"), new Phrase("--"));
 				footer.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
 				footer.setBorder(com.lowagie.text.Rectangle.NO_BORDER);
 				pdfDoc.setFooter(footer);
@@ -422,7 +419,8 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 						if ((keyword.contains("&Line(") || keyword.contains("&Rect(")) && cb != null) {
 							XFUtility.drawLineOrRect(keyword, cb);
 						} else {
-							chunk = getChunkForKeyword(keyword, cb);
+							chunkFont = new com.lowagie.text.Font(session_.getBaseFontWithID(paragraphList.get(i).getFontID()), paragraphList.get(i).getFontSize(), paragraphList.get(i).getFontStyle());
+							chunk = getChunkForKeyword(keyword, cb, chunkFont);
 							if (chunk != null) {
 								phrase.add(chunk);
 							}
@@ -446,7 +444,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		return pdfFile.toURI();
 	}
 
-	private Chunk getChunkForKeyword(String keyword, PdfContentByte cb) {
+	private Chunk getChunkForKeyword(String keyword, PdfContentByte cb, com.lowagie.text.Font chunkFont) {
 		StringTokenizer workTokenizer;
 		String wrkStr;
 		com.lowagie.text.Image image;
@@ -463,7 +461,8 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			if (keyword.contains("&DataSource(")) {
 				pos = keyword.lastIndexOf(")");
 				wrkStr = getExternalStringValueOfFieldByName(keyword.substring(12, pos));
-				chunk = new Chunk(wrkStr);
+				chunkFont.setColor(getColorOfDataSource(keyword.substring(12, pos)));
+				chunk = new Chunk(wrkStr, chunkFont);
 			}
 			//
 			if (keyword.contains("&Image(")) {
@@ -784,6 +783,19 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		}
 		return value;
 	}
+
+	public Color getColorOfDataSource(String dataSourceName) {
+		Color color = Color.black;
+		StringTokenizer workTokenizer = new StringTokenizer(dataSourceName, ";");
+		String wrkStr = workTokenizer.nextToken().trim();
+		for (int i = 0; i < fieldList.size(); i++) {
+			if (fieldList.get(i).getDataSourceName().equals(wrkStr)) {
+				color = fieldList.get(i).getForeground();
+				break;
+			}
+		}
+		return color;
+	}
 }
 
 class XF290_Field extends Object implements XFScriptableField {
@@ -812,6 +824,7 @@ class XF290_Field extends Object implements XFScriptableField {
 	private XF290 dialog_;
 	private ArrayList<String> kubunValueList = new ArrayList<String>();
 	private ArrayList<String> kubunTextList = new ArrayList<String>();
+	private Color foreground = Color.black;
 
 	public XF290_Field(String dataSourceName, XF290 dialog){
 		super();
@@ -1148,10 +1161,15 @@ class XF290_Field extends Object implements XFScriptableField {
 	}
 
 	public void setColor(String color) {
+		foreground = XFUtility.convertStringToColor(color);
 	}
 
 	public String getColor() {
-		return "";
+		return XFUtility.convertColorToString(foreground);
+	}
+
+	public Color getForeground() {
+		return foreground;
 	}
 }
 

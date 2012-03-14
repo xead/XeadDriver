@@ -429,9 +429,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	public void incrementProgress() {
 	}
 	
-	public void stopProgress() {
-	}
-	
 	public void commit() {
 		session_.commit(true, processLog);
 	}
@@ -444,7 +441,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		File pdfFile = null;
 		String pdfFileName = "";
 		FileOutputStream fileOutputStream = null;
-		com.lowagie.text.Font font;
+		com.lowagie.text.Font font, chunkFont;
 		Chunk chunk;
 		Phrase phrase;
 		//
@@ -482,7 +479,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				font = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhrase.getFontID()), headerPhrase.getFontSize(), headerPhrase.getFontStyle());
 				phrase = new Phrase("", font);
 				for (int i = 0; i < headerPhrase.getValueKeywordList().size(); i++) {
-					chunk = getChunkForKeyword(headerPhrase.getValueKeywordList().get(i), null);
+					chunkFont = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhrase.getFontID()), headerPhrase.getFontSize(), headerPhrase.getFontStyle());
+					chunk = getChunkForKeyword(headerPhrase.getValueKeywordList().get(i), null, chunkFont);
 					if (chunk != null) {
 						phrase.add(chunk);
 					}
@@ -528,7 +526,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	}
 	
 	private void addParagraphToDocument(com.lowagie.text.Document pdfDoc, String blockType, PdfContentByte cb) throws IOException, DocumentException {
-		com.lowagie.text.Font font;
+		com.lowagie.text.Font font, chunkFont;
 		Chunk chunk;
 		Phrase phrase;
 		Paragraph paragraph = null;
@@ -559,7 +557,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					if ((keyword.contains("&Line(") || keyword.contains("&Rect(")) && cb != null) {
 						XFUtility.drawLineOrRect(keyword, cb);
 					} else {
-						chunk = getChunkForKeyword(keyword, cb);
+						chunkFont = new com.lowagie.text.Font(session_.getBaseFontWithID(paragraphList.get(i).getFontID()), paragraphList.get(i).getFontSize(), paragraphList.get(i).getFontStyle());
+						chunk = getChunkForKeyword(keyword, cb, chunkFont);
 						if (chunk != null) {
 							phrase.add(chunk);
 						}
@@ -582,11 +581,12 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		String wrkStr;
 		int wrkInt;
 		XFTableOperator operatorDetail, operatorRefer;
+		String imageFileName = "";
 		//
 		try {
 			//
 			fontTableCell = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.BOLD);
-			fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
+			//fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
 			//
 			int totalWidth = 0;
 			int width[] = null;
@@ -636,6 +636,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			table.setPadding(2);
 			table.setSpacing(0);
 			//
+			Cell cell;
 			workingRowList.clear();
 			int countOfRows = 0;
 			int rowNo = 0;
@@ -682,7 +683,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					//
 					if (tableRowNoWidth > 0) {
 						rowNo++;
-						Cell cell = new Cell(new Phrase("" + rowNo, fontTableCellData));
+						fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
+						cell = new Cell(new Phrase("" + rowNo, fontTableCellData));
 						cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
 						if (countOfRows % 2 != 0) {
 							cell.setBackgroundColor(XFUtility.ODD_ROW_COLOR);
@@ -692,8 +694,15 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					//
 					for (int i = 0; i < detailColumnList.size(); i++) {
 						if (detailColumnList.get(i).isVisibleColumn()) {
+							fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
 							if (detailColumnList.get(i).getBarcodeType().equals("")) {
-								Cell cell = new Cell(new Phrase(detailColumnList.get(i).getExternalValue().toString(), fontTableCellData));
+								if (detailColumnList.get(i).isImage()) {
+									imageFileName = session_.getImageFileFolder() + detailColumnList.get(i).getExternalValue().toString();
+									cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
+								} else {
+									fontTableCellData.setColor(detailColumnList.get(i).getForeground());
+									cell = new Cell(new Phrase(detailColumnList.get(i).getExternalValue().toString(), fontTableCellData));
+								}
 								cell.setHorizontalAlignment(detailColumnList.get(i).getAlignment());
 								if (countOfRows % 2 != 0) {
 									cell.setBackgroundColor(XFUtility.ODD_ROW_COLOR);
@@ -703,7 +712,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 								chunk = XFUtility.getBarcodeChunkOfValue(detailColumnList.get(i).getExternalValue().toString(), detailColumnList.get(i).getBarcodeType(), cb);
 								phrase = new Phrase("", fontTableCellData);
 								phrase.add(chunk);
-								Cell cell = new Cell(phrase);
+								cell = new Cell(phrase);
 								cell.setHorizontalAlignment(detailColumnList.get(i).getAlignment());
 								table.addCell(cell);
 							}
@@ -743,7 +752,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					//
 					if (tableRowNoWidth > 0) {
 						rowNo = i+1;
-						Cell cell = new Cell(new Phrase("" + rowNo, fontTableCellData));
+						fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
+						cell = new Cell(new Phrase("" + rowNo, fontTableCellData));
 						cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_CENTER);
 						if (i % 2 != 0) {
 							cell.setBackgroundColor(XFUtility.ODD_ROW_COLOR);
@@ -753,8 +763,15 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					//
 					for (int j = 0; j < detailColumnList.size(); j++) {
 						if (detailColumnList.get(j).isVisibleColumn()) {
+							fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
 							if (detailColumnList.get(j).getBarcodeType().equals("")) {
-								Cell cell = new Cell(new Phrase(workingRowArray[i].getColumnValueList().get(j), fontTableCellData));
+								if (detailColumnList.get(j).isImage()) {
+									imageFileName = session_.getImageFileFolder() + detailColumnList.get(j).getExternalValue().toString();
+									cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
+								} else {
+									fontTableCellData.setColor(detailColumnList.get(j).getForeground());
+									cell = new Cell(new Phrase(workingRowArray[i].getColumnValueList().get(j), fontTableCellData));
+								}
 								cell.setHorizontalAlignment(detailColumnList.get(j).getAlignment());
 								if (i % 2 != 0) {
 									cell.setBackgroundColor(XFUtility.ODD_ROW_COLOR);
@@ -764,7 +781,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 								chunk = XFUtility.getBarcodeChunkOfValue(workingRowArray[i].getColumnValueList().get(j), detailColumnList.get(j).getBarcodeType(), cb);
 								phrase = new Phrase("", fontTableCellData);
 								phrase.add(chunk);
-								Cell cell = new Cell(phrase);
+								cell = new Cell(phrase);
 								cell.setHorizontalAlignment(detailColumnList.get(j).getAlignment());
 								table.addCell(cell);
 							}
@@ -780,21 +797,22 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			wrkInt = 0;
 			for (int i = 0; i < detailColumnList.size(); i++) {
 				if (detailColumnList.get(i).isVisibleColumn()) {
+					fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
 					wrkInt++;
 					if (detailColumnList.get(i).isWithTotal()) {
 						if (!isWithTotalHeading) {
-							Cell cell=new Cell(new Phrase(res.getString("Total"), fontTableCell));
+							cell = new Cell(new Phrase(res.getString("Total"), fontTableCell));
 							cell.setColspan(wrkInt);
 							cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
 							table.addCell(cell);
 							isWithTotalHeading = true;
 						}
-						Cell cell = new Cell(new Phrase(detailColumnList.get(i).getSummary().toString(), fontTableCellData));
+						cell = new Cell(new Phrase(detailColumnList.get(i).getSummary().toString(), fontTableCellData));
 						cell.setHorizontalAlignment(detailColumnList.get(i).getAlignment());
 						table.addCell(cell);
 					} else {
 						if (isWithTotalHeading) {
-							Cell cell = new Cell(new Phrase(" ", fontTableCellData));
+							cell = new Cell(new Phrase(" ", fontTableCellData));
 							table.addCell(cell);
 						}
 					}
@@ -815,7 +833,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		}
 	}
 
-	private Chunk getChunkForKeyword(String keyword, PdfContentByte cb) {
+	private Chunk getChunkForKeyword(String keyword, PdfContentByte cb, com.lowagie.text.Font chunkFont) {
 		StringTokenizer workTokenizer;
 		String wrkStr;
 		com.lowagie.text.Image image;
@@ -832,7 +850,9 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			if (keyword.contains("&DataSource(")) {
 				pos = keyword.lastIndexOf(")");
 				wrkStr = getExternalStringValueOfFieldByName(keyword.substring(12, pos));
-				chunk = new Chunk(wrkStr);
+				//chunk = new Chunk(wrkStr);
+				chunkFont.setColor(getColorOfDataSource(keyword.substring(12, pos)));
+				chunk = new Chunk(wrkStr, chunkFont);
 			}
 			//
 			if (keyword.contains("&Image(")) {
@@ -1247,6 +1267,19 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		}
 		return value;
 	}
+
+	public Color getColorOfDataSource(String dataSourceName) {
+		Color color = Color.black;
+		StringTokenizer workTokenizer = new StringTokenizer(dataSourceName, ";");
+		String wrkStr = workTokenizer.nextToken().trim();
+		for (int i = 0; i < headerFieldList.size(); i++) {
+			if (headerFieldList.get(i).getDataSourceName().equals(wrkStr)) {
+				color = headerFieldList.get(i).getForeground();
+				break;
+			}
+		}
+		return color;
+	}
 	
 	 class WorkingRow extends Object {
 		private ArrayList<String> columnValueList_ = new ArrayList<String>();
@@ -1312,6 +1345,7 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 	private XF390 dialog_;
 	private ArrayList<String> kubunValueList = new ArrayList<String>();
 	private ArrayList<String> kubunTextList = new ArrayList<String>();
+	private Color foreground = Color.black;
 
 	public XF390_HeaderField(String dataSourceName, XF390 dialog){
 		super();
@@ -1640,10 +1674,15 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 	}
 
 	public void setColor(String color) {
+		foreground = XFUtility.convertStringToColor(color);
 	}
 
 	public String getColor() {
-		return "";
+		return XFUtility.convertColorToString(foreground);
+	}
+
+	public Color getForeground() {
+		return foreground;
 	}
 }
 
@@ -2597,11 +2636,13 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 	private boolean isRangeKeyFieldExpire = false;
 	private boolean isWithTotal = false;
 	private boolean isKubunField = false;
+	private boolean isImage = false;
 	private ArrayList<String> kubunValueList = new ArrayList<String>();
 	private ArrayList<String> kubunTextList = new ArrayList<String>();
 	private Object value_ = null;
 	private long summaryLong = 0;
 	private double summaryDouble = 0d;
+	private Color foreground = Color.black;
 
 	public XF390_DetailColumn(org.w3c.dom.Element functionColumnElement, XF390 dialog){
 		super();
@@ -2683,6 +2724,9 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
 			}
+		}
+		if (dataTypeOptionList.contains("IMAGE")) {
+			isImage = true;
 		}
 		//
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "EDIT_CODE");
@@ -2769,6 +2813,10 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 		}
 		//
 		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+	}
+	
+	public boolean isImage() {
+		return isImage;
 	}
 
 	public void summarize() {
@@ -3023,6 +3071,7 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 	}
 
 	public void initialize() {
+		foreground = Color.black;
 		value_ = this.getNullValue();
 	}
 
@@ -3060,10 +3109,15 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 	}
 
 	public void setColor(String color) {
+		foreground = XFUtility.convertStringToColor(color);
 	}
 
 	public String getColor() {
-		return "";
+		return XFUtility.convertColorToString(foreground);
+	}
+
+	public Color getForeground() {
+		return foreground;
 	}
 }
 

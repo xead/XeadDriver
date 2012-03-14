@@ -37,7 +37,6 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -119,7 +118,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	private Bindings engineScriptBindings;
 	private int result;
 	private final int FONT_SIZE = 14;
-	private final int ROW_HEIGHT = 18;
+	//private final int ROW_HEIGHT = 18;
 	private boolean isInvalid = false;
 	private boolean isWithoutButtonToAddBlank;
 	private boolean isWithoutButtonToCallFunction;
@@ -142,7 +141,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		jTableMain.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		jTableMain.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		jTableMain.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		jTableMain.setRowHeight(ROW_HEIGHT);
+		//jTableMain.setRowHeight(ROW_HEIGHT);
 		jTableMain.setRowSelectionAllowed(true);
 		jTableMain.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
@@ -277,6 +276,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		addRowListTable = new XF310_AddRowListTable(dialog_.getFunctionElement(), this);
 		tableModelMain = new TableModelMain();
 		jTableMain.setModel(tableModelMain);
+		jTableMain.setRowHeight(XFUtility.ROW_HEIGHT_WITHOUT_IMAGE);
 		addRowListColumnList.clear();
 		addRowListReferTableList.clear();
 		//
@@ -303,6 +303,9 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				columnIndex++;
 				addRowListColumnList.get(j).setColumnIndex(columnIndex);
 				tableModelMain.addColumn(addRowListColumnList.get(j).getCaption());
+			}
+			if (addRowListColumnList.get(j).isImage()) {
+				jTableMain.setRowHeight(XFUtility.ROW_HEIGHT_WITH_IMAGE);
 			}
 		}
 		//
@@ -419,7 +422,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		// Add common used field (except for keys) to return field list of add-row-list table //
 		addRowListTable.addCommonUsedColumnToReturnList();
 		//
-        Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        //Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        Rectangle screenRect = dialog_.getSession().getMenuRectangle();
 		int width = screenRect.width - 150;
 		int height = screenRect.height - 150;
 		this.setPreferredSize(new Dimension(width, height));
@@ -632,9 +636,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	}
 	
 	public void incrementProgress() {
-	}
-	
-	public void stopProgress() {
 	}
 	
 	public void commit() {
@@ -1595,6 +1596,7 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 	private boolean isVirtualField = false;
 	private boolean isRangeKeyFieldValid = false;
 	private boolean isRangeKeyFieldExpire = false;
+	private boolean isImage = false;
 	private ArrayList<String> kubunValueList = new ArrayList<String>();
 	private ArrayList<String> kubunTextList = new ArrayList<String>();
 	private DecimalFormat integerFormat = new DecimalFormat("#,##0");
@@ -1703,7 +1705,12 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 								if (basicType.equals("DATE")) {
 									fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat());
 								} else {
-									fieldWidth = dataSize * 7 + 15;
+									if (dataTypeOptionList.contains("IMAGE")) {
+										isImage = true;
+										fieldWidth = 60;
+									} else {
+										fieldWidth = dataSize * 7 + 15;
+									}
 								}
 							}
 						}
@@ -1898,19 +1905,22 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 								}
 							}
 						} else {
-							if (value_ != null) {
-								value = value_.toString().trim();
-								//
-								if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
-									String wrkStr = value.toString();
-									if (!wrkStr.equals("")) {
-										value = XFUtility.getUserExpressionOfYearMonth(wrkStr, dialog_.getSession().getDateFormat());
+							if (this.isImage()) {
+								value = XFUtility.createSmallIcon(dialog_.getSession().getImageFileFolder() + value_.toString().trim());
+							} else {
+								if (value_ != null) {
+									value = value_.toString().trim();
+									if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
+										String wrkStr = value.toString();
+										if (!wrkStr.equals("")) {
+											value = XFUtility.getUserExpressionOfYearMonth(wrkStr, dialog_.getSession().getDateFormat());
+										}
 									}
-								}
-								if (dataTypeOptionList.contains("MSEQ")) {
-									String wrkStr = value.toString();
-									if (!wrkStr.equals("")) {
-										value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(wrkStr), dialog_.getSession());
+									if (dataTypeOptionList.contains("MSEQ")) {
+										String wrkStr = value.toString();
+										if (!wrkStr.equals("")) {
+											value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(wrkStr), dialog_.getSession());
+										}
 									}
 								}
 							}
@@ -1921,6 +1931,10 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 		}
 		//
 		return value;
+	}
+	
+	public boolean isImage() {
+		return isImage;
 	}
 
 	public boolean isNull(){

@@ -143,7 +143,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private final int FIELD_HORIZONTAL_MARGIN = 1;
 	private final int FIELD_VERTICAL_MARGIN = 5;
 	private final int FONT_SIZE = 14;
-	private final int ROW_HEIGHT = 18;
+	//private final int ROW_HEIGHT = 18;
 	private boolean lastFocusedWasDetailColumn = false;
 	private boolean readyToShowDialog;
 	private boolean isInvalid = false;
@@ -154,6 +154,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private XFTableCellEditor activeCellEditor = null;
 	private ReferChecker referChecker = null;
 	private Thread threadToSetupReferChecker = null;
+	private HSSFPatriarch patriarch = null;
 
 	public XF110_SubList(XF110 dialog) {
 		super(dialog, "", true);
@@ -204,7 +205,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jTableMain.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		jTableMain.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		jTableMain.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		jTableMain.setRowHeight(ROW_HEIGHT);
+		//jTableMain.setRowHeight(ROW_HEIGHT);
 		jTableMain.setRowSelectionAllowed(true);
 		jTableMain.addKeyListener(new XF110_SubListComponent_keyAdapter(this));
 		jTableMain.addFocusListener(new XF110_SubListjTableMain_focusAdapter(this));
@@ -363,6 +364,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		// Setup components for JTable of Detail //
 		tableModelMain = new TableModelEditableList();
 		jTableMain.setModel(tableModelMain);
+		jTableMain.setRowHeight(XFUtility.ROW_HEIGHT_WITHOUT_IMAGE);
 		TableColumn column = null;
 		detailColumnList.clear();
 
@@ -377,6 +379,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				columnIndex++;
 				detailColumnList.get(j).setColumnIndex(columnIndex);
 				tableModelMain.addColumn(detailColumnList.get(j).getCaption());
+			}
+			if (detailColumnList.get(j).isImage()) {
+				jTableMain.setRowHeight(XFUtility.ROW_HEIGHT_WITH_IMAGE);
 			}
 		}
 
@@ -853,13 +858,12 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	public void incrementProgress() {
 		jProgressBar.setValue(jProgressBar.getValue() + 1);
 		jProgressBar.paintImmediately(0,0,jProgressBar.getWidth(), jProgressBar.getHeight());
-	}
-	
-	public void stopProgress() {
-		jPanelBottom.remove(jProgressBar);
-		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
-		this.pack();
-		jPanelBottom.repaint();
+		if (jProgressBar.getValue() >= jProgressBar.getMaximum()) {
+			jPanelBottom.remove(jProgressBar);
+			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
+			this.pack();
+			jPanelBottom.repaint();
+		}
 	}
 
 	public void commit() {
@@ -1110,7 +1114,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						for (int i = 0; i < detailColumnList.size(); i++) {
 							if (detailColumnList.get(i).isVisibleOnPanel()) {
 								columnIndex = detailColumnList.get(i).getColumnIndex();
-								cell[columnIndex] = new XF110_SubListDetailCell(detailColumnList.get(i), (XF110_SubListDetailRowNumber)cell[0]);
+								cell[columnIndex] = new XF110_SubListDetailCell(detailColumnList.get(i), (XF110_SubListDetailRowNumber)cell[0], detailColumnList.get(i).isImage());
 								if (detailColumnList.get(i).isEditable()) {
 									tableModelMain.setEditable(countOfRows, columnIndex);
 								}
@@ -1468,6 +1472,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
 			}
 		}
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		public Class getColumnClass(int col){
+			return getValueAt(0, col).getClass();
+		}
 	}
 
 	class WorkingRow extends Object {
@@ -1526,6 +1534,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		FileOutputStream fileOutputStream = null;
 		HSSFFont font = null;
 		XF110_SubListDetailCell cellObject = null;
+		String imageFileName = "";
 		//
 		HSSFWorkbook workBook = new HSSFWorkbook();
 		String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("^", "_");
@@ -1533,6 +1542,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		workSheet.setDefaultRowHeight( (short) 300);
 		HSSFFooter workSheetFooter = workSheet.getFooter();
 		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
+		patriarch = workSheet.createDrawingPatriarch();
 		//
 		HSSFFont fontHeader = workBook.createFont();
 		fontHeader = workBook.createFont();
@@ -1715,6 +1725,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 							font = fontDataOrange;
 						}
 						setupCellAttributesForDetailColumn(rowData.createCell(columnIndex), workBook, detailColumnList.get(j).getBasicType(), detailColumnList.get(j).getTypeOptionList(), cellObject, font, detailColumnList.get(j).getDecimalSize());
+						if (cellObject.isImage() && !cellObject.getInternalValue().equals("")) {
+							imageFileName = session_.getImageFileFolder() + cellObject.getInternalValue();
+							XFUtility.setupImageCellForDetailColumn(workBook, workSheet, currentRowNumber, columnIndex, imageFileName, patriarch);
+						}
 					}
 				}
 			}
@@ -1828,11 +1842,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 									FileInputStream fis = null;
 									ByteArrayOutputStream bos = null;
 									try {
-										// read in the image file //
+										// read in the image file and copy the image bytes into the ByteArrayOutputStream//
 										fis = new FileInputStream(imageFile);
 										bos = new ByteArrayOutputStream( );
 										int c;
-										// copy the image bytes into the ByteArrayOutputStream //
 										while ((c = fis.read()) != -1) {
 											bos.write(c);
 										}
@@ -1845,7 +1858,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 										anchor.setDx2(-30);
 										anchor.setDy2(-250);
 										patriarch.createPicture(anchor, pictureIndex);
-										//
 									} catch(Exception ex) {
 										ex.printStackTrace(dialog_.getExceptionStream());
 									} finally {
@@ -1950,7 +1962,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			} else {
 				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
 				cell.setCellStyle(style);
-				if (value == null) {
+				if (value == null || object.isImage()) {
 					wrk = "";
 				} else {
 					wrk = value.toString();
@@ -3102,8 +3114,12 @@ class XF110_SubListDetailCellRenderer extends DefaultTableCellRenderer {
 	private static final long serialVersionUID = 1L;
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
 		XF110_SubListDetailCell cell = (XF110_SubListDetailCell)value;
-		setText(cell.getExternalValue().toString());
-		setFont(new java.awt.Font("Monospaced", 0, 14));
+		if (cell.isImage()) {
+			setIcon((Icon)cell.getExternalValue());
+		} else {
+			setText(cell.getExternalValue().toString());
+			setFont(new java.awt.Font("Monospaced", 0, 14));
+		}
 		//
 		if (column == 0) {
 			setFocusable(false);
@@ -4771,11 +4787,13 @@ class XF110_SubListDetailCell extends Object {
 	private Color foreground = Color.black;
 	private boolean isError_ = false;
 	private boolean isEditable_ = true;
+	private boolean isImage_ = false;
 
-	public XF110_SubListDetailCell(XF110_SubListDetailColumn column, XF110_SubListDetailRowNumber rowNumber) {
+	public XF110_SubListDetailCell(XF110_SubListDetailColumn column, XF110_SubListDetailRowNumber rowNumber, boolean isImage) {
 		column_ = column;
 		isEditable_ = column.isEditable();
 		rowNumber_ = rowNumber;
+		isImage_ = isImage;
 	}
 	public Object getInternalValue() {
 		column_.setValue(rowNumber_.getColumnValueMap().get(column_.getDataSourceName()));
@@ -4819,6 +4837,9 @@ class XF110_SubListDetailCell extends Object {
 	public boolean isEditable() {
 		return isEditable_;
 	}
+	public boolean isImage() {
+		return isImage_;
+	}
 }
 
 class XF110_SubListDetailColumn extends Object implements XFScriptableField {
@@ -4851,6 +4872,7 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 	private boolean isNonEditableField = false;
 	private boolean isRangeKeyFieldValid = false;
 	private boolean isRangeKeyFieldExpire = false;
+	private boolean isImage = false;
 	private DecimalFormat integerFormat = new DecimalFormat("#,##0");
 	private DecimalFormat floatFormat0 = new DecimalFormat("#,##0");
 	private DecimalFormat floatFormat1 = new DecimalFormat("#,##0.0");
@@ -5052,9 +5074,19 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 													editor = new XF110_SubListDetailCellEditorWithDateField(dialog_);
 												}
 											} else {
-												fieldWidth = dataSize * 7 + 15;
-												if (!isNonEditableField) {
-													editor = new XF110_SubListDetailCellEditorWithTextField(this, dialog_);
+												if (dataTypeOptionList.contains("IMAGE")) {
+													if (isNonEditableField) {
+														isImage = true;
+														fieldWidth = 60;
+													} else {
+														fieldWidth = dataSize * 7 + 15;
+														editor = new XF110_SubListDetailCellEditorWithTextField(this, dialog_);
+													}
+												} else {
+													fieldWidth = dataSize * 7 + 15;
+													if (!isNonEditableField) {
+														editor = new XF110_SubListDetailCellEditorWithTextField(this, dialog_);
+													}
 												}
 											}
 										}
@@ -5419,20 +5451,22 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 								}
 							}
 						} else {
-							if (value_ == null) {
-								value = "";
+							if (this.isImage()) {
+								value = XFUtility.createSmallIcon(dialog_.getSession().getImageFileFolder() + value_.toString().trim());
 							} else {
-								value = value_.toString().trim();
-								//
-								if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
-									String wrkStr = value.toString();
-									if (!wrkStr.equals("")) {
-										value = XFUtility.getUserExpressionOfYearMonth(wrkStr, dialog_.getSession().getDateFormat());
+								if (value_ == null) {
+									value = "";
+								} else {
+									value = value_.toString().trim();
+									if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
+										String wrkStr = value.toString();
+										if (!wrkStr.equals("")) {
+											value = XFUtility.getUserExpressionOfYearMonth(wrkStr, dialog_.getSession().getDateFormat());
+										}
 									}
-								}
-								//
-								if (dataTypeOptionList.contains("MSEQ")) {
-									value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(value.toString()), dialog_.getSession());
+									if (dataTypeOptionList.contains("MSEQ")) {
+										value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(value.toString()), dialog_.getSession());
+									}
 								}
 							}
 						}
@@ -5442,6 +5476,10 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 		}
 		//
 		return value;
+	}
+	
+	public boolean isImage() {
+		return isImage;
 	}
 
 	public boolean isNull(){

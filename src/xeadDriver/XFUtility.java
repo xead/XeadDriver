@@ -39,12 +39,16 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.SystemColor;
 import java.awt.Toolkit;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.URI;
@@ -93,7 +97,10 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFDataFormat;
+import org.apache.poi.hssf.usermodel.HSSFPatriarch;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.w3c.dom.*;
 import com.lowagie.text.BadElementException;
@@ -123,6 +130,8 @@ public class XFUtility {
 	static ImageIcon ICON_CHECK_0R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0R.PNG")));
 	static ImageIcon ICON_CHECK_1R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1R.PNG")));
 	public static final Color SELECTED_ACTIVE_COLOR = new Color(49,106,197);
+	public static final int ROW_HEIGHT_WITHOUT_IMAGE = 18;
+	public static final int ROW_HEIGHT_WITH_IMAGE = 40;
 	
 	static String getStringNumber(String text) {
 		char[] numberDigit = {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
@@ -248,6 +257,36 @@ public class XFUtility {
 		}
 		//
 		return fieldList;
+	}
+	
+	
+	static ImageIcon createSmallIcon(String fileName) {
+		ImageIcon icon = new ImageIcon();
+		File imageFile = new File(fileName);
+		if (imageFile.exists()) {
+			try {
+				FileInputStream fis = new FileInputStream(fileName);
+				BufferedImage image = ImageIO.read(fis);
+				fis.close();
+				float rate = (float)XFUtility.ROW_HEIGHT_WITH_IMAGE / image.getHeight();
+				int width = Math.round(image.getWidth()*rate);
+				int height = Math.round(image.getHeight()*rate);
+				BufferedImage shrinkImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+				Graphics2D g2d = shrinkImage.createGraphics();
+				g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+				g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+				g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
+				g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+				g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+				g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_NORMALIZE);													g2d.drawImage(image, 0, 0, width, height, null);
+				icon.setImage(shrinkImage);
+			} catch (Exception e) {
+			}
+		}
+		return icon;
 	}
 	
 	static String removeCommentsFromScriptText(String scriptText) {
@@ -1118,6 +1157,59 @@ public class XFUtility {
 		//
 		return image;
 	}
+
+	static void setupImageCellForDetailColumn(HSSFWorkbook workBook, HSSFSheet workSheet, int rowNumber, int columnIndex, String fileName, HSSFPatriarch patriarch) {
+		HSSFClientAnchor anchor = null;
+		int imageType = -1;
+		File imageFile = new File(fileName);
+		if (imageFile.exists()) {
+			boolean isValidFileType = false;
+			if (fileName.contains(".png") || fileName.contains(".PNG")) {
+				imageType = HSSFWorkbook.PICTURE_TYPE_PNG;
+				isValidFileType = true;
+			}
+			if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
+				imageType = HSSFWorkbook.PICTURE_TYPE_JPEG;
+				isValidFileType = true;
+			}
+			if (isValidFileType) {
+				FileInputStream fis = null;
+				ByteArrayOutputStream bos = null;
+				try {
+					// read in the image file and copy the image bytes into the ByteArrayOutputStream//
+					fis = new FileInputStream(imageFile);
+					bos = new ByteArrayOutputStream();
+					int c;
+					while ((c = fis.read()) != -1) {
+						bos.write(c);
+					}
+					// add the image bytes to the workbook //
+					int pictureIndex = workBook.addPicture(bos.toByteArray(), imageType);
+					anchor = new HSSFClientAnchor(0,0,0,0,
+							(short)columnIndex, rowNumber, (short)(columnIndex+1), rowNumber+1);
+					anchor.setAnchorType(0);
+					anchor.setDx1(20);
+					anchor.setDy1(20);
+					anchor.setDx2(0);
+					anchor.setDy2(0);
+					patriarch.createPicture(anchor, pictureIndex);
+				} catch(Exception e) {
+					e.printStackTrace();
+				} finally {
+					try {
+						if (fis != null) {
+							fis.close();
+						}
+						if (bos != null) {
+							bos.close();
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
 	
 	static com.lowagie.text.Rectangle getPageSize(String size, String direction) {
 		//
@@ -1981,7 +2073,6 @@ interface XFScriptable {
 	public StringBuffer getProcessLog();
 	public void startProgress(int maxValue);
 	public void incrementProgress();
-	public void stopProgress();
 	public XFTableOperator createTableOperator(String oparation, String tableID);
 	public XFTableOperator createTableOperator(String sqlText);
 }
@@ -3823,21 +3914,39 @@ class XFUrlField extends JPanel implements XFEditableField {
 class TableModelReadOnly extends DefaultTableModel {
 	private static final long serialVersionUID = 1L;
 	public boolean isCellEditable(int row, int col) {return false;}
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public Class getColumnClass(int col){
+		return getValueAt(0, col).getClass();
+	}
 }
 
 class TableCellReadOnly extends Object {
 	private static final long serialVersionUID = 1L;
-	private Object value_ = null;
+	private Object internalValue_ = null;
+	private Object externalValue_ = null;
 	private Color color_ = null;
-	public TableCellReadOnly(Object value, Color color) {
-		value_ = value;
+	private boolean isImage_ = false;
+	//public TableCellReadOnly(Object value, Color color) {
+	//	value_ = value;
+	//	color_ = color;
+	//}
+	public TableCellReadOnly(Object internalValue, Object externalValue, Color color, boolean isImage) {
+		internalValue_ = internalValue;
+		externalValue_ = externalValue;
 		color_ = color;
+		isImage_ = isImage;
 	}
-	public Object getValue() {
-		return value_;
+	public Object getInternalValue() {
+		return internalValue_;
+	}
+	public Object getExternalValue() {
+		return externalValue_;
 	}
 	public Color getColor() {
 		return color_;
+	}
+	public boolean isImage() {
+		return isImage_;
 	}
 }
 
@@ -3845,10 +3954,12 @@ class TableCellRendererReadOnly extends DefaultTableCellRenderer {
 	private static final long serialVersionUID = 1L;
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
 		TableCellReadOnly cell = (TableCellReadOnly)value;
-		//
-		setText((String)cell.getValue());
-		setFont(new java.awt.Font("Dialog", 0, 14));
-		//
+		if (cell.isImage()) {
+			setIcon((Icon)cell.getExternalValue());
+		} else {
+			setText((String)cell.getExternalValue());
+			setFont(new java.awt.Font("Dialog", 0, 14));
+		}
 		if (isSelected) {
 			setBackground(table.getSelectionBackground());
 			setForeground(table.getSelectionForeground());
@@ -3860,14 +3971,13 @@ class TableCellRendererReadOnly extends DefaultTableCellRenderer {
 			}
 			setForeground(table.getForeground());
 		}
-		//
 		if (!cell.getColor().equals(table.getForeground())) {
 			setForeground(cell.getColor());
 		}
-		//
 		validate();
 		return this;
 	}
+	
 }
 
 class TableCellRendererWithCheckBox extends XFCheckBox implements TableCellRenderer {
@@ -3877,7 +3987,7 @@ class TableCellRendererWithCheckBox extends XFCheckBox implements TableCellRende
 	}
 	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
 		TableCellReadOnly cell = (TableCellReadOnly)value;
-		this.setValue((String)cell.getValue());
+		this.setValue((String)cell.getExternalValue());
 		this.setOpaque(true);
 		if (isSelected) {
 			this.setBackground(table.getSelectionBackground());
@@ -4066,7 +4176,7 @@ class XFTableOperator {
 		}
 		if (sqlText_.toUpperCase().startsWith("DELETE ")) {
 			operation_ = "DELETE";
-			pos1 = sqlText_.indexOf("DELETE FROM ") + 12;
+			pos1 = sqlText_.toUpperCase().indexOf("DELETE FROM ") + 12;
 			pos2 = sqlText_.indexOf(" ", pos1);
 			if (pos2 < 0) {
 				pos2 = sqlText_.length();

@@ -197,7 +197,6 @@ public class ReferChecker extends Object {
 			}
 			function_.incrementProgress();
 		}
-		function_.stopProgress();
 		//
 		return msgList;
 	}

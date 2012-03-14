@@ -296,7 +296,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			jLabelFunctionID.setText("200" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
 			FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 			jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
-	        Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+	        //Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+	        Rectangle screenRect = session_.getMenuRectangle();
 			if (functionElement_.getAttribute("Size").equals("")) {
 				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
 				this.setLocation(screenRect.x, screenRect.y);
@@ -824,13 +825,12 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	public void incrementProgress() {
 		jProgressBar.setValue(jProgressBar.getValue() + 1);
 		jProgressBar.paintImmediately(0,0,jProgressBar.getWidth(), jProgressBar.getHeight());
-	}
-	
-	public void stopProgress() {
-		jPanelBottom.remove(jProgressBar);
-		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
-		this.pack();
-		jPanelBottom.repaint();
+		if (jProgressBar.getValue() >= jProgressBar.getMaximum()) {
+			jPanelBottom.remove(jProgressBar);
+			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
+			this.pack();
+			jPanelBottom.repaint();
+		}
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {

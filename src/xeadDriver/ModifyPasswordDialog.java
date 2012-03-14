@@ -137,8 +137,10 @@ public class ModifyPasswordDialog extends JDialog {
 		jTextFieldUserName.setText(session.getUserName());
 		jPanelMain.getRootPane().setDefaultButton(jButtonOK);
 		Dimension dlgSize = this.getPreferredSize();
-		Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
+		//Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+		//this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
+        Rectangle screenRect = session.getMenuRectangle();
+		this.setLocation(((screenRect.width - dlgSize.width) / 2) + screenRect.x, ((screenRect.height - dlgSize.height) / 2) + screenRect.y);
 		this.pack();
 		//
 		jPasswordCurrent.setText("");

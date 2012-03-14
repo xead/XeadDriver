@@ -33,7 +33,6 @@ package xeadDriver;
 
 import javax.swing.table.*;
 import javax.swing.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -121,13 +120,13 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	public Bindings engineScriptBindings;
 	private String scriptNameRunning = "";
 	private final int FONT_SIZE = 14;
-	private final int ROW_HEIGHT = 18;
 	private int initialReadCount = 0;
 	private double filterWidth = 0;
 	private ByteArrayOutputStream exceptionLog;
 	private PrintStream exceptionStream;
 	private String exceptionHeader = "";
 	private boolean anyFilterIsEditable = false;
+	private HSSFPatriarch patriarch = null;
 
 	public XF100(Session session, int instanceArrayIndex) {
 		super(session, "", true);
@@ -189,7 +188,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		jTableMain.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		jTableMain.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		jTableMain.setRowHeight(ROW_HEIGHT);
+		//jTableMain.setRowHeight(ROW_HEIGHT);
 		jTableMain.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		jTableMain.setRowSelectionAllowed(true);
 		jTableMain.addKeyListener(new XF100_jTableMain_keyAdapter(this));
@@ -319,7 +318,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 			jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 			this.setTitle(functionElement_.getAttribute("Name"));
-	        Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+	        //Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+	        Rectangle screenRect = session_.getMenuRectangle();
 			if (functionElement_.getAttribute("Size").equals("")) {
 				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
 				this.setLocation(screenRect.x, screenRect.y);
@@ -412,6 +412,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				//////////////////////////////
 				tableModelMain = new TableModelReadOnly();
 				jTableMain.setModel(tableModelMain);
+				jTableMain.setRowHeight(XFUtility.ROW_HEIGHT_WITHOUT_IMAGE);
 				TableColumn column = null;
 				columnList.clear();
 				tableModelMain.addColumn("NO.");
@@ -424,6 +425,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 						columnIndex++;
 						columnList.get(i).setColumnIndex(columnIndex);
 						tableModelMain.addColumn(columnList.get(i).getCaption());
+					}
+					if (columnList.get(i).isImage()) {
+						jTableMain.setRowHeight(XFUtility.ROW_HEIGHT_WITH_IMAGE);
 					}
 				}
 				//
@@ -620,9 +624,6 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	public void incrementProgress() {
-	}
-	
-	public void stopProgress() {
 	}
 	
 	public void commit() {
@@ -1113,10 +1114,11 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		 }
 	 }
 	
-	URI getExcellBookURI() {
+	private URI getExcellBookURI() {
 		File xlsFile = null;
 		String xlsFileName = "";
 		FileOutputStream fileOutputStream = null;
+		String imageFileName = "";
 		//
 		HSSFWorkbook workBook = new HSSFWorkbook();
 		String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
@@ -1124,6 +1126,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		workSheet.setDefaultRowHeight( (short) 300);
 		HSSFFooter workSheetFooter = workSheet.getFooter();
 		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
+		patriarch = workSheet.createDrawingPatriarch();
 		//
 		HSSFFont fontHeader = workBook.createFont();
 		fontHeader = workBook.createFont();
@@ -1247,6 +1250,10 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 							font = fontDetailOrange;
 						}
 						setupCellAttributes(rowData.createCell(columnIndex), workBook, columnList.get(j).getBasicType(), columnList.get(j).getTypeOptionList(), (TableCellReadOnly)tableModelMain.getValueAt(i,columnIndex), font, columnList.get(j).getDecimalSize());
+						if (cellObject.isImage() && !cellObject.getInternalValue().equals("")) {
+							imageFileName = session_.getImageFileFolder() + cellObject.getInternalValue();
+							XFUtility.setupImageCellForDetailColumn(workBook, workSheet, currentRowNumber, columnIndex, imageFileName, patriarch);
+						}
 					}
 				}
 			}
@@ -1307,17 +1314,17 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		if (basicType.equals("INTEGER")) {
 			if (typeOptionList.contains("MSEQ") || typeOptionList.contains("FYEAR")) {
 				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-				cell.setCellValue(new HSSFRichTextString(object.getValue().toString()));
+				cell.setCellValue(new HSSFRichTextString(object.getExternalValue().toString()));
 				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
 				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
 				style.setWrapText(true);
 				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
 				cell.setCellStyle(style);
 			} else {
-				if (object.getValue() == null) {
+				if (object.getExternalValue() == null) {
 					wrk = "";
 				} else {
-					wrk = XFUtility.getStringNumber(object.getValue().toString());
+					wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
 				}
 				if (wrk.equals("")) {
 					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
@@ -1334,10 +1341,10 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
-				if (object.getValue() == null) {
+				if (object.getExternalValue() == null) {
 					wrk = "";
 				} else {
-					wrk = XFUtility.getStringNumber(object.getValue().toString());
+					wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
 				}
 				if (wrk.equals("")) {
 					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
@@ -1353,10 +1360,10 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				cell.setCellStyle(style);
 			} else {
 				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-				if (object.getValue() == null) {
+				if (object.getExternalValue() == null || object.isImage()) {
 					wrk = "";
 				} else {
-					wrk = object.getValue().toString();
+					wrk = object.getExternalValue().toString();
 				}
 				cell.setCellValue(new HSSFRichTextString(wrk));
 				//
@@ -3076,6 +3083,7 @@ class XF100_Column extends Object implements XFScriptableField {
 	private boolean isRangeKeyFieldValid = false;
 	private boolean isRangeKeyFieldExpire = false;
 	private boolean isReadyToEvaluate = false;
+	private boolean isImage = false;
 	private DecimalFormat integerFormat = new DecimalFormat("#,##0");
 	private DecimalFormat floatFormat0 = new DecimalFormat("#,##0");
 	private DecimalFormat floatFormat1 = new DecimalFormat("#,##0.0");
@@ -3181,7 +3189,12 @@ class XF100_Column extends Object implements XFScriptableField {
 								if (basicType.equals("DATE")) {
 									fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat());
 								} else {
-									fieldWidth = dataSize * 7 + 15;
+									if (dataTypeOptionList.contains("IMAGE")) {
+										isImage = true;
+										fieldWidth = 60;
+									} else {
+										fieldWidth = dataSize * 7 + 15;
+									}
 								}
 							}
 						}
@@ -3430,10 +3443,14 @@ class XF100_Column extends Object implements XFScriptableField {
 										value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(wrkStr), dialog_.getSession());
 									}
 								} else {
-									if (value_ == null) {
-										value = "";
+									if (this.isImage()) {
+										value = XFUtility.createSmallIcon(dialog_.getSession().getImageFileFolder() + value_.toString().trim());
 									} else {
-										value = value_.toString().trim();
+										if (value_ == null) {
+											value = "";
+										} else {
+											value = value_.toString().trim();
+										}
 									}
 								}
 							}
@@ -3444,9 +3461,13 @@ class XF100_Column extends Object implements XFScriptableField {
 		}
 		return value;
 	}
+	
+	public boolean isImage() {
+		return isImage;
+	}
 
 	public TableCellReadOnly getCellObject() {
-		return new TableCellReadOnly(this.getExternalValue(), this.getForeground());
+		return new TableCellReadOnly(this.getInternalValue(), this.getExternalValue(), this.getForeground(), isImage);
 	}
 
 	public TableCellRenderer getCellRenderer(){
@@ -3601,7 +3622,7 @@ class XF100_Column extends Object implements XFScriptableField {
 		return XFUtility.convertColorToString(foreground);
 	}
 
-	Color getForeground() {
+	public Color getForeground() {
 		return foreground;
 	}
 }

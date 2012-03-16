@@ -108,7 +108,6 @@ public class Session extends JFrame {
 	private Dimension screenSize = new Dimension(0,0);
 	private Connection connectionManualCommit = null;
 	private Connection connectionAutoCommit = null;
-	//private DatabaseMetaData databaseMetaData = null;
 	private ArrayList<String> subDBIDList = new ArrayList<String>();
 	private ArrayList<String> subDBNameList = new ArrayList<String>();
 	private ArrayList<String> subDBUserList = new ArrayList<String>();
@@ -197,7 +196,6 @@ public class Session extends JFrame {
 						//
 						this.setVisible(true);
 					}else {
-						//JOptionPane.showMessageDialog(null, res.getString("LogInError2"));
 						closeSession(false);
 						System.exit(0);
 					}
@@ -216,18 +214,23 @@ public class Session extends JFrame {
 		}
 	}
 	
-	LoginDialog setupVariantsAndShowLoginDialog(String fileName, String user, String password) throws Exception {
+	private LoginDialog setupVariantsAndShowLoginDialog(String fileName, String user, String password) throws Exception {
 		String wrkStr= "";
         File xeafFile = new File(fileName);
-		currentFolder = xeafFile.getParent();
-		try {
-			DOMParser parser = new DOMParser();
-			parser.parse(new InputSource(new FileInputStream(fileName)));
-			domDocument = parser.getDocument();
-		} catch (Exception e1) {
-			JOptionPane.showMessageDialog(this, res.getString("SessionError2") + fileName + res.getString("SessionError3"));
-			return null;
-		}
+        if (xeafFile.exists()) {
+        	currentFolder = xeafFile.getParent();
+        	try {
+        		DOMParser parser = new DOMParser();
+        		parser.parse(new InputSource(new FileInputStream(fileName)));
+        		domDocument = parser.getDocument();
+        	} catch (Exception e1) {
+        		JOptionPane.showMessageDialog(this, res.getString("SessionError2") + fileName + res.getString("SessionError3"));
+        		return null;
+        	}
+        } else {
+    		JOptionPane.showMessageDialog(this, res.getString("SessionError21") + fileName + res.getString("SessionError22"));
+    		return null;
+        }
 		NodeList nodeList = domDocument.getElementsByTagName("System");
 		org.w3c.dom.Element element = (org.w3c.dom.Element)nodeList.item(0);
 
@@ -310,7 +313,6 @@ public class Session extends JFrame {
 				connectionManualCommit.setAutoCommit(false);
 				connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
 				connectionAutoCommit.setAutoCommit(true);
-				//databaseMetaData = connectionManualCommit.getMetaData();
 
 				////////////////////////////////////////////////////////
 				// Setup read-only connections for Sub-DB definitions //
@@ -329,7 +331,6 @@ public class Session extends JFrame {
 				return null;
 			}
 		}
-		//databaseDisconnect = element.getAttribute("DatabaseDisconnect");
 
 		org.w3c.dom.Element fontElement;
 		BaseFont baseFont;
@@ -350,9 +351,24 @@ public class Session extends JFrame {
 	 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
 		this.setIconImage(imageTitle);
 		this.enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		this.setPreferredSize(new Dimension(screenSize.width - 40, screenSize.height - 30));
+		//this.setPreferredSize(new Dimension(screenSize.width - 40, screenSize.height - 30));
+		int shorterWidth = Math.round(screenSize.width * (float)0.9);
+		int heightWrk = Math.round(shorterWidth / 8 * 6);
+		int shorterHeight = Math.round(screenSize.height * (float)0.9);
+		int widthWrk = Math.round(shorterHeight / 6 * 8);
+		if (widthWrk <= shorterWidth) {
+			this.setPreferredSize(new Dimension(widthWrk, shorterHeight));
+		} else {
+			this.setPreferredSize(new Dimension(shorterWidth, heightWrk));
+		}
 		this.setTitle(systemName + " " + version);
-	    this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		this.addComponentListener(new ComponentAdapter(){
+			public void componentResized(ComponentEvent e) {
+				jSplitPane2.setDividerLocation(getHeight() / 4);
+				jSplitPane1.setDividerLocation(getHeight() - (getHeight() / 7));
+			}
+        });
 
 		jTabbedPaneMenu.setFont(new java.awt.Font("SansSerif", 0, 14));
 		jTabbedPaneMenu.addKeyListener(new Session_keyAdapter(this));
@@ -382,10 +398,10 @@ public class Session extends JFrame {
 			File imageFile = new File(defaultImageFileName);
 			if (imageFile.exists()) {
 				imageIcon = new ImageIcon(defaultImageFileName);
-				Image image1 = imageIcon.getImage();
-				int maxWidth = screenSize.width - 30;
-				Image image2 = image1.getScaledInstance(maxWidth, -1, Image.SCALE_SMOOTH);
-				imageIcon.setImage(image2);
+				//Image image1 = imageIcon.getImage();
+				//int maxWidth = screenSize.width - 30;
+				//Image image2 = image1.getScaledInstance(maxWidth, -1, Image.SCALE_SMOOTH);
+				//imageIcon.setImage(image2);
 				JLabel labelImage = new JLabel("", imageIcon, JLabel.CENTER);
 				jScrollPaneNews.getViewport().add(labelImage, null);
 			} else {
@@ -465,11 +481,11 @@ public class Session extends JFrame {
 	    jSplitPane2.setOrientation(JSplitPane.VERTICAL_SPLIT);
 	    jSplitPane2.add(jScrollPaneNews, JSplitPane.TOP);
 	    jSplitPane2.add(jTabbedPaneMenu, JSplitPane.BOTTOM);
-	    jSplitPane2.setDividerLocation(screenSize.height - 635);
+	    //jSplitPane2.setDividerLocation(screenSize.height - 635);
 	    jSplitPane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
 	    jSplitPane1.add(jSplitPane2, JSplitPane.TOP);
 	    jSplitPane1.add(jScrollPaneMessages, JSplitPane.BOTTOM);
-	    jSplitPane1.setDividerLocation(screenSize.height - 120);
+	    //jSplitPane1.setDividerLocation(screenSize.height - 120);
 
 	    for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 20; j++) {
@@ -486,7 +502,7 @@ public class Session extends JFrame {
 		return new LoginDialog(this, user, password);
 	}
 	
-	void setupSessionAndMenus() throws ScriptException, Exception {
+	private void setupSessionAndMenus() throws ScriptException, Exception {
 		sessionID = this.getNextNumber("NRSESSION");
 		sessionStatus = "ACT";
 		InetAddress ip = InetAddress.getLocalHost();
@@ -537,7 +553,7 @@ public class Session extends JFrame {
 		}
 	}
 
-	ScriptEngineManager getScriptEngineManager() {
+	public ScriptEngineManager getScriptEngineManager() {
 		return scriptEngineManager;
 	}
 	
@@ -545,7 +561,7 @@ public class Session extends JFrame {
 		return baseFontMap.get(id);
 	}
 	
-	void buildMenuWithID(String id) {
+	private void buildMenuWithID(String id) {
 		int optionNo = 0;
 		NodeList optionList = null;
 		org.w3c.dom.Element menuElement = null;

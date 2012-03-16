@@ -427,8 +427,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		int width = screenRect.width - 150;
 		int height = screenRect.height - 150;
 		this.setPreferredSize(new Dimension(width, height));
-		posX = (screenRect.width - width) / 2;
-		posY = (screenRect.height - height) / 2;
+		posX = ((screenRect.width - width) / 2) + screenRect.x;
+		posY = ((screenRect.height - height) / 2) + screenRect.y;
 		this.setLocation(posX, posY);
 		this.pack();
 	}

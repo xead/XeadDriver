@@ -386,14 +386,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	        Rectangle screenRect = session_.getMenuRectangle();
 			if (functionElement_.getAttribute("Size").equals("")) {
 				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
-				this.setLocation(0, 0);
+				this.setLocation(screenRect.x, screenRect.y);
 			} else {
 				workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
 				int width = Integer.parseInt(workTokenizer.nextToken());
 				int height = Integer.parseInt(workTokenizer.nextToken());
 				this.setPreferredSize(new Dimension(width, height));
-				int posX = (screenRect.width - width) / 2;
-				int posY = (screenRect.height - height) / 2;
+				int posX = ((screenRect.width - width) / 2) + screenRect.x;
+				int posY = ((screenRect.height - height) / 2) + screenRect.y;
 				this.setLocation(posX, posY);
 			}
 			initialMsg = functionElement_.getAttribute("InitialMsg");
@@ -8389,7 +8389,6 @@ class XF310_KeyInputDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private JPanel jPanelMain = new JPanel();
-	private Dimension scrSize;
 	private JPanel jPanelKeyFields = new JPanel();
 	private JPanel jPanelTop = new JPanel();
 	private JPanel jPanelBottom = new JPanel();
@@ -8415,9 +8414,6 @@ class XF310_KeyInputDialog extends JDialog {
 	}
 
 	void initComponentsAndVariants() {
-		//
-		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		//
 		jPanelMain.setLayout(new BorderLayout());
 		jPanelTop.setLayout(new BorderLayout());
 		jPanelKeyFields.setLayout(null);
@@ -8490,7 +8486,6 @@ class XF310_KeyInputDialog extends JDialog {
 		jPanelButtons.add(jButtonOK);
 		this.getRootPane().setDefaultButton(jButtonOK);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		this.setSize(new Dimension(scrSize.width, scrSize.height));
 		//
 		StringTokenizer workTokenizer;
 		String tableAlias, tableID, fieldID;
@@ -8557,19 +8552,23 @@ class XF310_KeyInputDialog extends JDialog {
 		}
 		int height = biggestHeight + 117;
 		this.setPreferredSize(new Dimension(width, height));
-		posX = (scrSize.width - width) / 2;
-		posY = (scrSize.height - height) / 2;
-		this.setLocation(posX, posY);
 		this.pack();
 	}
 	
 	public HashMap<String, Object> requestKeyValues(String message) {
 		keyMap_.clear();
+		//
 		if (message.equals("")) {
 			jTextAreaMessages.setText(res.getString("FunctionMessage29"));
 		} else {
 			jTextAreaMessages.setText(message);
 		}
+		//
+		Rectangle screenRect = dialog_.getSession().getMenuRectangle();
+		int posX = (screenRect.width - (int)this.getPreferredSize().getWidth()) / 2 + screenRect.x;
+		int posY = (screenRect.height - (int)this.getPreferredSize().getHeight()) / 2 + screenRect.y;
+		this.setLocation(posX, posY);
+		//
 		this.setVisible(true);
 		//
 		return keyMap_;

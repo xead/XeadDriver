@@ -4478,7 +4478,7 @@ class XFTableOperator {
 				}
 				if (connection != null) {
 					if (operation_.toUpperCase().equals("SELECT")) {
-						connection.setReadOnly(true);
+						//connection.setReadOnly(true);
 						statement = connection.createStatement();
 						ResultSet result = statement.executeQuery(this.getSqlText());
 						relation_ = new Relation(result);
@@ -4486,7 +4486,7 @@ class XFTableOperator {
 						result.close();
 					} else {
 						if (operation_.toUpperCase().equals("COUNT")) {
-							connection.setReadOnly(true);
+							//connection.setReadOnly(true);
 							statement = connection.createStatement();
 							ResultSet result = statement.executeQuery(this.getSqlText());
 							if (result.next()) {
@@ -4494,7 +4494,7 @@ class XFTableOperator {
 							}
 							result.close();
 						} else {
-							connection.setReadOnly(false);
+							//connection.setReadOnly(false);
 							statement = connection.createStatement();
 							count = statement.executeUpdate(this.getSqlText());
 						}

@@ -338,8 +338,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				int width = Integer.parseInt(workTokenizer.nextToken());
 				int height = Integer.parseInt(workTokenizer.nextToken());
 				this.setPreferredSize(new Dimension(width, height));
-				int posX = (screenRect.width - width) / 2;
-				int posY = (screenRect.height - height) / 2;
+				int posX = ((screenRect.width - width) / 2) + screenRect.x;
+				int posY = ((screenRect.height - height) / 2) + screenRect.y;
 				this.setLocation(posX, posY);
 			}
 			this.pack();

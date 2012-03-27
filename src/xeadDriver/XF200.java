@@ -511,17 +511,17 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				}
 				if (workWidth > screenRect.width) {
 					workWidth = screenRect.width;
-					posX = 0;
+					posX = screenRect.x;
 				} else {
-					posX = (screenRect.width - workWidth) / 2;
+					posX = ((screenRect.width - workWidth) / 2) + screenRect.x;
 				}
 				//
 				int workHeight = biggestHeight + 150;
 				if (workHeight > screenRect.height) {
 					workHeight = screenRect.height;
-					posY = 0;
+					posY = screenRect.y;
 				} else {
-					posY = (screenRect.height - workHeight) / 2;
+					posY = ((screenRect.height - workHeight) / 2) + screenRect.y;
 				}
 				//
 				this.setPreferredSize(new Dimension(workWidth, workHeight));
@@ -1950,17 +1950,21 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < fieldList.size(); i++) {
 			if (tableID.equals("")) {
-				if (fieldList.get(i).getTableAlias().equals(tableAlias)) {
+				if (fieldList.get(i).getTableAlias().equals(tableAlias)
+						&& fieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (fieldList.get(i).getTableID().equals(tableID) && fieldList.get(i).getFieldID().equals(fieldID)) {
+				if (fieldList.get(i).getTableID().equals(tableID)
+						&& fieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (fieldList.get(i).getTableID().equals(tableID) && fieldList.get(i).getTableAlias().equals(tableAlias) && fieldList.get(i).getFieldID().equals(fieldID)) {
+				if (fieldList.get(i).getTableID().equals(tableID)
+						&& fieldList.get(i).getTableAlias().equals(tableAlias)
+						&& fieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -3029,7 +3033,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 					if (workDataTypeOptionList.contains("KANJI")) {
 						fieldWidth = dataSize * 14 + 20;
 					} else {
-						fieldWidth = dataSize * 7 + 20;
+						fieldWidth = dataSize * 7 + 30;
 					}
 					if (fieldWidth > 800) {
 						fieldWidth = 800;
@@ -3054,25 +3058,39 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
 			//
-			boolean blankItemRequired = true;
+//			boolean blankItemRequired = true;
+//			XFHashMap keyValues = new XFHashMap();
+//			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
+//				for (int j = 0; j < dialog_.getFieldList().size(); j++) {
+//					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
+//						if (dialog_.getFieldList().get(j).isNullable()) {
+//							if (dialog_.getFieldList().get(j).isVisibleOnPanel()) {
+//								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
+//							} else {
+//								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
+//							}
+//						} else {
+//							blankItemRequired = false;
+//							break;
+//						}
+//					}
+//				}
+//				if (!blankItemRequired) {
+//					break;
+//				}
+//			}
+			boolean blankItemRequired = false;
 			XFHashMap keyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 				for (int j = 0; j < dialog_.getFieldList().size(); j++) {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
 						if (dialog_.getFieldList().get(j).isNullable()) {
-							if (dialog_.getFieldList().get(j).isVisibleOnPanel()) {
-								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
-							} else {
-								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
-							}
+							blankItemRequired = true;
+							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
 						} else {
-							blankItemRequired = false;
-							break;
+							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
 						}
 					}
-				}
-				if (!blankItemRequired) {
-					break;
 				}
 			}
 			if (blankItemRequired) {
@@ -3333,16 +3351,17 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Object value;
-				//
-				HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
-				for (int i = 0; i < fieldsToPutList_.size(); i++) {
-					value = dialog_.getValueOfFieldByName(fieldsToPutList_.get(i));
-					if (value != null) {
-						fieldValuesMap.put(fieldsToPutToList_.get(i), value);
-					}
-				}
-				//
 				try {
+					setCursor(new Cursor(Cursor.WAIT_CURSOR));
+					//
+					HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
+					for (int i = 0; i < fieldsToPutList_.size(); i++) {
+						value = dialog_.getValueOfFieldByName(fieldsToPutList_.get(i));
+						if (value != null) {
+							fieldValuesMap.put(fieldsToPutToList_.get(i), value);
+						}
+					}
+					//
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
 					if (!returnMap.get("RETURN_CODE").equals("99")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
@@ -3361,6 +3380,8 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 					}
 				} catch (Exception ex) {
 					JOptionPane.showMessageDialog(null, ex.getMessage());
+				} finally {
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				}
 			}
 		});
@@ -3583,7 +3604,7 @@ class XF200_PrimaryTable extends Object {
 		return detailRowNoID;
 	}
 
-	public void setUpdateCounterValue(XFTableOperator operator) {
+	public void setUpdateCounterValue(XFTableOperator operator) throws Exception {
 		updateCounterValue = Long.parseLong(operator.getValueOf(updateCounterID).toString());
 	}
 	
@@ -4403,7 +4424,7 @@ class XF200_ReferTable extends Object {
 		return isToBeExecuted;
 	}
 	
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {

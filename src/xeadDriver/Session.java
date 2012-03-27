@@ -165,7 +165,7 @@ public class Session extends JFrame {
 		String fileName = "";
 		String loginUser = "";
 		String loginPassword = "";
-		//
+
 		try {
 			if (args.length >= 1) {
 				fileName =  args[0];
@@ -176,12 +176,11 @@ public class Session extends JFrame {
 			if (args.length >= 3) {
 				loginPassword =  args[2];
 			}
-			//
+
 			if (fileName.equals("")) {
 				JOptionPane.showMessageDialog(null, res.getString("SessionError1"));
 				System.exit(0);
 			} else {
-				//
 				loginDialog = setupVariantsAndShowLoginDialog(fileName, loginUser, loginPassword);
 				if (loginDialog == null) {
 					System.exit(0);
@@ -191,9 +190,7 @@ public class Session extends JFrame {
 						userName = loginDialog.getUserName();
 						userEmployeeNo = loginDialog.getUserEmployeeNo();
 						userMenus = loginDialog.getUserMenus();
-						//
 						setupSessionAndMenus();
-						//
 						this.setVisible(true);
 					}else {
 						closeSession(false);
@@ -347,29 +344,6 @@ public class Session extends JFrame {
 			baseFontMap.put(wrkStr, baseFont);
 		}
 
-		screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-	 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
-		this.setIconImage(imageTitle);
-		this.enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		//this.setPreferredSize(new Dimension(screenSize.width - 40, screenSize.height - 30));
-		int shorterWidth = Math.round(screenSize.width * (float)0.9);
-		int heightWrk = Math.round(shorterWidth / 8 * 6);
-		int shorterHeight = Math.round(screenSize.height * (float)0.9);
-		int widthWrk = Math.round(shorterHeight / 6 * 8);
-		if (widthWrk <= shorterWidth) {
-			this.setPreferredSize(new Dimension(widthWrk, shorterHeight));
-		} else {
-			this.setPreferredSize(new Dimension(shorterWidth, heightWrk));
-		}
-		this.setTitle(systemName + " " + version);
-		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-		this.addComponentListener(new ComponentAdapter(){
-			public void componentResized(ComponentEvent e) {
-				jSplitPane2.setDividerLocation(getHeight() / 4);
-				jSplitPane1.setDividerLocation(getHeight() - (getHeight() / 7));
-			}
-        });
-
 		jTabbedPaneMenu.setFont(new java.awt.Font("SansSerif", 0, 14));
 		jTabbedPaneMenu.addKeyListener(new Session_keyAdapter(this));
 		jTabbedPaneMenu.requestFocus();
@@ -398,10 +372,6 @@ public class Session extends JFrame {
 			File imageFile = new File(defaultImageFileName);
 			if (imageFile.exists()) {
 				imageIcon = new ImageIcon(defaultImageFileName);
-				//Image image1 = imageIcon.getImage();
-				//int maxWidth = screenSize.width - 30;
-				//Image image2 = image1.getScaledInstance(maxWidth, -1, Image.SCALE_SMOOTH);
-				//imageIcon.setImage(image2);
 				JLabel labelImage = new JLabel("", imageIcon, JLabel.CENTER);
 				jScrollPaneNews.getViewport().add(labelImage, null);
 			} else {
@@ -474,18 +444,43 @@ public class Session extends JFrame {
 		jTextAreaMessages.setText(res.getString("SessionMessage"));
 		jTextAreaMessages.setFocusable(false);
 	    jTextAreaMessages.setLineWrap(true);
-		this.getContentPane().setFocusable(false);
-		this.getContentPane().add(jPanelTop, BorderLayout.NORTH);
-		this.getContentPane().add(jSplitPane1, BorderLayout.CENTER);
-		this.pack();
 	    jSplitPane2.setOrientation(JSplitPane.VERTICAL_SPLIT);
 	    jSplitPane2.add(jScrollPaneNews, JSplitPane.TOP);
 	    jSplitPane2.add(jTabbedPaneMenu, JSplitPane.BOTTOM);
-	    //jSplitPane2.setDividerLocation(screenSize.height - 635);
 	    jSplitPane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
 	    jSplitPane1.add(jSplitPane2, JSplitPane.TOP);
 	    jSplitPane1.add(jScrollPaneMessages, JSplitPane.BOTTOM);
-	    //jSplitPane1.setDividerLocation(screenSize.height - 120);
+
+		this.enableEvents(AWTEvent.WINDOW_EVENT_MASK);
+		this.setTitle(systemName + " " + version);
+	 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
+		this.setIconImage(imageTitle);
+		screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		int shorterWidth1 = Math.round(screenSize.width * (float)0.9);
+		int shorterHeight1 = Math.round(shorterWidth1 / 3 * 2);
+		int shorterHeight2 = Math.round(screenSize.height * (float)0.9);
+		int shorterWidth2 = Math.round(shorterHeight2 / 2 * 3);
+		if (shorterWidth2 <= shorterWidth1) {
+			this.setPreferredSize(new Dimension(shorterWidth2, shorterHeight2));
+			this.setLocation((screenSize.width - shorterWidth2) / 2, (screenSize.height - shorterHeight2) / 2);
+		} else {
+			this.setPreferredSize(new Dimension(shorterWidth1, shorterHeight1));
+			this.setLocation((screenSize.width - shorterWidth1) / 2, (screenSize.height - shorterHeight1) / 2);
+		}
+		this.addComponentListener(new ComponentAdapter(){
+			public void componentResized(ComponentEvent e) {
+				jSplitPane2.setDividerLocation(getHeight() / 4);
+				jSplitPane1.setDividerLocation(getHeight() - (getHeight() / 7));
+			}
+        });
+	    this.getContentPane().setFocusable(false);
+		this.getContentPane().add(jPanelTop, BorderLayout.NORTH);
+		this.getContentPane().add(jSplitPane1, BorderLayout.CENTER);
+		this.pack();
+		this.validate();
+		if (screenSize.height < 1000) {
+			this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		}
 
 	    for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 20; j++) {
@@ -506,22 +501,22 @@ public class Session extends JFrame {
 		sessionID = this.getNextNumber("NRSESSION");
 		sessionStatus = "ACT";
 		InetAddress ip = InetAddress.getLocalHost();
-		//
+
 		String sql = "insert into " + sessionTable
 		+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, KBSESSIONSTATUS) values ("
 		+ "'" + sessionID + "'," + "'" + userID + "'," + "CURRENT_TIMESTAMP,"
 		+ "'" + ip.toString() + "','" + sessionStatus + "')";
 		XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 		operator.execute();
-		//
+
 		operator = new XFTableOperator(this, null, "select * from " + calendarTable, true);
 		while (operator.next()) {
 			offDateList.add(operator.getValueOf("DTOFF").toString());
 		}
-		//
+
 		jLabelUser.setText("User " + userName);
 		jLabelSession.setText("Session " + sessionID);
-		//
+
 		NodeList menuList = domDocument.getElementsByTagName("Menu");
 		sortingList = XFUtility.getSortedListModel(menuList, "ID");
 		if (userMenus.equals("ALL")) {
@@ -532,20 +527,9 @@ public class Session extends JFrame {
 				buildMenuWithID(workTokenizer.nextToken());
 			}
 		}
-		//
+
 		setupOptionsOfMenuWithTabNo(0);
-		//
-		this.validate();
-		Dimension frameSize = this.getSize();
-		if (frameSize.height > screenSize.height) {
-			frameSize.height = screenSize.height;
-		}
-		if (frameSize.width > screenSize.width) {
-			frameSize.width = screenSize.width;
-		}
-		this.setLocation((screenSize.width - frameSize.width) / 2, (screenSize.height - frameSize.height) / 2);
-		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-		//
+
 	    globalScriptBindings.put("session", new XFSessionForScript(this));
 		ScriptEngine scriptEngine = getScriptEngineManager().getEngineByName("js");
 		if (!loginScript.equals("")) {

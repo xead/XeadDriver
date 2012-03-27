@@ -154,10 +154,18 @@ public class ReferChecker extends Object {
 	}
 	
 	public ArrayList<String> getOperationErrors(String operation, HashMap<String, Object> columnValueMap,  HashMap<String, Object> columnOldValueMap) {
-		return getOperationErrors(operation, columnValueMap, columnOldValueMap, 0);
+		return getOperationErrors(operation, columnValueMap, columnOldValueMap, 0, "");
+	}
+
+	public ArrayList<String> getOperationErrors(String operation, HashMap<String, Object> columnValueMap,  HashMap<String, Object> columnOldValueMap, String checkSkippingTableID) {
+		return getOperationErrors(operation, columnValueMap, columnOldValueMap, 0, checkSkippingTableID);
+	}
+
+	public ArrayList<String> getOperationErrors(String operation, HashMap<String, Object> columnValueMap,  HashMap<String, Object> columnOldValueMap, int rowNumber) {
+		return getOperationErrors(operation, columnValueMap, columnOldValueMap, rowNumber, "");
 	}
 	
-	public ArrayList<String> getOperationErrors(String operation, HashMap<String, Object> columnValueMap,  HashMap<String, Object> columnOldValueMap, int rowNumber) {
+	public ArrayList<String> getOperationErrors(String operation, HashMap<String, Object> columnValueMap,  HashMap<String, Object> columnOldValueMap, int rowNumber, String checkSkippingTableID) {
 		ArrayList<String> msgList  = new ArrayList<String>();
 		columnValueMap_ = columnValueMap; //mapping key is Field ID//
 		columnOldValueMap_ = columnOldValueMap; //mapping key is Field ID//
@@ -178,21 +186,23 @@ public class ReferChecker extends Object {
 		msgHeader = bf.toString();
 		//
 		for (int i = 0; i < subjectTableList_.size(); i++) {
-			if (operation.toUpperCase().equals("INSERT")) {
-				if (rangeKeyType_ == 1 || rangeKeyType_ == 2) {
-					if (subjectTableList_.get(i).hasErrorToInsert()) {
-						msgList.add(msgHeader + res.getString("ReferCheckerMessage3") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage4"));
+			if (!subjectTableList_.get(i).getID().equals(checkSkippingTableID)) { 
+				if (operation.toUpperCase().equals("INSERT")) {
+					if (rangeKeyType_ == 1 || rangeKeyType_ == 2) {
+						if (subjectTableList_.get(i).hasErrorToInsert()) {
+							msgList.add(msgHeader + res.getString("ReferCheckerMessage3") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage4"));
+						}
 					}
 				}
-			}
-			if (operation.toUpperCase().equals("UPDATE")) {
-				if (subjectTableList_.get(i).hasErrorToUpdate()) {
-					msgList.add(msgHeader + res.getString("ReferCheckerMessage5") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage6"));
+				if (operation.toUpperCase().equals("UPDATE")) {
+					if (subjectTableList_.get(i).hasErrorToUpdate()) {
+						msgList.add(msgHeader + res.getString("ReferCheckerMessage5") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage6"));
+					}
 				}
-			}
-			if (operation.toUpperCase().equals("DELETE")) {
-				if (subjectTableList_.get(i).hasErrorToDelete()) {
-					msgList.add(msgHeader + res.getString("ReferCheckerMessage7") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage8"));
+				if (operation.toUpperCase().equals("DELETE")) {
+					if (subjectTableList_.get(i).hasErrorToDelete()) {
+						msgList.add(msgHeader + res.getString("ReferCheckerMessage7") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage8"));
+					}
 				}
 			}
 			function_.incrementProgress();
@@ -333,6 +343,58 @@ class ReferChecker_SubjectTable extends Object {
 			workElement = (org.w3c.dom.Element)sortableList.getElementAt(i);
         	scriptList.add(new XFScript(subjectTableID, workElement));
 		}
+		//
+		// Analyze fields in scripts and add them as HIDDEN columns if necessary //
+		for (int i = 0; i < scriptList.size(); i++) {
+			if	(scriptList.get(i).isToBeRunAtEvent("BR", "") || scriptList.get(i).isToBeRunAtEvent("BU", "")) {
+				for (int j = 0; j < scriptList.get(i).getFieldList().size(); j++) {
+					workTokenizer1 = new StringTokenizer(scriptList.get(i).getFieldList().get(j), "." );
+					wrkTableAlias = workTokenizer1.nextToken();
+					wrkTableID = getTableIDOfTableAlias(wrkTableAlias);
+					wrkFieldID = workTokenizer1.nextToken();
+					if (!containsField(wrkTableID, wrkTableAlias, wrkFieldID)) {
+						workElement = targetTableChecker_.getSession().getFieldElement(wrkTableID, wrkFieldID);
+						if (workElement == null) {
+							String msg = res.getString("FunctionError1") + subjectTableID + res.getString("FunctionError2") + scriptList.get(i).getName() + res.getString("FunctionError3") + wrkTableID + "_" + wrkFieldID + res.getString("FunctionError4");
+							JOptionPane.showMessageDialog(null, msg);
+						} else {
+							fieldList.add(new ReferChecker_Field(wrkTableID, wrkTableID, wrkFieldID, this));
+						}
+					}
+				}
+			}
+		}
+	}
+	
+
+	public boolean containsField(String tableID, String tableAlias, String fieldID) {
+		boolean result = false;
+		for (int i = 0; i < fieldList.size(); i++) {
+			if (tableID.equals("")) {
+				if (fieldList.get(i).getTableAlias().equals(tableAlias)
+						&& fieldList.get(i).getFieldID().equals(fieldID)) {
+					result = true;
+				}
+			}
+			if (tableAlias.equals("")) {
+				if (fieldList.get(i).getTableID().equals(tableID)
+						&& fieldList.get(i).getFieldID().equals(fieldID)) {
+					result = true;
+				}
+			}
+			if (!tableID.equals("") && !tableAlias.equals("")) {
+				if (fieldList.get(i).getTableID().equals(tableID)
+						&& fieldList.get(i).getTableAlias().equals(tableAlias)
+						&& fieldList.get(i).getFieldID().equals(fieldID)) {
+					result = true;
+				}
+			}
+		}
+		return result;
+	}
+	
+	public String getID() {
+		return subjectTableID;
 	}
 	
 	public String getName() {
@@ -655,8 +717,8 @@ class ReferChecker_SubjectTable extends Object {
 		if (alias.equals(subjectTableID)) {
 			returnValue = alias;
 		} else {
-			for (int i = 0; i < referTableList.size(); i++) {
-				element = (org.w3c.dom.Element)referTableList.get(i);
+			for (int i = 0; i < referNodeList.getLength(); i++) {
+				element = (org.w3c.dom.Element)referNodeList.item(i);
 				if (element.getAttribute("TableAlias").equals(alias) || (element.getAttribute("TableAlias").equals("") && element.getAttribute("ToTable").equals(alias))) {
 					returnValue = element.getAttribute("ToTable");
 					break;
@@ -1002,7 +1064,7 @@ class ReferChecker_ReferTable extends Object {
 		return isToBeChecked;
 	}
 	
-	public boolean isRecordToBeSelected(XFTableOperator operator, boolean isOverridenByNewValue){
+	public boolean isRecordToBeSelected(XFTableOperator operator, boolean isOverridenByNewValue) throws Exception {
 		boolean returnValue = false;
 		Object subjectKey = null;
 		Object targetKeyFrom = null;
@@ -1057,7 +1119,7 @@ class ReferChecker_ReferTable extends Object {
 		return returnValue;
 	}
 	
-	public boolean newRecordIsToBeSelectedHere(XFTableOperator operator){
+	public boolean newRecordIsToBeSelectedHere(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		Object subjectRecordKey = null;
 		Object existingTargetRecordKey = null;
@@ -1180,7 +1242,9 @@ class ReferChecker_Field extends Object implements XFScriptableField {
 			isVirtualField = true;
 		}
 		//
-		subjectTable_.getScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		if (!subjectTable_.getScriptBindings().containsKey(this.getFieldIDInScript())) {
+			subjectTable_.getScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		}
 	}
 
 	public boolean isVirtualField(){

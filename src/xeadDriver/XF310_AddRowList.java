@@ -899,17 +899,21 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < addRowListColumnList.size(); i++) {
 			if (tableID.equals("")) {
-				if (addRowListColumnList.get(i).getTableAlias().equals(tableAlias)) {
+				if (addRowListColumnList.get(i).getTableAlias().equals(tableAlias)
+						&& addRowListColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (addRowListColumnList.get(i).getTableID().equals(tableID) && addRowListColumnList.get(i).getFieldID().equals(fieldID)) {
+				if (addRowListColumnList.get(i).getTableID().equals(tableID)
+						&& addRowListColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (addRowListColumnList.get(i).getTableID().equals(tableID) && addRowListColumnList.get(i).getTableAlias().equals(tableAlias) && addRowListColumnList.get(i).getFieldID().equals(fieldID)) {
+				if (addRowListColumnList.get(i).getTableID().equals(tableID)
+						&& addRowListColumnList.get(i).getTableAlias().equals(tableAlias)
+						&& addRowListColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -945,8 +949,17 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		dialog_.evalScript(name, text, engineScriptBindings);
 	}
 	
-	public String getTableIDOfTableAlias(String alias) {
-		return dialog_.getTableIDOfTableAlias(alias);
+	public String getTableIDOfTableAlias(String tableAlias) {
+		String tableID = tableAlias;
+		//
+		for (int j = 0; j < addRowListReferTableList.size(); j++) {
+			if (addRowListReferTableList.get(j).getTableAlias().equals(tableAlias)) {
+				tableID = addRowListReferTableList.get(j).getTableID();
+				break;
+			}
+		}
+		//
+		return tableID;
 	}
 	
 	public XF310_HeaderField getHeaderFieldObjectByID(String tableID, String alias, String fieldID) {
@@ -1383,7 +1396,7 @@ class XF310_AddRowListTable extends Object {
 		return buf.toString();
 	}
 
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		int comp1, comp2;
 		//
@@ -1432,7 +1445,7 @@ class XF310_AddRowListTable extends Object {
 		return returnValue;
 	}
 
-	boolean isNewUpperKeyGroup(XFTableOperator operator){
+	boolean isNewUpperKeyGroup(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		for (int i = 0; i < keyFieldIDList.size(); i++) {
 			if (!keyFieldIDList.get(i).equals(rangeKeyFieldValid)) {
@@ -1549,7 +1562,7 @@ class XF310_AddRowListTable extends Object {
 		return isValid;
 	}
 
-	public void runScript(String event1, String event2, HashMap<String, Object> columnValueMap) throws ScriptException  {
+	public void runScript(String event1, String event2, HashMap<String, Object> columnValueMap) throws ScriptException {
 		XFScript script;
 		ArrayList<XFScript> validScriptList = new ArrayList<XFScript>();
 		//
@@ -2420,7 +2433,7 @@ class XF310_AddRowListReferTable extends Object {
 		return isKeyNull;
 	}
 
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {

@@ -2176,17 +2176,21 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < batchFieldList.size(); i++) {
 			if (tableID.equals("")) {
-				if (batchFieldList.get(i).getTableAlias().equals(tableAlias) && batchFieldList.get(i).getFieldID().equals(fieldID)) {
+				if (batchFieldList.get(i).getTableAlias().equals(tableAlias)
+						&& batchFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (batchFieldList.get(i).getTableID().equals(tableID) && batchFieldList.get(i).getFieldID().equals(fieldID)) {
+				if (batchFieldList.get(i).getTableID().equals(tableID)
+						&& batchFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (batchFieldList.get(i).getTableID().equals(tableID) && batchFieldList.get(i).getTableAlias().equals(tableAlias) && batchFieldList.get(i).getFieldID().equals(fieldID)) {
+				if (batchFieldList.get(i).getTableID().equals(tableID)
+						&& batchFieldList.get(i).getTableAlias().equals(tableAlias)
+						&& batchFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -2198,17 +2202,21 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < detailColumnList.size(); i++) {
 			if (tableID.equals("")) {
-				if (detailColumnList.get(i).getTableAlias().equals(tableAlias)) {
+				if (detailColumnList.get(i).getTableAlias().equals(tableAlias)
+						&& detailColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (detailColumnList.get(i).getTableID().equals(tableID) && detailColumnList.get(i).getFieldID().equals(fieldID)) {
+				if (detailColumnList.get(i).getTableID().equals(tableID)
+						&& detailColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (detailColumnList.get(i).getTableID().equals(tableID) && detailColumnList.get(i).getTableAlias().equals(tableAlias) && detailColumnList.get(i).getFieldID().equals(fieldID)) {
+				if (detailColumnList.get(i).getTableID().equals(tableID)
+						&& detailColumnList.get(i).getTableAlias().equals(tableAlias)
+						&& detailColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -2487,7 +2495,7 @@ class XF110_SubListBatchField extends JPanel implements XFScriptableField {
 						component.setLocation(5, 0);
 					} else {
 						if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-							component = new XFTextArea(dataSize, "", fieldOptions);
+							component = new XFTextArea(dataSize, dataTypeOptions, fieldOptions);
 							component.setLocation(5, 0);
 							component.setEditable(false);
 						} else {
@@ -4174,7 +4182,7 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 		//
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.setLayout(new BorderLayout());
-		this.setFocusable(false);
+		//this.setFocusable(false);
 		this.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
 				stopCellEditing();
@@ -4308,25 +4316,39 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 			tableKeyValuesList.clear();
 			this.removeAllItems();
 			//
-			boolean blankItemRequired = true;
+//			boolean blankItemRequired = true;
+//			XFHashMap keyValues = new XFHashMap();
+//			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
+//				for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
+//					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
+//						if (dialog_.getDetailColumnList().get(j).isNullable()) {
+//							if (dialog_.getDetailColumnList().get(j).isVisibleOnPanel()) {
+//								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getValue());
+//							} else {
+//								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
+//							}
+//						} else {
+//							blankItemRequired = false;
+//							break;
+//						}
+//					}
+//				}
+//				if (!blankItemRequired) {
+//					break;
+//				}
+//			}
+			boolean blankItemRequired = false;
 			XFHashMap keyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 				for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
 						if (dialog_.getDetailColumnList().get(j).isNullable()) {
-							if (dialog_.getDetailColumnList().get(j).isVisibleOnPanel()) {
-								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getValue());
-							} else {
-								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
-							}
+							blankItemRequired = true;
+							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
 						} else {
-							blankItemRequired = false;
-							break;
+							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getValue());
 						}
 					}
-				}
-				if (!blankItemRequired) {
-					break;
 				}
 			}
 			if (blankItemRequired) {
@@ -4355,6 +4377,7 @@ class XF110_SubListDetailCellEditorWithComboBox extends JComboBox implements XFT
 			}
 			//
 			this.setSelectedItem(selectedItemValue);
+			this.updateUI();
 		}
 	}
 
@@ -4488,15 +4511,18 @@ class XF110_SubListDetailCellEditorWithPromptCall extends JPanel implements XFTa
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Object value;
-				HashMap<String, Object> columnValueMap = detailCell.getTableRowNumber().getColumnValueMap();
-				HashMap<String, Object> parmValueMap = new HashMap<String, Object>();
-				for (int i = 0; i < fieldsToPutList_.size(); i++) {
-					value = columnValueMap.get(fieldsToPutList_.get(i));
-					if (value != null) {
-						parmValueMap.put(fieldsToPutToList_.get(i), value);
-					}
-				}
 				try {
+					setCursor(new Cursor(Cursor.WAIT_CURSOR));
+					//
+					HashMap<String, Object> columnValueMap = detailCell.getTableRowNumber().getColumnValueMap();
+					HashMap<String, Object> parmValueMap = new HashMap<String, Object>();
+					for (int i = 0; i < fieldsToPutList_.size(); i++) {
+						value = columnValueMap.get(fieldsToPutList_.get(i));
+						if (value != null) {
+							parmValueMap.put(fieldsToPutToList_.get(i), value);
+						}
+					}
+					//
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, parmValueMap);
 					if (!returnMap.get("RETURN_CODE").equals("99")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
@@ -4522,6 +4548,7 @@ class XF110_SubListDetailCellEditorWithPromptCall extends JPanel implements XFTa
 				} finally {
 					stopCellEditing();
 					dialog_.getTableModel().fireTableRowsUpdated(dialog_.getJTableMain().getSelectedRow(), dialog_.getJTableMain().getSelectedRow());
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				}
 			}
 		});
@@ -6200,7 +6227,7 @@ class XF110_SubListBatchReferTable extends Object {
 		return isKeyNull;
 	}
 
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {
@@ -6726,7 +6753,7 @@ class XF110_SubListDetailTable extends Object {
 		return isValid;
 	}
 
-	public int runScript(String event1, String event2, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap) throws ScriptException  {
+	public int runScript(String event1, String event2, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap) throws ScriptException {
 		int countOfErrors = 0;
 		XFScript script;
 		ArrayList<XFScript> validScriptList = new ArrayList<XFScript>();
@@ -7084,7 +7111,7 @@ class XF110_SubListDetailReferTable extends Object {
 		return isKeyNull;
 	}
 
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception{
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {
@@ -7330,7 +7357,7 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 					if (workDataTypeOptionList.contains("KANJI")) {
 						fieldWidth = dataSize * 14 + 20;
 					} else {
-						fieldWidth = dataSize * 7 + 20;
+						fieldWidth = dataSize * 7 + 30;
 					}
 					if (fieldWidth > 800) {
 						fieldWidth = 800;
@@ -7356,25 +7383,39 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
 			//
-			boolean blankItemRequired = true;
+//			boolean blankItemRequired = true;
+//			XFHashMap keyValues = new XFHashMap();
+//			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
+//				for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
+//					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
+//						if (dialog_.getBatchFieldList().get(j).isNullable()) {
+//							if (dialog_.getBatchFieldList().get(j).isVisibleOnPanel()) {
+//								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
+//							} else {
+//								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getNullValue());
+//							}
+//						} else {
+//							blankItemRequired = false;
+//							break;
+//						}
+//					}
+//				}
+//				if (!blankItemRequired) {
+//					break;
+//				}
+//			}
+			boolean blankItemRequired = false;
 			XFHashMap keyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 				for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
 						if (dialog_.getBatchFieldList().get(j).isNullable()) {
-							if (dialog_.getBatchFieldList().get(j).isVisibleOnPanel()) {
-								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
-							} else {
-								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getNullValue());
-							}
+							blankItemRequired = true;
+							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getNullValue());
 						} else {
-							blankItemRequired = false;
-							break;
+							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
 						}
 					}
-				}
-				if (!blankItemRequired) {
-					break;
 				}
 			}
 			if (blankItemRequired) {
@@ -7638,16 +7679,17 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Object value;
-				//
-				HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
-				for (int i = 0; i < fieldsToPutList_.size(); i++) {
-					value = dialog_.getValueOfBatchFieldByName(fieldsToPutList_.get(i));
-					if (value != null) {
-						fieldValuesMap.put(fieldsToPutToList_.get(i), value);
-					}
-				}
-				//
 				try {
+					setCursor(new Cursor(Cursor.WAIT_CURSOR));
+					//
+					HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
+					for (int i = 0; i < fieldsToPutList_.size(); i++) {
+						value = dialog_.getValueOfBatchFieldByName(fieldsToPutList_.get(i));
+						if (value != null) {
+							fieldValuesMap.put(fieldsToPutToList_.get(i), value);
+						}
+					}
+					//
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
 					if (!returnMap.get("RETURN_CODE").equals("99")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
@@ -7666,6 +7708,8 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 					}
 				} catch (Exception ex) {
 					JOptionPane.showMessageDialog(null, ex.getMessage());
+				} finally {
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				}
 			}
 		});

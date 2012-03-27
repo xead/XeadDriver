@@ -2297,17 +2297,21 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < headerFieldList.size(); i++) {
 			if (tableID.equals("")) {
-				if (headerFieldList.get(i).getTableAlias().equals(tableAlias)) {
+				if (headerFieldList.get(i).getTableAlias().equals(tableAlias)
+						&& headerFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (headerFieldList.get(i).getTableID().equals(tableID) && headerFieldList.get(i).getFieldID().equals(fieldID)) {
+				if (headerFieldList.get(i).getTableID().equals(tableID)
+						&& headerFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (headerFieldList.get(i).getTableID().equals(tableID) && headerFieldList.get(i).getTableAlias().equals(tableAlias) && headerFieldList.get(i).getFieldID().equals(fieldID)) {
+				if (headerFieldList.get(i).getTableID().equals(tableID)
+						&& headerFieldList.get(i).getTableAlias().equals(tableAlias)
+						&& headerFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -2319,17 +2323,21 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < detailColumnListArray[tabIndex].size(); i++) {
 			if (tableID.equals("")) {
-				if (detailColumnListArray[tabIndex].get(i).getTableAlias().equals(tableAlias)) {
+				if (detailColumnListArray[tabIndex].get(i).getTableAlias().equals(tableAlias)
+						&& detailColumnListArray[tabIndex].get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (detailColumnListArray[tabIndex].get(i).getTableID().equals(tableID) && detailColumnListArray[tabIndex].get(i).getFieldID().equals(fieldID)) {
+				if (detailColumnListArray[tabIndex].get(i).getTableID().equals(tableID)
+						&& detailColumnListArray[tabIndex].get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (detailColumnListArray[tabIndex].get(i).getTableID().equals(tableID) && detailColumnListArray[tabIndex].get(i).getTableAlias().equals(tableAlias) && detailColumnListArray[tabIndex].get(i).getFieldID().equals(fieldID)) {
+				if (detailColumnListArray[tabIndex].get(i).getTableID().equals(tableID)
+						&& detailColumnListArray[tabIndex].get(i).getTableAlias().equals(tableAlias)
+						&& detailColumnListArray[tabIndex].get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -3784,7 +3792,7 @@ class XF300_Filter extends JPanel {
 		this.add(jLabelField, BorderLayout.WEST);
 		this.add(jPanelField, BorderLayout.CENTER);
 		//
-		int fieldWidthMax = (int)dialog_.getFilterWidth(index_) - 100;
+		int fieldWidthMax = (int)dialog_.getFilterWidth(index_) - 110;
 		//
 		XFTableOperator operator;
 		//
@@ -5246,7 +5254,7 @@ class XF300_HeaderTable extends Object {
 		return isValid;
 	}
 
-	public void runScript(String event1, String event2) throws ScriptException  {
+	public void runScript(String event1, String event2) throws ScriptException {
 		XFScript script;
 		ArrayList<XFScript> validScriptList = new ArrayList<XFScript>();
 		//
@@ -5474,7 +5482,7 @@ class XF300_HeaderReferTable extends Object {
 		return isToBeExecuted;
 	}
 
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {
@@ -5691,7 +5699,7 @@ class XF300_StructureTable extends Object {
 		return buf.toString();
 	}
 	
-	public String getSQLForNodeInfo(XFTableOperator structreTableOperator){
+	public String getSQLForNodeInfo(XFTableOperator structreTableOperator) throws Exception {
 		int count;
 		StringBuffer buf = new StringBuffer();
 		XF300_HeaderField headerField;
@@ -5728,7 +5736,7 @@ class XF300_StructureTable extends Object {
 		return buf.toString();
 	}
 	
-	public XF300_TreeNode createTreeNode(XFTableOperator headerTableOperator) {
+	public XF300_TreeNode createTreeNode(XFTableOperator headerTableOperator) throws Exception {
 		HashMap<String, Object> keyValueMap = new HashMap<String, Object>();
 		for (int i = 0; i < dialog_.getHeaderTable().getKeyFieldIDList().size(); i++) {
 			keyValueMap.put(dialog_.getHeaderTable().getKeyFieldIDList().get(i), headerTableOperator.getValueOf(dialog_.getHeaderTable().getKeyFieldIDList().get(i)));
@@ -5765,7 +5773,7 @@ class XF300_StructureTable extends Object {
 		return new XF300_TreeNode(keyValueMap, sb.toString(), icon, dialog_);
 	}
 	
-	public XF300_TreeNode createTreeNode(XFTableOperator headerTableOperator, XFTableOperator structureTableOperator) {
+	public XF300_TreeNode createTreeNode(XFTableOperator headerTableOperator, XFTableOperator structureTableOperator) throws Exception {
 		HashMap<String, Object> keyValueMap = new HashMap<String, Object>();
 		for (int i = 0; i < dialog_.getHeaderTable().getKeyFieldIDList().size(); i++) {
 			keyValueMap.put(dialog_.getHeaderTable().getKeyFieldIDList().get(i), headerTableOperator.getValueOf(dialog_.getHeaderTable().getKeyFieldIDList().get(i)));
@@ -6069,7 +6077,7 @@ class XF300_DetailTable extends Object {
 		return isValid;
 	}
 
-	public void runScript(int index, String event1, String event2) throws ScriptException  {
+	public void runScript(int index, String event1, String event2) throws ScriptException {
 		XFScript script;
 		ArrayList<XFScript> validScriptList = new ArrayList<XFScript>();
 		//
@@ -6309,7 +6317,7 @@ class XF300_DetailReferTable extends Object {
 		return isToBeExecuted;
 	}
 
-	public boolean isRecordToBeSelected(int index, XFTableOperator operator){
+	public boolean isRecordToBeSelected(int index, XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {

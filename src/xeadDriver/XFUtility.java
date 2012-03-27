@@ -204,8 +204,8 @@ public class XFUtility {
 	static ArrayList<String> getFieldListInScriptText(String scriptText) {
 		ArrayList<String> fieldList = new ArrayList<String>();
 		int pos, posWrk, wrkInt, posWrk2;
-		String[] sectionDigit = {"(", ")", "{", "}", "+", "-", "/", "*", "=", "<", ">", ";", "|", "&", "\n", "\t", ",", " "};
-		String[] fieldProperty = {"value", "oldValue", "color", "editable", "error"};
+		String[] sectionDigit = {"(", ")", "{", "}", "+", "-", "/", "*", "=", "<", ">", ";", "|", "&", "\n", "\t", ",", " ", "!"};
+		String[] fieldProperty = {"value", "oldValue", "color", "editable", "error", "valueChanged"};
 		boolean isFirstDigitOfField;
 		String wrkStr, dataSource;
 		//
@@ -1139,14 +1139,29 @@ public class XFUtility {
 		return buf.toString();
 	}
 	
-	static com.lowagie.text.Image getImage(String fileName, float newWidth) {
+	static com.lowagie.text.Image getImage(String fileName, float newWidth, float newHeight) {
 		com.lowagie.text.Image image = null;
 		//
 		try {
+			float percentWidth = 100f;
+			float percentHeight = 100f;
 			BufferedImage bi = ImageIO.read(new File(fileName));
 			image = com.lowagie.text.Image.getInstance(bi, null);
-			float percent = newWidth / image.getWidth() * 100.0f;
-			image.scalePercent(percent);
+			if (newWidth > 0 && newHeight > 0) {
+				image.scaleToFit(newWidth, newHeight);
+			} else {
+				if (newWidth > 0) {
+					percentWidth = newWidth / image.getWidth() * 100.0f;
+				}
+				if (newHeight > 0) {
+					percentHeight = newHeight / image.getHeight() * 100.0f;
+				}
+				if (percentWidth < percentHeight) {
+					image.scalePercent(percentWidth);
+				} else {
+					image.scalePercent(percentHeight);
+				}
+			}
 		} catch (BadElementException e) {
 			e.printStackTrace();
 			JOptionPane.showMessageDialog(null, e.getMessage() + "\n" + fileName);
@@ -2520,6 +2535,7 @@ class XFTextField extends JTextField implements XFEditableField {
 	private int rows_ = 1;
 	private ArrayList<String> dataTypeOptionList;
 	private String fieldOptions_;
+	private String autoNumberKey = "";
 	private DecimalFormat integerFormat = new DecimalFormat("#,##0");
 	private DecimalFormat floatFormat0 = new DecimalFormat("#,##0");
 	private DecimalFormat floatFormat1 = new DecimalFormat("#,##0.0");
@@ -2574,6 +2590,15 @@ class XFTextField extends JTextField implements XFEditableField {
 		this.addFocusListener(new ComponentFocusListener());
 		this.setFont(new java.awt.Font("Monospaced", 0, 14));
 		this.setDocument(new LimitedDocument(this));
+		this.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					if (basicType_.equals("STRING") && !autoNumberKey.equals("")) {
+						fillZero();
+					}
+				}
+			} 
+		});
 		//
 		int fieldWidth, fieldHeight;
 		if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
@@ -2593,6 +2618,10 @@ class XFTextField extends JTextField implements XFEditableField {
 		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
 		if (!wrkStr.equals("")) {
 			fieldWidth = Integer.parseInt(wrkStr);
+		}
+		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "AUTO_NUMBER");
+		if (!wrkStr.equals("")) {
+			autoNumberKey = wrkStr;
 		}
 		//
 		this.setSize(new Dimension(fieldWidth, fieldHeight));
@@ -2765,6 +2794,32 @@ class XFTextField extends JTextField implements XFEditableField {
 	public int getRows() {
 		return rows_;
 	}
+	
+	private void fillZero() {
+		int stringDigitFrom = -1;
+		int numberDigitFrom = 0;
+		if (getText().length() < digits_ && !getText().equals("")) {
+			for( int i = 0; i < getText().length() ; i++) {
+				try {
+					Integer.parseInt(getText().substring(i, i+1));
+					numberDigitFrom = i;
+					break;
+				} catch(NumberFormatException e) {
+					stringDigitFrom = i;
+				}
+			}
+			StringBuffer sb = new StringBuffer();
+			if (stringDigitFrom > -1) {
+				sb.append(getText().substring(stringDigitFrom, numberDigitFrom));
+			}
+			int zeroLen = digits_ - getText().length();
+			for( int i = 0; i < zeroLen ; i++) {
+				sb.append("0");
+			}
+			sb.append(getText().substring(numberDigitFrom, getText().length()));
+			setText(sb.toString());
+		}
+	}
 
 	class ComponentFocusListener implements FocusListener{
 		public void focusLost(FocusEvent event){
@@ -2778,6 +2833,9 @@ class XFTextField extends JTextField implements XFEditableField {
 			}
 			if (getInputContext() != null) {
 				getInputContext().setCompositionEnabled(false);
+			}
+			if (basicType_.equals("STRING") && !autoNumberKey.equals("")) {
+				fillZero();
 			}
 		}
 		public void focusGained(FocusEvent event){
@@ -4614,7 +4672,7 @@ class XFTableOperator {
     	return hasPrevious;
     }
     
-    public Object getValueOf(String fieldID) {
+    public Object getValueOf(String fieldID) throws Exception {
     	Object value = null;
     	if (relation_ != null) {
     		value = relation_.getValueOf(fieldID);

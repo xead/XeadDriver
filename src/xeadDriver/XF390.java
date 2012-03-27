@@ -51,6 +51,7 @@ import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import org.w3c.dom.*;
 import com.lowagie.text.*;
+import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.*;
 
 public class XF390 extends Component implements XFExecutable, XFScriptable {
@@ -69,7 +70,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	private boolean isToBeCanceled = false;
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
-	private XF390_Phrase headerPhrase = null;
+	private ArrayList<XF390_Phrase> headerPhraseList = new ArrayList<XF390_Phrase>();
 	private ArrayList<XF390_Phrase> paragraphList = new ArrayList<XF390_Phrase>();
 	private ArrayList<XF390_HeaderReferTable> headerReferTableList = new ArrayList<XF390_HeaderReferTable>();
 	private ArrayList<XF390_DetailReferTable> detailReferTableList = new ArrayList<XF390_DetailReferTable>();
@@ -114,9 +115,9 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
-			///////////////////
-			// Process parms //
-			///////////////////
+			////////////////////////
+			// Process parameters //
+			////////////////////////
 			parmMap_ = parmMap;
 			if (parmMap_ == null) {
 				parmMap_ = new HashMap<String, Object>();
@@ -135,7 +136,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			exceptionHeader = "";
 			functionElement_ = functionElement;
 			processLog.delete(0, processLog.length());
-			//connection = session_.getConnection();
 			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 			//////////////////////////////////////
@@ -162,34 +162,25 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			// Setup phrase and field List //
 			/////////////////////////////////
 			XF390_Phrase phrase;
-			String lastBlock = "";
-			headerPhrase = null;
+			headerPhraseList.clear();
 			headerFieldList.clear();
 			paragraphList.clear();
 			NodeList nodeList = functionElement_.getElementsByTagName("HeaderPhrase");
 			SortableDomElementListModel sortableList = XFUtility.getSortedListModel(nodeList, "Order");
 			for (int i = 0; i < sortableList.getSize(); i++) {
 				phrase = new XF390_Phrase((org.w3c.dom.Element)sortableList.getElementAt(i));
-				if (phrase.getBlock().equals("PHRASE")) {
-					if (lastBlock.equals("PARAGRAPH")) {
-						paragraphList.add(phrase);
-					}
+				if (phrase.getBlock().equals("HEADER")) {
+					headerPhraseList.add(phrase);
 				} else {
-					if (phrase.getBlock().equals("HEADER")) {
-						headerPhrase = phrase;
-					}
-					if (phrase.getBlock().equals("PARAGRAPH")) {
-						paragraphList.add(phrase);
-					}
-					lastBlock = phrase.getBlock();
+					paragraphList.add(phrase);
 				}
 			}
 			//
 			// Add fields on phrases if they are not on the column list //
-			if (headerPhrase != null) {
-				for (int j = 0; j < headerPhrase.getDataSourceNameList().size(); j++) {
-					if (!existsInFieldList(headerPhrase.getDataSourceNameList().get(j))) {
-						headerFieldList.add(new XF390_HeaderField(headerPhrase.getDataSourceNameList().get(j), this));
+			for (int i = 0; i < headerPhraseList.size(); i++) {
+				for (int j = 0; j < headerPhraseList.get(i).getDataSourceNameList().size(); j++) {
+					if (!existsInFieldList(headerPhraseList.get(i).getDataSourceNameList().get(j))) {
+						headerFieldList.add(new XF390_HeaderField(headerPhraseList.get(i).getDataSourceNameList().get(j), this));
 					}
 				}
 			}
@@ -378,7 +369,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		// CloseFunction //
 		///////////////////
 		closeFunction();
-
 		return returnMap_;
 	}
 
@@ -441,9 +431,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		File pdfFile = null;
 		String pdfFileName = "";
 		FileOutputStream fileOutputStream = null;
-		com.lowagie.text.Font font, chunkFont;
-		Chunk chunk;
-		Phrase phrase;
 		//
 		//Setup margins//
 		float leftMargin = 50;
@@ -468,6 +455,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			pdfFileName = pdfFile.getPath();
 			fileOutputStream = new FileOutputStream(pdfFileName);
 			PdfWriter writer = PdfWriter.getInstance(pdfDoc, fileOutputStream);
+			writer.setStrictImageSequence(true);
 			//
 			//Set document attributes//
 			pdfDoc.addTitle(functionElement_.getAttribute("Name"));
@@ -475,20 +463,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			pdfDoc.addCreator("XEAD Driver");
 			//
 			//Add header to the document//
-			if (headerPhrase != null && headerPhrase.getValueKeywordList().size() > 0) {
-				font = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhrase.getFontID()), headerPhrase.getFontSize(), headerPhrase.getFontStyle());
-				phrase = new Phrase("", font);
-				for (int i = 0; i < headerPhrase.getValueKeywordList().size(); i++) {
-					chunkFont = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhrase.getFontID()), headerPhrase.getFontSize(), headerPhrase.getFontStyle());
-					chunk = getChunkForKeyword(headerPhrase.getValueKeywordList().get(i), null, chunkFont);
-					if (chunk != null) {
-						phrase.add(chunk);
-					}
-				}
-				HeaderFooter header = new HeaderFooter(phrase,	false);
-				header.setAlignment(headerPhrase.getAlignment());
-				pdfDoc.setHeader(header);
-			}
+			addHeaderToDocument(pdfDoc);
 			//
 			//Add page-number-footer to the document//
 			if (functionElement_.getAttribute("WithPageNumber").equals("T")) {
@@ -525,6 +500,57 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		return pdfFile.toURI();
 	}
 	
+	private void addHeaderToDocument(com.lowagie.text.Document pdfDoc) {
+		com.lowagie.text.Font font, chunkFont;
+		Chunk chunk;
+		Phrase phrase;
+		if (headerPhraseList.size() == 1) {
+			font = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhraseList.get(0).getFontID()), headerPhraseList.get(0).getFontSize(), headerPhraseList.get(0).getFontStyle());
+			phrase = new Phrase("", font);
+			for (int i = 0; i < headerPhraseList.get(0).getValueKeywordList().size(); i++) {
+				chunkFont = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhraseList.get(0).getFontID()), headerPhraseList.get(0).getFontSize(), headerPhraseList.get(0).getFontStyle());
+				chunk = getChunkForKeyword(headerPhraseList.get(0).getValueKeywordList().get(i), null, chunkFont);
+				if (chunk != null) {
+					phrase.add(chunk);
+				}
+			}
+			HeaderFooter header = new HeaderFooter(phrase,	false);
+			header.setAlignment(headerPhraseList.get(0).getAlignment());
+			pdfDoc.setHeader(header);
+		}
+		if (headerPhraseList.size() > 1) {
+			PdfPTable table = new PdfPTable(2);
+			table.setWidthPercentage(100.0f);
+			table.getDefaultCell().setBorder(Rectangle.NO_BORDER);
+			for (int i = 0; i < headerPhraseList.size(); i++) {
+				font = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhraseList.get(i).getFontID()), headerPhraseList.get(i).getFontSize(), headerPhraseList.get(i).getFontStyle());
+				phrase = new Phrase("", font);
+				for (int j = 0; j < headerPhraseList.get(i).getValueKeywordList().size(); j++) {
+					chunkFont = new com.lowagie.text.Font(session_.getBaseFontWithID(headerPhraseList.get(i).getFontID()), headerPhraseList.get(i).getFontSize(), headerPhraseList.get(i).getFontStyle());
+					chunk = getChunkForKeyword(headerPhraseList.get(i).getValueKeywordList().get(j), null, chunkFont);
+					if (chunk != null) {
+						phrase.add(chunk);
+					}
+				}
+				PdfPCell cell = new PdfPCell(table.getDefaultCell());
+				cell.setHorizontalAlignment(headerPhraseList.get(i).getAlignment());
+				cell.setPhrase(phrase);
+				table.addCell(cell);
+			}
+			if (headerPhraseList.size() % 2 != 0) {
+				phrase = new Phrase("");
+				PdfPCell cell = new PdfPCell(table.getDefaultCell());
+				cell.setPhrase(phrase);
+				table.addCell(cell);
+			}
+			Paragraph paragraph = new Paragraph();
+			paragraph.add(table);
+			HeaderFooter header = new HeaderFooter(paragraph, false);
+			header.setBorder(Rectangle.NO_BORDER);
+			pdfDoc.setHeader(header);
+		}
+	}
+	
 	private void addParagraphToDocument(com.lowagie.text.Document pdfDoc, String blockType, PdfContentByte cb) throws IOException, DocumentException {
 		com.lowagie.text.Font font, chunkFont;
 		Chunk chunk;
@@ -538,16 +564,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				//
 				paragraph = new Paragraph(new Phrase(""));
 				paragraph.setAlignment(paragraphList.get(i).getAlignment());
-				if (paragraph.getAlignment() == Paragraph.ALIGN_RIGHT) {
-					paragraph.setIndentationRight(paragraphList.get(i).getAlignmentMargin());
-				}
-				if (paragraph.getAlignment() == Paragraph.ALIGN_LEFT) {
-					paragraph.setIndentationLeft(paragraphList.get(i).getAlignmentMargin());
-				}
-				if (paragraph.getAlignment() == Paragraph.ALIGN_CENTER) {
-					paragraph.setIndentationRight(paragraphList.get(i).getAlignmentMargin());
-					paragraph.setIndentationLeft(paragraphList.get(i).getAlignmentMargin());
-				}
+				paragraph.setIndentationRight(paragraphList.get(i).getMarginRight());
+				paragraph.setIndentationLeft(paragraphList.get(i).getMarginLeft());
 				paragraph.setSpacingAfter(paragraphList.get(i).getSpacingAfter());
 				//
 				font = new com.lowagie.text.Font(session_.getBaseFontWithID(paragraphList.get(i).getFontID()), paragraphList.get(i).getFontSize(), paragraphList.get(i).getFontStyle());
@@ -565,7 +583,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					}
 				}
 				paragraph.add(phrase);
-				//
 				pdfDoc.add(paragraph);
 			}
 		}
@@ -698,7 +715,11 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 							if (detailColumnList.get(i).getBarcodeType().equals("")) {
 								if (detailColumnList.get(i).isImage()) {
 									imageFileName = session_.getImageFileFolder() + detailColumnList.get(i).getExternalValue().toString();
-									cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
+									try {
+										cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
+									} catch (Exception e) {
+										cell = new Cell(detailColumnList.get(i).getExternalValue().toString());
+									}
 								} else {
 									fontTableCellData.setColor(detailColumnList.get(i).getForeground());
 									cell = new Cell(new Phrase(detailColumnList.get(i).getExternalValue().toString(), fontTableCellData));
@@ -835,9 +856,9 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 
 	private Chunk getChunkForKeyword(String keyword, PdfContentByte cb, com.lowagie.text.Font chunkFont) {
 		StringTokenizer workTokenizer;
-		String wrkStr;
+		String wrkStr = "";
 		com.lowagie.text.Image image;
-		int pos, x, y, w;
+		int pos, x, y, w, h;
 		Chunk chunk = null;
 		//
 		try {
@@ -850,20 +871,29 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			if (keyword.contains("&DataSource(")) {
 				pos = keyword.lastIndexOf(")");
 				wrkStr = getExternalStringValueOfFieldByName(keyword.substring(12, pos));
-				//chunk = new Chunk(wrkStr);
+				if (wrkStr.equals("")) {
+					wrkStr = " ";
+				}
 				chunkFont.setColor(getColorOfDataSource(keyword.substring(12, pos)));
 				chunk = new Chunk(wrkStr, chunkFont);
 			}
 			//
-			if (keyword.contains("&Image(")) {
-				pos = keyword.lastIndexOf(")");
-				workTokenizer = new StringTokenizer(keyword.substring(7, pos), ";" );
-				wrkStr = workTokenizer.nextToken().trim();
-				x = Integer.parseInt(workTokenizer.nextToken().trim());
-				y = Integer.parseInt(workTokenizer.nextToken().trim());
-				w = Integer.parseInt(workTokenizer.nextToken().trim());
-				image = XFUtility.getImage(getExternalStringValueOfFieldByName(wrkStr), w);
-				chunk = new Chunk(image, x, y, true);
+			if (keyword.contains("&DataSourceImage(")) {
+				x = 0; y = 0; w = 0; h = 0;
+				try {
+					pos = keyword.lastIndexOf(")");
+					workTokenizer = new StringTokenizer(keyword.substring(17, pos), ";" );
+					wrkStr = workTokenizer.nextToken().trim();
+					x = Integer.parseInt(workTokenizer.nextToken().trim());
+					y = Integer.parseInt(workTokenizer.nextToken().trim());
+					w = Integer.parseInt(workTokenizer.nextToken().trim());
+					h = Integer.parseInt(workTokenizer.nextToken().trim());
+				} catch (Exception e) {
+				}
+				image = XFUtility.getImage(session_.getImageFileFolder() + getExternalStringValueOfFieldByName(wrkStr), w, h);
+				if (image != null) {
+					chunk = new Chunk(image, x, y, true);
+				}
 			}
 			//
 			if (keyword.contains("&Barcode(") && cb != null) {
@@ -892,13 +922,19 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				chunk = new Chunk(session_.getToday(keyword.substring(6, pos)));
 			}
 			//
-			if (keyword.contains("&Logo(")) {
-				pos = keyword.lastIndexOf(")");
-				workTokenizer = new StringTokenizer(keyword.substring(6, pos), ";" );
-				x = Integer.parseInt(workTokenizer.nextToken().trim());
-				y = Integer.parseInt(workTokenizer.nextToken().trim());
-				w = Integer.parseInt(workTokenizer.nextToken().trim());
-				image = XFUtility.getImage(session_.getSystemVariantString("COMP_LOGO"), w);
+			if (keyword.contains("&Image(")) {
+				x = 0; y = 0; w = 0; h = 0;
+				try {
+					pos = keyword.lastIndexOf(")");
+					workTokenizer = new StringTokenizer(keyword.substring(7, pos), ";" );
+					wrkStr = workTokenizer.nextToken().trim();
+					x = Integer.parseInt(workTokenizer.nextToken().trim());
+					y = Integer.parseInt(workTokenizer.nextToken().trim());
+					w = Integer.parseInt(workTokenizer.nextToken().trim());
+					h = Integer.parseInt(workTokenizer.nextToken().trim());
+				} catch (Exception e) {
+				}
+				image = XFUtility.getImage(session_.getImageFileFolder() + wrkStr, w, h);
 				chunk = new Chunk(image, x, y, true);
 			}
 		} catch (Exception e) {
@@ -1127,17 +1163,21 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < headerFieldList.size(); i++) {
 			if (tableID.equals("")) {
-				if (headerFieldList.get(i).getTableAlias().equals(tableAlias)) {
+				if (headerFieldList.get(i).getTableAlias().equals(tableAlias)
+						&& headerFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (headerFieldList.get(i).getTableID().equals(tableID) && headerFieldList.get(i).getFieldID().equals(fieldID)) {
+				if (headerFieldList.get(i).getTableID().equals(tableID)
+						&& headerFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (headerFieldList.get(i).getTableID().equals(tableID) && headerFieldList.get(i).getTableAlias().equals(tableAlias) && headerFieldList.get(i).getFieldID().equals(fieldID)) {
+				if (headerFieldList.get(i).getTableID().equals(tableID)
+						&& headerFieldList.get(i).getTableAlias().equals(tableAlias)
+						&& headerFieldList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -1149,17 +1189,21 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < detailColumnList.size(); i++) {
 			if (tableID.equals("")) {
-				if (detailColumnList.get(i).getTableAlias().equals(tableAlias)) {
+				if (detailColumnList.get(i).getTableAlias().equals(tableAlias)
+						&& detailColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (detailColumnList.get(i).getTableID().equals(tableID) && detailColumnList.get(i).getFieldID().equals(fieldID)) {
+				if (detailColumnList.get(i).getTableID().equals(tableID)
+						&& detailColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (detailColumnList.get(i).getTableID().equals(tableID) && detailColumnList.get(i).getTableAlias().equals(tableAlias) && detailColumnList.get(i).getFieldID().equals(fieldID)) {
+				if (detailColumnList.get(i).getTableID().equals(tableID)
+						&& detailColumnList.get(i).getTableAlias().equals(tableAlias)
+						&& detailColumnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -1696,6 +1740,8 @@ class XF390_Phrase extends Object {
 	private String fontID = "";
 	private int fontSize = 0;
 	private float alignmentMargin;
+	private float marginRight;
+	private float marginLeft;
 	private float spacingAfter;
 	private String fontStyle = "";
 
@@ -1710,6 +1756,31 @@ class XF390_Phrase extends Object {
 			alignmentMargin = Float.parseFloat(phraseElement_.getAttribute("AlignmentMargin"));
 		} catch (NumberFormatException e) {
 			alignmentMargin = 0f;
+		}
+		if (alignmentMargin > 0f) {
+			if (alignment.equals("LEFT")) {
+				marginLeft = alignmentMargin;
+				marginRight = 0f;
+			}
+			if (alignment.equals("RIGHT")) {
+				marginLeft = 0f;
+				marginRight = alignmentMargin;
+			}
+			if (alignment.equals("CENTER")) {
+				marginLeft = alignmentMargin;
+				marginRight = alignmentMargin;
+			}
+		} else {
+			try {
+				marginRight = Float.parseFloat(phraseElement_.getAttribute("MarginRight"));
+			} catch (NumberFormatException e) {
+				marginRight = 0f;
+			}
+			try {
+				marginLeft = Float.parseFloat(phraseElement_.getAttribute("MarginLeft"));
+			} catch (NumberFormatException e) {
+				marginLeft = 0f;
+			}
 		}
 		//
 		try {
@@ -1740,9 +1811,9 @@ class XF390_Phrase extends Object {
 				wrkStr = workTokenizer.nextToken().trim();
 				dataSourceNameList.add(wrkStr);
 			}
-			if (valueKeywordList.get(i).contains("&Image(")) {
+			if (valueKeywordList.get(i).contains("&DataSourceImage(")) {
 				pos1 = valueKeywordList.get(i).indexOf(")", 0);
-				workTokenizer = new StringTokenizer(valueKeywordList.get(i).substring(7, pos1), ";");
+				workTokenizer = new StringTokenizer(valueKeywordList.get(i).substring(17, pos1), ";");
 				wrkStr = workTokenizer.nextToken().trim();
 				dataSourceNameList.add(wrkStr);
 			}
@@ -1763,8 +1834,16 @@ class XF390_Phrase extends Object {
 		return block;
 	}
 
-	public float getAlignmentMargin(){
-		return alignmentMargin;
+	//public float getAlignmentMargin(){
+	//	return alignmentMargin;
+	//}
+
+	public float getMarginRight(){
+		return marginRight;
+	}
+
+	public float getMarginLeft(){
+		return marginLeft;
 	}
 
 	public float getSpacingAfter(){
@@ -2274,7 +2353,7 @@ class XF390_HeaderReferTable extends Object {
 		return isToBeExecuted;
 	}
 
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {
@@ -2590,7 +2669,7 @@ class XF390_DetailTable extends Object {
 		return isValid;
 	}
 
-	public void runScript(String event1, String event2) throws ScriptException  {
+	public void runScript(String event1, String event2) throws ScriptException {
 		XFScript script;
 		ArrayList<XFScript> validScriptList = new ArrayList<XFScript>();
 		//
@@ -3334,7 +3413,7 @@ class XF390_DetailReferTable extends Object {
 		return isToBeExecuted;
 	}
 
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {

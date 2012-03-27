@@ -1017,17 +1017,21 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		boolean result = false;
 		for (int i = 0; i < columnList.size(); i++) {
 			if (tableID.equals("")) {
-				if (columnList.get(i).getTableAlias().equals(tableAlias)) {
+				if (columnList.get(i).getTableAlias().equals(tableAlias)
+						&& columnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (tableAlias.equals("")) {
-				if (columnList.get(i).getTableID().equals(tableID) && columnList.get(i).getFieldID().equals(fieldID)) {
+				if (columnList.get(i).getTableID().equals(tableID)
+						&& columnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
 			if (!tableID.equals("") && !tableAlias.equals("")) {
-				if (columnList.get(i).getTableID().equals(tableID) && columnList.get(i).getTableAlias().equals(tableAlias) && columnList.get(i).getFieldID().equals(fieldID)) {
+				if (columnList.get(i).getTableID().equals(tableID)
+						&& columnList.get(i).getTableAlias().equals(tableAlias)
+						&& columnList.get(i).getFieldID().equals(fieldID)) {
 					result = true;
 				}
 			}
@@ -1738,7 +1742,7 @@ class XF100_Filter extends JPanel {
 		this.add(jLabelField, BorderLayout.WEST);
 		this.add(jPanelField, BorderLayout.CENTER);
 		//
-		int fieldWidthMax = (int)dialog_.getFilterWidth() - 100;
+		int fieldWidthMax = (int)dialog_.getFilterWidth() - 110;
 		//
 		////////////////////////////////////////////////////////////////////////////////
 		// Steps to check BOOLEAN should be here because the field can be specified   //
@@ -3905,7 +3909,7 @@ class XF100_PrimaryTable extends Object {
 		return isValid;
 	}
 
-	public void runScript(String event1, String event2) throws ScriptException, Exception  {
+	public void runScript(String event1, String event2) throws ScriptException {
 		XFScript script;
 		ArrayList<XFScript> validScriptList = new ArrayList<XFScript>();
 		String tableAlias = "";
@@ -4162,7 +4166,7 @@ class XF100_ReferTable extends Object {
 		return isToBeExecuted;
 	}
 	
-	public boolean isRecordToBeSelected(XFTableOperator operator){
+	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		//
 		if (rangeKeyType == 0) {

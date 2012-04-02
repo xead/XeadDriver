@@ -712,17 +712,13 @@ class ReferChecker_SubjectTable extends Object {
 	}
 	
 	public String getTableIDOfTableAlias(String alias) {
-		String returnValue = "";
+		String returnValue = alias;
 		org.w3c.dom.Element element;
-		if (alias.equals(subjectTableID)) {
-			returnValue = alias;
-		} else {
-			for (int i = 0; i < referNodeList.getLength(); i++) {
-				element = (org.w3c.dom.Element)referNodeList.item(i);
-				if (element.getAttribute("TableAlias").equals(alias) || (element.getAttribute("TableAlias").equals("") && element.getAttribute("ToTable").equals(alias))) {
-					returnValue = element.getAttribute("ToTable");
-					break;
-				}
+		for (int i = 0; i < referNodeList.getLength(); i++) {
+			element = (org.w3c.dom.Element)referNodeList.item(i);
+			if (element.getAttribute("TableAlias").equals(alias) || (element.getAttribute("TableAlias").equals("") && element.getAttribute("ToTable").equals(alias))) {
+				returnValue = element.getAttribute("ToTable");
+				break;
 			}
 		}
 		return returnValue;

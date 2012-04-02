@@ -2724,7 +2724,9 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 		this.setToolTipText(wrkStr);
 		component.setToolTipText(wrkStr);
 		//
-		dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		if (!dialog_.getHeaderScriptBindings().containsKey(this.getFieldIDInScript())) {
+			dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		}
 	}
 
 	public XF300_HeaderField(String tableID, String tableAlias, String fieldID, XF300 dialog){
@@ -2833,7 +2835,9 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 			isVirtualField = true;
 		}
 		//
-		dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		if (!dialog_.getHeaderScriptBindings().containsKey(this.getFieldIDInScript())) {
+			dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		}
 	}
 
 	public String getTableID(){

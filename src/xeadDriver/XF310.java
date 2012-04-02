@@ -3077,7 +3077,9 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 			isVirtualField = true;
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
+			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		}
 	}
 
 	public XFEditableField getComponent() {

@@ -31,24 +31,69 @@ package xeadDriver;
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+import java.awt.Color;
+import java.awt.EventQueue;
+import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JWindow;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
-
 public class Application {
+	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
+	private JWindow splashScreen;
+	private JLabel  splashIcon;
+	private JLabel  splashLabel;
 
 	public Application(String[] args) {
-		new Session(args);
+		ImageIcon image = new ImageIcon(xeadDriver.Application.class.getResource("xeaddrv.png"));
+		splashIcon = new JLabel(image);
+		splashIcon.setLayout(null);
+		splashLabel = new JLabel();
+		splashLabel.setFont(new java.awt.Font("Dialog", 0, 12));
+		splashLabel.setForeground(Color.cyan);
+		splashLabel.setOpaque(false);
+		splashLabel.setBounds(0, 92, 500, 15);
+		splashLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		splashLabel.setText(res.getString("SplashMessage0"));
+		splashIcon.add(splashLabel);
+		splashScreen = new JWindow();
+		splashScreen.getContentPane().add(splashIcon);
+		splashScreen.pack();
+		splashScreen.setLocationRelativeTo(null);
+		EventQueue.invokeLater(new Runnable() {
+			@Override public void run() {
+				showSplash();
+			}
+		});
+		//
+		new Session(args, this);
 	}
 
 	public static void main(String[] args) {
-		//
 		try {
 			UIManager.getInstalledLookAndFeels(); 
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		//
 		new Application(args);
+	}
+	
+	public void showSplash() {
+		splashScreen.setVisible(true);
+	}
+	
+	public void setTextOnSplash(String text) {
+		splashLabel.setText(text);
+	}
+
+	public void hideSplash() {
+		if (splashScreen != null) {
+			splashScreen.setVisible(false);
+			splashScreen = null;
+			splashLabel  = null;
+		}
 	}
 }

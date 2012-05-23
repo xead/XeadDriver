@@ -1989,6 +1989,9 @@ class XFSessionForScript {
 	public String getUserEmployeeNo() {
 		return session_.getUserEmployeeNo();
 	}
+	public String getUserEmailAddress() {
+		return session_.getUserEmailAddress();
+	}
 	public String getUserID() {
 		return session_.getUserID();
 	}
@@ -2068,6 +2071,12 @@ class XFSessionForScript {
 	}
 	public void editFile(String fileName) {
 		session_.editFile(fileName);
+	}
+	public void sendMail(String addressFrom, String addressTo, String addressCc,
+			String subject, String message,
+			String fileName, String attachedName, String charset) {
+		session_.sendMail(addressFrom, addressTo, addressCc,
+				subject, message, fileName, attachedName, charset);
 	}
 }
 

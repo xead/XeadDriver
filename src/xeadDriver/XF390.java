@@ -453,6 +453,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		try {
 			pdfFile = session_.createTempFile(functionElement_.getAttribute("ID"), ".pdf");
 			pdfFileName = pdfFile.getPath();
+			returnMap_.put("FILE_NAME", pdfFileName);
 			fileOutputStream = new FileOutputStream(pdfFileName);
 			PdfWriter writer = PdfWriter.getInstance(pdfDoc, fileOutputStream);
 			writer.setStrictImageSequence(true);

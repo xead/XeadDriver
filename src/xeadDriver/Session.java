@@ -36,6 +36,8 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -56,9 +58,7 @@ import javax.script.ScriptException;
 import org.apache.xerces.parsers.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
-
 import com.lowagie.text.pdf.BaseFont;
-
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -67,6 +67,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+
+import javax.activation.DataHandler;
+import javax.activation.FileDataSource;
+import javax.mail.*;
+import javax.mail.internet.*;
 
 public class Session extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -83,6 +88,7 @@ public class Session extends JFrame {
 	private String userID = "";
 	private String userName = "";
 	private String userEmployeeNo = "";
+	private String userEmailAddress = "";
 	private String userMenus = "";
 	private String userTable = "";
 	private String variantsTable = "";
@@ -103,6 +109,10 @@ public class Session extends JFrame {
 	private String currentFolder = "";
 	private String loginScript = "";
 	private String scriptFunctions = "";
+	private String smtpHost = "";
+	private String smtpPort = "";
+	private String smtpUser = "";
+	private String smtpPassword = "";
 
 	private Image imageTitle;
 	private Dimension screenSize = new Dimension(0,0);
@@ -160,11 +170,13 @@ public class Session extends JFrame {
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
 	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
+	private Application application;
 
-	public Session(String[] args) {
+	public Session(String[] args, Application app) {
 		String fileName = "";
 		String loginUser = "";
 		String loginPassword = "";
+		application = app;
 
 		try {
 			if (args.length >= 1) {
@@ -178,10 +190,15 @@ public class Session extends JFrame {
 			}
 
 			if (fileName.equals("")) {
+				EventQueue.invokeLater(new Runnable() {
+					@Override public void run() {
+						application.hideSplash();
+					}
+				});
 				JOptionPane.showMessageDialog(null, res.getString("SessionError1"));
 				System.exit(0);
 			} else {
-				loginDialog = setupVariantsAndShowLoginDialog(fileName, loginUser, loginPassword);
+				loginDialog = setupVariantsToGetLoginDialog(fileName, loginUser, loginPassword);
 				if (loginDialog == null) {
 					System.exit(0);
 				} else {
@@ -189,8 +206,14 @@ public class Session extends JFrame {
 						userID = loginDialog.getUserID();
 						userName = loginDialog.getUserName();
 						userEmployeeNo = loginDialog.getUserEmployeeNo();
+						userEmailAddress = loginDialog.getUserEmailAddress();
 						userMenus = loginDialog.getUserMenus();
 						setupSessionAndMenus();
+						EventQueue.invokeLater(new Runnable() {
+							@Override public void run() {
+								application.hideSplash();
+							}
+						});
 						this.setVisible(true);
 					}else {
 						closeSession(false);
@@ -211,32 +234,58 @@ public class Session extends JFrame {
 		}
 	}
 	
-	private LoginDialog setupVariantsAndShowLoginDialog(String fileName, String user, String password) throws Exception {
-		String wrkStr= "";
-        File xeafFile = new File(fileName);
-        if (xeafFile.exists()) {
-        	currentFolder = xeafFile.getParent();
+	private LoginDialog setupVariantsToGetLoginDialog(String fileName, String user, String password) throws Exception {
+		////////////////////////////////////////////////////////////////
+		// Parse XML formatted data into DOM with file name requested //
+		////////////////////////////////////////////////////////////////
+		application.setTextOnSplash(res.getString("SplashMessage1"));
+		if (fileName.startsWith("http:")
+				|| fileName.startsWith("https:")
+				|| fileName.startsWith("file:")) {
         	try {
+        		URL url = new URL(fileName);
+        		URLConnection connection = url.openConnection();
+        		InputStream inputStream = connection.getInputStream();
         		DOMParser parser = new DOMParser();
-        		parser.parse(new InputSource(new FileInputStream(fileName)));
+        		parser.parse(new InputSource(inputStream));
         		domDocument = parser.getDocument();
-        	} catch (Exception e1) {
-        		JOptionPane.showMessageDialog(this, res.getString("SessionError2") + fileName + res.getString("SessionError3"));
+        	} catch (Exception e) {
+        		JOptionPane.showMessageDialog(this, res.getString("SessionError2") + fileName + res.getString("SessionError3") + "\n" + e.getMessage());
         		return null;
         	}
-        } else {
-    		JOptionPane.showMessageDialog(this, res.getString("SessionError21") + fileName + res.getString("SessionError22"));
-    		return null;
-        }
+		} else {
+			File xeafFile = new File(fileName);
+	        if (xeafFile.exists()) {
+	        	currentFolder = xeafFile.getParent();
+	        	try {
+					DOMParser parser = new DOMParser();
+					parser.parse(new InputSource(new FileInputStream(fileName)));
+					domDocument = parser.getDocument();
+	        	} catch (Exception e) {
+	        		JOptionPane.showMessageDialog(this, res.getString("SessionError2") + fileName + res.getString("SessionError3") + "\n" + e.getMessage());
+	        		return null;
+	        	}
+	        } else {
+	    		JOptionPane.showMessageDialog(this, res.getString("SessionError21") + fileName + res.getString("SessionError22"));
+	    		return null;
+	        }
+		}
+
+		////////////////////////////////////////////////////////////
+		// Extract various elements of system definition from DOM //
+		////////////////////////////////////////////////////////////
 		NodeList nodeList = domDocument.getElementsByTagName("System");
 		org.w3c.dom.Element element = (org.w3c.dom.Element)nodeList.item(0);
-
 		systemName = element.getAttribute("Name");
 		version = element.getAttribute("Version");
 		welcomePageURL = element.getAttribute("WelcomePageURL");
 		dateFormat = element.getAttribute("DateFormat");
 		calendar.setLenient(false);
-        wrkStr = element.getAttribute("ImageFileFolder"); 
+
+		////////////////////
+		// System Folders //
+		////////////////////
+		String wrkStr = element.getAttribute("ImageFileFolder"); 
 		if (wrkStr.equals("")) {
 			imageFileFolder = currentFolder + File.separator;
 		} else {
@@ -259,6 +308,9 @@ public class Session extends JFrame {
 			}
 		}
 		
+		///////////////////////////
+		// System control tables //
+		///////////////////////////
 		userTable = element.getAttribute("UserTable");
 		variantsTable = element.getAttribute("VariantsTable");
 		userVariantsTable = element.getAttribute("UserVariantsTable");
@@ -270,18 +322,27 @@ public class Session extends JFrame {
 		exchangeRateAnnualTable = element.getAttribute("ExchangeRateAnnualTable");
 		exchangeRateMonthlyTable = element.getAttribute("ExchangeRateMonthlyTable");
 
+		////////////////////
+		// System Scripts //
+		////////////////////
 		loginScript = XFUtility.substringLinesWithTokenOfEOL(element.getAttribute("LoginScript"), "\n");
 		scriptFunctions = XFUtility.substringLinesWithTokenOfEOL(element.getAttribute("ScriptFunctions"), "\n");
+
+		////////////////////////////////
+		// Function List / Table List //
+		////////////////////////////////
 		functionList = domDocument.getElementsByTagName("Function");
 		tableList = domDocument.getElementsByTagName("Table");
 
+		//////////////////////////
+		// Main / Sub Databases //
+		//////////////////////////
 		databaseName = element.getAttribute("DatabaseName");
 		if (databaseName.contains("<CURRENT>")) {
 			databaseName = databaseName.replace("<CURRENT>", currentFolder);
 		}
 		databaseUser = element.getAttribute("DatabaseUser");
 		databasePassword = element.getAttribute("DatabasePassword");
-
 		org.w3c.dom.Element subDBElement;
 		Connection subDBConnection;
 		NodeList subDBList = domDocument.getElementsByTagName("SubDB");
@@ -297,8 +358,12 @@ public class Session extends JFrame {
 			subDBNameList.add(wrkStr);
 		}
 		
+		///////////////////
+		// DB-Method URL //
+		///////////////////
 		if (!element.getAttribute("AppServerName").equals("")) {
-			appServerName = "http://" + element.getAttribute("AppServerName") + "/XeadServer/DBMethod";
+			//appServerName = "http://" + element.getAttribute("AppServerName") + "/XeadServer/DBMethod";
+			appServerName = element.getAttribute("AppServerName");
 		}
 		if (appServerName.equals("")) {
 			try {
@@ -329,6 +394,17 @@ public class Session extends JFrame {
 			}
 		}
 
+		/////////////////////////
+		// SMTP Configurations //
+		/////////////////////////
+		smtpHost = element.getAttribute("SmtpHost");
+		smtpPort = element.getAttribute("SmtpPort");
+		smtpUser = element.getAttribute("SmtpUser");
+		smtpPassword = element.getAttribute("SmtpPassword");
+
+		////////////////////
+		// PDF print font //
+		////////////////////
 		org.w3c.dom.Element fontElement;
 		BaseFont baseFont;
 		NodeList printFontList = domDocument.getElementsByTagName("PrintFont");
@@ -358,22 +434,27 @@ public class Session extends JFrame {
 		jEditorPaneNews.setFocusable(false);
 		editorKit.install(jEditorPaneNews);
 		jEditorPaneNews.setEditorKit(editorKit);
+		jScrollPaneNews.getViewport().add(jEditorPaneNews);
 		boolean isValidURL = false;
 		if (!welcomePageURL.equals("")) {
 			try {
 				jEditorPaneNews.setPage(welcomePageURL);
-				jScrollPaneNews.getViewport().add(jEditorPaneNews, null);
 				isValidURL = true;
 			} catch (Exception ex) {
 			}
 		}
 		if (!isValidURL) {
-			String defaultImageFileName = currentFolder + File.separator + "WelcomePageDefaultImage.jpg"; 
+			String defaultImageFileName = "";
+			if (currentFolder.equals("")) {
+				defaultImageFileName = "WelcomePageDefaultImage.jpg";
+			} else {
+				defaultImageFileName = currentFolder + File.separator + "WelcomePageDefaultImage.jpg";
+			}
 			File imageFile = new File(defaultImageFileName);
 			if (imageFile.exists()) {
 				imageIcon = new ImageIcon(defaultImageFileName);
 				JLabel labelImage = new JLabel("", imageIcon, JLabel.CENTER);
-				jScrollPaneNews.getViewport().add(labelImage, null);
+				jScrollPaneNews.getViewport().add(labelImage);
 			} else {
 				if (welcomePageURL.equals("")) {
 					jEditorPaneNews.setText(res.getString("SessionError10"));
@@ -491,9 +572,9 @@ public class Session extends JFrame {
         digestAdapter = new DigestAdapter("MD5");
 	    modifyPasswordDialog = new ModifyPasswordDialog(this);
 
-	    ///////////////////////////////////////////////
-	    // Show Login Dialog and Return Login Object //
-	    ///////////////////////////////////////////////
+	    /////////////////////////
+	    // Return Login Dialog //
+	    /////////////////////////
 		return new LoginDialog(this, user, password);
 	}
 	
@@ -588,6 +669,10 @@ public class Session extends JFrame {
 			}
 		}
 		
+	}
+	
+	public Application getApplication() {
+		return application;
 	}
 	
 	public String getCurrentMenuID() {
@@ -1997,6 +2082,73 @@ public class Session extends JFrame {
 		return domDocument;
 	}
 
+	public void sendMail(String addressFrom, String addressTo, String addressCc, 
+			String subject, String message,
+			String fileName, String attachedName, String charset) {
+		try{
+			Properties props = new Properties();
+			props.put("mail.smtp.host", smtpHost);
+			props.put("mail.host", smtpHost);
+			props.put("mail.from", addressFrom);
+			if (!smtpPassword.equals("")) {
+				props.setProperty("mail.smtp.auth", "true");
+			}
+			if (!smtpPort.equals("")) {
+				props.put("mail.smtp.port", smtpPort);
+			}
+			javax.mail.Session mailSession = javax.mail.Session.getDefaultInstance(props, null);
+			MimeMessage mailObj = new MimeMessage(mailSession);
+			InternetAddress[] toList = new InternetAddress[1];
+			toList[0] = new InternetAddress(addressTo);
+			mailObj.setRecipients(Message.RecipientType.TO, toList);
+			InternetAddress[] ccList = new InternetAddress[1];
+			ccList[0] = new InternetAddress(addressCc);
+			mailObj.setRecipients(Message.RecipientType.CC, ccList);
+			mailObj.setFrom(new InternetAddress(addressFrom));
+			mailObj.setSentDate(new Date());
+			if (charset.equals("")) {
+				mailObj.setSubject(subject);
+			} else {
+				mailObj.setSubject(subject, charset);
+			}
+			//
+			MimeBodyPart bodyMessage = new MimeBodyPart();
+			MimeBodyPart bodyAttachedFile = new MimeBodyPart();
+			if (charset.equals("")) {
+				bodyMessage.setText(message);
+			} else {
+				bodyMessage.setText(message, charset);
+			}
+			if (!fileName.equals("")) {
+				FileDataSource fds = new FileDataSource(fileName);
+				bodyAttachedFile.setDataHandler(new DataHandler(fds));
+				if (!attachedName.equals("")) {
+					if (charset.equals("")) {
+						bodyAttachedFile.setFileName(MimeUtility.encodeWord(attachedName));
+					} else {
+						bodyAttachedFile.setFileName(MimeUtility.encodeWord(attachedName, charset, "B"));
+					}
+				}
+			}
+			Multipart multipart = new MimeMultipart();
+			multipart.addBodyPart(bodyMessage);
+			if (!fileName.equals("")) {
+				multipart.addBodyPart(bodyAttachedFile);
+			}
+			mailObj.setContent(multipart);
+			//
+			if (smtpPassword.equals("")) {
+				Transport.send(mailObj);
+			} else {
+				Transport tp = mailSession.getTransport("smtp");
+				tp.connect(smtpHost, smtpUser, smtpPassword);
+				tp.sendMessage(mailObj, toList);
+			}
+        }catch(Exception e){
+			JOptionPane.showMessageDialog(null, "Sending mail with subject '" + subject + "' failed.\n\n" + e.getMessage());
+		}
+	}
+	
 	public HashMap<String, Object> executeFunction(String functionID, HashMap<String, Object> parmMap) throws Exception {
 		HashMap<String, Object> returnMap = null;
 		org.w3c.dom.Element element, elementOfFunction = null;
@@ -2163,6 +2315,10 @@ public class Session extends JFrame {
 
 	public String getUserEmployeeNo() {
 		return userEmployeeNo;
+	}
+
+	public String getUserEmailAddress() {
+		return userEmailAddress;
 	}
 	
 	public String getAttribute(String id) {

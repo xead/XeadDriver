@@ -32,6 +32,7 @@ package xeadDriver;
  */
 
 import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.PlainDocument;
@@ -40,13 +41,12 @@ import java.util.Date;
 import java.util.ResourceBundle;
 
 public class LoginDialog extends JDialog {
-	/**
-	 * Static constants
-	 */
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
+	/**
+	 * Application Information
+	 */
 	public static final String APPLICATION_NAME  = "XEAD Driver 1.1";
-	public static final String FULL_VERSION  = "V1.R1.M5";
+	public static final String FULL_VERSION  = "V1.R1.M6";
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
 	public static final String COPYRIGHT = "Copyright 2012 DBC,Ltd.";
@@ -54,6 +54,7 @@ public class LoginDialog extends JDialog {
 	/**
 	 * Private variants
 	 */
+	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private JPanel jPanelMain = new JPanel();
 	private JButton jButtonOK = new JButton();
 	private JButton jButtonClose = new JButton();
@@ -63,7 +64,7 @@ public class LoginDialog extends JDialog {
 	private JTextField jTextFieldUserID = new JTextField();
 	private JPasswordField jPasswordField = new JPasswordField();
 	private Session session = null;
-	private String userID, userName, userEmployeeNo, userMenus = "";
+	private String userID, userName, userEmployeeNo, userEmailAddress, userMenus = "";
 	private boolean validated = false;
 	private About about;
 
@@ -138,6 +139,11 @@ public class LoginDialog extends JDialog {
 		//
 		String password = new String(jPasswordField.getPassword());
 		if (jTextFieldUserID.getText().equals("") || password.equals("")) {
+			EventQueue.invokeLater(new Runnable() {
+				@Override public void run() {
+					session.getApplication().hideSplash();
+				}
+			});
 			super.setVisible(true);
 		} else {
 			jButtonOK_actionPerformed(null);
@@ -149,7 +155,7 @@ public class LoginDialog extends JDialog {
 	void jButtonOK_actionPerformed(ActionEvent e) throws Exception {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
-			if (checkUserAndPassword(jTextFieldUserID.getText(), new String(jPasswordField.getPassword()))) {
+			if (isValidPassword(jTextFieldUserID.getText(), new String(jPasswordField.getPassword()))) {
 				this.setVisible(false);
 			}
 		} finally {
@@ -158,15 +164,26 @@ public class LoginDialog extends JDialog {
 		}
 	}
 
+	protected void processWindowEvent(WindowEvent e) {
+		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
+			super.processWindowEvent(e);
+			jButtonClose_actionPerformed(null);
+		} else {
+			super.processWindowEvent(e);
+		}
+	}
+
 	void jButtonAbout_actionPerformed(ActionEvent e) {
 		about.request();
 	}
 
-	boolean checkUserAndPassword(String userID, String password) throws Exception {
+	boolean isValidPassword(String userID, String password) throws Exception {
 		if (userID.equals("") || password.equals("")) {
 			JOptionPane.showMessageDialog(this, res.getString("LogInComment"));
 		} else {
-			if (!session.getSystemVariantString("LOGIN_PERMITTED").equals("F")) {
+			//if (session.getSystemVariantString("LOGIN_PERMITTED").equals("F")) {
+			//	JOptionPane.showMessageDialog(this, res.getString("LogInError3"));
+			//} else {
 				String passwordDigested = session.getDigestAdapter().digest(password);
 				StringBuffer statementBuf = new StringBuffer();
 				statementBuf.append("select * from ");
@@ -189,6 +206,7 @@ public class LoginDialog extends JDialog {
 							this.userID = jTextFieldUserID.getText();
 							this.userName = operator.getValueOf("TXNAME").toString().trim();
 							this.userEmployeeNo = operator.getValueOf("NREMPLOYEE").toString().trim();
+							this.userEmailAddress = operator.getValueOf("TXEMAIL").toString().trim();
 							this.userMenus = operator.getValueOf("TXMENUS").toString().trim();
 							validated = true;
 						} else {
@@ -200,9 +218,7 @@ public class LoginDialog extends JDialog {
 				} else {
 					JOptionPane.showMessageDialog(this, res.getString("LogInError2"));
 				}
-			} else {
-				JOptionPane.showMessageDialog(this, res.getString("LogInError3"));
-			}
+			//}
 		}
 		return validated;
 	}
@@ -221,6 +237,10 @@ public class LoginDialog extends JDialog {
 
 	String getUserEmployeeNo() {
 		return userEmployeeNo;
+	}
+
+	String getUserEmailAddress() {
+		return userEmailAddress;
 	}
 
 	String getUserMenus() {

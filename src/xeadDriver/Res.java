@@ -225,6 +225,8 @@ public class Res extends java.util.ListResourceBundle {
 		{ "SessionError21", "Session was not started as the content file with name '" },
 		{ "SessionError22", "' does not exist." },
 		{ "SessionMessage", "* Use Arrow-Keys to select the menu option and enter to execute. Push F1 for HELP, F12 to change the log-in password." },
+		{ "SplashMessage0", "Launching XEAD Driver..." },
+		{ "SplashMessage1", "Parsing System Definitions..." },
 		{ "TimerStart", "Start" },
 		{ "TimerStop", "Stop" },
 		{ "TimerTime", "Time to Run" },

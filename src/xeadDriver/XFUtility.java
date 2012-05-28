@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -259,15 +260,27 @@ public class XFUtility {
 		return fieldList;
 	}
 	
-	
 	static ImageIcon createSmallIcon(String fileName) {
 		ImageIcon icon = new ImageIcon();
-		File imageFile = new File(fileName);
-		if (imageFile.exists()) {
-			try {
-				FileInputStream fis = new FileInputStream(fileName);
-				BufferedImage image = ImageIO.read(fis);
-				fis.close();
+		BufferedImage image = null;
+		try{
+			//////////////////////////////////////////////////
+			// Setup buffered image data with its file name //
+			//////////////////////////////////////////////////
+			if (fileName.startsWith("http://")) {
+				fileName = fileName.replace("\\", "/");
+				URL url = new URL(fileName);
+				image = ImageIO.read(url);
+			} else {
+				File imageFile = new File(fileName);
+				if (imageFile.exists()) {
+					image = ImageIO.read(imageFile);
+				}
+			}
+			/////////////////////////////////////////////////////
+			// Setup small icon image with buffered image data //
+			/////////////////////////////////////////////////////
+			if (image != null) {
 				float rate = (float)XFUtility.ROW_HEIGHT_WITH_IMAGE / image.getHeight();
 				int width = Math.round(image.getWidth()*rate);
 				int height = Math.round(image.getHeight()*rate);
@@ -283,8 +296,8 @@ public class XFUtility {
 				g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 				g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_NORMALIZE);													g2d.drawImage(image, 0, 0, width, height, null);
 				icon.setImage(shrinkImage);
-			} catch (Exception e) {
 			}
+		}catch(Exception e){
 		}
 		return icon;
 	}
@@ -1139,90 +1152,237 @@ public class XFUtility {
 		return buf.toString();
 	}
 	
-	static com.lowagie.text.Image getImage(String fileName, float newWidth, float newHeight) {
+	static com.lowagie.text.Image getImageForPDF(String fileName, float newWidth, float newHeight) {
 		com.lowagie.text.Image image = null;
 		//
 		try {
 			float percentWidth = 100f;
 			float percentHeight = 100f;
-			BufferedImage bi = ImageIO.read(new File(fileName));
-			image = com.lowagie.text.Image.getInstance(bi, null);
-			if (newWidth > 0 && newHeight > 0) {
-				image.scaleToFit(newWidth, newHeight);
+			BufferedImage bi = null;
+			if (fileName.startsWith("http://")) {
+					fileName = fileName.replace("\\", "/");
+					URL url = new URL(fileName);
+					bi = ImageIO.read(url);
 			} else {
-				if (newWidth > 0) {
-					percentWidth = newWidth / image.getWidth() * 100.0f;
-				}
-				if (newHeight > 0) {
-					percentHeight = newHeight / image.getHeight() * 100.0f;
-				}
-				if (percentWidth < percentHeight) {
-					image.scalePercent(percentWidth);
-				} else {
-					image.scalePercent(percentHeight);
+				File imageFile = new File(fileName);
+				if (imageFile.exists()) {
+					bi = ImageIO.read(imageFile);
 				}
 			}
-		} catch (BadElementException e) {
-			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, e.getMessage() + "\n" + fileName);
-		} catch (IOException e) {
-			e.printStackTrace();
+			if (bi != null) {
+				image = com.lowagie.text.Image.getInstance(bi, null);
+				if (newWidth > 0 && newHeight > 0) {
+					image.scaleToFit(newWidth, newHeight);
+				} else {
+					if (newWidth > 0) {
+						percentWidth = newWidth / image.getWidth() * 100.0f;
+					}
+					if (newHeight > 0) {
+						percentHeight = newHeight / image.getHeight() * 100.0f;
+					}
+					if (percentWidth < percentHeight) {
+						image.scalePercent(percentWidth);
+					} else {
+						image.scalePercent(percentHeight);
+					}
+				}
+			}
+		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e.getMessage() + "\n" + fileName);
 		}
 		//
 		return image;
 	}
 
+//	static void setupImageCellForDetailColumn(HSSFWorkbook workBook, HSSFSheet workSheet, int rowNumber, int columnIndex, String fileName, HSSFPatriarch patriarch) {
+//		HSSFClientAnchor anchor = null;
+//		int imageType = -1;
+//		File imageFile = new File(fileName);
+//		if (imageFile.exists()) {
+//			boolean isValidFileType = false;
+//			if (fileName.contains(".png") || fileName.contains(".PNG")) {
+//				imageType = HSSFWorkbook.PICTURE_TYPE_PNG;
+//				isValidFileType = true;
+//			}
+//			if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
+//				imageType = HSSFWorkbook.PICTURE_TYPE_JPEG;
+//				isValidFileType = true;
+//			}
+//			if (isValidFileType) {
+//				FileInputStream fis = null;
+//				ByteArrayOutputStream bos = null;
+//				try {
+//					// read in the image file and copy the image bytes into the ByteArrayOutputStream//
+//					fis = new FileInputStream(imageFile);
+//					bos = new ByteArrayOutputStream();
+//					int c;
+//					while ((c = fis.read()) != -1) {
+//						bos.write(c);
+//					}
+//					// add the image bytes to the workbook //
+//					int pictureIndex = workBook.addPicture(bos.toByteArray(), imageType);
+//					anchor = new HSSFClientAnchor(0,0,0,0,
+//							(short)columnIndex, rowNumber, (short)(columnIndex+1), rowNumber+1);
+//					anchor.setAnchorType(0);
+//					anchor.setDx1(20);
+//					anchor.setDy1(20);
+//					anchor.setDx2(0);
+//					anchor.setDy2(0);
+//					patriarch.createPicture(anchor, pictureIndex);
+//				} catch(Exception e) {
+//					e.printStackTrace();
+//				} finally {
+//					try {
+//						if (fis != null) {
+//							fis.close();
+//						}
+//						if (bos != null) {
+//							bos.close();
+//						}
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//					}
+//				}
+//			}
+//		}
+//	}
 	static void setupImageCellForDetailColumn(HSSFWorkbook workBook, HSSFSheet workSheet, int rowNumber, int columnIndex, String fileName, HSSFPatriarch patriarch) {
 		HSSFClientAnchor anchor = null;
-		int imageType = -1;
-		File imageFile = new File(fileName);
-		if (imageFile.exists()) {
-			boolean isValidFileType = false;
-			if (fileName.contains(".png") || fileName.contains(".PNG")) {
-				imageType = HSSFWorkbook.PICTURE_TYPE_PNG;
-				isValidFileType = true;
-			}
-			if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
-				imageType = HSSFWorkbook.PICTURE_TYPE_JPEG;
-				isValidFileType = true;
-			}
-			if (isValidFileType) {
-				FileInputStream fis = null;
-				ByteArrayOutputStream bos = null;
+		int imageTypeInt = -1;
+		String imageTypeString = "";
+		ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
+		boolean isValidFileType = false;
+		//////////////////////
+		// Check image type //
+		//////////////////////
+		if (fileName.contains(".png") || fileName.contains(".PNG")) {
+			imageTypeInt = HSSFWorkbook.PICTURE_TYPE_PNG;
+			imageTypeString = "png";
+			isValidFileType = true;
+		}
+		if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
+			imageTypeInt = HSSFWorkbook.PICTURE_TYPE_JPEG;
+			imageTypeString = "jpg";
+			isValidFileType = true;
+		}
+		if (isValidFileType) {
+			//////////////////////////////////////////////
+			// Setup image byte data with its file name //
+			//////////////////////////////////////////////
+			if (fileName.startsWith("http://")) {
+				fileName = fileName.replace("\\", "/");
 				try {
-					// read in the image file and copy the image bytes into the ByteArrayOutputStream//
-					fis = new FileInputStream(imageFile);
-					bos = new ByteArrayOutputStream();
-					int c;
-					while ((c = fis.read()) != -1) {
-						bos.write(c);
-					}
-					// add the image bytes to the workbook //
-					int pictureIndex = workBook.addPicture(bos.toByteArray(), imageType);
-					anchor = new HSSFClientAnchor(0,0,0,0,
-							(short)columnIndex, rowNumber, (short)(columnIndex+1), rowNumber+1);
-					anchor.setAnchorType(0);
-					anchor.setDx1(20);
-					anchor.setDy1(20);
-					anchor.setDx2(0);
-					anchor.setDy2(0);
-					patriarch.createPicture(anchor, pictureIndex);
-				} catch(Exception e) {
-					e.printStackTrace();
+					URL url = new URL(fileName);
+					BufferedImage image = ImageIO.read(url);
+					ImageIO.write(image, imageTypeString, imageBytes);
+					imageBytes.flush();
+				} catch (Exception e) { //required as URL can be invalid //
 				} finally {
 					try {
-						if (fis != null) {
-							fis.close();
-						}
-						if (bos != null) {
-							bos.close();
-						}
+						imageBytes.close();
 					} catch (IOException e) {
-						e.printStackTrace();
+					}
+				}
+			} else {
+				File imageFile = new File(fileName);
+				if (imageFile.exists()) {
+					FileInputStream fis = null;
+					try {
+						fis = new FileInputStream(imageFile);
+						int c;
+						while ((c = fis.read()) != -1) {
+							imageBytes.write(c);
+						}
+					} catch (Exception e) {
+					} finally {
+						try {
+							if (fis != null) {
+								fis.close();
+							}
+							imageBytes.close();
+						} catch (IOException e) {
+						}
 					}
 				}
 			}
+			/////////////////////////////////////////
+			// Add image byte data to the workbook //
+			/////////////////////////////////////////
+			int pictureIndex = workBook.addPicture(imageBytes.toByteArray(), imageTypeInt);
+			anchor = new HSSFClientAnchor(0,0,0,0, (short)columnIndex, rowNumber, (short)(columnIndex+1), rowNumber+1);
+			anchor.setAnchorType(0);
+			anchor.setDx1(20);
+			anchor.setDy1(20);
+			anchor.setDx2(0);
+			anchor.setDy2(0);
+			patriarch.createPicture(anchor, pictureIndex);
+		}
+	}
+	
+	static void setupImageCellForField(HSSFWorkbook workBook, HSSFSheet workSheet, int columnIndex, int rowNumber, int cellWidth, int cellHeight, String fileName, HSSFPatriarch patriarch) throws Exception{
+		//HSSFClientAnchor anchor = null;
+		int imageTypeInt = -1;
+		String imageTypeString = "";
+		boolean isValidFileType = false;
+		ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
+		//////////////////////
+		// Check image type //
+		//////////////////////
+		if (fileName.contains(".png") || fileName.contains(".PNG")) {
+			imageTypeInt = HSSFWorkbook.PICTURE_TYPE_PNG;
+			imageTypeString = "png";
+			isValidFileType = true;
+		}
+		if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
+			imageTypeInt = HSSFWorkbook.PICTURE_TYPE_JPEG;
+			imageTypeString = "jpg";
+			isValidFileType = true;
+		}
+		if (isValidFileType) {
+			//////////////////////////////////////////////
+			// Setup image byte data with its file name //
+			//////////////////////////////////////////////
+			if (fileName.startsWith("http://")) {
+				try {
+					fileName = fileName.replace("\\", "/");
+					URL url;
+					url = new URL(fileName);
+					BufferedImage image = ImageIO.read(url);
+					ImageIO.write(image, imageTypeString, imageBytes);
+					imageBytes.flush();
+				} catch (Exception e) { //required as URL can be invalid //
+				} finally {
+					imageBytes.close();
+				}
+			} else {
+				File imageFile = new File(fileName);
+				if (imageFile.exists()) {
+					FileInputStream fis = null;
+					try {
+						fis = new FileInputStream(imageFile);
+						int c;
+						while ((c = fis.read()) != -1) {
+							imageBytes.write(c);
+						}
+					} finally {
+						if (fis != null) {
+							fis.close();
+						}
+						imageBytes.close();
+					}
+				}
+			}
+			/////////////////////////////////////////
+			// Add image byte data to the workbook //
+			/////////////////////////////////////////
+			int pictureIndex = workBook.addPicture(imageBytes.toByteArray(), imageTypeInt);
+			HSSFClientAnchor anchor = new HSSFClientAnchor(0,0,0,0, (short)columnIndex, rowNumber, (short)(columnIndex + cellWidth), rowNumber + cellHeight);
+			anchor.setAnchorType(0);
+			anchor.setDx1(30);
+			anchor.setDy1(30);
+			anchor.setDx2(-30);
+			anchor.setDy2(-250);
+			patriarch.createPicture(anchor, pictureIndex);
 		}
 	}
 	
@@ -2231,7 +2391,8 @@ class XFImageField extends JPanel implements XFEditableField {
 	}
 	
 	public Object getExternalValue() {
-		return imageFileFolder_ + "\\" + jTextField.getText();
+		//return imageFileFolder_ + "\\" + jTextField.getText();
+		return imageFileFolder_ + jTextField.getText();
 	}
 	
 	public void setValue(Object obj) {
@@ -2246,11 +2407,27 @@ class XFImageField extends JPanel implements XFEditableField {
 		jTextField.setText(imageFileName);
 		imageIcon = null;
 		String fullName = imageFileFolder_ + imageFileName;
-        File imageFile = new File(fullName);
-        if (imageFile.exists()) {
-			imageIcon = new ImageIcon(fullName);
-        }
-    	jLabelImage = new JLabel("", imageIcon, JLabel.CENTER);
+		if (imageFileName.equals("")) {
+			jLabelImage = new JLabel();
+		} else {
+			if (fullName.startsWith("http://")) {
+				try{
+					fullName = fullName.replace("\\", "/");
+					URL url = new URL(fullName);
+					imageIcon = new ImageIcon(url);
+				}catch(Exception e){
+					jLabelImage.setText(res.getString("ImageFileNotFound1") + fullName + res.getString("ImageFileNotFound2"));
+				}
+			} else {
+				File imageFile = new File(fullName);
+				if (imageFile.exists()) {
+					imageIcon = new ImageIcon(fullName);
+				} else {
+					jLabelImage.setText(res.getString("ImageFileNotFound1") + fullName + res.getString("ImageFileNotFound2"));
+				}
+			}
+			jLabelImage = new JLabel("", imageIcon, JLabel.CENTER);
+		}
         jLabelImage.setOpaque(true);
 		jLabelImage.setText("");
 		jLabelImage.setToolTipText(imageFileName);
@@ -4626,7 +4803,7 @@ class XFTableOperator {
 							retryCount = 3;
 						} catch(SocketException ex) {
 							if (retryCount < 3) {
-								Thread.sleep(500);
+								Thread.sleep(1000);
 							} else {
 								if (logBuf_ != null) {
 									XFUtility.appendLog(ex.getMessage(), logBuf_);

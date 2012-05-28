@@ -501,7 +501,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 					h = Integer.parseInt(workTokenizer.nextToken().trim());
 				} catch (Exception e) {
 				}
-				image = XFUtility.getImage(session_.getImageFileFolder() + getExternalStringValueOfFieldByName(wrkStr), w, h);
+				image = XFUtility.getImageForPDF(session_.getImageFileFolder() + getExternalStringValueOfFieldByName(wrkStr), w, h);
 				chunk = new Chunk(image, x, y, true);
 			}
 			//
@@ -543,7 +543,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 					h = Integer.parseInt(workTokenizer.nextToken().trim());
 				} catch (Exception e) {
 				}
-				image = XFUtility.getImage(session_.getImageFileFolder() + wrkStr, w, h);
+				image = XFUtility.getImageForPDF(session_.getImageFileFolder() + wrkStr, w, h);
 				chunk = new Chunk(image, x, y, true);
 			}
 		} catch (Exception e) {

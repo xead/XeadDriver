@@ -1317,14 +1317,10 @@ public class Session extends JFrame {
 			try {
 				connectionManualCommit.close();
 				connectionAutoCommit.close();
-				//if (!databaseDisconnect.equals("")) {
-				//	DriverManager.getConnection(databaseDisconnect);
-				//}
 				if (databaseName.contains("jdbc:derby")) {
 					DriverManager.getConnection("jdbc:derby:;shutdown=true");
 				}
 			} catch (SQLException e) {
-				//if (e.getSQLState() != null && !e.getSQLState().equals("XJ015")) {
 				if (databaseName.contains("jdbc:derby")
 						&& e.getSQLState() != null
 						&& !e.getSQLState().equals("XJ015")) {

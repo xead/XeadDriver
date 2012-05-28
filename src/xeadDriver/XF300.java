@@ -1841,60 +1841,70 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
 							style.setVerticalAlignment(HSSFCellStyle.VERTICAL_BOTTOM);
 							style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
-							HSSFClientAnchor anchor = null;
 							cellValue.setCellStyle(style);
 							cellValue.setCellValue(new HSSFRichTextString((String)object.getInternalValue()));
-							int imageType = -1;
-							String fileName = (String)object.getExternalValue();
-							File imageFile = new File(fileName);
-							if (imageFile.exists()) {
-								boolean isValidFileType = false;
-								if (fileName.contains(".png") || fileName.contains(".PNG")) {
-									imageType = HSSFWorkbook.PICTURE_TYPE_PNG;
-									isValidFileType = true;
-								}
-								if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
-									imageType = HSSFWorkbook.PICTURE_TYPE_JPEG;
-									isValidFileType = true;
-								}
-								if (isValidFileType) {
-									int pictureIndex;
-									FileInputStream fis = null;
-									ByteArrayOutputStream bos = null;
-									try {
-										// read in the image file and copy the image bytes into the ByteArrayOutputStream//
-										fis = new FileInputStream(imageFile);
-										bos = new ByteArrayOutputStream();
-										int c;
-										while ((c = fis.read()) != -1) {
-											bos.write(c);
-										}
-										// add the image bytes to the workbook //
-										pictureIndex = workBook.addPicture( bos.toByteArray(), imageType);
-										anchor = new HSSFClientAnchor(0,0,0,0,
-												(short)2, currentRowNumber, (short)6, currentRowNumber + object.getRows());
-										anchor.setAnchorType(0);
-										anchor.setDx1(30);
-										anchor.setDy1(30);
-										anchor.setDx2(-30);
-										anchor.setDy2(-250);
-										patriarch.createPicture(anchor, pictureIndex);
-									} catch(Exception e) {
-										e.printStackTrace(exceptionStream);
-									} finally {
-										try {
-											if (fis != null) {
-												fis.close();
-											}
-											if (bos != null) {
-												bos.close();
-											}
-										} catch (IOException e) {
-											e.printStackTrace(exceptionStream);
-										}
-									}
-								}
+							try {
+								XFUtility.setupImageCellForField(workBook, workSheet, 2, currentRowNumber, 4, object.getRows(), (String)object.getExternalValue(), patriarch);
+							} catch(Exception e) {
+								e.printStackTrace(exceptionStream);
 							}
+//							style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+//							style.setVerticalAlignment(HSSFCellStyle.VERTICAL_BOTTOM);
+//							style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
+//							HSSFClientAnchor anchor = null;
+//							cellValue.setCellStyle(style);
+//							cellValue.setCellValue(new HSSFRichTextString((String)object.getInternalValue()));
+//							int imageType = -1;
+//							String fileName = (String)object.getExternalValue();
+//							File imageFile = new File(fileName);
+//							if (imageFile.exists()) {
+//								boolean isValidFileType = false;
+//								if (fileName.contains(".png") || fileName.contains(".PNG")) {
+//									imageType = HSSFWorkbook.PICTURE_TYPE_PNG;
+//									isValidFileType = true;
+//								}
+//								if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
+//									imageType = HSSFWorkbook.PICTURE_TYPE_JPEG;
+//									isValidFileType = true;
+//								}
+//								if (isValidFileType) {
+//									int pictureIndex;
+//									FileInputStream fis = null;
+//									ByteArrayOutputStream bos = null;
+//									try {
+//										// read in the image file and copy the image bytes into the ByteArrayOutputStream//
+//										fis = new FileInputStream(imageFile);
+//										bos = new ByteArrayOutputStream();
+//										int c;
+//										while ((c = fis.read()) != -1) {
+//											bos.write(c);
+//										}
+//										// add the image bytes to the workbook //
+//										pictureIndex = workBook.addPicture( bos.toByteArray(), imageType);
+//										anchor = new HSSFClientAnchor(0,0,0,0,
+//												(short)2, currentRowNumber, (short)6, currentRowNumber + object.getRows());
+//										anchor.setAnchorType(0);
+//										anchor.setDx1(30);
+//										anchor.setDy1(30);
+//										anchor.setDx2(-30);
+//										anchor.setDy2(-250);
+//										patriarch.createPicture(anchor, pictureIndex);
+//									} catch(Exception e) {
+//										e.printStackTrace(exceptionStream);
+//									} finally {
+//										try {
+//											if (fis != null) {
+//												fis.close();
+//											}
+//											if (bos != null) {
+//												bos.close();
+//											}
+//										} catch (IOException e) {
+//											e.printStackTrace(exceptionStream);
+//										}
+//									}
+//								}
+//							}
 						} else {
 							cellValue.setCellStyle(style);
 							cellValue.setCellValue(new HSSFRichTextString((String)object.getExternalValue()));

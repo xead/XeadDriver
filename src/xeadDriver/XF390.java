@@ -716,6 +716,9 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 							if (detailColumnList.get(i).getBarcodeType().equals("")) {
 								if (detailColumnList.get(i).isImage()) {
 									imageFileName = session_.getImageFileFolder() + detailColumnList.get(i).getExternalValue().toString();
+									if (imageFileName.startsWith("http://")) {
+										imageFileName = imageFileName.replace("\\", "/");
+									}
 									try {
 										cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
 									} catch (Exception e) {
@@ -789,6 +792,9 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 							if (detailColumnList.get(j).getBarcodeType().equals("")) {
 								if (detailColumnList.get(j).isImage()) {
 									imageFileName = session_.getImageFileFolder() + detailColumnList.get(j).getExternalValue().toString();
+									if (imageFileName.startsWith("http://")) {
+										imageFileName = imageFileName.replace("\\", "/");
+									}
 									cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
 								} else {
 									fontTableCellData.setColor(detailColumnList.get(j).getForeground());
@@ -891,7 +897,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					h = Integer.parseInt(workTokenizer.nextToken().trim());
 				} catch (Exception e) {
 				}
-				image = XFUtility.getImage(session_.getImageFileFolder() + getExternalStringValueOfFieldByName(wrkStr), w, h);
+				image = XFUtility.getImageForPDF(session_.getImageFileFolder() + getExternalStringValueOfFieldByName(wrkStr), w, h);
 				if (image != null) {
 					chunk = new Chunk(image, x, y, true);
 				}
@@ -935,7 +941,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					h = Integer.parseInt(workTokenizer.nextToken().trim());
 				} catch (Exception e) {
 				}
-				image = XFUtility.getImage(session_.getImageFileFolder() + wrkStr, w, h);
+				image = XFUtility.getImageForPDF(session_.getImageFileFolder() + wrkStr, w, h);
 				chunk = new Chunk(image, x, y, true);
 			}
 		} catch (Exception e) {

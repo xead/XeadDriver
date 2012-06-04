@@ -815,7 +815,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void closeFunction() {
-		String wrkStr;
+		//String wrkStr;
 		try {
 			if (threadToSetupReferChecker != null) {
 				threadToSetupReferChecker.join();
@@ -827,13 +827,18 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		if (anyRecordsDeleted && !returnMap_.get("RETURN_CODE").toString().equals("99")) {
 			returnMap_.put("RETURN_CODE", "20");
 		}
+//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
+//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
+//		} else {
+//			wrkStr = processLog.toString();
+//		}
+//		wrkStr = wrkStr.replace("'", "\"");
+//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-		} else {
-			wrkStr = processLog.toString();
+			errorLog = exceptionHeader + exceptionLog.toString();
 		}
-		wrkStr = wrkStr.replace("'", "\"");
-		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
 		this.setVisible(false);
 	}
 	

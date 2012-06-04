@@ -35,6 +35,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -67,7 +68,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
 import javax.mail.*;
@@ -581,12 +581,11 @@ public class Session extends JFrame {
 	private void setupSessionAndMenus() throws ScriptException, Exception {
 		sessionID = this.getNextNumber("NRSESSION");
 		sessionStatus = "ACT";
-		InetAddress ip = InetAddress.getLocalHost();
 
 		String sql = "insert into " + sessionTable
 		+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, KBSESSIONSTATUS) values ("
 		+ "'" + sessionID + "'," + "'" + userID + "'," + "CURRENT_TIMESTAMP,"
-		+ "'" + ip.toString() + "','" + sessionStatus + "')";
+		+ "'" + getIpAddress() + "','" + sessionStatus + "')";
 		XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 		operator.execute();
 
@@ -616,6 +615,46 @@ public class Session extends JFrame {
 		if (!loginScript.equals("")) {
 			scriptEngine.eval(loginScript);
 		}
+	}
+	
+	private String getIpAddress() {
+		String value = "";
+		HttpPost httpPost = null;
+		try {
+			InetAddress ip = InetAddress.getLocalHost();
+			value = ip.getHostAddress();
+			//
+			if (getAppServerName().equals("")) {
+			} else {
+				int retryCount = -1;
+				httpPost = new HttpPost(getAppServerName());
+				List<NameValuePair> objValuePairs = new ArrayList<NameValuePair>(1);
+				objValuePairs.add(new BasicNameValuePair("METHOD", "IP"));
+				httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
+				//
+				while (retryCount < 3) {
+					try {
+						retryCount++;
+						HttpResponse response = httpClient.execute(httpPost);
+						HttpEntity responseEntity = response.getEntity();
+						if (responseEntity != null) {
+							value = EntityUtils.toString(responseEntity) + " - " + ip.getHostAddress();
+						}
+						retryCount = 3;
+					} catch(SocketException ex) {
+						if (retryCount < 3) {
+							Thread.sleep(1000);
+						}
+					}
+				}
+			}
+		} catch(Exception ex) {
+		} finally {
+			if (httpPost != null) {
+				httpPost.abort();
+			}
+		}
+		return value;
 	}
 
 	public ScriptEngineManager getScriptEngineManager() {
@@ -1334,9 +1373,14 @@ public class Session extends JFrame {
 
 	protected void processWindowEvent(WindowEvent e) {
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-			super.processWindowEvent(e);
-			closeSession(true);
-			System.exit(0);
+			Object[] bts = {res.getString("LogOut"), res.getString("Cancel")};
+			int rtn = JOptionPane.showOptionDialog(this, res.getString("FunctionMessage55"),
+					systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[1]);
+			if (rtn == 0) {
+				super.processWindowEvent(e);
+				closeSession(true);
+				System.exit(0);
+			}
 		} else {
 			super.processWindowEvent(e);
 		}
@@ -1402,14 +1446,15 @@ public class Session extends JFrame {
 		return sqProgram;
 	}
 
-	void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String errorLog) {
-		if (errorLog.length() > 20000) {
-			//errorLog = errorLog.substring(0, 20000) + "...";
-			String logFileName = "";
+	void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String processLog, String errorLog) {
+		StringBuffer bf = new StringBuffer();
+		int totalLength = processLog.length() + errorLog.length();
+		if (totalLength > 20000 && !errorLog.equals("")) {
+			String errorLogFileName = "";
 			try {
 				File logFile = createTempFile(sessionID, ".log");
-				logFileName = logFile.getPath();
-				FileWriter fileWriter = new FileWriter(logFileName);
+				errorLogFileName = logFile.getPath();
+				FileWriter fileWriter = new FileWriter(errorLogFileName);
 				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 				bufferedWriter.write(errorLog);
 				bufferedWriter.flush();
@@ -1417,7 +1462,18 @@ public class Session extends JFrame {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			errorLog = "Log data is too big. Refer to the log file(" + logFileName + ")";
+			bf.append(processLog.replace("'", "\""));
+			bf.append("\n\n...Error log follows in the log file(");
+			bf.append(errorLogFileName);
+			bf.append(")");
+			processLog = bf.toString();
+		} else {
+			bf.append(processLog.replace("'", "\""));
+			if (!errorLog.equals("")) {
+				bf.append("\nERROR LOG:\n");
+				bf.append(errorLog);
+			}
+			processLog = bf.toString();
 		}
 		//
 		if (programStatus.equals("99")) {
@@ -1428,7 +1484,7 @@ public class Session extends JFrame {
 			String sql = "update " + sessionDetailTable
 				+ " set DTEND=CURRENT_TIMESTAMP, KBPROGRAMSTATUS='"
 				+ programStatus + "', TXERRORLOG='"
-				+ errorLog + "' where " + "NRSESSION='"
+				+ processLog + "' where " + "NRSESSION='"
 				+ this.getSessionID() + "' and "
 				+ "SQPROGRAM=" + sqProgramOfFunction;
 			XFTableOperator operator = new XFTableOperator(this, null, sql, true);

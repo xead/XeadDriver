@@ -385,14 +385,19 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		//
 		instanceIsAvailable_ = true;
 		//
-		String wrkStr;
+//		String wrkStr;
+//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
+//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
+//		} else {
+//			wrkStr = processLog.toString();
+//		}
+//		wrkStr = wrkStr.replace("'", "\"");
+//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-		} else {
-			wrkStr = processLog.toString();
+			errorLog = exceptionHeader + exceptionLog.toString();
 		}
-		wrkStr = wrkStr.replace("'", "\"");
-		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
 	}
 	
 	public void cancelWithMessage(String message) {

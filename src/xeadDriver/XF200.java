@@ -739,7 +739,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void closeFunction() {
-		String wrkStr;
+		//String wrkStr;
 		instanceIsAvailable_ = true;
 		messageList.clear();
 		try {
@@ -755,13 +755,18 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				returnMap_.put("RETURN_CODE", "11");
 			}
 		}
+//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
+//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
+//		} else {
+//			wrkStr = processLog.toString();
+//		}
+//		wrkStr = wrkStr.replace("'", "\"");
+//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-		} else {
-			wrkStr = processLog.toString();
+			errorLog = exceptionHeader + exceptionLog.toString();
 		}
-		wrkStr = wrkStr.replace("'", "\"");
-		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
 		this.setVisible(false);
 	}
 	

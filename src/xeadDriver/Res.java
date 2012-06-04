@@ -152,6 +152,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "FunctionMessage52", "* No function specified to process the row selected." },
 		{ "FunctionMessage53", "Serch service is not available.Check internet connection." },
 		{ "FunctionMessage54", "Zip-No is invalid." },
+		{ "FunctionMessage55", "Sure to logout?" },
 		{ "Iconify", "Iconify" },
 		{ "ImageFileNotFound1", "<html>The image file specified<br>" },
 		{ "ImageFileNotFound2", "<br>is not found in folders." },

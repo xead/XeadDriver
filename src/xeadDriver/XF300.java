@@ -869,14 +869,19 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		instanceIsAvailable = true;
 		//
-		String wrkStr;
+//		String wrkStr;
+//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
+//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
+//		} else {
+//			wrkStr = processLog.toString();
+//		}
+//		wrkStr = wrkStr.replace("'", "\"");
+//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-		} else {
-			wrkStr = processLog.toString();
+			errorLog = exceptionHeader + exceptionLog.toString();
 		}
-		wrkStr = wrkStr.replace("'", "\"");
-		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
 		//
 		setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		//

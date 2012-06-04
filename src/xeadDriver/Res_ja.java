@@ -152,6 +152,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "FunctionMessage52", "＊明細行に対する処理機能は指定されていません。" },
 		{ "FunctionMessage53", "検索サービスを利用できません。ネット接続を確認してください。" },
 		{ "FunctionMessage54", "郵便番号の値が無効です。" },
+		{ "FunctionMessage55", "ログアウトしますか？" },
 		{ "Iconify", "最小化" },
 		{ "ImageFileNotFound1", "<html>指定された画像ファイル<br>" },
 		{ "ImageFileNotFound2", "<br>が見つかりません" },

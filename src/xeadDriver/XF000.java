@@ -481,20 +481,28 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		if (returnMap_.get("RETURN_MESSAGE") != null && !returnMap_.get("RETURN_MESSAGE").equals("")) {
 			setProcessLog(returnMap_.get("RETURN_MESSAGE").toString());
 		}
-		//
 		instanceIsAvailable_ = true;
 		//
-		String wrkStr;
+//		String wrkStr;
+//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
+//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
+//		} else {
+//			wrkStr = processLog.toString();
+//		}
+//		if (!functionElement_.getAttribute("TimerOption").equals("")) {
+//			wrkStr = wrkStr + "\n\n<Console Log>\n" + jTextAreaMessages.getText();
+//		}
+//		wrkStr = wrkStr.replace("'", "\"");
+//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-		} else {
-			wrkStr = processLog.toString();
+			errorLog = exceptionHeader + exceptionLog.toString();
 		}
+		String wrkStr = processLog.toString();
 		if (!functionElement_.getAttribute("TimerOption").equals("")) {
 			wrkStr = wrkStr + "\n\n<Console Log>\n" + jTextAreaMessages.getText();
 		}
-		wrkStr = wrkStr.replace("'", "\"");
-		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr, errorLog);
 		//
 		if (this.isVisible()) {
 			this.setVisible(false);

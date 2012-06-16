@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -41,6 +41,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -138,8 +139,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private JMenuItem jMenuItemTreeNodeImplosion = new JMenuItem();
 	private JLabel jLabelTree = new JLabel();
 	private boolean isForExplosion = true;
-	private JSplitPane jSplitPaneMain = new JSplitPane();
-	private JSplitPane jSplitPaneCenter = new JSplitPane();
+	//private JSplitPane jSplitPaneMain = new JSplitPane();
+	private JSplitPane jSplitPaneMain = null;
+	//private JSplitPane jSplitPaneCenter = new JSplitPane();
+	private JSplitPane jSplitPaneCenter = null;
 	private JScrollPane jScrollPaneTable = new JScrollPane();
 	private JScrollPane jScrollPaneMessages = new JScrollPane();
 	private JTextArea jTextAreaMessages = new JTextArea();
@@ -195,10 +198,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	void initComponentsAndVariants() throws Exception {
 		//
 		jPanelMain.setLayout(new BorderLayout());
-		jSplitPaneMain.setOrientation(JSplitPane.VERTICAL_SPLIT);
-		jSplitPaneMain.add(jSplitPaneCenter, JSplitPane.TOP);
-		jSplitPaneMain.add(jScrollPaneMessages, JSplitPane.BOTTOM);
-		jSplitPaneMain.setFocusable(false);
+		//jSplitPaneMain.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		//jSplitPaneMain.add(jSplitPaneCenter, JSplitPane.TOP);
+		//jSplitPaneMain.add(jScrollPaneMessages, JSplitPane.BOTTOM);
+		//jSplitPaneMain.setFocusable(false);
 		//
 		jScrollPaneHeaderFields.getViewport().add(jPanelHeaderFields, null);
 		jScrollPaneHeaderFields.setBorder(null);
@@ -236,10 +239,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		jTextAreaMessages.setLineWrap(true);
 		jTextAreaMessages.setWrapStyleWord(true);
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
-		jSplitPaneCenter.setOrientation(JSplitPane.VERTICAL_SPLIT);
-		jSplitPaneCenter.add(jScrollPaneHeaderFields, JSplitPane.TOP);
-		jSplitPaneCenter.add(jTabbedPane, JSplitPane.BOTTOM);
-		jSplitPaneCenter.setFocusable(false);
+		//jSplitPaneCenter.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		//jSplitPaneCenter.add(jScrollPaneHeaderFields, JSplitPane.TOP);
+		//jSplitPaneCenter.add(jTabbedPane, JSplitPane.BOTTOM);
+		//jSplitPaneCenter.setFocusable(false);
 		jTabbedPane.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 		jTabbedPane.addKeyListener(new XF300_jTabbedPane_keyAdapter(this));
 		jTabbedPane.addChangeListener(new XF300_jTabbedPane_changeAdapter(this));
@@ -384,19 +387,36 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
 				this.setLocation(screenRect.x, screenRect.y);
 			} else {
-				workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
-				int width = Integer.parseInt(workTokenizer.nextToken());
-				int height = Integer.parseInt(workTokenizer.nextToken());
-				this.setPreferredSize(new Dimension(width, height));
-				int posX = ((screenRect.width - width) / 2) + screenRect.x;
-				int posY = ((screenRect.height - height) / 2) + screenRect.y;
-				this.setLocation(posX, posY);
+				if (!functionElement_.getAttribute("Size").equals("AUTO")) {
+					workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
+					int width = Integer.parseInt(workTokenizer.nextToken());
+					int height = Integer.parseInt(workTokenizer.nextToken());
+					this.setPreferredSize(new Dimension(width, height));
+					int posX = ((screenRect.width - width) / 2) + screenRect.x;
+					int posY = ((screenRect.height - height) / 2) + screenRect.y;
+					this.setLocation(posX, posY);
+				}
 			}
 			jPanelMain.updateUI();
 			this.pack();
 		
 			if (!functionElement_.getAttribute("ID").equals(lastFunctionID)) {
 				lastFunctionID = functionElement_.getAttribute("ID");
+
+				////////////////////////////////////////////////
+				// Setup SplitPane / These steps are required //
+				// as its divider location can't be altered.  //
+				////////////////////////////////////////////////
+				jSplitPaneCenter = new JSplitPane();
+				jSplitPaneCenter.setOrientation(JSplitPane.VERTICAL_SPLIT);
+				jSplitPaneCenter.add(jScrollPaneHeaderFields, JSplitPane.TOP);
+				jSplitPaneCenter.add(jTabbedPane, JSplitPane.BOTTOM);
+				jSplitPaneCenter.setFocusable(false);
+				jSplitPaneMain = new JSplitPane();
+				jSplitPaneMain.setOrientation(JSplitPane.VERTICAL_SPLIT);
+				jSplitPaneMain.add(jSplitPaneCenter, JSplitPane.TOP);
+				jSplitPaneMain.add(jScrollPaneMessages, JSplitPane.BOTTOM);
+				jSplitPaneMain.setFocusable(false);
 
 				//////////////////////////////////////
 				// Setup Script Engine and Bindings //
@@ -452,7 +472,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				int biggestWidth = 300;
 				int biggestHeight = 30;
 				boolean firstVisibleField = true;
-				//
 				NodeList headerFieldElementList = functionElement_.getElementsByTagName("Field");
 				workSortingList = XFUtility.getSortedListModel(headerFieldElementList, "Order");
 				for (int i = 0; i < workSortingList.getSize(); i++) {
@@ -489,6 +508,34 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							dimOfPriviousField = new Dimension(dim.width, dim.height);
 						}
 					}
+				}
+				if (functionElement_.getAttribute("Size").equals("AUTO")) {
+					int strViewWidth = 0;
+					if (!functionElement_.getAttribute("StructureTable").equals("")) {
+						strViewWidth = Integer.parseInt(functionElement_.getAttribute("StructureViewWidth"));
+					}
+					int workWidth = biggestWidth + 50 + strViewWidth;
+					if (workWidth < 800) {
+						workWidth = 800;
+					}
+					if (workWidth > screenRect.width) {
+						workWidth = screenRect.width;
+						posX = screenRect.x;
+					} else {
+						posX = ((screenRect.width - workWidth) / 2) + screenRect.x;
+						if (posX > 10) {
+							posX = posX - 10;
+						}
+					}
+					int workHeight = biggestHeight + 500;
+					if (workHeight > (screenRect.height - 60)) {
+						workHeight = screenRect.height - 60;
+						posY = screenRect.y + 30;
+					} else {
+						posY = ((screenRect.height - workHeight) / 2) + screenRect.y;
+					}
+					this.setPreferredSize(new Dimension(workWidth, workHeight));
+					this.setLocation(posX, posY);
 				}
 				//
 				// Add primary table keys as HIDDEN fields if they are not on the header field list //
@@ -561,10 +608,14 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 				//
-				jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 118);
-				this.pack();
+//				jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 118);
+//				jPanelHeaderFields.setPreferredSize(new Dimension(biggestWidth, biggestHeight));
+//				jSplitPaneCenter.setDividerLocation(biggestHeight + this.FIELD_VERTICAL_MARGIN + 13);
+//				this.pack();
 				jPanelHeaderFields.setPreferredSize(new Dimension(biggestWidth, biggestHeight));
 				jSplitPaneCenter.setDividerLocation(biggestHeight + this.FIELD_VERTICAL_MARGIN + 13);
+				jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 118);
+				this.pack();
 
 				///////////////////////////////////////
 				// Setup information of detail table //
@@ -4979,8 +5030,8 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
 			}
 		}
 		//
-		jButton.setText("...");
-		jButton.setFont(new java.awt.Font("Dialog", 0, 11));
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF300.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -512,6 +512,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					posX = screenRect.x;
 				} else {
 					posX = ((screenRect.width - workWidth) / 2) + screenRect.x;
+					if ((posX + workWidth + 10) < screenRect.width) {
+						posX = posX + 10;
+					}
 				}
 				//
 				int workHeight = biggestHeight + 150;
@@ -3012,9 +3015,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 					jComboBox.addItem("");
 				}
 				try {
-					//XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-					//operator.addKeyValue("IDUSERKUBUN", strWrk);
-					//operator.setOrderBy("SQLIST");
 					String sql = "select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST";
 					XFTableOperator operator = dialog_.createTableOperator(sql, true);
 					while (operator.next()) {
@@ -3358,8 +3358,8 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 			}
 		}
 		//
-		jButton.setText("...");
-		jButton.setFont(new java.awt.Font("Dialog", 0, 11));
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF200.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -2550,8 +2550,8 @@ class XFDateField extends JPanel implements XFEditableField {
 		});
 		normalModeColor = dateTextField.getBackground();
 		//
-		jButton.setText("...");
-		jButton.setFont(new java.awt.Font("Dialog", 0, 11));
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

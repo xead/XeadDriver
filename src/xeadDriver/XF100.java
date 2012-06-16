@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -33,6 +33,7 @@ package xeadDriver;
 
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -588,18 +589,20 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		if (!returnMap_.get("RETURN_CODE").equals("99")) {
 			this.commit();
 		}
-		//
 		instanceIsAvailable = true;
-		//
-		String wrkStr;
+//		String wrkStr;
+//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
+//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
+//		} else {
+//			wrkStr = processLog.toString();
+//		}
+//		wrkStr = wrkStr.replace("'", "\"");
+//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-		} else {
-			wrkStr = processLog.toString();
+			errorLog = exceptionHeader + exceptionLog.toString();
 		}
-		wrkStr = wrkStr.replace("'", "\"");
-		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr );
-		//
+		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
 		this.setVisible(false);
 	}
 	
@@ -2913,8 +2916,8 @@ class XF100_PromptCallField extends JPanel implements XFEditableField {
 			}
 		}
 		//
-		jButton.setText("...");
-		jButton.setFont(new java.awt.Font("Dialog", 0, 11));
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF100.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

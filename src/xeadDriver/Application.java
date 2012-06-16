@@ -47,7 +47,7 @@ public class Application {
 	private JLabel  splashLabel;
 
 	public Application(String[] args) {
-		ImageIcon image = new ImageIcon(xeadDriver.Application.class.getResource("xeaddrv.png"));
+		ImageIcon image = new ImageIcon(xeadDriver.Application.class.getResource("splash.png"));
 		splashIcon = new JLabel(image);
 		splashIcon.setLayout(null);
 		splashLabel = new JLabel();

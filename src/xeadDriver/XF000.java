@@ -708,11 +708,13 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	
 	private void setRunNow() {
 		if (jCheckBoxRunNow.isSelected()) {
+			jLabelTime.setEnabled(false);
 			jSpinnerHour.setEnabled(false);
 			jSpinnerMinuite.setEnabled(false);
 			jCheckBoxRepeat.setEnabled(false);
 			jCheckBoxRunOffDay.setEnabled(false);
 		} else {
+			jLabelTime.setEnabled(true);
 			jSpinnerHour.setEnabled(true);
 			jSpinnerMinuite.setEnabled(true);
 			jCheckBoxRepeat.setEnabled(true);

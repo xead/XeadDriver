@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -38,6 +38,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -387,13 +388,15 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
 				this.setLocation(screenRect.x, screenRect.y);
 			} else {
-				workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
-				int width = Integer.parseInt(workTokenizer.nextToken());
-				int height = Integer.parseInt(workTokenizer.nextToken());
-				this.setPreferredSize(new Dimension(width, height));
-				int posX = ((screenRect.width - width) / 2) + screenRect.x;
-				int posY = ((screenRect.height - height) / 2) + screenRect.y;
-				this.setLocation(posX, posY);
+				if (!functionElement_.getAttribute("Size").equals("AUTO")) {
+					workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
+					int width = Integer.parseInt(workTokenizer.nextToken());
+					int height = Integer.parseInt(workTokenizer.nextToken());
+					this.setPreferredSize(new Dimension(width, height));
+					int posX = ((screenRect.width - width) / 2) + screenRect.x;
+					int posY = ((screenRect.height - height) / 2) + screenRect.y;
+					this.setLocation(posX, posY);
+				}
 			}
 			initialMsg = functionElement_.getAttribute("InitialMsg");
 
@@ -401,7 +404,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			// Setup information of Header Table and Lists //
 			/////////////////////////////////////////////////
 			headerTable = new XF310_HeaderTable(functionElement_, this);
-			//
 			headerReferTableList.clear();
 			headerReferElementList = headerTable.getTableElement().getElementsByTagName("Refer");
 			sortingList1 = XFUtility.getSortedListModel(headerReferElementList, "Order");
@@ -465,6 +467,34 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					dimOfPriviousField = new Dimension(dim.width, dim.height);
 				}
+			}
+			if (functionElement_.getAttribute("Size").equals("AUTO")) {
+				int strViewWidth = 0;
+				if (!functionElement_.getAttribute("StructureTable").equals("")) {
+					strViewWidth = Integer.parseInt(functionElement_.getAttribute("StructureViewWidth"));
+				}
+				int workWidth = biggestWidth + 50 + strViewWidth;
+				if (workWidth < 800) {
+					workWidth = 800;
+				}
+				if (workWidth > screenRect.width) {
+					workWidth = screenRect.width;
+					posX = screenRect.x;
+				} else {
+					posX = ((screenRect.width - workWidth) / 2) + screenRect.x;
+					if ((posX + workWidth + 10) < screenRect.width) {
+						posX = posX + 10;
+					}
+				}
+				int workHeight = biggestHeight + 500;
+				if (workHeight > (screenRect.height - 60)) {
+					workHeight = screenRect.height - 60;
+					posY = screenRect.y + 30;
+				} else {
+					posY = ((screenRect.height - workHeight) / 2) + screenRect.y;
+				}
+				this.setPreferredSize(new Dimension(workWidth, workHeight));
+				this.setLocation(posX, posY);
 			}
 			//
 			// Add header table keys as HIDDEN fields if they are not on the header field list //
@@ -4879,8 +4909,8 @@ class XF310_DetailCellEditorWithPromptCall extends JPanel implements XFTableCell
 			}
 		}
 		//
-		jButton.setText("...");
-		jButton.setFont(new java.awt.Font("Dialog", 0, 11));
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF310.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -8303,8 +8333,8 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions);
 		xFTextField.setLocation(5, 0);
 		//
-		jButton.setText("...");
-		jButton.setFont(new java.awt.Font("Dialog", 0, 11));
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF310.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

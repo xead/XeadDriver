@@ -1585,7 +1585,7 @@ class XF310_AddRowListTable extends Object {
 	}
 }
 
-class XF310_AddRowListColumn extends Object implements XFScriptableField {
+class XF310_AddRowListColumn extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionColumnElement_ = null;
@@ -1745,7 +1745,7 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 			fieldWidth = captionWidth;
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF310_AddRowListColumn(String tableID, String tableAlias, String fieldID, XF310_AddRowList dialog){
@@ -1794,7 +1794,7 @@ class XF310_AddRowListColumn extends Object implements XFScriptableField {
 			isVirtualField = true;
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public boolean isVisibleOnPanel(){

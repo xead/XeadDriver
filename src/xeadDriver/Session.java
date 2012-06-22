@@ -163,7 +163,8 @@ public class Session extends JFrame {
 	private HashMap<String, BaseFont> baseFontMap = new HashMap<String, BaseFont>();
 	private HashMap<String, String> attributeMap = new HashMap<String, String>();
 	private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
-	private Bindings globalScriptBindings = scriptEngineManager.getBindings();
+	//private Bindings globalScriptBindings = scriptEngineManager.getBindings();
+	private Bindings globalScriptBindings = null;
     private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
     private HttpClient httpClient = new DefaultHttpClient();
 	private DOMParser responseDocParser = new DOMParser();
@@ -579,9 +580,15 @@ public class Session extends JFrame {
 	}
 	
 	private void setupSessionAndMenus() throws ScriptException, Exception {
+		/////////////////////////////////
+		// Setup session no and status //
+		/////////////////////////////////
 		sessionID = this.getNextNumber("NRSESSION");
 		sessionStatus = "ACT";
 
+		//////////////////////////////////////////
+		// insert a new record to session table //
+		//////////////////////////////////////////
 		String sql = "insert into " + sessionTable
 		+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, KBSESSIONSTATUS) values ("
 		+ "'" + sessionID + "'," + "'" + userID + "'," + "CURRENT_TIMESTAMP,"
@@ -589,14 +596,19 @@ public class Session extends JFrame {
 		XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 		operator.execute();
 
+		//////////////////////////////////////
+		// setup off date list for calendar //
+		//////////////////////////////////////
 		operator = new XFTableOperator(this, null, "select * from " + calendarTable, true);
 		while (operator.next()) {
 			offDateList.add(operator.getValueOf("DTOFF").toString());
 		}
 
+		///////////////////////////////////////////////
+		// Setup elements on menu and show first tab //
+		///////////////////////////////////////////////
 		jLabelUser.setText("User " + userName);
 		jLabelSession.setText("Session " + sessionID);
-
 		NodeList menuList = domDocument.getElementsByTagName("Menu");
 		sortingList = XFUtility.getSortedListModel(menuList, "ID");
 		if (userMenus.equals("ALL")) {
@@ -607,11 +619,14 @@ public class Session extends JFrame {
 				buildMenuWithID(workTokenizer.nextToken());
 			}
 		}
-
 		setupOptionsOfMenuWithTabNo(0);
 
-	    globalScriptBindings.put("session", new XFSessionForScript(this));
-		ScriptEngine scriptEngine = getScriptEngineManager().getEngineByName("js");
+		////////////////////////////////////////////////////
+		// setup global bindings and execute login-script //
+		////////////////////////////////////////////////////
+		globalScriptBindings = scriptEngineManager.getBindings();
+		globalScriptBindings.put("session", this);
+		ScriptEngine scriptEngine = scriptEngineManager.getEngineByName("js");
 		if (!loginScript.equals("")) {
 			scriptEngine.eval(loginScript);
 		}
@@ -1446,34 +1461,38 @@ public class Session extends JFrame {
 		return sqProgram;
 	}
 
-	void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String processLog, String errorLog) {
+	void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String tableOperationLog, String errorLog) {
+		String logString = "";
 		StringBuffer bf = new StringBuffer();
-		int totalLength = processLog.length() + errorLog.length();
-		if (totalLength > 20000 && !errorLog.equals("")) {
-			String errorLogFileName = "";
-			try {
-				File logFile = createTempFile(sessionID, ".log");
-				errorLogFileName = logFile.getPath();
-				FileWriter fileWriter = new FileWriter(errorLogFileName);
-				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-				bufferedWriter.write(errorLog);
-				bufferedWriter.flush();
-				bufferedWriter.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			bf.append(processLog.replace("'", "\""));
-			bf.append("\n\n...Error log follows in the log file(");
-			bf.append(errorLogFileName);
-			bf.append(")");
-			processLog = bf.toString();
+		if (errorLog.equals("")) {
+			bf.append(tableOperationLog.replace("'", "\""));
+			logString = bf.toString();
 		} else {
-			bf.append(processLog.replace("'", "\""));
-			if (!errorLog.equals("")) {
-				bf.append("\nERROR LOG:\n");
-				bf.append(errorLog);
+			int totalLength = tableOperationLog.length() + errorLog.length();
+			if (totalLength > 10000) {
+				String errorLogFileName = "";
+				try {
+					File logFile = createTempFile(sessionID, ".log");
+					errorLogFileName = logFile.getPath();
+					FileWriter fileWriter = new FileWriter(errorLogFileName);
+					BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+					bufferedWriter.write(errorLog);
+					bufferedWriter.flush();
+					bufferedWriter.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				bf.append(tableOperationLog.replace("'", "\""));
+				bf.append("\n\n...Error log follows in the file ");
+				bf.append(errorLogFileName);
+				bf.append(".");
+				logString = bf.toString();
+			} else {
+				bf.append(tableOperationLog.replace("'", "\""));
+				bf.append("\n");
+				bf.append(errorLog.replace("'", "\""));
+				logString = bf.toString();
 			}
-			processLog = bf.toString();
 		}
 		//
 		if (programStatus.equals("99")) {
@@ -1484,7 +1503,7 @@ public class Session extends JFrame {
 			String sql = "update " + sessionDetailTable
 				+ " set DTEND=CURRENT_TIMESTAMP, KBPROGRAMSTATUS='"
 				+ programStatus + "', TXERRORLOG='"
-				+ processLog + "' where " + "NRSESSION='"
+				+ logString + "' where " + "NRSESSION='"
 				+ this.getSessionID() + "' and "
 				+ "SQPROGRAM=" + sqProgramOfFunction;
 			XFTableOperator operator = new XFTableOperator(this, null, sql, true);

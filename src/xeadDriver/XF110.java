@@ -1650,7 +1650,10 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText + session_.getScriptFunctions());
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString());
 		}
 	}
 
@@ -3152,7 +3155,7 @@ class XF110_RowNumber extends Object {
 	}
 }
 
-class XF110_Column extends Object implements XFScriptableField {
+class XF110_Column extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionColumnElement_ = null;
@@ -3317,7 +3320,7 @@ class XF110_Column extends Object implements XFScriptableField {
 			fieldWidth = captionWidth;
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF110_Column(String tableID, String tableAlias, String fieldID, XF110 dialog){
@@ -3386,7 +3389,7 @@ class XF110_Column extends Object implements XFScriptableField {
 		//
 		isVisibleOnPanel = false;
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public boolean isReadyToValidate(){

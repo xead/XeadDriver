@@ -2109,19 +2109,19 @@ class XFHashMap extends Object {
 	}
 }
 
-interface XFScriptableField {
-	public Object getValue();
-	public void setValue(Object value);
-	public Object getOldValue();
-	public void setOldValue(Object value);
-	public boolean isValueChanged();
-	public String getColor();
-	public void setColor(String colorName);
-	public boolean isEditable();
-	public void setEditable(boolean isEditable);
-	public String getError();
-	public void setError(String message);
-}
+//interface XFScriptableField {
+//	public Object getValue();
+//	public void setValue(Object value);
+//	public Object getOldValue();
+//	public void setOldValue(Object value);
+//	public boolean isValueChanged();
+//	public String getColor();
+//	public void setColor(String colorName);
+//	public boolean isEditable();
+//	public void setEditable(boolean isEditable);
+//	public String getError();
+//	public void setError(String message);
+//}
 
 class XFSessionForScript {
 	private Session session_;
@@ -4170,10 +4170,6 @@ class TableCellReadOnly extends Object {
 	private Object externalValue_ = null;
 	private Color color_ = null;
 	private boolean isImage_ = false;
-	//public TableCellReadOnly(Object value, Color color) {
-	//	value_ = value;
-	//	color_ = color;
-	//}
 	public TableCellReadOnly(Object internalValue, Object externalValue, Color color, boolean isImage) {
 		internalValue_ = internalValue;
 		externalValue_ = externalValue;
@@ -4200,6 +4196,7 @@ class TableCellRendererReadOnly extends DefaultTableCellRenderer {
 		TableCellReadOnly cell = (TableCellReadOnly)value;
 		if (cell.isImage()) {
 			setIcon((Icon)cell.getExternalValue());
+			setHorizontalAlignment(SwingConstants.CENTER);
 		} else {
 			setText((String)cell.getExternalValue());
 			setFont(new java.awt.Font("Dialog", 0, 14));

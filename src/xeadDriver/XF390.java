@@ -1065,7 +1065,10 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText + session_.getScriptFunctions());
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString());
 		}
 	}
 
@@ -1375,7 +1378,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	 }
 }
 
-class XF390_HeaderField extends Object implements XFScriptableField {
+class XF390_HeaderField extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element tableElement = null;
@@ -1418,7 +1421,7 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 		//
 		setupVariants();
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF390_HeaderField(String tableID, String tableAlias, String fieldID, XF390 dialog){
@@ -1437,7 +1440,7 @@ class XF390_HeaderField extends Object implements XFScriptableField {
 		//
 		setupVariants();
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public void setupVariants(){
@@ -2698,7 +2701,7 @@ class XF390_DetailTable extends Object {
 	}
 }
 
-class XF390_DetailColumn extends Object implements XFScriptableField {
+class XF390_DetailColumn extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionColumnElement_ = null;
@@ -2778,9 +2781,6 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 			fieldCaption = wrkStr;
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		//if (dataSize > 50) {
-		//	dataSize = 50;
-		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -2840,7 +2840,7 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 			fieldWidth = 20;
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF390_DetailColumn(String tableID, String tableAlias, String fieldID, XF390 dialog){
@@ -2884,10 +2884,6 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 			fieldCaption = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		//if (dataSize > 50) {
-		//	dataSize = 50;
-		//}
-		//
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 		if (!tableElement.getAttribute("RangeKey").equals("")) {
 			StringTokenizer workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
@@ -2903,7 +2899,7 @@ class XF390_DetailColumn extends Object implements XFScriptableField {
 			isVirtualField = true;
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 	
 	public boolean isImage() {

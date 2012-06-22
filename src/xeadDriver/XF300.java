@@ -2287,14 +2287,20 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	public void evalHeaderTableScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText + session_.getScriptFunctions());
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString());
 		}
 	}
 
 	public void evalDetailTableScript(String scriptName, String scriptText, int index) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText + session_.getScriptFunctions(), detailScriptBindingsArray[index]);
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString(), detailScriptBindingsArray[index]);
 		}
 	}
 
@@ -2518,7 +2524,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 }
 
-class XF300_HeaderField extends JPanel implements XFScriptableField {
+class XF300_HeaderField extends XFFieldScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element functionFieldElement_ = null;
@@ -2791,7 +2797,7 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 		component.setToolTipText(wrkStr);
 		//
 		if (!dialog_.getHeaderScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 	}
 
@@ -2902,7 +2908,7 @@ class XF300_HeaderField extends JPanel implements XFScriptableField {
 		}
 		//
 		if (!dialog_.getHeaderScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			dialog_.getHeaderScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 	}
 
@@ -3191,7 +3197,7 @@ class XF300_DetailRowNumber extends Object {
 	}
 }
 
-class XF300_DetailColumn extends Object implements XFScriptableField {
+class XF300_DetailColumn extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionColumnElement_ = null;
@@ -3350,7 +3356,7 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 			fieldWidth = captionWidth;
 		}
 		//
-		dialog_.getDetailScriptBindings(index).put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getDetailScriptBindings(index).put(this.getFieldIDInScript(), this);
 	}
 
 	public XF300_DetailColumn(String detailTableID, String tableID, String tableAlias, String fieldID, XF300 dialog, int index){
@@ -3399,7 +3405,7 @@ class XF300_DetailColumn extends Object implements XFScriptableField {
 			isVirtualField = true;
 		}
 		//
-		dialog_.getDetailScriptBindings(index).put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getDetailScriptBindings(index).put(this.getFieldIDInScript(), this);
 	}
 
 	public boolean isVisibleOnPanel(){

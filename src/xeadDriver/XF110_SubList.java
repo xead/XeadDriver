@@ -2111,7 +2111,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText + session_.getScriptFunctions(), engineScriptBindings);
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString(), engineScriptBindings);
 		}
 	}
 	
@@ -2316,7 +2319,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	}
 }
 
-class XF110_SubListBatchField extends JPanel implements XFScriptableField {
+class XF110_SubListBatchField extends XFFieldScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element functionFieldElement_ = null;
@@ -2642,7 +2645,7 @@ class XF110_SubListBatchField extends JPanel implements XFScriptableField {
 		this.setToolTipText(wrkStr);
 		component.setToolTipText(wrkStr);
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF110_SubListBatchField(String tableID, String tableAlias, String fieldID, XF110_SubList dialog){
@@ -2729,7 +2732,7 @@ class XF110_SubListBatchField extends JPanel implements XFScriptableField {
 			isVirtualField = true;
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XFEditableField getComponent() {
@@ -4869,7 +4872,7 @@ class XF110_SubListDetailCell extends Object {
 	}
 }
 
-class XF110_SubListDetailColumn extends Object implements XFScriptableField {
+class XF110_SubListDetailColumn extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionColumnElement_ = null;
@@ -5165,7 +5168,7 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 		//
 		// Not put to bindings if the field is already put as Batch field //
 		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 	}
 
@@ -5237,7 +5240,7 @@ class XF110_SubListDetailColumn extends Object implements XFScriptableField {
 		//
 		// Not put to bindings if the field is already put as Batch field //
 		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 	}
 

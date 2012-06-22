@@ -695,7 +695,10 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText + session_.getScriptFunctions());
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString());
 		}
 	}
 
@@ -842,7 +845,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	}
 }
 
-class XF290_Field extends Object implements XFScriptableField {
+class XF290_Field extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element tableElement = null;
@@ -885,7 +888,7 @@ class XF290_Field extends Object implements XFScriptableField {
 		//
 		setupVariants();
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF290_Field(String tableID, String tableAlias, String fieldID, XF290 dialog){
@@ -904,7 +907,7 @@ class XF290_Field extends Object implements XFScriptableField {
 		//
 		setupVariants();
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public void setupVariants(){

@@ -551,7 +551,10 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		String scriptText = XFUtility.substringLinesWithTokenOfEOL(functionElement_.getAttribute("Script"), "\n");
 		if (!scriptText.equals("")) {
-			scriptEngine.eval(scriptText + session_.getScriptFunctions());
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString());
 		}
 	}
 

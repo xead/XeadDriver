@@ -1164,7 +1164,7 @@ class ReferChecker_ReferTable extends Object {
 	}
 }
 
-class ReferChecker_Field extends Object implements XFScriptableField {
+class ReferChecker_Field extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element tableElement = null;
@@ -1221,9 +1221,6 @@ class ReferChecker_Field extends Object implements XFScriptableField {
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 		if (!wrkStr.equals("")) {
 			try {
-				//XFTableOperator operator = subjectTable_.getReferChecker().getFunction().createTableOperator("Select", subjectTable_.getReferChecker().getSession().getTableNameOfUserVariants());
-				//operator.addKeyValue("IDUSERKUBUN", wrkStr);
-				//operator.setOrderBy("SQLIST");
 				String sql = "select * from " + subjectTable_.getReferChecker().getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
 				XFTableOperator operator = subjectTable_.getReferChecker().createTableOperator(sql, true);
 				while (operator.next()) {
@@ -1239,7 +1236,7 @@ class ReferChecker_Field extends Object implements XFScriptableField {
 		}
 		//
 		if (!subjectTable_.getScriptBindings().containsKey(this.getFieldIDInScript())) {
-			subjectTable_.getScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			subjectTable_.getScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 	}
 

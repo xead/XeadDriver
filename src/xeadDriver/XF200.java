@@ -1938,7 +1938,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText + session_.getScriptFunctions());
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString());
 		}
 	}
 
@@ -2014,7 +2017,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 }
 
-class XF200_Field extends JPanel implements XFScriptableField {
+class XF200_Field extends XFFieldScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element functionFieldElement_ = null;
@@ -2356,7 +2359,7 @@ class XF200_Field extends JPanel implements XFScriptableField {
 		this.setToolTipText(wrkStr);
 		component.setToolTipText(wrkStr);
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF200_Field(String tableID, String tableAlias, String fieldID, XF200 dialog){
@@ -2450,7 +2453,7 @@ class XF200_Field extends JPanel implements XFScriptableField {
 			this.setEnabled(false);
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XFEditableField getComponent() {

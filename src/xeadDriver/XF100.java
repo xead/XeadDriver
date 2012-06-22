@@ -48,6 +48,8 @@ import org.w3c.dom.*;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.hssf.util.*;
 import javax.script.Bindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -128,6 +130,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	private String exceptionHeader = "";
 	private boolean anyFilterIsEditable = false;
 	private HSSFPatriarch patriarch = null;
+	private HashMap<String, CompiledScript> compiledScriptMap = new HashMap<String, CompiledScript>(); 
 
 	public XF100(Session session, int instanceArrayIndex) {
 		super(session, "", true);
@@ -294,6 +297,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionHeader = "";
 			processLog.delete(0, processLog.length());
 			messageList.clear();
+			compiledScriptMap.clear();
 			functionElement_ = functionElement;
 			if (functionElement_.getAttribute("InitialReadCount").equals("")) {
 				initialReadCount = 0;
@@ -590,19 +594,13 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			this.commit();
 		}
 		instanceIsAvailable = true;
-//		String wrkStr;
-//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-//		} else {
-//			wrkStr = processLog.toString();
-//		}
-//		wrkStr = wrkStr.replace("'", "\"");
-//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
+		//
 		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
 			errorLog = exceptionHeader + exceptionLog.toString();
 		}
 		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
+		//
 		this.setVisible(false);
 	}
 	
@@ -1568,7 +1566,17 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
-			scriptEngine.eval(scriptText + session_.getScriptFunctions());
+			if (compiledScriptMap.containsKey(scriptNameRunning)) {
+				compiledScriptMap.get(scriptNameRunning).eval(engineScriptBindings);
+			} else {
+				StringBuffer bf = new StringBuffer();
+				bf.append(scriptText);
+				bf.append(session_.getScriptFunctions());
+				Compilable compiler = (Compilable)session_.getScriptEngineManager().getEngineByName("js");
+				CompiledScript script = compiler.compile(bf.toString());
+				script.eval(engineScriptBindings);
+				compiledScriptMap.put(scriptNameRunning, script);
+			}
 		}
 	}
 	
@@ -3065,7 +3073,7 @@ class XF100_RowNumber extends Object {
 	}
 }
 
-class XF100_Column extends Object implements XFScriptableField {
+class XF100_Column extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionColumnElement_ = null;
@@ -3223,7 +3231,7 @@ class XF100_Column extends Object implements XFScriptableField {
 			fieldWidth = captionWidth;
 		}
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(getFieldIDInScript(), this);
 	}
 
 	public XF100_Column(String tableID, String tableAlias, String fieldID, XF100 dialog) throws Exception {
@@ -3285,7 +3293,7 @@ class XF100_Column extends Object implements XFScriptableField {
 		//
 		isVisibleOnPanel = false;
 		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+		dialog_.getEngineScriptBindings().put(getFieldIDInScript(), this);
 	}
 
 	public boolean isReadyToEvaluate(){
@@ -3631,6 +3639,47 @@ class XF100_Column extends Object implements XFScriptableField {
 
 	public Color getForeground() {
 		return foreground;
+	}
+}
+
+
+class XF100_ColumnScriptable {
+	XF100_Column column_;
+	public XF100_ColumnScriptable (XF100_Column column) {
+		column_ = column;
+	}
+	public Object getValue(){
+		return column_.getValue();
+	}
+	public void setValue(Object value) {
+		column_.setValue(value);
+	}
+	public Object getOldValue(){
+		return column_.getOldValue();
+	}
+	public void setOldValue(Object value) {
+		column_.setOldValue(value);
+	}
+	public boolean isValueChanged() {
+		return column_.isValueChanged();
+	}
+	public String getColor() {
+		return column_.getColor();
+	}
+	public void setColor(String colorName) {
+		column_.setColor(colorName);
+	}
+	public boolean isEditable() {
+		return column_.isEditable();
+	}
+	public void setEditable(boolean isEditable) {
+		column_.setEditable(isEditable);
+	}
+	public String getError() {
+		return column_.getError();
+	}
+	public void setError(String message) {
+		column_.setError(message);
 	}
 }
 

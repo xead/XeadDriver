@@ -2490,10 +2490,13 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	public void evalScript(String scriptName, String scriptText, Bindings bindings) throws ScriptException {
 		if (!scriptText.equals("")) {
 			scriptNameRunning = scriptName;
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
 			if (bindings == null) {
-				scriptEngine.eval(scriptText + session_.getScriptFunctions());
+				scriptEngine.eval(bf.toString());
 			} else {
-				scriptEngine.eval(scriptText + session_.getScriptFunctions(), bindings);
+				scriptEngine.eval(bf.toString(), bindings);
 				
 			}
 		}
@@ -2702,7 +2705,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 }
 
-class XF310_HeaderField extends JPanel implements XFScriptableField {
+class XF310_HeaderField extends XFFieldScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element functionFieldElement_ = null;
@@ -3026,7 +3029,7 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 		component.setToolTipText(wrkStr);
 		//
 		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 		this.setFocusable(true);
 		this.addFocusListener(new FocusAdapter() {
@@ -3121,7 +3124,7 @@ class XF310_HeaderField extends JPanel implements XFScriptableField {
 		}
 		//
 		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 	}
 
@@ -5299,7 +5302,7 @@ class XF310_DetailCell extends Object {
 	}
 }
 
-class XF310_DetailColumn extends Object implements XFScriptableField {
+class XF310_DetailColumn extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionColumnElement_ = null;
@@ -5597,7 +5600,7 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 		}
 		//
 		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 	}
 
@@ -5677,7 +5680,7 @@ class XF310_DetailColumn extends Object implements XFScriptableField {
 		isEditable = !isNonEditableField;
 		//
 		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), (XFScriptableField)this);
+			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 		}
 	}
 

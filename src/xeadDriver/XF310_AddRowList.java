@@ -472,9 +472,9 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		this.setVisible(true);
 		//
 		} catch (ScriptException e) {
-			e.printStackTrace();
+			cancelWithScriptException(e, dialog_.getScriptNameRunning());
 		} catch (Exception e) {
-			e.printStackTrace();
+			cancelWithException(e);
 		}
 		//
 		return result;
@@ -596,6 +596,21 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		if (this.isVisible()) {
 			this.setVisible(false);
 		}
+	}
+	
+	public void cancelWithScriptException(ScriptException e, String scriptName) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + scriptName + res.getString("FunctionError8"));
+		dialog_.setExceptionHeader("'" + scriptName + "' Script error\n");
+		e.printStackTrace(dialog_.getExceptionStream());
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
+	
+	public void cancelWithException(Exception e) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+		e.printStackTrace(dialog_.getExceptionStream());
+		this.rollback();
+		setErrorAndCloseFunction();
 	}
 
 	public HashMap<String, Object> getParmMap() {
@@ -1048,9 +1063,9 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				selectDetailRecordsAndSetupTableRows();
 			}
 		} catch (ScriptException e) {
-			e.printStackTrace();
+			cancelWithScriptException(e, dialog_.getScriptNameRunning());
 		} catch (Exception e) {
-			e.printStackTrace();
+			cancelWithException(e);
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}

@@ -742,7 +742,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void closeFunction() {
-		//String wrkStr;
 		instanceIsAvailable_ = true;
 		messageList.clear();
 		try {
@@ -758,13 +757,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				returnMap_.put("RETURN_CODE", "11");
 			}
 		}
-//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-//		} else {
-//			wrkStr = processLog.toString();
-//		}
-//		wrkStr = wrkStr.replace("'", "\"");
-//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
 		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
 			errorLog = exceptionHeader + exceptionLog.toString();
@@ -787,6 +779,21 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			returnMap_.put("RETURN_CODE", "11");
 		}
 		isToBeCanceled = true;
+	}
+	
+	public void cancelWithScriptException(ScriptException e, String scriptName) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + scriptName + res.getString("FunctionError8"));
+		exceptionHeader = "'" + scriptName + "' Script error\n";
+		e.printStackTrace(exceptionStream);
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
+	
+	public void cancelWithException(Exception e) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+		e.printStackTrace(exceptionStream);
+		this.rollback();
+		setErrorAndCloseFunction();
 	}
 
 	public void callFunction(String functionID) {
@@ -1001,16 +1008,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					columnOldValueMap.put(fieldList.get(i).getFieldID(), fieldList.get(i).getInternalValue());
 				}
 			}
-			//
+
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			this.cancelWithException(e);
 		}
 	}
 
@@ -1153,18 +1155,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < fieldList.size(); i++) {
 				fieldList.get(i).checkPromptKeyEdit();
 			}
-			//
+
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			this.cancelWithException(e);
 		}
-		//
+
 		if (toBeChecked) {
 			return countOfErrors;
 		} else {
@@ -1455,17 +1452,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			}
-		} catch(ScriptException e1) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-			e1.printStackTrace(exceptionStream);
-			this.rollback();
-			setErrorAndCloseFunction();
+		} catch(ScriptException e) {
+			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "" + e.getMessage());
-			e.printStackTrace(exceptionStream);
-			this.rollback();
-			setErrorAndCloseFunction();
+			this.cancelWithException(e);
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
@@ -1506,16 +1496,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-			e.printStackTrace(exceptionStream);
-			this.rollback();
-			setErrorAndCloseFunction();
+			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
-			e.printStackTrace(exceptionStream);
-			this.rollback();
-			setErrorAndCloseFunction();
+			this.cancelWithException(e);
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
@@ -1605,19 +1588,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					}
 					//
 					closeFunction();
-					//
 				}
 			} catch(ScriptException e) {
-				JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-				exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-				e.printStackTrace(exceptionStream);
-				this.rollback();
-				setErrorAndCloseFunction();
+				this.cancelWithScriptException(e, this.getScriptNameRunning());
 			} catch(Exception e) {
-				JOptionPane.showMessageDialog(jPanelMain, res.getString("FunctionError5") + "\n" + e.getMessage());
-				e.printStackTrace(exceptionStream);
-				this.rollback();
-				setErrorAndCloseFunction();
+				this.cancelWithException(e);
 			} finally {
 				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}

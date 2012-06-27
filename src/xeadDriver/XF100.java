@@ -610,6 +610,21 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		returnMap_.put("RETURN_CODE", "01");
 	}
+	
+	public void cancelWithScriptException(ScriptException e, String scriptName) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + scriptName + res.getString("FunctionError8"));
+		exceptionHeader = "'" + scriptName + "' Script error\n";
+		e.printStackTrace(exceptionStream);
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
+	
+	public void cancelWithException(Exception e) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+		e.printStackTrace(exceptionStream);
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
 
 	public void callFunction(String functionID) {
 		try {
@@ -856,14 +871,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			setMessagesOnPanel();
 			//
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(this, e.getMessage());
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			cancelWithException(e);
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}

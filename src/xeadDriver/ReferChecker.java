@@ -63,6 +63,7 @@ public class ReferChecker extends Object {
 	private String rangeKeyFieldValid_ = "";
 	private String rangeKeyFieldExpire_ = "";
 	private XFScriptable function_;
+	private String scriptNameRunning_ = "";
 
 	public ReferChecker(Session session, String targetTableID, XFScriptable function) {
 		super();
@@ -185,27 +186,37 @@ public class ReferChecker extends Object {
 		}
 		msgHeader = bf.toString();
 		//
-		for (int i = 0; i < subjectTableList_.size(); i++) {
-			if (!subjectTableList_.get(i).getID().equals(checkSkippingTableID)) { 
-				if (operation.toUpperCase().equals("INSERT")) {
-					if (rangeKeyType_ == 1 || rangeKeyType_ == 2) {
-						if (subjectTableList_.get(i).hasErrorToInsert()) {
-							msgList.add(msgHeader + res.getString("ReferCheckerMessage3") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage4"));
+		try {
+			for (int i = 0; i < subjectTableList_.size(); i++) {
+				if (!subjectTableList_.get(i).getID().equals(checkSkippingTableID)) {
+					if (operation.toUpperCase().equals("INSERT")) {
+						if (rangeKeyType_ == 1 || rangeKeyType_ == 2) {
+							if (subjectTableList_.get(i).hasErrorToInsert()) {
+								msgList.add(msgHeader + res.getString("ReferCheckerMessage3") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage4"));
+							}
+						}
+					}
+					if (operation.toUpperCase().equals("UPDATE")) {
+						if (subjectTableList_.get(i).hasErrorToUpdate()) {
+							msgList.add(msgHeader + res.getString("ReferCheckerMessage5") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage6"));
+						}
+					}
+					if (operation.toUpperCase().equals("DELETE")) {
+						if (subjectTableList_.get(i).hasErrorToDelete()) {
+							msgList.add(msgHeader + res.getString("ReferCheckerMessage7") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage8"));
 						}
 					}
 				}
-				if (operation.toUpperCase().equals("UPDATE")) {
-					if (subjectTableList_.get(i).hasErrorToUpdate()) {
-						msgList.add(msgHeader + res.getString("ReferCheckerMessage5") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage6"));
-					}
-				}
-				if (operation.toUpperCase().equals("DELETE")) {
-					if (subjectTableList_.get(i).hasErrorToDelete()) {
-						msgList.add(msgHeader + res.getString("ReferCheckerMessage7") + subjectTableList_.get(i).getName() + res.getString("ReferCheckerMessage8"));
-					}
-				}
+				function_.incrementProgress();
 			}
-			function_.incrementProgress();
+		} catch(ScriptException e) {
+			function_.cancelWithScriptException(e, scriptNameRunning_);
+			//JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + scriptNameRunning_ + res.getString("FunctionError8"));
+			//e.printStackTrace();
+		} catch (Exception e) {
+			function_.cancelWithException(e);
+			//JOptionPane.showMessageDialog(null, "Error:" + e.getMessage());
+			//e.printStackTrace();
 		}
 		//
 		return msgList;
@@ -232,6 +243,10 @@ public class ReferChecker extends Object {
 		//
 		return operator;
 	}
+	
+	public void setScriptNameRunning(String name) {
+		scriptNameRunning_ = name;
+	}
 }
 
 class ReferChecker_SubjectTable extends Object {
@@ -253,7 +268,7 @@ class ReferChecker_SubjectTable extends Object {
 	private NodeList referNodeList;
 	private ScriptEngine scriptEngine_;
 	private Bindings scriptBindings_ = null;
-	private String scriptNameRunning_ = "";
+	//private String scriptNameRunning_ = "";
 
 	public ReferChecker_SubjectTable(org.w3c.dom.Element subjectTableElement, org.w3c.dom.Element referElement, ReferChecker targetTableChecker) {
 		super();
@@ -413,13 +428,13 @@ class ReferChecker_SubjectTable extends Object {
 		return scriptBindings_;
 	}
 	
-	public boolean hasErrorToInsert() {
+	public boolean hasErrorToInsert() throws ScriptException, Exception {
 		boolean isFound, hasError = false;
 		XFTableOperator operatorSubjectTable, operatorReferTable;
 		int countOfErrors;
 		String sql;
 		//
-		try {
+		//try {
 			operatorSubjectTable = this.getReferChecker().createTableOperator(this.getSelectSQL(), true);
 			//operatorSubjectTable = new XFTableOperator(targetTableChecker_.getSession(), targetTableChecker_.getFunction().getProcessLog(), this.getSelectSQL(), false);
 			while (operatorSubjectTable.next()) {
@@ -486,25 +501,25 @@ class ReferChecker_SubjectTable extends Object {
 					setRecordInformationInSessionLog();
 				}
 			}
-		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + scriptNameRunning_ + res.getString("FunctionError8"));
-			e.printStackTrace();
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "Error:" + e.getMessage());
-			e.printStackTrace();
-		}
+		//} catch(ScriptException e) {
+		//	JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + scriptNameRunning_ + res.getString("FunctionError8"));
+		//	e.printStackTrace();
+		//} catch (Exception e) {
+		//	JOptionPane.showMessageDialog(null, "Error:" + e.getMessage());
+		//	e.printStackTrace();
+		//}
 		//
 		return hasError;
 	}
 	
-	public boolean hasErrorToUpdate() {
+	public boolean hasErrorToUpdate() throws ScriptException, Exception {
 		boolean isFound, hasError = false;
 		XFTableOperator operatorSubjectTable, operatorReferTable;
 		int countOfErrors;
 		String sql;
 		//
 		if (hasReferFieldWhichValuesAreAltered()) {
-			try {
+			//try {
 				//operatorSubjectTable = new XFTableOperator(targetTableChecker_.getSession(), targetTableChecker_.getFunction().getProcessLog(), this.getSelectSQL(), false);
 				operatorSubjectTable = this.getReferChecker().createTableOperator(this.getSelectSQL(), true);
 				while (operatorSubjectTable.next()) {
@@ -572,25 +587,25 @@ class ReferChecker_SubjectTable extends Object {
 						setRecordInformationInSessionLog();
 					}
 				}
-			} catch(ScriptException e) {
-				JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + scriptNameRunning_ + res.getString("FunctionError8"));
-				e.printStackTrace();
-			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null, "Error:" + e.getMessage());
-				e.printStackTrace();
-			}
+			//} catch(ScriptException e) {
+			//	JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + scriptNameRunning_ + res.getString("FunctionError8"));
+			//	e.printStackTrace();
+			//} catch (Exception e) {
+			//	JOptionPane.showMessageDialog(null, "Error:" + e.getMessage());
+			//	e.printStackTrace();
+			//}
 		}
 		//
 		return hasError;
 	}
 	
-	public boolean hasErrorToDelete() {
+	public boolean hasErrorToDelete() throws ScriptException, Exception {
 		boolean isFound, hasError = false;
 		XFTableOperator operatorSubjectTable, operatorReferTable;
 		int countOfErrors;
 		String sql;
 		//
-		try {
+		//try {
 			//operatorSubjectTable = new XFTableOperator(targetTableChecker_.getSession(), targetTableChecker_.getFunction().getProcessLog(), this.getSelectSQL(), false);
 			operatorSubjectTable = this.getReferChecker().createTableOperator(this.getSelectSQL(), true);
 			while (operatorSubjectTable.next()) {
@@ -647,13 +662,13 @@ class ReferChecker_SubjectTable extends Object {
 					setRecordInformationInSessionLog();
 				}
 			}
-		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + scriptNameRunning_ + res.getString("FunctionError8"));
-			e.printStackTrace();
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "Error:" + e.getMessage());
-			e.printStackTrace();
-		}
+//		} catch(ScriptException e) {
+//			JOptionPane.showMessageDialog(null, res.getString("FunctionError7") + scriptNameRunning_ + res.getString("FunctionError8"));
+//			e.printStackTrace();
+//		} catch (Exception e) {
+//			JOptionPane.showMessageDialog(null, "Error:" + e.getMessage());
+//			e.printStackTrace();
+//		}
 		//
 		return hasError;
 	}
@@ -869,7 +884,8 @@ class ReferChecker_SubjectTable extends Object {
 		//
 		if (validScriptList.size() > 0) {
 			for (int i = 0; i < validScriptList.size(); i++) {
-				scriptNameRunning_ = validScriptList.get(i).getName();
+				//scriptNameRunning_ = validScriptList.get(i).getName();
+				targetTableChecker_.setScriptNameRunning(validScriptList.get(i).getName());
 				bf = new StringBuffer();
 				bf.append(validScriptList.get(i).getScriptText());
 				bf.append(targetTableChecker_.getSession().getScriptFunctions());

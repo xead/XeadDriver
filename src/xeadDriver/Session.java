@@ -1468,31 +1468,49 @@ public class Session extends JFrame {
 			bf.append(tableOperationLog.replace("'", "\""));
 			logString = bf.toString();
 		} else {
+//			int totalLength = tableOperationLog.length() + errorLog.length();
+//			if (totalLength > 20000) {
+//				String errorLogFileName = "";
+//				try {
+//					File logFile = createTempFile(sessionID, ".log");
+//					errorLogFileName = logFile.getPath();
+//					FileWriter fileWriter = new FileWriter(errorLogFileName);
+//					BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+//					bufferedWriter.write(errorLog);
+//					bufferedWriter.flush();
+//					bufferedWriter.close();
+//				} catch (Exception e) {
+//					e.printStackTrace();
+//				}
+//				bf.append(tableOperationLog.replace("'", "\""));
+//				bf.append("\n...Error log follows in the file ");
+//				bf.append(errorLogFileName);
+//				bf.append(".");
+//				logString = bf.toString();
+//			} else {
+//				bf.append(tableOperationLog.replace("'", "\""));
+//				bf.append("\n");
+//				bf.append(errorLog.replace("'", "\""));
+//				logString = bf.toString();
+//			}
 			int totalLength = tableOperationLog.length() + errorLog.length();
-			if (totalLength > 10000) {
-				String errorLogFileName = "";
-				try {
-					File logFile = createTempFile(sessionID, ".log");
-					errorLogFileName = logFile.getPath();
-					FileWriter fileWriter = new FileWriter(errorLogFileName);
-					BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-					bufferedWriter.write(errorLog);
-					bufferedWriter.flush();
-					bufferedWriter.close();
-				} catch (Exception e) {
-					e.printStackTrace();
+			if (totalLength > 20000) {
+				StringBuffer bf2 = new StringBuffer();
+				int wrkInt = 20000 - tableOperationLog.length();
+				if (wrkInt > 100) {
+					bf2.append(errorLog.substring(0, wrkInt));
+					bf2.append(" ...");
+					errorLog = bf2.toString();
+				} else {
+					bf2.append(tableOperationLog.substring(0, 20000));
+					bf2.append(" ... Error log was disposed as it is too long.");
+					tableOperationLog = bf2.toString();
 				}
-				bf.append(tableOperationLog.replace("'", "\""));
-				bf.append("\n\n...Error log follows in the file ");
-				bf.append(errorLogFileName);
-				bf.append(".");
-				logString = bf.toString();
-			} else {
-				bf.append(tableOperationLog.replace("'", "\""));
-				bf.append("\n");
-				bf.append(errorLog.replace("'", "\""));
-				logString = bf.toString();
 			}
+			bf.append(tableOperationLog.replace("'", "\""));
+			bf.append("\n");
+			bf.append(errorLog.replace("'", "\""));
+			logString = bf.toString();
 		}
 		//
 		if (programStatus.equals("99")) {

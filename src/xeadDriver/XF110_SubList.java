@@ -831,6 +831,21 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			this.setVisible(false);
 		}
 	}
+	
+	public void cancelWithScriptException(ScriptException e, String scriptName) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + scriptName + res.getString("FunctionError8"));
+		dialog_.setExceptionHeader("'" + scriptName + "' Script error\n");
+		e.printStackTrace(dialog_.getExceptionStream());
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
+	
+	public void cancelWithException(Exception e) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+		e.printStackTrace(dialog_.getExceptionStream());
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
 
 	public void callFunction(String functionID) {
 		try {
@@ -930,14 +945,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				batchFieldList.get(i).checkPromptKeyEdit();
 			}
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			dialog_.setExceptionHeader("'" + this.getScriptNameRunning() + "' Script error\n");
-			e.printStackTrace(dialog_.getExceptionStream());
-			setErrorAndCloseFunction();
+			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
-			e.printStackTrace(dialog_.getExceptionStream());
-			setErrorAndCloseFunction();
+			this.cancelWithException(e);
 		}
 		//
 		return countOfErrors;
@@ -999,14 +1009,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				detailColumnList.get(i).checkPromptKeyEdit();
 			}
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			dialog_.setExceptionHeader("'" + this.getScriptNameRunning() + "' Script error\n");
-			e.printStackTrace(dialog_.getExceptionStream());
-			setErrorAndCloseFunction();
+			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
-			e.printStackTrace(dialog_.getExceptionStream());
-			setErrorAndCloseFunction();
+			this.cancelWithException(e);
 		}
 		//
 		return countOfErrors;
@@ -1248,17 +1253,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				this.commit();
 			}
 			//
-		} catch(ScriptException e1) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			dialog_.setExceptionHeader("'" + this.getScriptNameRunning() + "' Script error\n");
-			e1.printStackTrace(dialog_.getExceptionStream());
-			this.rollback();
-			setErrorAndCloseFunction();
+		} catch(ScriptException e) {
+			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
-			e.printStackTrace(dialog_.getExceptionStream());
-			this.rollback();
-			setErrorAndCloseFunction();
+			this.cancelWithException(e);
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}

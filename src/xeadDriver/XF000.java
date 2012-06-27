@@ -313,14 +313,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			}
 
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError12"));
-			exceptionHeader = "'Script error in the function'\n";
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			cancelWithScriptException(e, "");
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError5"));
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			cancelWithException(e);
 		} finally {
 			instanceIsAvailable_ = true;
 		}
@@ -462,6 +457,26 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		errorHasOccured = true;
 	}
+	
+	public void cancelWithScriptException(ScriptException e, String scriptName) {
+		if (scriptName.equals("")) {
+			JOptionPane.showMessageDialog(null, res.getString("FunctionError12"));
+			exceptionHeader = "'Script error in the function'\n";
+		} else {
+			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + scriptName + res.getString("FunctionError8"));
+			exceptionHeader = "'" + scriptName + "' Script error\n";
+		}
+		e.printStackTrace(exceptionStream);
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
+	
+	public void cancelWithException(Exception e) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+		e.printStackTrace(exceptionStream);
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
 
 	void setErrorAndCloseFunction() {
 		errorHasOccured = true;
@@ -483,17 +498,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		instanceIsAvailable_ = true;
 		//
-//		String wrkStr;
-//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-//		} else {
-//			wrkStr = processLog.toString();
-//		}
-//		if (!functionElement_.getAttribute("TimerOption").equals("")) {
-//			wrkStr = wrkStr + "\n\n<Console Log>\n" + jTextAreaMessages.getText();
-//		}
-//		wrkStr = wrkStr.replace("'", "\"");
-//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr);
 		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
 			errorLog = exceptionHeader + exceptionLog.toString();
@@ -571,14 +575,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				jTextAreaMessages.setText(getNewMessage(res.getString("FunctionMessage48"), "") + "\n");
 			}
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError12"));
-			exceptionHeader = "'Script error in the function'\n";
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			cancelWithScriptException(e, "");
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError5"));
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			cancelWithException(e);
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
@@ -620,7 +619,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jCheckBoxRepeat.setEnabled(true);
 		jCheckBoxRunOffDay.setEnabled(true);
 		//
-		//jButtonExit.setEnabled(true);
 		jButtonStart.setEnabled(true);
 		jButtonStop.setEnabled(false);
 		jButtonIconify.setEnabled(false);
@@ -693,16 +691,10 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					stopTimer();
 				}
-				//
 			} catch(ScriptException e) {
-				JOptionPane.showMessageDialog(null, res.getString("FunctionError12"));
-				exceptionHeader = "'Script error in the function'\n";
-				e.printStackTrace(exceptionStream);
-				setErrorAndCloseFunction();
+				cancelWithScriptException(e, "");
 			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null, res.getString("FunctionError5"));
-				e.printStackTrace(exceptionStream);
-				setErrorAndCloseFunction();
+				cancelWithException(e);
 			} finally {
 				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}

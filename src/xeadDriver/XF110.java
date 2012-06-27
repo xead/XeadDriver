@@ -601,14 +601,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 
 	void closeFunction() {
 		instanceIsAvailable = true;
-//		String wrkStr;
-//		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
-//			wrkStr = processLog.toString() + "\nERROR LOG:\n" + exceptionHeader + exceptionLog.toString();
-//		} else {
-//			wrkStr = processLog.toString();
-//		}
-//		wrkStr = wrkStr.replace("'", "\"");
-//		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), wrkStr );
 		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
 			errorLog = exceptionHeader + exceptionLog.toString();
@@ -623,6 +615,21 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		returnMap_.put("RETURN_CODE", "01");
 		isToBeCanceled = true;
+	}
+	
+	public void cancelWithScriptException(ScriptException e, String scriptName) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + scriptName + res.getString("FunctionError8"));
+		exceptionHeader = "'" + scriptName + "' Script error\n";
+		e.printStackTrace(exceptionStream);
+		this.rollback();
+		setErrorAndCloseFunction();
+	}
+	
+	public void cancelWithException(Exception e) {
+		JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+		e.printStackTrace(exceptionStream);
+		this.rollback();
+		setErrorAndCloseFunction();
 	}
 
 	public void callFunction(String functionID) {
@@ -866,16 +873,11 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				messageList.add(res.getString("FunctionMessage4"));
 			}
 			setMessagesOnPanel();
-			//
+
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + this.getScriptNameRunning() + res.getString("FunctionError8"));
-			exceptionHeader = "'" + this.getScriptNameRunning() + "' Script error\n";
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			cancelWithException(e);
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}

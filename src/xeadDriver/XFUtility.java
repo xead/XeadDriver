@@ -389,6 +389,24 @@ public class XFUtility {
 		return value;
 	}
 	
+	static String getLongestSegment(String caption) {
+		String value = "";
+		ArrayList<String> stringList = new ArrayList<String>();
+		String wrkStr = caption.toUpperCase();
+		wrkStr = wrkStr.replace("<HTML>", "");
+		wrkStr = wrkStr.replace("</HTML>", "");
+		StringTokenizer workTokenizer = new StringTokenizer(wrkStr, "<BR>");
+		while (workTokenizer.hasMoreTokens()) {
+			stringList.add(workTokenizer.nextToken());
+		}
+		for (int i = 0; i < stringList.size(); i++) {
+			if (stringList.get(i).length() > value.length()) {
+				value = stringList.get(i);
+			}
+		}
+		return value;
+	}
+	
 	static String getDefaultValueOfFilterField(String keywordValue, Session session){
 		String defaultValue = null;
 		//
@@ -446,6 +464,7 @@ public class XFUtility {
 			basicType = "FLOAT";
 		}
 		if (dataType.equals("CHAR")
+				|| dataType.equals("TEXT")
 				|| dataType.equals("VARCHAR")
 				|| dataType.equals("LONG VARCHAR")
 					) {
@@ -465,10 +484,10 @@ public class XFUtility {
 		if (dataType.equals("DATE")) {
 			basicType = "DATE";
 		}
-		if (dataType.equals("TIME")) {
+		if (dataType.startsWith("TIME")) {
 			basicType = "TIME";
 		}
-		if (dataType.equals("TIMESTAMP")) {
+		if (dataType.startsWith("TIMESTAMP")) {
 			basicType = "DATETIME";
 		}
 		return basicType;
@@ -774,8 +793,8 @@ public class XFUtility {
 							|| wrkStr.equals("VARCHAR")
 							|| wrkStr.equals("LONG VARCHAR")
 							|| wrkStr.equals("DATE")
-							|| wrkStr.equals("TIME")
-							|| wrkStr.equals("TIMESTAMP")) {
+							|| wrkStr.startsWith("TIME")
+							|| wrkStr.startsWith("TIMESTAMP")) {
 						keyFieldIsLiteralRequiredList.add(true);
 					} else {
 						keyFieldIsLiteralRequiredList.add(false);
@@ -1136,6 +1155,19 @@ public class XFUtility {
 		}
 		//
 		return buf.toString();
+	}
+	
+	static String getCaptionForCell(String caption) {
+		String value = caption;
+		if (value.toUpperCase().contains("<HTML>")) {
+			value = value.replace("<HTML>", "");
+			value = value.replace("<html>", "");
+			value = value.replace("<BR>", "\n");
+			value = value.replace("<br>", "\n");
+			value = value.replace("</HTML>", "");
+			value = value.replace("</html>", "");
+		}
+		return value;
 	}
 	
 	static com.lowagie.text.Image getImageForPDF(String fileName, float newWidth, float newHeight) {

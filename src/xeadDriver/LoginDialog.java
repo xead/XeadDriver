@@ -46,7 +46,7 @@ public class LoginDialog extends JDialog {
 	 * Application Information
 	 */
 	public static final String APPLICATION_NAME  = "XEAD Driver 1.1";
-	public static final String FULL_VERSION  = "V1.R1.M11";
+	public static final String FULL_VERSION  = "V1.R1.M12";
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
 	public static final String COPYRIGHT = "Copyright 2012 DBC,Ltd.";
@@ -194,29 +194,42 @@ public class LoginDialog extends JDialog {
 				statementBuf.append(passwordDigested);
 				statementBuf.append("'") ;
 				//
-				XFTableOperator operator = new XFTableOperator(session, null, statementBuf.toString(), true);
-				if (operator.next()) {
-					Date resultDateFrom = null;
-					Date resultDateThru = null;
-					Date today = new Date();
-					resultDateFrom = (java.util.Date)operator.getValueOf("DTVALID");
-					resultDateThru = (java.util.Date)operator.getValueOf("DTEXPIRE");
-					if (today.after(resultDateFrom)) {
-						if (resultDateThru == null || today.before(resultDateThru)) {
-							this.userID = jTextFieldUserID.getText();
-							this.userName = operator.getValueOf("TXNAME").toString().trim();
-							this.userEmployeeNo = operator.getValueOf("NREMPLOYEE").toString().trim();
-							this.userEmailAddress = operator.getValueOf("TXEMAIL").toString().trim();
-							this.userMenus = operator.getValueOf("TXMENUS").toString().trim();
-							validated = true;
+				int retryCount = 0;
+				while (retryCount < 3) {
+					try {
+						retryCount++;
+						XFTableOperator operator = new XFTableOperator(session, null, statementBuf.toString(), true);
+						if (operator.next()) {
+							Date resultDateFrom = null;
+							Date resultDateThru = null;
+							Date today = new Date();
+							resultDateFrom = (java.util.Date)operator.getValueOf("DTVALID");
+							resultDateThru = (java.util.Date)operator.getValueOf("DTEXPIRE");
+							if (today.after(resultDateFrom)) {
+								if (resultDateThru == null || today.before(resultDateThru)) {
+									this.userID = jTextFieldUserID.getText();
+									this.userName = operator.getValueOf("TXNAME").toString().trim();
+									this.userEmployeeNo = operator.getValueOf("NREMPLOYEE").toString().trim();
+									this.userEmailAddress = operator.getValueOf("TXEMAIL").toString().trim();
+									this.userMenus = operator.getValueOf("TXMENUS").toString().trim();
+									validated = true;
+								} else {
+									JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
+								}
+							} else {
+								JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
+							}
 						} else {
-							JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
+							JOptionPane.showMessageDialog(this, res.getString("LogInError2"));
 						}
-					} else {
-						JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
+						retryCount = 3;
+					} catch(Exception e) {
+						if (retryCount < 3) {
+							Thread.sleep(1000);
+						} else {
+							throw e;
+						}
 					}
-				} else {
-					JOptionPane.showMessageDialog(this, res.getString("LogInError2"));
 				}
 			}
 		}

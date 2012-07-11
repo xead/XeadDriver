@@ -1691,7 +1691,7 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 		//
 		JLabel jLabel = new JLabel();
 		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
+		int captionWidth = metrics.stringWidth(XFUtility.getLongestSegment(fieldCaption)) + 18;
 		//
 		String basicType = this.getBasicType();
 		//

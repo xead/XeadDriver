@@ -35,7 +35,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -163,15 +162,15 @@ public class Session extends JFrame {
 	private HashMap<String, BaseFont> baseFontMap = new HashMap<String, BaseFont>();
 	private HashMap<String, String> attributeMap = new HashMap<String, String>();
 	private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
-	//private Bindings globalScriptBindings = scriptEngineManager.getBindings();
 	private Bindings globalScriptBindings = null;
     private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
-    private HttpClient httpClient = new DefaultHttpClient();
+    //private HttpClient httpClient = new DefaultHttpClient();
 	private DOMParser responseDocParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
 	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
 	private Application application;
+	private XFOptionDialog optionDialog = new XFOptionDialog(this);
 
 	public Session(String[] args, Application app) {
 		String fileName = "";
@@ -363,7 +362,6 @@ public class Session extends JFrame {
 		// DB-Method URL //
 		///////////////////
 		if (!element.getAttribute("AppServerName").equals("")) {
-			//appServerName = "http://" + element.getAttribute("AppServerName") + "/XeadServer/DBMethod";
 			appServerName = element.getAttribute("AppServerName");
 		}
 		if (appServerName.equals("")) {
@@ -633,42 +631,41 @@ public class Session extends JFrame {
 	}
 	
 	private String getIpAddress() {
-		String value = "";
+		String value = "N/A";
 		HttpPost httpPost = null;
+		HttpClient httpClient = null;
+
 		try {
 			InetAddress ip = InetAddress.getLocalHost();
 			value = ip.getHostAddress();
-			//
-			if (getAppServerName().equals("")) {
-			} else {
-				int retryCount = -1;
+
+			if (!getAppServerName().equals("")) {
 				httpPost = new HttpPost(getAppServerName());
 				List<NameValuePair> objValuePairs = new ArrayList<NameValuePair>(1);
 				objValuePairs.add(new BasicNameValuePair("METHOD", "IP"));
 				httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
-				//
-				while (retryCount < 3) {
-					try {
-						retryCount++;
-						HttpResponse response = httpClient.execute(httpPost);
-						HttpEntity responseEntity = response.getEntity();
-						if (responseEntity != null) {
-							value = EntityUtils.toString(responseEntity) + " - " + ip.getHostAddress();
-						}
-						retryCount = 3;
-					} catch(SocketException ex) {
-						if (retryCount < 3) {
-							Thread.sleep(1000);
-						}
+
+				try {
+					httpClient = new DefaultHttpClient();
+					HttpResponse response = httpClient.execute(httpPost);
+					HttpEntity responseEntity = response.getEntity();
+					if (responseEntity != null) {
+						value = EntityUtils.toString(responseEntity) + " - " + ip.getHostAddress();
+					}
+				} catch(Exception e) {
+				} finally {
+					if (httpClient != null) {
+						httpClient.getConnectionManager().shutdown();
 					}
 				}
 			}
-		} catch(Exception ex) {
+		} catch(Exception e) {
 		} finally {
 			if (httpPost != null) {
 				httpPost.abort();
 			}
 		}
+
 		return value;
 	}
 
@@ -727,6 +724,10 @@ public class Session extends JFrame {
 	
 	public Application getApplication() {
 		return application;
+	}
+	
+	public XFOptionDialog getOptionDialog() {
+		return optionDialog;
 	}
 	
 	public String getCurrentMenuID() {
@@ -1383,7 +1384,7 @@ public class Session extends JFrame {
 			}
 		}
 		//
-		httpClient.getConnectionManager().shutdown();
+		//httpClient.getConnectionManager().shutdown();
 	}
 
 	protected void processWindowEvent(WindowEvent e) {
@@ -1986,6 +1987,7 @@ public class Session extends JFrame {
 		     	XFUtility.appendLog(e.getMessage(), logBuf);
 			}
 		} else {
+			HttpClient httpClient = new DefaultHttpClient();
 	        HttpPost httpPost = null;
 			try {
 				httpPost = new HttpPost(appServerName);
@@ -2015,6 +2017,7 @@ public class Session extends JFrame {
 				JOptionPane.showMessageDialog(null, msg);
 		     	XFUtility.appendLog(e.getMessage(), logBuf);
 			} finally {
+				httpClient.getConnectionManager().shutdown();
 				if (httpPost != null) {
 					httpPost.abort();
 				}
@@ -2022,9 +2025,9 @@ public class Session extends JFrame {
 		}
 	}
 	
-	public HttpClient getHttpClient() {
-		return httpClient;
-	}
+	//public HttpClient getHttpClient() {
+	//	return httpClient;
+	//}
 	
 	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
 		ReferChecker checker = null;
@@ -2045,6 +2048,7 @@ public class Session extends JFrame {
 		String value = "";
         HttpResponse response = null;
     	InputStream inputStream = null;
+		HttpClient httpClient = new DefaultHttpClient();
 		try {
 			httpGet.setURI(new URI(ZIP_URL + "zipcode=" + zipNo + "&format=xml"));
 	        response = httpClient.execute(httpGet);  
@@ -2066,6 +2070,7 @@ public class Session extends JFrame {
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(null, res.getString("FunctionMessage53") + "\n" + ex.getMessage());
 		} finally {
+			httpClient.getConnectionManager().shutdown();
 			try {
 				if (inputStream != null) {
 					inputStream.close();
@@ -2349,6 +2354,7 @@ public class Session extends JFrame {
 						if (appServerName.equals("")) {
 							statement.executeUpdate(statementBuf.toString());
 						} else {
+							HttpClient httpClient = new DefaultHttpClient();
 							try {
 								httpPost = new HttpPost(appServerName);
 								List<NameValuePair> objValuePairs = new ArrayList<NameValuePair>(1);
@@ -2362,6 +2368,7 @@ public class Session extends JFrame {
 									throw new Exception(msg);
 								}
 							} finally {
+								httpClient.getConnectionManager().shutdown();
 								if (httpPost != null) {
 									httpPost.abort();
 								}

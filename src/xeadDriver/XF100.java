@@ -1134,9 +1134,10 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		String xlsFileName = "";
 		FileOutputStream fileOutputStream = null;
 		String imageFileName = "";
+		String wrkStr;
 		//
 		HSSFWorkbook workBook = new HSSFWorkbook();
-		String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
+		wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
 		HSSFSheet workSheet = workBook.createSheet(wrkStr);
 		workSheet.setDefaultRowHeight( (short) 300);
 		HSSFFooter workSheetFooter = workSheet.getFooter();
@@ -1176,7 +1177,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		styleHeader.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
 		styleHeader.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
 		styleHeader.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+		styleHeader.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
 		styleHeader.setFont(fontHeader);
+		styleHeader.setWrapText(true);
 		//
 		HSSFCellStyle styleHeaderNumber = workBook.createCellStyle();
 		styleHeaderNumber.setBorderBottom(HSSFCellStyle.BORDER_THIN);
@@ -1186,6 +1189,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		styleHeaderNumber.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
 		styleHeaderNumber.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
 		styleHeaderNumber.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+		styleHeaderNumber.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
 		styleHeaderNumber.setFont(fontHeader);
 		//
 		HSSFCellStyle styleDataInteger = workBook.createCellStyle();
@@ -1232,7 +1236,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				}
 				Rectangle rect = jTableMain.getCellRect(0, i, true);
 				workSheet.setColumnWidth(i, rect.width * 40);
-				cell.setCellValue(new HSSFRichTextString(tableModelMain.getColumnName(i)));
+				wrkStr = XFUtility.getCaptionForCell(tableModelMain.getColumnName(i));
+				cell.setCellValue(new HSSFRichTextString(wrkStr));
 			}
 			//
 			for (int i = 0; i < tableModelMain.getRowCount(); i++) {
@@ -1723,7 +1728,7 @@ class XF100_Filter extends JPanel {
 		}
 		if (fieldOptionList.contains("SCAN")) {
 			operandType = "SCAN";
-			operand = "";
+			operand = " LIKE ";
 		}
 		if (fieldOptionList.contains("GENERIC")) {
 			operandType = "GENERIC";
@@ -2279,7 +2284,8 @@ class XF100_Filter extends JPanel {
 					stringFilterValue = (String)xFTextField.getInternalValue();
 					//
 					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-						if (stringFilterValue.equals("")) {
+						//if (stringFilterValue.equals("")) {
+						if (stringFilterValue.trim().equals("0") && fieldOptionList.contains("IGNORE_IF_ZERO")) {
 							validated = true;
 						} else {
 							doubleResultValue = Double.parseDouble(stringResultValue);
@@ -2761,14 +2767,20 @@ class XF100_Filter extends JPanel {
 				wrkStr = (String)xFTextField.getInternalValue();
 				if (!wrkStr.equals("")) {
 					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-						value = fieldID + operand + wrkStr;
+						if (!wrkStr.trim().equals("0") || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+							value = fieldID + operand + wrkStr;
+						}
 					} else {
 						if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME") || this.getBasicType().equals("DATETIME")) {
 							wrkStr = wrkStr.replace("-", "");
 							wrkStr = wrkStr.replace("/", "");
 							value = fieldID + operand + wrkStr;
 						} else {
-							value = fieldID + operand + "'" + wrkStr + "'";
+							if (operand.equals(" LIKE ")) {
+								value = fieldID + operand + "'%" + wrkStr + "%'";
+							} else {
+								value = fieldID + operand + "'" + wrkStr + "'";
+							}
 						}
 					}
 				}
@@ -3178,7 +3190,7 @@ class XF100_Column extends XFColumnScriptable {
 		if (!wrkStr.equals("")) {
 			fieldCaption = wrkStr;
 		}
-		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
+		int captionWidth = metrics.stringWidth(XFUtility.getLongestSegment(fieldCaption)) + 18;
 		//
 		String basicType = this.getBasicType();
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");

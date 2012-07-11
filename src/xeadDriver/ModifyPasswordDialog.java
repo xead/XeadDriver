@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -57,8 +57,6 @@ public class ModifyPasswordDialog extends JDialog {
 	private JPasswordField jPasswordNew = new JPasswordField();
 	private Session session = null;
 	private String userID = "";
-	//private Connection connection = null;
-	//private Statement statement = null;
 	private boolean modified = false;
 	private Image imageTitle;
 	private About about;
@@ -70,7 +68,6 @@ public class ModifyPasswordDialog extends JDialog {
 		 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.ModifyPasswordDialog.class.getResource("ikey.png"));
 		 	this.setIconImage(imageTitle);
 			this.session = session;
-			//this.connection = session.getConnection();
 			this.setTitle(res.getString("ModifyPassword"));
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
 			jPanelMain.setPreferredSize(new Dimension(290, 163));
@@ -89,7 +86,7 @@ public class ModifyPasswordDialog extends JDialog {
 			jLabelPasswordCurrent.setFont(new java.awt.Font("Dialog", 0, 12));
 			jLabelPasswordCurrent.setText(res.getString("PasswordCurrent"));
 			jPasswordCurrent.setFont(new java.awt.Font("Dialog", 0, 12));
-			jPasswordCurrent.setBounds(new Rectangle(105, 50, 140, 25));
+			jPasswordCurrent.setBounds(new Rectangle(105, 50, 160, 25));
 			jPasswordCurrent.setDocument(new LimitedDocument(10));
 			//
 			jLabelPasswordNew.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -97,7 +94,7 @@ public class ModifyPasswordDialog extends JDialog {
 			jLabelPasswordNew.setFont(new java.awt.Font("Dialog", 0, 12));
 			jLabelPasswordNew.setText(res.getString("PasswordNew"));
 			jPasswordNew.setFont(new java.awt.Font("Dialog", 0, 12));
-			jPasswordNew.setBounds(new Rectangle(105, 83, 140, 25));
+			jPasswordNew.setBounds(new Rectangle(105, 83, 160, 25));
 			jPasswordNew.setDocument(new LimitedDocument(10));
 			//
 			jButtonClose.setBounds(new Rectangle(10, 125, 80, 25));
@@ -137,8 +134,6 @@ public class ModifyPasswordDialog extends JDialog {
 		jTextFieldUserName.setText(session.getUserName());
 		jPanelMain.getRootPane().setDefaultButton(jButtonOK);
 		Dimension dlgSize = this.getPreferredSize();
-		//Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		//this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
         Rectangle screenRect = session.getMenuRectangle();
 		this.setLocation(((screenRect.width - dlgSize.width) / 2) + screenRect.x, ((screenRect.height - dlgSize.height) / 2) + screenRect.y);
 		this.pack();
@@ -200,16 +195,6 @@ public class ModifyPasswordDialog extends JDialog {
 				} else {
 					JOptionPane.showMessageDialog(this, res.getString("ModifyPasswordError2"));
 				}
-//				String sql = statementBuf.toString();
-//				statement = connection.createStatement();
-//				int count = statement.executeUpdate(sql);
-//				if (count == 1) {
-//					validated = true;
-//				} else {
-//					JOptionPane.showMessageDialog(this, res.getString("ModifyPasswordError2"));
-//				}
-//				//
-//				connection.commit();
 				//
 			} catch (Exception e) {
 				e.printStackTrace();

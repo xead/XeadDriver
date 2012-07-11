@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -39,12 +39,18 @@ import javax.swing.text.html.HTMLEditorKit;
 
 public class About extends JDialog implements ActionListener {
 	private static final long serialVersionUID = 1L;
-	private JPanel panelMain = new JPanel();
-	private JButton buttonOK = new JButton();
-	private JLabel labelProduct = new JLabel();
-	private JLabel labelVersion = new JLabel();
-	private JLabel labelCopyright = new JLabel();
-	private JLabel labelURL = new JLabel();
+	JPanel panel1 = new JPanel();
+	JPanel panel2 = new JPanel();
+	JPanel insetsPanel1 = new JPanel();
+	JPanel insetsPanel2 = new JPanel();
+	JPanel insetsPanel3 = new JPanel();
+	JButton buttonOK = new JButton();
+	JLabel imageLabel = new JLabel();
+	JLabel labelName = new JLabel();
+	JLabel labelVersion = new JLabel();
+	JLabel labelCopyright = new JLabel();
+	JLabel labelURL = new JLabel();
+	ImageIcon imageXead = new ImageIcon();
 	private HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
 	private Desktop desktop = Desktop.getDesktop();
 	private JDialog parent_;
@@ -62,49 +68,62 @@ public class About extends JDialog implements ActionListener {
 	}
 
 	private void jbInit() throws Exception  {
-		labelProduct.setFont(new java.awt.Font("Serif", 1, 16));
-		labelProduct.setHorizontalAlignment(SwingConstants.CENTER);
-		labelProduct.setText(LoginDialog.PRODUCT_NAME);
-		labelProduct.setBounds(new Rectangle(0, 11, 230, 18));
+	 	imageXead = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png")));
+		imageLabel.setIcon(imageXead);
+		panel1.setLayout(new BorderLayout());
+		panel1.setBorder(BorderFactory.createEtchedBorder());
+		panel2.setLayout(new BorderLayout());
+		insetsPanel2.setLayout(new BorderLayout());
+		insetsPanel2.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		insetsPanel2.setPreferredSize(new Dimension(75, 52));
+		insetsPanel2.add(imageLabel, BorderLayout.EAST);
+		//
+		labelName.setFont(new java.awt.Font("Serif", 1, 16));
+		labelName.setHorizontalAlignment(SwingConstants.CENTER);
+		labelName.setText(LoginDialog.PRODUCT_NAME);
+		labelName.setBounds(new Rectangle(-5, 9, 190, 18));
 		labelVersion.setFont(new java.awt.Font("Dialog", 0, 12));
 		labelVersion.setHorizontalAlignment(SwingConstants.CENTER);
 		labelVersion.setText(LoginDialog.FULL_VERSION);
-		labelVersion.setBounds(new Rectangle(0, 34, 230, 15));
+		labelVersion.setBounds(new Rectangle(-5, 32, 190, 15));
 		labelCopyright.setFont(new java.awt.Font("Dialog", 0, 12));
 		labelCopyright.setHorizontalAlignment(SwingConstants.CENTER);
 		labelCopyright.setText(LoginDialog.COPYRIGHT);
-		labelCopyright.setBounds(new Rectangle(0, 55, 230, 15));
-		labelURL.setBorder(null);
+		labelCopyright.setBounds(new Rectangle(-5, 53, 190, 15));
 		labelURL.setFont(new java.awt.Font("Dialog", 0, 12));
 		labelURL.setHorizontalAlignment(SwingConstants.CENTER);
 		labelURL.setText("<html><u><font color='blue'>" + LoginDialog.URL_DBC);
-		labelURL.setBounds(new Rectangle(0, 75, 230, 15));
+		labelURL.setBounds(new Rectangle(-5, 73, 190, 15));
 		labelURL.addMouseListener(new About_labelURL_mouseAdapter(this));
-		buttonOK.setFont(new java.awt.Font("Dialog", 0, 12));
+		insetsPanel3.setLayout(null);
+		insetsPanel3.setBorder(BorderFactory.createEmptyBorder(10, 60, 10, 10));
+		insetsPanel3.setPreferredSize(new Dimension(190, 80));
+		insetsPanel3.add(labelName, null);
+		insetsPanel3.add(labelVersion, null);
+		insetsPanel3.add(labelCopyright, null);
+		insetsPanel3.add(labelURL, null);
+		//
 		buttonOK.setText("OK");
-		buttonOK.setBounds(new Rectangle(86, 105, 56, 22));
 		buttonOK.addActionListener(this);
+		insetsPanel1.add(buttonOK, null);
 		//
-		panelMain.setLayout(null);
-		panelMain.add(labelProduct);
-		panelMain.add(labelVersion);
-		panelMain.add(labelCopyright);
-		panelMain.add(labelURL);
-		panelMain.add(buttonOK);
+		panel1.add(insetsPanel1, BorderLayout.SOUTH);
+		panel1.add(panel2, BorderLayout.NORTH);
+		panel2.setPreferredSize(new Dimension(270, 90));
+		panel2.add(insetsPanel2, BorderLayout.CENTER);
+		panel2.add(insetsPanel3, BorderLayout.EAST);
 		//
-		this.setResizable(false);
 		this.setTitle("About XEAD Driver");
-	 	this.setIconImage(Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png")));
-		this.setPreferredSize(new Dimension(233, 167));
-		this.getContentPane().add(panelMain, BorderLayout.CENTER);
+		this.getContentPane().add(panel1, null);
+		this.setResizable(false);
 	}
 
 	public void request() {
-		panelMain.getRootPane().setDefaultButton(buttonOK);
+		insetsPanel1.getRootPane().setDefaultButton(buttonOK);
 		Dimension dlgSize = this.getPreferredSize();
 		Dimension frmSize = parent_.getSize();
 		Point loc = parent_.getLocation();
-		this.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x, (frmSize.height - dlgSize.height) / 2 + loc.y);
+		this.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x + 30, (frmSize.height - dlgSize.height) / 2 + loc.y + 30);
 		this.pack();
 		super.setVisible(true);
 	}

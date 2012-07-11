@@ -1905,9 +1905,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		HSSFFont font = null;
 		XF310_DetailCell cellObject = null;
 		String imageFileName = "";
+		String wrkStr;
 		//
 		HSSFWorkbook workBook = new HSSFWorkbook();
-		String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
+		wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
 		HSSFSheet workSheet = workBook.createSheet(wrkStr);
 		workSheet.setDefaultRowHeight( (short) 300);
 		HSSFFooter workSheetFooter = workSheet.getFooter();
@@ -1958,7 +1959,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		styleDetailLabel.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
 		styleDetailLabel.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
 		styleDetailLabel.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+		styleDetailLabel.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
 		styleDetailLabel.setFont(fontHeader);
+		styleDetailLabel.setWrapText(true);
 		//
 		HSSFCellStyle styleDetailNumberLabel = workBook.createCellStyle();
 		styleDetailNumberLabel.setBorderBottom(HSSFCellStyle.BORDER_THIN);
@@ -1968,6 +1971,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		styleDetailNumberLabel.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
 		styleDetailNumberLabel.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
 		styleDetailNumberLabel.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+		styleDetailNumberLabel.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
 		styleDetailNumberLabel.setFont(fontHeader);
 		//
 		HSSFCellStyle styleDataInteger = workBook.createCellStyle();
@@ -2043,7 +2047,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				if (i == 0) {
 					cell.setCellStyle(styleDetailNumberLabel);
 				} else {
-					//cell.setCellStyle(styleDetailLabel);
 					for (int j = 0; j < detailColumnList.size(); j++) {
 						if (detailColumnList.get(j).getColumnIndex() == i) {
 							if (detailColumnList.get(j).getBasicType().equals("INTEGER")
@@ -2058,7 +2061,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 				Rectangle rect = jTableMain.getCellRect(0, i, true);
 				workSheet.setColumnWidth(i, rect.width * 40);
-				cell.setCellValue(new HSSFRichTextString(tableModelMain.getColumnName(i)));
+				wrkStr = XFUtility.getCaptionForCell(tableModelMain.getColumnName(i));
+				cell.setCellValue(new HSSFRichTextString(wrkStr));
 			}
 			//
 			for (int i = 0; i < tableModelMain.getRowCount(); i++) {
@@ -5424,7 +5428,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 		//
 		JLabel jLabel = new JLabel();
 		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
+		int captionWidth = metrics.stringWidth(XFUtility.getLongestSegment(fieldCaption)) + 18;
 		//
 		String basicType = this.getBasicType();
 		//

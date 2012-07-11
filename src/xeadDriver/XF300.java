@@ -1608,9 +1608,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		HSSFFont font = null;
 		TableCellReadOnly cellObject = null;
 		String imageFileName = "";
+		String wrkStr;
 		//
 		HSSFWorkbook workBook = new HSSFWorkbook();
-		String wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
+		wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
 		HSSFSheet workSheet = workBook.createSheet(wrkStr);
 		workSheet.setDefaultRowHeight( (short) 300);
 		HSSFFooter workSheetFooter = workSheet.getFooter();
@@ -1661,7 +1662,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		styleDetailLabel.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
 		styleDetailLabel.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
 		styleDetailLabel.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+		styleDetailLabel.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
 		styleDetailLabel.setFont(fontHeader);
+		styleDetailLabel.setWrapText(true);
 		//
 		HSSFCellStyle styleDetailNumberLabel = workBook.createCellStyle();
 		styleDetailNumberLabel.setBorderBottom(HSSFCellStyle.BORDER_THIN);
@@ -1671,6 +1674,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		styleDetailNumberLabel.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
 		styleDetailNumberLabel.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
 		styleDetailNumberLabel.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+		styleDetailNumberLabel.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
 		styleDetailNumberLabel.setFont(fontHeader);
 		//
 		HSSFCellStyle styleDataInteger = workBook.createCellStyle();
@@ -1765,7 +1769,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				}
 				Rectangle rect = jTableMainArray[jTabbedPane.getSelectedIndex()].getCellRect(0, i, true);
 				workSheet.setColumnWidth(i, rect.width * 40);
-				cell.setCellValue(new HSSFRichTextString(tableModelMainArray[jTabbedPane.getSelectedIndex()].getColumnName(i)));
+				wrkStr = XFUtility.getCaptionForCell(tableModelMainArray[jTabbedPane.getSelectedIndex()].getColumnName(i));
+				cell.setCellValue(new HSSFRichTextString(wrkStr));
 			}
 			//
 			for (int i = 0; i < tableModelMainArray[jTabbedPane.getSelectedIndex()].getRowCount(); i++) {
@@ -3282,7 +3287,7 @@ class XF300_DetailColumn extends XFColumnScriptable {
 		//
 		JLabel jLabel = new JLabel();
 		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
+		int captionWidth = metrics.stringWidth(XFUtility.getLongestSegment(fieldCaption)) + 18;
 		//
 		String basicType = this.getBasicType();
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
@@ -4448,7 +4453,8 @@ class XF300_Filter extends JPanel {
 					stringFilterValue = (String)xFTextField.getInternalValue();
 					//
 					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-						if (stringFilterValue.equals("")) {
+						//if (stringFilterValue.equals("")) {
+						if (stringFilterValue.trim().equals("0") && fieldOptionList.contains("IGNORE_IF_ZERO")) {
 							validated = true;
 						} else {
 							doubleResultValue = Double.parseDouble(stringResultValue);

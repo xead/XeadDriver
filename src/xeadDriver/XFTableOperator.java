@@ -1,18 +1,52 @@
 package xeadDriver;
 
+/*
+ * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * All rights reserved.
+ *
+ * This file is part of XEAD Driver.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the XEAD Project nor the names of its contributors
+ *       may be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.SocketException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JOptionPane;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import xeadServer.Relation;
@@ -71,7 +105,7 @@ public class XFTableOperator {
 			} else {
 				operation_ = "SELECT";
 			}
-			pos1 = sqlText_.toUpperCase().indexOf("FROM ") + 5;
+			pos1 = sqlText_.toUpperCase().indexOf(" FROM ") + 6;
 			pos2 = sqlText_.indexOf(" ", pos1);
 			if (pos2 < 0) {
 				pos2 = sqlText_.length();
@@ -381,12 +415,15 @@ public class XFTableOperator {
     }
     
     private int executeOnLocal() throws Exception {
-    	int count = -1;
+    	int processRowCount = -1;
+    	//
 		Connection connection = null;
 		Statement statement = null;
         //
 		if (!dbID.equals("") && !operation_.toUpperCase().equals("SELECT") && !operation_.toUpperCase().equals("COUNT")) {
-			//JOptionPane.showMessageDialog(null, "Update/Insert/Delete are not permitted to the read-only database.");
+			String message = "Update/Insert/Delete are not permitted to the read-only database.";
+			JOptionPane.showMessageDialog(null, message);
+			throw new Exception(message);
 		} else {
 			try {
 				if (dbID.equals("")) {
@@ -400,25 +437,22 @@ public class XFTableOperator {
 				}
 				if (connection != null) {
 					if (operation_.toUpperCase().equals("SELECT")) {
-						//connection.setReadOnly(true);
 						statement = connection.createStatement();
 						ResultSet result = statement.executeQuery(this.getSqlText());
 						relation_ = new Relation(result);
-						count = relation_.getRowCount();
+						processRowCount = relation_.getRowCount();
 						result.close();
 					} else {
 						if (operation_.toUpperCase().equals("COUNT")) {
-							//connection.setReadOnly(true);
 							statement = connection.createStatement();
 							ResultSet result = statement.executeQuery(this.getSqlText());
 							if (result.next()) {
-								count = result.getInt(1);
+								processRowCount = result.getInt(1);
 							}
 							result.close();
 						} else {
-							//connection.setReadOnly(false);
 							statement = connection.createStatement();
-							count = statement.executeUpdate(this.getSqlText());
+							processRowCount = statement.executeUpdate(this.getSqlText());
 						}
 					}
 					statement.close();
@@ -431,20 +465,26 @@ public class XFTableOperator {
 			}
 		}
 		//
-    	return count;
+    	return processRowCount;
     }
 
     private int executeOnServer() throws Exception {
-    	int rowCount = -1;
-		int retryCount = -1;
+    	int processRowCount = -1;
+    	//
         HttpPost httpPost = null;
 		List<NameValuePair> objValuePairs = null;
+		ObjectInputStream inputStream = null;
+		HttpClient httpClient = null;
         //
 		if (!dbID.equals("") && !operation_.toUpperCase().equals("SELECT") && !operation_.toUpperCase().equals("COUNT")) {
-			//JOptionPane.showMessageDialog(null, "Update/Insert/Delete are not permitted to the read-only database.");
+			String message = "Update/Insert/Delete are not permitted to the read-only database.";
+			JOptionPane.showMessageDialog(null, message);
+			throw new Exception(message);
 		} else {
 			if (!isAutoCommit_ && session_.getSessionID().equals("")) {
-				throw new Exception("Manual-commit transaction is not allowed with blank session ID.");
+				String message = "Manual-commit transaction is not allowed with blank session ID.";
+				JOptionPane.showMessageDialog(null, message);
+				throw new Exception(message);
 			} else {
 				try {
 					httpPost = new HttpPost(session_.getAppServerName());
@@ -460,41 +500,46 @@ public class XFTableOperator {
 					}
 					httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
 					//
-					while (retryCount < 3) {
+					try {
+						httpClient = new DefaultHttpClient();
+						HttpResponse response = httpClient.execute(httpPost);
+						HttpEntity responseEntity = response.getEntity();
+						if (responseEntity == null) {
+							if (logBuf_ != null) {
+								XFUtility.appendLog("Response is NULL.", logBuf_);
+							}
+						} else {
+							if (operation_.toUpperCase().equals("SELECT")) {
+								inputStream = new ObjectInputStream(responseEntity.getContent());
+								relation_ = (Relation)inputStream.readObject();
+								processRowCount = relation_.getRowCount();
+							} else {
+								processRowCount = Integer.parseInt(EntityUtils.toString(responseEntity));
+							}
+						}
+					} catch(Exception ex) {
+						String message = "HttpClient error with the application server.\n" + ex.getMessage();
+						if (logBuf_ != null) {
+							XFUtility.appendLog(message, logBuf_);
+						}
+						throw new Exception(message);
+					} finally {
 						try {
-							retryCount++;
-							HttpResponse response = session_.getHttpClient().execute(httpPost);
-							HttpEntity responseEntity = response.getEntity();
-							if (responseEntity == null) {
-								if (logBuf_ != null) {
-									XFUtility.appendLog("Response is NULL.", logBuf_);
-								}
-							} else {
-								if (operation_.toUpperCase().equals("SELECT")) {
-									ObjectInputStream ois = new ObjectInputStream(responseEntity.getContent());
-									relation_ = (Relation)ois.readObject();
-									rowCount = relation_.getRowCount();
-								} else {
-									rowCount = Integer.parseInt(EntityUtils.toString(responseEntity));
-								}
+							if (inputStream != null) {
+								inputStream.close();
 							}
-							retryCount = 3;
-						} catch(SocketException ex) {
-							if (retryCount < 3) {
-								Thread.sleep(1000);
-							} else {
-								if (logBuf_ != null) {
-									XFUtility.appendLog(ex.getMessage(), logBuf_);
-								}
-								throw new Exception("Communication error with the application server.\n" + ex.getMessage());
-							}
+						} catch(IOException e) {
+						}
+						if (httpClient != null) {
+							httpClient.getConnectionManager().shutdown();
 						}
 					}
 				} catch(Exception ex) {
+					String message = "HttpPost error with the application server.\n" + ex.getMessage();
 					if (logBuf_ != null) {
-						XFUtility.appendLog(ex.getMessage(), logBuf_);
+						XFUtility.appendLog(message, logBuf_);
 					}
-					throw ex;
+					throw new Exception(message);
 				} finally {
 					if (httpPost != null) {
 						httpPost.abort();
@@ -503,7 +548,7 @@ public class XFTableOperator {
 			}
 		}
 		//
-    	return rowCount;
+    	return processRowCount;
     }
     
     public void resetCursor() {

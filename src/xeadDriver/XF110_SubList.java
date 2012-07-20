@@ -5070,7 +5070,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 							dialog_.setErrorAndCloseFunction();
 						}
 					} else {
-						if (dataTypeOptionList.contains("KANJI")) {
+						if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 							fieldWidth = dataSize * 14 + 5;
 							if (!isNonEditableField) {
 								editor = new XF110_SubListDetailCellEditorWithTextField(this, dialog_);

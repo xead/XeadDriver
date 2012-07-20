@@ -5450,7 +5450,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 						}
 					}
 				}
-				if (dataTypeOptionList.contains("KANJI")) {
+				if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 					fieldWidth = dataSize * 14 + 5;
 				} else {
 					fieldWidth = dataSize * 7 + 12;
@@ -5461,7 +5461,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 			} else {
 				wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 				if (!wrkStr.equals("")) {
-					if (dataTypeOptionList.contains("KANJI")) {
+					if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 						fieldWidth = dataSize * 14 + 5;
 					} else {
 						fieldWidth = dataSize * 7 + 12;

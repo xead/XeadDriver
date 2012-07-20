@@ -3309,7 +3309,7 @@ class XF300_DetailColumn extends XFColumnScriptable {
 				dialog_.setErrorAndCloseFunction();
 			}
 		} else {
-			if (dataTypeOptionList.contains("KANJI")) {
+			if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 				fieldWidth = dataSize * 14 + 5;
 			} else {
 				if (dataTypeOptionList.contains("FYEAR")) {

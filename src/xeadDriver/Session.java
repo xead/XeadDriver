@@ -2158,6 +2158,14 @@ public class Session extends JFrame {
 		return tempFile;
 	}
 
+	public XFTableOperator createTableOperator(String oparation, String tableID) {
+		return new XFTableOperator(this, null, oparation, tableID);
+	}
+
+	public XFTableOperator createTableOperator(String sqlText) {
+		return new XFTableOperator(this, null, sqlText);
+	}
+
 	//DatabaseMetaData getDatabaseMetaData() {
 	//	return databaseMetaData;
 	//}
@@ -2422,7 +2430,7 @@ public class Session extends JFrame {
 	}
 	
 	public void setAttribute(String id, String value) {
-		attributeMap.put(id, value);
+		attributeMap.put(id.trim(), value.trim());
 	}
 
 	public NodeList getFunctionList() {

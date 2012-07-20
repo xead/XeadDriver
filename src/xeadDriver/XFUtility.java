@@ -413,7 +413,6 @@ public class XFUtility {
 		StringTokenizer workTokenizer = new StringTokenizer(keywordValue, ":" );
 		if (workTokenizer.countTokens() == 1) {
 			defaultValue = workTokenizer.nextToken().trim();
-			
 		}
 		if (workTokenizer.countTokens() == 2) {
 			//
@@ -1564,7 +1563,7 @@ public class XFUtility {
 		int length = dataSize;
 		//
 		if (decimalSize > 0) {
-			length = length + decimalSize + 1;
+			length = length + 1;
 		}
 		if (acceptMinus) {
 			length = length + 1;
@@ -2255,6 +2254,13 @@ class XFSessionForScript {
 			String fileName, String attachedName, String charset) {
 		session_.sendMail(addressFrom, addressTo, addressCc,
 				subject, message, fileName, attachedName, charset);
+	}
+
+	public XFTableOperator createTableOperator(String oparation, String tableID) {
+		return new XFTableOperator(session_, null, oparation, tableID);
+	}
+	public XFTableOperator createTableOperator(String sqlText) {
+		return new XFTableOperator(session_, null, sqlText);
 	}
 }
 

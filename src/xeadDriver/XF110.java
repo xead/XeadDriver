@@ -131,7 +131,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	public Bindings engineScriptBindings;
 	private String scriptNameRunning = "";
 	private final int FONT_SIZE = 14;
-	//private final int ROW_HEIGHT = 18;
 	private int initialReadCount = 0;
 	private double filterWidth = 0;
 	private ByteArrayOutputStream exceptionLog;
@@ -334,16 +333,16 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
 				this.setLocation(screenRect.x, screenRect.y);
 			} else {
-				workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
-				int width = Integer.parseInt(workTokenizer.nextToken());
-				int height = Integer.parseInt(workTokenizer.nextToken());
-				this.setPreferredSize(new Dimension(width, height));
-				int posX = ((screenRect.width - width) / 2) + screenRect.x;
-				int posY = ((screenRect.height - height) / 2) + screenRect.y;
-				this.setLocation(posX, posY);
+				if (!functionElement_.getAttribute("Size").equals("AUTO")) {
+					workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
+					int width = Integer.parseInt(workTokenizer.nextToken());
+					int height = Integer.parseInt(workTokenizer.nextToken());
+					this.setPreferredSize(new Dimension(width, height));
+					int posX = ((screenRect.width - width) / 2) + screenRect.x;
+					int posY = ((screenRect.height - height) / 2) + screenRect.y;
+					this.setLocation(posX, posY);
+				}
 			}
-			this.pack();
-			jSplitPaneCenter.setDividerLocation(this.getPreferredSize().height - 118);
 
 			//////////////////////////////////////////////
 			// Setup the primary table and refer tables //
@@ -354,67 +353,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			sortingList = XFUtility.getSortedListModel(referElementList, "Order");
 			for (int i = 0; i < sortingList.getSize(); i++) {
 				referTableList.add(new XF110_ReferTable((org.w3c.dom.Element)sortingList.getElementAt(i), this));
-			}
-
-			///////////////////////////
-			// Setup Filter fields ////
-			///////////////////////////
-			filterList.clear();
-			jPanelCenter.remove(jPanelTop);
-			jPanelTop.remove(jPanelTopEast);
-			jPanelFilter.removeAll();
-			anyFilterIsEditable = false;
-			NodeList FilterFieldList = functionElement_.getElementsByTagName("Filter");
-			sortingList = XFUtility.getSortedListModel(FilterFieldList, "Order");
-			if (sortingList.getSize() <= 2) {
-				jPanelTop.setPreferredSize(new Dimension(600, 45));
-				gridLayoutFilter.setColumns(2);
-				gridLayoutFilter.setRows(1);
-				filterWidth = (this.getPreferredSize().getWidth() - 90) / 2;
-			}
-			if (sortingList.getSize() == 3) {
-				jPanelTop.setPreferredSize(new Dimension(600, 45));
-				gridLayoutFilter.setColumns(3);
-				gridLayoutFilter.setRows(1);
-				filterWidth = (this.getPreferredSize().getWidth() - 90) / 3;
-			}
-			if (sortingList.getSize() == 4) {
-				jPanelTop.setPreferredSize(new Dimension(600, 45));
-				gridLayoutFilter.setColumns(4);
-				gridLayoutFilter.setRows(1);
-				filterWidth = (this.getPreferredSize().getWidth() - 90) / 4;
-			}
-			if (sortingList.getSize() >= 5 && sortingList.getSize() <= 6) {
-				jPanelTop.setPreferredSize(new Dimension(600, 75));
-				gridLayoutFilter.setColumns(3);
-				gridLayoutFilter.setRows(2);
-				filterWidth = (this.getPreferredSize().getWidth() - 90) / 3;
-			}
-			if (sortingList.getSize() >= 7) {
-				jPanelTop.setPreferredSize(new Dimension(600, 75));
-				gridLayoutFilter.setColumns(4);
-				gridLayoutFilter.setRows(2);
-				filterWidth = (this.getPreferredSize().getWidth() - 90) / 4;
-			}
-			for (int i = 0; i < sortingList.getSize() && i < 8; i++) {
-				filterList.add(new XF110_Filter((org.w3c.dom.Element)sortingList.getElementAt(i), this));
-				//filterList.get(i).setParmMapValue(parmMap_);
-				if (!filterList.get(i).isValidatedWithParmMapValue(parmMap_)) {
-					JOptionPane.showMessageDialog(this, res.getString("FunctionError47") + filterList.get(i).getCaption() + res.getString("FunctionError48"));
-					isToBeCanceled = true;
-					break;
-				}
-				if (filterList.get(i).isEditable()) {
-					anyFilterIsEditable = true;
-				}
-				jPanelFilter.add(filterList.get(i));
-			}
-			if (anyFilterIsEditable) {
-				jPanelTop.add(jPanelTopEast, BorderLayout.EAST);
-			}
-			if (filterList.size() >= 1) {
-				jPanelCenter.add(jPanelTop, BorderLayout.NORTH);
-				filterList.get(0).requestFocus();
 			}
 
 			//////////////////////////////
@@ -450,14 +388,32 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			column.setCellRenderer(new CheckBoxRenderer());
 			column.setCellEditor(new DefaultCellEditor(new JCheckBox()));
 			column.setHeaderRenderer(new CheckBoxHeaderRenderer(new CheckBoxHeaderListener()));
+			int width = 38 + 22;
 			for (int i = 0; i < columnList.size(); i++) {
 				if (columnList.get(i).isVisibleOnPanel()) {
 					column = jTableMain.getColumnModel().getColumn(columnList.get(i).getColumnIndex());
 					column.setPreferredWidth(columnList.get(i).getWidth());
+					width = width + columnList.get(i).getWidth();
 					column.setCellRenderer(columnList.get(i).getCellRenderer());
 					column.setHeaderRenderer(columnList.get(i).getHeaderRenderer());
 				}
 			}
+			if (functionElement_.getAttribute("Size").equals("AUTO")) {
+				width = width + 50;
+				if (width < 800) {
+					width = 800;
+				}
+				if (width > screenRect.width) {
+					width = screenRect.width;
+				}
+				int height = screenRect.height * width / screenRect.width;
+				this.setPreferredSize(new Dimension(width, height));
+				int posX = ((screenRect.width - width) / 2) + screenRect.x;
+				int posY = ((screenRect.height - height) / 2) + screenRect.y;
+				this.setLocation(posX, posY);
+			}
+			this.pack();
+			jSplitPaneCenter.setDividerLocation(this.getPreferredSize().height - 118);
 			//
 			// Add primary table key fields as HIDDEN columns if they are not on the column list //
 			for (int i = 0; i < primaryTable_.getKeyFieldIDList().size(); i++) {
@@ -478,13 +434,13 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					columnList.add(new XF110_Column(workTableID, workAlias, workFieldID, this));
 				}
 			}
-			//
-			// Add filter fields as HIDDEN columns if they are not on the column list //
-			for (int i = 0; i < filterList.size(); i++) {
-				if (!existsInColumnList(filterList.get(i).getTableID(), filterList.get(i).getTableAlias(), filterList.get(i).getFieldID())) {
-					columnList.add(new XF110_Column(filterList.get(i).getTableID(), filterList.get(i).getTableAlias(), filterList.get(i).getFieldID(), this));
-				}
-			}
+//			//
+//			// Add filter fields as HIDDEN columns if they are not on the column list //
+//			for (int i = 0; i < filterList.size(); i++) {
+//				if (!existsInColumnList(filterList.get(i).getTableID(), filterList.get(i).getTableAlias(), filterList.get(i).getFieldID())) {
+//					columnList.add(new XF110_Column(filterList.get(i).getTableID(), filterList.get(i).getTableAlias(), filterList.get(i).getFieldID(), this));
+//				}
+//			}
 			//
 			// Analyze fields in script and add them as HIDDEN columns if necessary //
 			for (int i = 0; i < primaryTable_.getScriptList().size(); i++) {
@@ -535,6 +491,74 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 						}
 					}
 				}
+			}
+
+			///////////////////////////
+			// Setup Filter fields ////
+			///////////////////////////
+			filterList.clear();
+			jPanelCenter.remove(jPanelTop);
+			jPanelTop.remove(jPanelTopEast);
+			jPanelFilter.removeAll();
+			anyFilterIsEditable = false;
+			NodeList FilterFieldList = functionElement_.getElementsByTagName("Filter");
+			sortingList = XFUtility.getSortedListModel(FilterFieldList, "Order");
+			if (sortingList.getSize() <= 2) {
+				jPanelTop.setPreferredSize(new Dimension(600, 45));
+				gridLayoutFilter.setColumns(2);
+				gridLayoutFilter.setRows(1);
+				filterWidth = (this.getPreferredSize().getWidth() - 90) / 2;
+			}
+			if (sortingList.getSize() == 3) {
+				jPanelTop.setPreferredSize(new Dimension(600, 45));
+				gridLayoutFilter.setColumns(3);
+				gridLayoutFilter.setRows(1);
+				filterWidth = (this.getPreferredSize().getWidth() - 90) / 3;
+			}
+			if (sortingList.getSize() == 4) {
+				jPanelTop.setPreferredSize(new Dimension(600, 45));
+				gridLayoutFilter.setColumns(4);
+				gridLayoutFilter.setRows(1);
+				filterWidth = (this.getPreferredSize().getWidth() - 90) / 4;
+			}
+			if (sortingList.getSize() >= 5 && sortingList.getSize() <= 6) {
+				jPanelTop.setPreferredSize(new Dimension(600, 75));
+				gridLayoutFilter.setColumns(3);
+				gridLayoutFilter.setRows(2);
+				filterWidth = (this.getPreferredSize().getWidth() - 90) / 3;
+			}
+			if (sortingList.getSize() >= 7) {
+				jPanelTop.setPreferredSize(new Dimension(600, 75));
+				gridLayoutFilter.setColumns(4);
+				gridLayoutFilter.setRows(2);
+				filterWidth = (this.getPreferredSize().getWidth() - 90) / 4;
+			}
+			for (int i = 0; i < sortingList.getSize() && i < 8; i++) {
+				filterList.add(new XF110_Filter((org.w3c.dom.Element)sortingList.getElementAt(i), this));
+				if (!filterList.get(i).isValidatedWithParmMapValue(parmMap_)) {
+					JOptionPane.showMessageDialog(this, res.getString("FunctionError47") + filterList.get(i).getCaption() + res.getString("FunctionError48"));
+					isToBeCanceled = true;
+					break;
+				}
+				if (filterList.get(i).isEditable()) {
+					anyFilterIsEditable = true;
+				}
+				jPanelFilter.add(filterList.get(i));
+			}
+			if (anyFilterIsEditable) {
+				jPanelTop.add(jPanelTopEast, BorderLayout.EAST);
+			}
+			if (filterList.size() >= 1) {
+				//
+				// Add filter fields as HIDDEN columns if they are not on the column list //
+				for (int i = 0; i < filterList.size(); i++) {
+					if (!existsInColumnList(filterList.get(i).getTableID(), filterList.get(i).getTableAlias(), filterList.get(i).getFieldID())) {
+						columnList.add(new XF110_Column(filterList.get(i).getTableID(), filterList.get(i).getTableAlias(), filterList.get(i).getFieldID(), this));
+					}
+				}
+				//
+				jPanelCenter.add(jPanelTop, BorderLayout.NORTH);
+				filterList.get(0).requestFocus();
 			}
 
 			//////////////////////////////////////////////
@@ -810,7 +834,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 									}
 								}
 								tableModelMain.addRow(Cell);
-								jTableMain.paintImmediately(new Rectangle(0,0, jTableMain.getWidth(), jTableMain.getHeight()));
 							} else {
 								columnValueList = new ArrayList<Object>();
 								for (int i = 0; i < columnList.size(); i++) {
@@ -847,6 +870,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			}
+			primaryTableOp = null; //clear heap//
 			//
 			if (!primaryTable_.hasOrderByAsItsOwnFields()) {
 				WorkingRow[] workingRowArray = workingRowList.toArray(new WorkingRow[0]);
@@ -859,7 +883,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 						Cell[j+2] = workingRowArray[i].getColumnValueList().get(j);
 					}
 					tableModelMain.addRow(Cell);
-					jTableMain.paintImmediately(new Rectangle(0,0, jTableMain.getWidth(), jTableMain.getHeight()));
 				}
 			}
 			//
@@ -3289,7 +3312,7 @@ class XF110_Column extends XFColumnScriptable {
 				dialog_.setErrorAndCloseFunction();
 			}
 		} else {
-			if (dataTypeOptionList.contains("KANJI")) {
+			if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 				fieldWidth = dataSize * 14 + 5;
 			} else {
 				if (dataTypeOptionList.contains("FYEAR")) {

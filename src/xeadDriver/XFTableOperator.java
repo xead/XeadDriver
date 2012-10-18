@@ -51,6 +51,10 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import xeadServer.Relation;
 
+////////////////////////////////////////////////////////////////
+// This is a public class used in Table-Script.               //
+// Note that public classes are defined in its own java file. //
+////////////////////////////////////////////////////////////////
 public class XFTableOperator {
     private Session session_ = null;
     private Relation relation_ = null;

@@ -74,7 +74,6 @@ import javax.mail.internet.*;
 
 public class Session extends JFrame {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private String systemName = "";
 	private String version = "";
 	private String sessionID = "";
@@ -152,8 +151,8 @@ public class Session extends JFrame {
 	private org.w3c.dom.Document domDocument;
 	private Desktop desktop = Desktop.getDesktop();
 	private DigestAdapter digestAdapter = null;
-	private LoginDialog loginDialog = null;
-	private ModifyPasswordDialog modifyPasswordDialog = null;
+	private DialogLogin loginDialog = null;
+	private DialogModifyPassword modifyPasswordDialog = null;
 	private FunctionLauncher functionLauncher = new FunctionLauncher(this);
 	private SortableDomElementListModel sortingList;
 	private NodeList functionList = null;
@@ -195,7 +194,7 @@ public class Session extends JFrame {
 						application.hideSplash();
 					}
 				});
-				JOptionPane.showMessageDialog(null, res.getString("SessionError1"));
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError1"));
 				System.exit(0);
 			} else {
 				loginDialog = setupVariantsToGetLoginDialog(fileName, loginUser, loginPassword);
@@ -222,23 +221,23 @@ public class Session extends JFrame {
 				}
 			}
 		} catch(ScriptException e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError0") + "\n" + e.getMessage());
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionError0") + "\n" + e.getMessage());
 			noErrorsOccured = false;
 			closeSession(false);
 			System.exit(0);
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(null, res.getString("LogInError3") + "\n" + e.getMessage());
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("LogInError3") + "\n" + e.getMessage());
 			noErrorsOccured = false;
 			closeSession(false);
 			System.exit(0);
 		}
 	}
 	
-	private LoginDialog setupVariantsToGetLoginDialog(String fileName, String user, String password) throws Exception {
+	private DialogLogin setupVariantsToGetLoginDialog(String fileName, String user, String password) throws Exception {
 		////////////////////////////////////////////////////////////////
 		// Parse XML formatted data into DOM with file name requested //
 		////////////////////////////////////////////////////////////////
-		application.setTextOnSplash(res.getString("SplashMessage1"));
+		application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage1"));
 		if (fileName.startsWith("http:")
 				|| fileName.startsWith("https:")
 				|| fileName.startsWith("file:")) {
@@ -250,7 +249,7 @@ public class Session extends JFrame {
         		parser.parse(new InputSource(inputStream));
         		domDocument = parser.getDocument();
         	} catch (Exception e) {
-        		JOptionPane.showMessageDialog(this, res.getString("SessionError2") + fileName + res.getString("SessionError3") + "\n" + e.getMessage());
+        		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError2") + fileName + XFUtility.RESOURCE.getString("SessionError3") + "\n" + e.getMessage());
         		return null;
         	}
 		} else {
@@ -262,11 +261,11 @@ public class Session extends JFrame {
 					parser.parse(new InputSource(new FileInputStream(fileName)));
 					domDocument = parser.getDocument();
 	        	} catch (Exception e) {
-	        		JOptionPane.showMessageDialog(this, res.getString("SessionError2") + fileName + res.getString("SessionError3") + "\n" + e.getMessage());
+	        		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError2") + fileName + XFUtility.RESOURCE.getString("SessionError3") + "\n" + e.getMessage());
 	        		return null;
 	        	}
 	        } else {
-	    		JOptionPane.showMessageDialog(this, res.getString("SessionError21") + fileName + res.getString("SessionError22"));
+	    		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError21") + fileName + XFUtility.RESOURCE.getString("SessionError22"));
 	    		return null;
 	        }
 		}
@@ -385,9 +384,9 @@ public class Session extends JFrame {
 				}
 			} catch (Exception e) {
 				if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("jdbc:derby://")) {
-					JOptionPane.showMessageDialog(this, res.getString("SessionError4") + systemName + res.getString("SessionError5"));
+					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
 				} else {
-					JOptionPane.showMessageDialog(this, res.getString("SessionError6") + databaseName + res.getString("SessionError7") + e.getMessage());
+					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + databaseName + XFUtility.RESOURCE.getString("SessionError7") + e.getMessage());
 				}
 				return null;
 			}
@@ -413,7 +412,7 @@ public class Session extends JFrame {
 			try {
 				baseFont = BaseFont.createFont(fontElement.getAttribute("PDFFontName"), fontElement.getAttribute("PDFEncoding"), false);
 			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null, res.getString("SessionError8") + fontElement.getAttribute("FontName") + res.getString("SessionError9"));
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError8") + fontElement.getAttribute("FontName") + XFUtility.RESOURCE.getString("SessionError9"));
 				baseFont = BaseFont.createFont("Times-Roman", "Cp1252", false);
 			}
 			baseFontMap.put(wrkStr, baseFont);
@@ -456,9 +455,9 @@ public class Session extends JFrame {
 				jScrollPaneNews.getViewport().add(labelImage);
 			} else {
 				if (welcomePageURL.equals("")) {
-					jEditorPaneNews.setText(res.getString("SessionError10"));
+					jEditorPaneNews.setText(XFUtility.RESOURCE.getString("SessionError10"));
 				} else {
-					jEditorPaneNews.setText(res.getString("SessionError11") + welcomePageURL + res.getString("SessionError12"));
+					jEditorPaneNews.setText(XFUtility.RESOURCE.getString("SessionError11") + welcomePageURL + XFUtility.RESOURCE.getString("SessionError12"));
 				}
 			}
 		}
@@ -521,7 +520,7 @@ public class Session extends JFrame {
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
 	    jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, 14));
-		jTextAreaMessages.setText(res.getString("SessionMessage"));
+		jTextAreaMessages.setText(XFUtility.RESOURCE.getString("SessionMessage"));
 		jTextAreaMessages.setFocusable(false);
 	    jTextAreaMessages.setLineWrap(true);
 	    jSplitPane2.setOrientation(JSplitPane.VERTICAL_SPLIT);
@@ -569,12 +568,12 @@ public class Session extends JFrame {
 	    }
 
         digestAdapter = new DigestAdapter("MD5");
-	    modifyPasswordDialog = new ModifyPasswordDialog(this);
+	    modifyPasswordDialog = new DialogModifyPassword(this);
 
 	    /////////////////////////
 	    // Return Login Dialog //
 	    /////////////////////////
-		return new LoginDialog(this, user, password);
+		return new DialogLogin(this, user, password);
 	}
 	
 	private void setupSessionAndMenus() throws ScriptException, Exception {
@@ -736,20 +735,20 @@ public class Session extends JFrame {
 
 	public void browseHelp() {
 		if (helpURLArray[jTabbedPaneMenu.getSelectedIndex()].equals("")) {
-			JOptionPane.showMessageDialog(null, res.getString("SessionError16") + menuCaptionArray[jTabbedPaneMenu.getSelectedIndex()] + res.getString("SessionError17"));
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError16") + menuCaptionArray[jTabbedPaneMenu.getSelectedIndex()] + XFUtility.RESOURCE.getString("SessionError17"));
 		} else {
 			try {
 				setCursor(new Cursor(Cursor.WAIT_CURSOR));
 				desktop.browse(new URI(helpURLArray[jTabbedPaneMenu.getSelectedIndex()]));
 			} catch (URISyntaxException ex) {
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(null, res.getString("SessionError18") + menuCaptionArray[jTabbedPaneMenu.getSelectedIndex()] + res.getString("SessionError19") + ex.getMessage());
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError18") + menuCaptionArray[jTabbedPaneMenu.getSelectedIndex()] + XFUtility.RESOURCE.getString("SessionError19") + ex.getMessage());
 			} catch (IOException ex) {
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(null, res.getString("SessionError18") + menuCaptionArray[jTabbedPaneMenu.getSelectedIndex()] + res.getString("SessionError19") + ex.getMessage());
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError18") + menuCaptionArray[jTabbedPaneMenu.getSelectedIndex()] + XFUtility.RESOURCE.getString("SessionError19") + ex.getMessage());
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(null, res.getString("SessionError18") + menuCaptionArray[jTabbedPaneMenu.getSelectedIndex()] + res.getString("SessionError19") + ex.getMessage());
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError18") + menuCaptionArray[jTabbedPaneMenu.getSelectedIndex()] + XFUtility.RESOURCE.getString("SessionError19") + ex.getMessage());
 			} finally {
 				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}
@@ -806,7 +805,7 @@ public class Session extends JFrame {
 					int mSeq = getMSeqOfDate(dateValue);
 					int yyyyMSeqTarget = yyyy * 100 + mSeq;
 					if (yyyyMSeqTarget < yyyyMSeq) {
-						message = res.getString("FunctionError49");
+						message = XFUtility.RESOURCE.getString("FunctionError49");
 					}
 				}
 			}
@@ -973,7 +972,7 @@ public class Session extends JFrame {
 				operator = new XFTableOperator(this, null, sql, true);
 				operator.execute();
 			} else {
-				JOptionPane.showMessageDialog(null, res.getString("SessionError13") + numberID + res.getString("SessionError14"));
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError13") + numberID + XFUtility.RESOURCE.getString("SessionError14"));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -1383,15 +1382,13 @@ public class Session extends JFrame {
 				}
 			}
 		}
-		//
-		//httpClient.getConnectionManager().shutdown();
 	}
 
 	protected void processWindowEvent(WindowEvent e) {
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-			Object[] bts = {res.getString("LogOut"), res.getString("Cancel")};
-			int rtn = JOptionPane.showOptionDialog(this, res.getString("FunctionMessage55"),
-					systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[1]);
+			Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
+			int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
+					systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 			if (rtn == 0) {
 				super.processWindowEvent(e);
 				closeSession(true);
@@ -1543,7 +1540,7 @@ public class Session extends JFrame {
 		if (e.getKeyCode() == KeyEvent.VK_F12) {
 			boolean modified = modifyPasswordDialog.passwordModified();
 			if (modified) {
-				jTextAreaMessages.setText(res.getString("PasswordModified"));
+				jTextAreaMessages.setText(XFUtility.RESOURCE.getString("PasswordModified"));
 			}
 		}
 		//
@@ -1725,7 +1722,7 @@ public class Session extends JFrame {
 			int countOfRuccursiveCalls = 0;
 			//
 			if (functionElement == null) {
-				JOptionPane.showMessageDialog(null, res.getString("SessionError15"));
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError15"));
 			} else {
 				String functionID = functionElement.getAttribute("ID");
 				for (int i = 0; i < 10; i++) {
@@ -1741,7 +1738,7 @@ public class Session extends JFrame {
 							} else {
 								if (xF000[i].getFunctionID().equals(functionID)) {
 									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError20"));
 										returnMap.put("RETURN_CODE", "01");
 										break;
 									} else {
@@ -1763,7 +1760,7 @@ public class Session extends JFrame {
 							} else {
 								if (xF100[i].getFunctionID().equals(functionID)) {
 									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError20"));
 										returnMap.put("RETURN_CODE", "01");
 										break;
 									} else {
@@ -1785,7 +1782,7 @@ public class Session extends JFrame {
 							} else {
 								if (xF110[i].getFunctionID().equals(functionID)) {
 									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError20"));
 										returnMap.put("RETURN_CODE", "01");
 										break;
 									} else {
@@ -1807,7 +1804,7 @@ public class Session extends JFrame {
 							} else {
 								if (xF200[i].getFunctionID().equals(functionID)) {
 									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError20"));
 										returnMap.put("RETURN_CODE", "01");
 										break;
 									} else {
@@ -1829,7 +1826,7 @@ public class Session extends JFrame {
 							} else {
 								if (xF290[i].getFunctionID().equals(functionID)) {
 									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError20"));
 										returnMap.put("RETURN_CODE", "01");
 										break;
 									} else {
@@ -1851,7 +1848,7 @@ public class Session extends JFrame {
 							} else {
 								if (xF300[i].getFunctionID().equals(functionID)) {
 									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError20"));
 										returnMap.put("RETURN_CODE", "01");
 										break;
 									} else {
@@ -1873,7 +1870,7 @@ public class Session extends JFrame {
 							} else {
 								if (xF310[i].getFunctionID().equals(functionID)) {
 									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError20"));
 										returnMap.put("RETURN_CODE", "01");
 										break;
 									} else {
@@ -1895,7 +1892,7 @@ public class Session extends JFrame {
 							} else {
 								if (xF390[i].getFunctionID().equals(functionID)) {
 									if (countOfRuccursiveCalls >= 1) {
-										JOptionPane.showMessageDialog(null, res.getString("SessionError20"));
+										JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError20"));
 										returnMap.put("RETURN_CODE", "01");
 										break;
 									} else {
@@ -1927,7 +1924,7 @@ public class Session extends JFrame {
 				}
 			} else {
 				if (optionName.equals("LOGOUT")) {
-					optionName_ = res.getString("LogOut");
+					optionName_ = XFUtility.RESOURCE.getString("LogOut");
 					isLogoutOption = true;
 				} else {
 					optionName_ = optionName;
@@ -2058,7 +2055,7 @@ public class Session extends JFrame {
     			responseDoc = responseDocParser.getDocument();
     			org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("groovewebservice").item(0);
     			if (rootNode.getElementsByTagName("address").getLength() == 0) {
-    				JOptionPane.showMessageDialog(null, res.getString("FunctionMessage54") + "\n" + zipNo);
+    				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage54") + "\n" + zipNo);
     			} else {
     				org.w3c.dom.Element addressNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("address").item(0);
     				org.w3c.dom.Element prefectureNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("prefecture").item(0);
@@ -2068,7 +2065,7 @@ public class Session extends JFrame {
     			}
 	        }  
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionMessage53") + "\n" + ex.getMessage());
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
 		} finally {
 			httpClient.getConnectionManager().shutdown();
 			try {
@@ -2264,7 +2261,7 @@ public class Session extends JFrame {
 		}
 		//
 		if (elementOfFunction == null) {
-			throw new Exception(res.getString("FunctionError9") + functionID + res.getString("FunctionError10"));
+			throw new Exception(XFUtility.RESOURCE.getString("FunctionError9") + functionID + XFUtility.RESOURCE.getString("FunctionError10"));
 		} else {
 			returnMap = functionLauncher.execute(elementOfFunction, parmMap);
 		}
@@ -2490,7 +2487,7 @@ public class Session extends JFrame {
 		return element2;
 	}
 	
-	String getTableName(String tableID) {
+	public String getTableName(String tableID) {
 		String tableName = "";
 		org.w3c.dom.Element element1;
 		org.w3c.dom.Element element2 = null;
@@ -2503,6 +2500,10 @@ public class Session extends JFrame {
 			}
 		}
 		return tableName;
+	}
+	
+	public NodeList getTableNodeList() {
+		return tableList;
 	}
 	
 	public org.w3c.dom.Element getFieldElement(String tableID, String fieldID) {

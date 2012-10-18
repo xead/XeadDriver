@@ -31,6 +31,10 @@ package xeadDriver;
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+////////////////////////////////////////////////////////////////
+// This is a public class used in Table-Script.               //
+// Note that public classes are defined in its own java file. //
+////////////////////////////////////////////////////////////////
 public class XFColumnScriptable {
 	public Object getValue(){
 		return null;

@@ -33,6 +33,10 @@ package xeadDriver;
 
 import javax.swing.*;
 
+////////////////////////////////////////////////////////////////
+// This is a public class used in Table-Script.               //
+// Note that public classes are defined in its own java file. //
+////////////////////////////////////////////////////////////////
 public class XFFieldScriptable extends JPanel {
 	private static final long serialVersionUID = 1L;
 	public Object getValue(){

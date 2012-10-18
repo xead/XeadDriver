@@ -32,29 +32,14 @@ package xeadDriver;
  */
 
 import java.awt.*;
-
 import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.PlainDocument;
 import java.awt.event.*;
 import java.util.Date;
-import java.util.ResourceBundle;
 
-public class LoginDialog extends JDialog {
+public class DialogLogin extends JDialog {
 	private static final long serialVersionUID = 1L;
-	/**
-	 * Application Information
-	 */
-	public static final String APPLICATION_NAME  = "XEAD Driver 1.1";
-	public static final String FULL_VERSION  = "V1.R1.M13";
-	public static final String FORMAT_VERSION  = "1.1";
-	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String COPYRIGHT = "Copyright 2012 DBC,Ltd.";
-	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
-	/**
-	 * Private variants
-	 */
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private JPanel jPanelMain = new JPanel();
 	private JButton jButtonOK = new JButton();
 	private JButton jButtonClose = new JButton();
@@ -66,53 +51,53 @@ public class LoginDialog extends JDialog {
 	private Session session = null;
 	private String userID, userName, userEmployeeNo, userEmailAddress, userMenus = "";
 	private boolean validated = false;
-	private About about;
+	private DialogAbout aboutDialog;
 
-	public LoginDialog(Session session, String loginUser, String loginPassword) {
+	public DialogLogin(Session session, String loginUser, String loginPassword) {
 		super(session, "", true);
 		try {
 			org.w3c.dom.Element fieldElement;
 			int fieldSize;
-			//
+
 			this.session = session;
 			this.setTitle(session.getSystemName() + " " + session.getVersion());
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
 			jPanelMain.setPreferredSize(new Dimension(290, 130));
 			jPanelMain.setLayout(null);
-			//
+
 			jLabelUserID.setHorizontalAlignment(SwingConstants.RIGHT);
 			jLabelUserID.setBounds(new Rectangle(10, 17, 80, 25));
 			jLabelUserID.setFont(new java.awt.Font("Dialog", 0, 14));
-			jLabelUserID.setText(res.getString("UserID"));
+			jLabelUserID.setText(XFUtility.RESOURCE.getString("UserID"));
 			fieldElement = this.session.getFieldElement(session.getTableNameOfUser(), "IDUSER");
 			fieldSize = Integer.parseInt(fieldElement.getAttribute("Size"));
 			jTextFieldUserID.setFont(new java.awt.Font("Dialog", 0, 14));
 			jTextFieldUserID.setBounds(new Rectangle(100, 17, fieldSize * 10, 25));
 			jTextFieldUserID.setDocument(new LimitedDocument(fieldSize));
 			jTextFieldUserID.setText(loginUser);
-			//
+
 			jLabelPassword.setHorizontalAlignment(SwingConstants.RIGHT);
 			jLabelPassword.setBounds(new Rectangle(10, 52, 80, 25));
 			jLabelPassword.setFont(new java.awt.Font("Dialog", 0, 14));
-			jLabelPassword.setText(res.getString("Password"));
+			jLabelPassword.setText(XFUtility.RESOURCE.getString("Password"));
 			jPasswordField.setFont(new java.awt.Font("Dialog", 0, 12));
 			jPasswordField.setBounds(new Rectangle(100, 52, 140, 25));
 			jPasswordField.setDocument(new LimitedDocument(10));
 			jPasswordField.setText(loginPassword);
-			//
+
 			jButtonClose.setBounds(new Rectangle(10, 92, 80, 25));
 			jButtonClose.setFont(new java.awt.Font("Dialog", 0, 12));
-			jButtonClose.setText(res.getString("Close"));
+			jButtonClose.setText(XFUtility.RESOURCE.getString("Close"));
 			jButtonClose.addActionListener(new LoginDialog_jButtonClose_actionAdapter(this));
 			jButtonOK.setBounds(new Rectangle(100, 92, 90, 25));
 			jButtonOK.setFont(new java.awt.Font("Dialog", 0, 12));
-			jButtonOK.setText(res.getString("LogIn"));
+			jButtonOK.setText(XFUtility.RESOURCE.getString("LogIn"));
 			jButtonOK.addActionListener(new LoginDialog_jButtonOK_actionAdapter(this));
 			jButtonAbout.setBounds(new Rectangle(200, 92, 80, 25));
 			jButtonAbout.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonAbout.setText("About");
 			jButtonAbout.addActionListener(new LoginDialog_jButtonAbout_actionAdapter(this));
-			//
+
 			this.getContentPane().add(jPanelMain,  BorderLayout.CENTER);
 			jPanelMain.add(jButtonClose, null);
 			jPanelMain.add(jButtonOK, null);
@@ -122,8 +107,8 @@ public class LoginDialog extends JDialog {
 			jPanelMain.add(jTextFieldUserID, null);
 			jPanelMain.add(jPasswordField, null);
 			pack();
-			//
-			about = new About(this);
+
+			aboutDialog = new DialogAbout(this);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -136,7 +121,7 @@ public class LoginDialog extends JDialog {
 		Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
 		this.pack();
-		//
+
 		String password = new String(jPasswordField.getPassword());
 		if (jTextFieldUserID.getText().equals("") || password.equals("")) {
 			EventQueue.invokeLater(new Runnable() {
@@ -148,7 +133,7 @@ public class LoginDialog extends JDialog {
 		} else {
 			jButtonOK_actionPerformed(null);
 		}
-		//
+
 		return validated;
 	}
 
@@ -174,16 +159,20 @@ public class LoginDialog extends JDialog {
 	}
 
 	void jButtonAbout_actionPerformed(ActionEvent e) {
-		about.request();
+		aboutDialog.request();
 	}
 
 	boolean isValidPassword(String userID, String password) throws Exception {
 		if (userID.equals("") || password.equals("")) {
-			JOptionPane.showMessageDialog(this, res.getString("LogInComment"));
+			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInComment"));
 		} else {
 			if (session.getSystemVariantString("LOGIN_PERMITTED").equals("F")) {
-				JOptionPane.showMessageDialog(this, res.getString("LogInError3"));
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError3"));
 			} else {
+
+				/////////////////////////////////////////////////////
+				// Setup select-statement to check login authority //
+				/////////////////////////////////////////////////////
 				String passwordDigested = session.getDigestAdapter().digest(password);
 				StringBuffer statementBuf = new StringBuffer();
 				statementBuf.append("select * from ");
@@ -193,7 +182,10 @@ public class LoginDialog extends JDialog {
 				statementBuf.append("' and TXPASSWORD = '") ;
 				statementBuf.append(passwordDigested);
 				statementBuf.append("'") ;
-				//
+
+				///////////////////////////////////////////////
+				// Execute select-statement retrying 3 times //
+				///////////////////////////////////////////////
 				int retryCount = 0;
 				while (retryCount < 3) {
 					try {
@@ -214,13 +206,13 @@ public class LoginDialog extends JDialog {
 									this.userMenus = operator.getValueOf("TXMENUS").toString().trim();
 									validated = true;
 								} else {
-									JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
+									JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError1"));
 								}
 							} else {
-								JOptionPane.showMessageDialog(this, res.getString("LogInError1"));
+								JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError1"));
 							}
 						} else {
-							JOptionPane.showMessageDialog(this, res.getString("LogInError2"));
+							JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError2"));
 						}
 						retryCount = 3;
 					} catch(Exception e) {
@@ -279,23 +271,22 @@ public class LoginDialog extends JDialog {
 }
 
 class LoginDialog_jButtonOK_actionAdapter implements java.awt.event.ActionListener {
-	LoginDialog adaptee;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
-	LoginDialog_jButtonOK_actionAdapter(LoginDialog adaptee) {
+	DialogLogin adaptee;
+	LoginDialog_jButtonOK_actionAdapter(DialogLogin adaptee) {
 		this.adaptee = adaptee;
 	}
 	public void actionPerformed(ActionEvent e) {
 		try {
 			adaptee.jButtonOK_actionPerformed(e);
 		} catch(Exception ex) {
-			JOptionPane.showMessageDialog(null, res.getString("LogInError3") + "\n" + ex.getMessage());
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("LogInError3") + "\n" + ex.getMessage());
 		}
 	}
 }
 
 class LoginDialog_jButtonClose_actionAdapter implements java.awt.event.ActionListener {
-	LoginDialog adaptee;
-	LoginDialog_jButtonClose_actionAdapter(LoginDialog adaptee) {
+	DialogLogin adaptee;
+	LoginDialog_jButtonClose_actionAdapter(DialogLogin adaptee) {
     this.adaptee = adaptee;
   }
   public void actionPerformed(ActionEvent e) {
@@ -304,8 +295,8 @@ class LoginDialog_jButtonClose_actionAdapter implements java.awt.event.ActionLis
 }
 
 class LoginDialog_jButtonAbout_actionAdapter implements java.awt.event.ActionListener {
-	LoginDialog adaptee;
-	LoginDialog_jButtonAbout_actionAdapter(LoginDialog adaptee) {
+	DialogLogin adaptee;
+	LoginDialog_jButtonAbout_actionAdapter(DialogLogin adaptee) {
     this.adaptee = adaptee;
   }
   public void actionPerformed(ActionEvent e) {

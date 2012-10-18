@@ -32,19 +32,13 @@ package xeadDriver;
  */
 
 import java.awt.*;
-
 import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.PlainDocument;
 import java.awt.event.*;
-//import java.sql.Connection;
-//import java.sql.SQLException;
-//import java.sql.Statement;
-import java.util.ResourceBundle;
 
-public class ModifyPasswordDialog extends JDialog {
+public class DialogModifyPassword extends JDialog {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private JPanel jPanelMain = new JPanel();
 	private JButton jButtonOK = new JButton();
 	private JButton jButtonClose = new JButton();
@@ -59,16 +53,16 @@ public class ModifyPasswordDialog extends JDialog {
 	private String userID = "";
 	private boolean modified = false;
 	private Image imageTitle;
-	private About about;
+	private DialogAbout about;
 
-	public ModifyPasswordDialog(Session session) {
+	public DialogModifyPassword(Session session) {
 		super(session, "", true);
 		try {
 			//
-		 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.ModifyPasswordDialog.class.getResource("ikey.png"));
+		 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.DialogModifyPassword.class.getResource("ikey.png"));
 		 	this.setIconImage(imageTitle);
 			this.session = session;
-			this.setTitle(res.getString("ModifyPassword"));
+			this.setTitle(XFUtility.RESOURCE.getString("ModifyPassword"));
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
 			jPanelMain.setPreferredSize(new Dimension(290, 163));
 			jPanelMain.setLayout(null);
@@ -76,7 +70,7 @@ public class ModifyPasswordDialog extends JDialog {
 			jLabelUserName.setHorizontalAlignment(SwingConstants.RIGHT);
 			jLabelUserName.setBounds(new Rectangle(10, 17, 90, 25));
 			jLabelUserName.setFont(new java.awt.Font("Dialog", 0, 12));
-			jLabelUserName.setText(res.getString("UserName"));
+			jLabelUserName.setText(XFUtility.RESOURCE.getString("UserName"));
 			jTextFieldUserName.setFont(new java.awt.Font("Dialog", 0, 12));
 			jTextFieldUserName.setBounds(new Rectangle(105, 17, 160, 25));
 			jTextFieldUserName.setEditable(false);
@@ -84,7 +78,7 @@ public class ModifyPasswordDialog extends JDialog {
 			jLabelPasswordCurrent.setHorizontalAlignment(SwingConstants.RIGHT);
 			jLabelPasswordCurrent.setBounds(new Rectangle(10, 50, 90, 25));
 			jLabelPasswordCurrent.setFont(new java.awt.Font("Dialog", 0, 12));
-			jLabelPasswordCurrent.setText(res.getString("PasswordCurrent"));
+			jLabelPasswordCurrent.setText(XFUtility.RESOURCE.getString("PasswordCurrent"));
 			jPasswordCurrent.setFont(new java.awt.Font("Dialog", 0, 12));
 			jPasswordCurrent.setBounds(new Rectangle(105, 50, 160, 25));
 			jPasswordCurrent.setDocument(new LimitedDocument(10));
@@ -92,18 +86,18 @@ public class ModifyPasswordDialog extends JDialog {
 			jLabelPasswordNew.setHorizontalAlignment(SwingConstants.RIGHT);
 			jLabelPasswordNew.setBounds(new Rectangle(10, 83, 90, 25));
 			jLabelPasswordNew.setFont(new java.awt.Font("Dialog", 0, 12));
-			jLabelPasswordNew.setText(res.getString("PasswordNew"));
+			jLabelPasswordNew.setText(XFUtility.RESOURCE.getString("PasswordNew"));
 			jPasswordNew.setFont(new java.awt.Font("Dialog", 0, 12));
 			jPasswordNew.setBounds(new Rectangle(105, 83, 160, 25));
 			jPasswordNew.setDocument(new LimitedDocument(10));
 			//
 			jButtonClose.setBounds(new Rectangle(10, 125, 80, 25));
 			jButtonClose.setFont(new java.awt.Font("Dialog", 0, 12));
-			jButtonClose.setText(res.getString("Close"));
+			jButtonClose.setText(XFUtility.RESOURCE.getString("Close"));
 			jButtonClose.addActionListener(new ModifyPasswordDialog_jButtonClose_actionAdapter(this));
 			jButtonOK.setBounds(new Rectangle(100, 125, 90, 25));
 			jButtonOK.setFont(new java.awt.Font("Dialog", 0, 12));
-			jButtonOK.setText(res.getString("Modify"));
+			jButtonOK.setText(XFUtility.RESOURCE.getString("Modify"));
 			jButtonOK.addActionListener(new ModifyPasswordDialog_jButtonOK_actionAdapter(this));
 			jButtonAbout.setBounds(new Rectangle(200, 125, 80, 25));
 			jButtonAbout.setFont(new java.awt.Font("Dialog", 0, 12));
@@ -122,7 +116,7 @@ public class ModifyPasswordDialog extends JDialog {
 			jPanelMain.add(jPasswordNew, null);
 			pack();
 			//
-			about = new About(this); 
+			about = new DialogAbout(this); 
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
@@ -174,7 +168,7 @@ public class ModifyPasswordDialog extends JDialog {
 		String passwordNewDigested = session.getDigestAdapter().digest(passwordNew);
 		//
 		if (passwordNew.length() < 5) {
-			JOptionPane.showMessageDialog(this, res.getString("ModifyPasswordError1"));
+			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("ModifyPasswordError1"));
 		} else {
 			try {
 				StringBuffer statementBuf = new StringBuffer();
@@ -193,7 +187,7 @@ public class ModifyPasswordDialog extends JDialog {
 				if (count == 1) {
 					validated = true;
 				} else {
-					JOptionPane.showMessageDialog(this, res.getString("ModifyPasswordError2"));
+					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("ModifyPasswordError2"));
 				}
 				//
 			} catch (Exception e) {
@@ -231,8 +225,8 @@ public class ModifyPasswordDialog extends JDialog {
 }
 
 class ModifyPasswordDialog_jButtonOK_actionAdapter implements java.awt.event.ActionListener {
-	ModifyPasswordDialog adaptee;
-	ModifyPasswordDialog_jButtonOK_actionAdapter(ModifyPasswordDialog adaptee) {
+	DialogModifyPassword adaptee;
+	ModifyPasswordDialog_jButtonOK_actionAdapter(DialogModifyPassword adaptee) {
     this.adaptee = adaptee;
   }
   public void actionPerformed(ActionEvent e) {
@@ -241,8 +235,8 @@ class ModifyPasswordDialog_jButtonOK_actionAdapter implements java.awt.event.Act
 }
 
 class ModifyPasswordDialog_jButtonClose_actionAdapter implements java.awt.event.ActionListener {
-	ModifyPasswordDialog adaptee;
-	ModifyPasswordDialog_jButtonClose_actionAdapter(ModifyPasswordDialog adaptee) {
+	DialogModifyPassword adaptee;
+	ModifyPasswordDialog_jButtonClose_actionAdapter(DialogModifyPassword adaptee) {
     this.adaptee = adaptee;
   }
   public void actionPerformed(ActionEvent e) {
@@ -251,8 +245,8 @@ class ModifyPasswordDialog_jButtonClose_actionAdapter implements java.awt.event.
 }
 
 class ModifyPasswordDialog_jButtonAbout_actionAdapter implements java.awt.event.ActionListener {
-	ModifyPasswordDialog adaptee;
-	ModifyPasswordDialog_jButtonAbout_actionAdapter(ModifyPasswordDialog adaptee) {
+	DialogModifyPassword adaptee;
+	ModifyPasswordDialog_jButtonAbout_actionAdapter(DialogModifyPassword adaptee) {
     this.adaptee = adaptee;
   }
   public void actionPerformed(ActionEvent e) {

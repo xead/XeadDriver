@@ -33,7 +33,6 @@ package xeadDriver;
 
 import java.awt.Color;
 import java.awt.EventQueue;
-import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JWindow;
@@ -41,7 +40,6 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
 public class Application {
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private JWindow splashScreen;
 	private JLabel  splashIcon;
 	private JLabel  splashLabel;
@@ -56,7 +54,7 @@ public class Application {
 		splashLabel.setOpaque(false);
 		splashLabel.setBounds(0, 92, 500, 15);
 		splashLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		splashLabel.setText(res.getString("SplashMessage0"));
+		splashLabel.setText(XFUtility.RESOURCE.getString("SplashMessage0"));
 		splashIcon.add(splashLabel);
 		splashScreen = new JWindow();
 		splashScreen.getContentPane().add(splashIcon);
@@ -67,7 +65,6 @@ public class Application {
 				showSplash();
 			}
 		});
-		//
 		new Session(args, this);
 	}
 

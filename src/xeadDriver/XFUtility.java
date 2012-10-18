@@ -39,7 +39,9 @@ import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.SystemColor;
@@ -68,9 +70,7 @@ import javax.imageio.ImageIO;
 import javax.script.ScriptException;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -102,23 +102,23 @@ import com.lowagie.text.pdf.BarcodePDF417;
 import com.lowagie.text.pdf.PdfContentByte;
 
 public class XFUtility {
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
-	static int FIELD_UNIT_HEIGHT = 24;
-	static String DEFAULT_UPDATE_COUNTER = "UPDCOUNTER";
-    static Color ERROR_COLOR = new Color(238,187,203);
-    static Color ACTIVE_COLOR = SystemColor.white;
-    static Color INACTIVE_COLOR = SystemColor.control;
-	static Color ODD_ROW_COLOR = new Color(240, 240, 255);
-	static SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm:ss.SSS");
-	static ImageIcon ICON_CHECK_0A = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0A.PNG")));
-	static ImageIcon ICON_CHECK_1A = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1A.PNG")));
-	static ImageIcon ICON_CHECK_0D = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0D.PNG")));
-	static ImageIcon ICON_CHECK_1D = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1D.PNG")));
-	static ImageIcon ICON_CHECK_0R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0R.PNG")));
-	static ImageIcon ICON_CHECK_1R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1R.PNG")));
+	public static final ResourceBundle RESOURCE = ResourceBundle.getBundle("xeadDriver.Res");
+	public static final int FIELD_UNIT_HEIGHT = 24;
+	public static final int ROW_UNIT_HEIGHT = 24;
+	public static final int SEQUENCE_WIDTH = 30;
+	public static final String DEFAULT_UPDATE_COUNTER = "UPDCOUNTER";
+	public static final Color ERROR_COLOR = new Color(238,187,203);
+	public static final Color ACTIVE_COLOR = SystemColor.white;
+	public static final Color INACTIVE_COLOR = SystemColor.control;
+	public static final Color ODD_ROW_COLOR = new Color(240, 240, 255);
 	public static final Color SELECTED_ACTIVE_COLOR = new Color(49,106,197);
-	public static final int ROW_HEIGHT_WITHOUT_IMAGE = 18;
-	public static final int ROW_HEIGHT_WITH_IMAGE = 40;
+	public static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm:ss.SSS");
+	public static final ImageIcon ICON_CHECK_0A = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0A.PNG")));
+	public static final ImageIcon ICON_CHECK_1A = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1A.PNG")));
+	public static final ImageIcon ICON_CHECK_0D = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0D.PNG")));
+	public static final ImageIcon ICON_CHECK_1D = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1D.PNG")));
+	public static final ImageIcon ICON_CHECK_0R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0R.PNG")));
+	public static final ImageIcon ICON_CHECK_1R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1R.PNG")));
 	
 	static String getStringNumber(String text) {
 		char[] numberDigit = {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
@@ -187,14 +187,15 @@ public class XFUtility {
 		//
 		return isNull;
 	}
-	
-	static ArrayList<String> getFieldListInScriptText(String scriptText) {
+
+	static ArrayList<String> getDSNameListInScriptText(String scriptText, NodeList tableList) {
 		ArrayList<String> fieldList = new ArrayList<String>();
 		int pos, posWrk, wrkInt, posWrk2;
 		String[] sectionDigit = {"(", ")", "{", "}", "+", "-", "/", "*", "=", "<", ">", ";", "|", "&", "\n", "\t", ",", " ", "!"};
 		String[] fieldProperty = {"value", "oldValue", "color", "editable", "error", "valueChanged"};
 		boolean isFirstDigitOfField;
-		String wrkStr, dataSource;
+		String variantExpression, wrkStr1, wrkStr2, dataSource;
+		org.w3c.dom.Element element;
 		//
 		for (int i = 0; i < fieldProperty.length; i++) {
 			//
@@ -217,9 +218,9 @@ public class XFUtility {
 						isFirstDigitOfField = false;
 						//
 						if (wrkInt > -1) {
-							wrkStr = scriptText.substring(wrkInt, wrkInt+1);
+							wrkStr1 = scriptText.substring(wrkInt, wrkInt+1);
 							for (int j = 0; j < sectionDigit.length; j++) {
-								if (wrkStr.equals(sectionDigit[j])) {
+								if (wrkStr1.equals(sectionDigit[j])) {
 									isFirstDigitOfField = true;
 									break;
 								}
@@ -227,12 +228,33 @@ public class XFUtility {
 						}
 						//
 						if (wrkInt == -1 || isFirstDigitOfField) {
-							wrkStr = scriptText.substring(wrkInt + 1, posWrk);
-							posWrk2 = wrkStr.indexOf("_");
-							if (posWrk2 > -1) {
-								dataSource = wrkStr.substring(0, posWrk2) + "." + wrkStr.substring(posWrk2 + 1, wrkStr.length());
-								if (!fieldList.contains(dataSource)) {
-									fieldList.add(dataSource);
+							dataSource = "";
+							variantExpression = scriptText.substring(wrkInt + 1, posWrk);
+							if (countStringInText(variantExpression, "_") > 1) {
+								wrkStr2 = "";
+								for (int j = 0; j < tableList.getLength(); j++) {
+									element = (org.w3c.dom.Element)tableList.item(j);
+									wrkStr1 = element.getAttribute("ID") + "_";
+									if (variantExpression.startsWith(wrkStr1)) {
+										if (wrkStr1.length() > wrkStr2.length()+1) {
+											wrkStr2 = element.getAttribute("ID");
+										}
+									}
+								}
+								if (!wrkStr2.equals("")) {
+									dataSource = variantExpression.replace(wrkStr2+"_", wrkStr2+".");
+									if (!fieldList.contains(dataSource)) {
+										fieldList.add(dataSource);
+									}
+								}
+							}
+							if (dataSource.equals("")) {
+								posWrk2 = variantExpression.indexOf("_");
+								if (posWrk2 > -1) {
+									dataSource = variantExpression.substring(0, posWrk2) + "." + variantExpression.substring(posWrk2 + 1, variantExpression.length());
+									if (!fieldList.contains(dataSource)) {
+										fieldList.add(dataSource);
+									}
 								}
 							}
 							wrkInt = -1;
@@ -246,7 +268,11 @@ public class XFUtility {
 		return fieldList;
 	}
 	
-	static ImageIcon createSmallIcon(String fileName) {
+	static public int countStringInText(String text, String searchString) {
+        return (text.length() - text.replaceAll(searchString, "").length()) / searchString.length();
+    }	
+
+	static ImageIcon createSmallIcon(String fileName, int iconHeight) {
 		ImageIcon icon = new ImageIcon();
 		BufferedImage image = null;
 		try{
@@ -267,7 +293,7 @@ public class XFUtility {
 			// Setup small icon image with buffered image data //
 			/////////////////////////////////////////////////////
 			if (image != null) {
-				float rate = (float)XFUtility.ROW_HEIGHT_WITH_IMAGE / image.getHeight();
+				float rate = (float)iconHeight / image.getHeight();
 				int width = Math.round(image.getWidth()*rate);
 				int height = Math.round(image.getHeight()*rate);
 				BufferedImage shrinkImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -1509,7 +1535,7 @@ public class XFUtility {
 				}
 			}
 		} catch (NumberFormatException e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError39") + keyword + res.getString("FunctionError40") + e.toString());
+			JOptionPane.showMessageDialog(null, RESOURCE.getString("FunctionError39") + keyword + RESOURCE.getString("FunctionError40") + e.toString());
 		}
 	}
 
@@ -1578,11 +1604,11 @@ public class XFUtility {
 		return length;
 	}
 	
-	static int getWidthOfDateValue(String dateFormat) {
+	static int getWidthOfDateValue(String dateFormat, int fontSize) {
 		//
 		int width = 133;
 		JTextField textField = new JTextField();
-		FontMetrics metrics = textField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
+		FontMetrics metrics = textField.getFontMetrics(new java.awt.Font("Dialog", 0, fontSize));
 		//
 		if (dateFormat.equals("en00")) {
 			width = metrics.stringWidth("06/17/10");
@@ -2034,33 +2060,33 @@ public class XFUtility {
 		String message = "";
 		//
 		if (code.equals("00")) {
-			message = res.getString("ReturnMessage00");
+			message = RESOURCE.getString("ReturnMessage00");
 		}
 		//
 		if (code.equals("01")) {
-			message = res.getString("ReturnMessage01");
+			message = RESOURCE.getString("ReturnMessage01");
 		}
 		//
 		if (code.equals("10")) {
-			message = res.getString("ReturnMessage10");
+			message = RESOURCE.getString("ReturnMessage10");
 		}
 		if (code.equals("11")) {
-			message = res.getString("ReturnMessage11");
+			message = RESOURCE.getString("ReturnMessage11");
 		}
 		//
 		if (code.equals("20")) {
-			message = res.getString("ReturnMessage20");
+			message = RESOURCE.getString("ReturnMessage20");
 		}
 		if (code.equals("21")) {
-			message = res.getString("ReturnMessage21");
+			message = RESOURCE.getString("ReturnMessage21");
 		}
 		//
 		if (code.equals("30")) {
-			message = res.getString("ReturnMessage30");
+			message = RESOURCE.getString("ReturnMessage30");
 		}
 		//
 		if (code.equals("99")) {
-			message = res.getString("ReturnMessage99");
+			message = RESOURCE.getString("ReturnMessage99");
 		}
 		//
 		return message;
@@ -2287,10 +2313,27 @@ interface XFScriptable {
 	public XFTableOperator createTableOperator(String sqlText);
 }
 
-interface XFTableCellEditor extends TableCellEditor {
+//interface XFTableCellEditor extends TableCellEditor {
+//	public Object getInternalValue();
+//	public Object getExternalValue();
+//	public void setBackground(Color color);
+//}
+
+interface XFTableColumnEditor {
 	public Object getInternalValue();
 	public Object getExternalValue();
+	public void setBorder(Border border);
 	public void setBackground(Color color);
+	public void setHorizontalAlignment(int alignment);
+	public void setBounds(Rectangle rec);
+	public void setColorOfError();
+	public void setColorOfNormal(int row);
+	public void setEditable(boolean isEditable);
+	public void setFocusable(boolean isFocusable);
+	public void setValue(Object value);
+	public void requestFocus();
+	public boolean hasFocus();
+	public boolean isEditable();
 }
 
 interface XFEditableField {
@@ -2316,7 +2359,6 @@ interface XFEditableField {
 
 class XFImageField extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private int size_ = 10;
 	private int rows_;
 	private JTextField jTextField = new JTextField();
@@ -2355,7 +2397,7 @@ class XFImageField extends JPanel implements XFEditableField {
 		//
 		jButton.setFont(new java.awt.Font("Dialog", 0, 14));
 		jButton.setPreferredSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
-		jButton.setText(res.getString("Refresh"));
+		jButton.setText(XFUtility.RESOURCE.getString("Refresh"));
 		jButton.addActionListener(new XFImageField_jButton_actionAdapter(this));
 		jButton.addKeyListener(new XFImageField_jButton_keyAdapter(this));
 		jPanelBottom.setPreferredSize(new Dimension(200, XFUtility.FIELD_UNIT_HEIGHT));
@@ -2442,14 +2484,14 @@ class XFImageField extends JPanel implements XFEditableField {
 					URL url = new URL(fullName);
 					imageIcon = new ImageIcon(url);
 				}catch(Exception e){
-					jLabelImage.setText(res.getString("ImageFileNotFound1") + fullName + res.getString("ImageFileNotFound2"));
+					jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
 				}
 			} else {
 				File imageFile = new File(fullName);
 				if (imageFile.exists()) {
 					imageIcon = new ImageIcon(fullName);
 				} else {
-					jLabelImage.setText(res.getString("ImageFileNotFound1") + fullName + res.getString("ImageFileNotFound2"));
+					jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
 				}
 			}
 			jLabelImage = new JLabel("", imageIcon, JLabel.CENTER);
@@ -2458,7 +2500,7 @@ class XFImageField extends JPanel implements XFEditableField {
 		jLabelImage.setText("");
 		jLabelImage.setToolTipText(imageFileName);
         if (!jTextField.getText().equals("") && imageIcon == null) {
-			jLabelImage.setText(res.getString("ImageFileNotFound1") + fullName + res.getString("ImageFileNotFound2"));
+			jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
         }
         //
 		int wrkWidth = this.getWidth() - 50;
@@ -2539,18 +2581,16 @@ class XFDateField extends JPanel implements XFEditableField {
 	private int rows_ = 1;
 	private DateTextField dateTextField = new DateTextField();
 	private JButton jButton = new JButton();
-	private JPanel jPanelDummy = new JPanel();
 	private boolean isEditable = false;
     private java.util.Date date;
     private Session session_;
-    private Color normalModeColor = null;
     private Object oldValue = null;
 	private XFCalendar xFCalendar;
 
 	public XFDateField(Session session){
 		super();
 		session_ = session;
-		dateTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+		dateTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
 		dateTextField.setEditable(false);
 		dateTextField.addFocusListener(new FocusAdapter() {
 			public void focusGained(FocusEvent event) {
@@ -2572,9 +2612,12 @@ class XFDateField extends JPanel implements XFEditableField {
 					setUtilDateValue(null);
 					jButton.requestFocus();
 				}
+				if (isEditable && event.getKeyCode() == KeyEvent.VK_ENTER) {
+					jButton.requestFocus();
+				}
 			} 
 		});
-		normalModeColor = dateTextField.getBackground();
+		//normalModeColor = dateTextField.getBackground();
 		//
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("prompt.png"));
 	 	jButton.setIcon(imageIcon);
@@ -2595,14 +2638,18 @@ class XFDateField extends JPanel implements XFEditableField {
 			} 
 		});
 		//
-		jPanelDummy.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
+		//jPanelDummy.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		//
-		this.setSize(new Dimension(XFUtility.getWidthOfDateValue(session.getDateFormat()) + 26, XFUtility.FIELD_UNIT_HEIGHT));
+		this.setSize(new Dimension(XFUtility.getWidthOfDateValue(session.getDateFormat(), 14) + 26, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(dateTextField, BorderLayout.CENTER);
 		this.add(jButton, BorderLayout.EAST);
 		//
 		xFCalendar = new XFCalendar(session_, this);
+	}
+	
+	public void setInternalBorder(Border border) {
+		dateTextField.setBorder(border);
 	}
 	
 	public void addActionListener(ActionListener listener) {
@@ -2615,14 +2662,18 @@ class XFDateField extends JPanel implements XFEditableField {
 
 	public void setEditable(boolean editable) {
 		if (editable) {
-			this.remove(jPanelDummy);
+			//this.remove(jPanelDummy);
 			this.add(jButton, BorderLayout.EAST);
-			dateTextField.setBackground(Color.white);
+			dateTextField.setFont(new java.awt.Font("SansSerif", 0, 12));
+			//dateTextField.setBackground(Color.white);
+			dateTextField.setBackground(SystemColor.text);
 			dateTextField.setFocusable(true);
 		} else {
 			this.remove(jButton);
-			this.add(jPanelDummy, BorderLayout.EAST);
-			dateTextField.setBackground(normalModeColor);
+			//this.add(jPanelDummy, BorderLayout.EAST);
+			dateTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
+			//dateTextField.setBackground(normalModeColor);
+			dateTextField.setBackground(SystemColor.control);
 			dateTextField.setFocusable(false);
 		}
 		isEditable = editable;
@@ -2680,6 +2731,20 @@ class XFDateField extends JPanel implements XFEditableField {
 	}
 	
 	public void setWidth(int width) {
+	}
+	
+	public void setNarrower(int width) {
+		int workWidth;
+		if (this.getWidth() > width) {
+			for (int fontSize = 13; fontSize >= 9; fontSize--) {
+				workWidth = XFUtility.getWidthOfDateValue(session_.getDateFormat(), fontSize) + 26;
+				if (workWidth <= width || fontSize == 9) {
+					dateTextField.setFont(new java.awt.Font("Dialog", 0, fontSize));
+					break;
+				}
+			}
+			this.setSize(new Dimension(width, XFUtility.FIELD_UNIT_HEIGHT));
+		}
 	}
 
 	public void setOldValue(Object obj) {
@@ -2740,7 +2805,6 @@ class XFDateField extends JPanel implements XFEditableField {
 
 class XFTextField extends JTextField implements XFEditableField {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private String basicType_ = "";
 	private int digits_ = 5;
 	private int decimal_ = 0;
@@ -3098,7 +3162,7 @@ class XFTextField extends JTextField implements XFEditableField {
 				//
 				if (adaptee.decimal_ > 0 && str.length() == 1) {
 					if (adaptee.isEditable() && !dataTypeOptionList.contains("ACCEPT_MINUS") && str.contains("-")) {
-						JOptionPane.showMessageDialog(null, res.getString("MinusError"));
+						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError"));
 					} else {
 						String wrkStr0 = super.getText(0, super.getLength());
 						wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
@@ -3110,7 +3174,7 @@ class XFTextField extends JTextField implements XFEditableField {
 							super.replace(0, super.getLength(), wrkStr1, attr);
 						} else {
 							if (basicType_.equals("INTEGER") && str.contains(".")) {
-								JOptionPane.showMessageDialog(null, res.getString("NumberFormatError"));
+								JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("NumberFormatError"));
 							} else {
 								int posOfDecimal = wrkStr0.indexOf(".");
 								if (posOfDecimal == -1) {
@@ -3131,11 +3195,11 @@ class XFTextField extends JTextField implements XFEditableField {
 					}
 				} else {
 					if (adaptee.isEditable() && dataTypeOptionList.contains("NO_MINUS") && str.contains("-")) {
-						JOptionPane.showMessageDialog(null, res.getString("MinusError"));
+						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError"));
 					} else {
 						if (basicType_.equals("INTEGER")) {
 							if (str.contains(".")) {
-								JOptionPane.showMessageDialog(null, res.getString("NumberFormatError"));
+								JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("NumberFormatError"));
 							} else {
 								String wrkStr0 = super.getText(0, super.getLength());
 								wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
@@ -3187,26 +3251,37 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		ActionMap actionMap = jTextArea.getActionMap();
 		//
 		KeyStroke tab = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
+		KeyStroke shiftTab = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_MASK);
 		KeyStroke enter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
 		KeyStroke altEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_MASK);
 		//
 		inputMap.put(altEnter, inputMap.get(enter));
-		inputMap.put(enter, "none");
+		inputMap.put(enter, "Exit");
 		inputMap.put(tab, "Exit");
-		Action exitAction = new AbstractAction(){
+		inputMap.put(shiftTab, "Backward");
+		Action transferFocusAction = new AbstractAction(){
 			private static final long serialVersionUID = 1L;
 			public void actionPerformed(ActionEvent e){
-				exitFromComponent();
+				jTextArea.transferFocus();
+				//exitFromComponent();
 			}
 		};
-		actionMap.put("Exit", exitAction);
+		actionMap.put("Exit", transferFocusAction);
+		Action transferFocusBackwardAction = new AbstractAction(){
+			private static final long serialVersionUID = 1L;
+			public void actionPerformed(ActionEvent e){
+				jTextArea.transferFocusBackward();
+				//exitFromComponent();
+			}
+		};
+		actionMap.put("Backward", transferFocusBackwardAction);
 		//
 		jTextArea.addFocusListener(new ComponentFocusListener());
 		jTextArea.setFont(new java.awt.Font("Dialog", 0, 14));
 		jTextArea.setLineWrap(true);
 		jTextArea.setWrapStyleWord(true);
-		this.getViewport().add(jTextArea, null);
 		jTextArea.setDocument(new LimitedDocument(this));
+		this.getViewport().add(jTextArea, null);
 		//
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ROWS");
 		if (!wrkStr.equals("")) {
@@ -3228,9 +3303,9 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		this.setSize(width, this.getHeight());
 	}
 
-	public void exitFromComponent() {
-		jTextArea.transferFocus();
-	}
+	//public void exitFromComponent() {
+	//	jTextArea.transferFocus();
+	//}
 
 	public boolean isEditable() {
 		return jTextArea.isEditable();
@@ -3978,6 +4053,7 @@ class XFCheckBox extends JCheckBox implements XFEditableField {
 	}
 	
 	public void setValue(Object obj) {
+		this.setSelected(false);
 		value_ = obj.toString();
 		if (value_.equals(valueTrue)) {
 			this.setSelected(true);
@@ -4025,7 +4101,6 @@ class XFCheckBox extends JCheckBox implements XFEditableField {
 
 class XFUrlField extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private JTextField jTextField = new JTextField();
 	private JLabel jLabel = new JLabel();
 	private Desktop desktop = Desktop.getDesktop();
@@ -4039,11 +4114,11 @@ class XFUrlField extends JPanel implements XFEditableField {
 	public XFUrlField(int digits){
 		super();
 		//
-		jTextField.setFont(new java.awt.Font(res.getString("URLFont"), 0, 14));
+		jTextField.setFont(new java.awt.Font(XFUtility.RESOURCE.getString("URLFont"), 0, 14));
 		jTextField.setDocument(new LimitedDocument(digits));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
-		Font labelFont = new java.awt.Font(res.getString("URLFont"), 0, 14);
+		Font labelFont = new java.awt.Font(XFUtility.RESOURCE.getString("URLFont"), 0, 14);
 		jLabel.setFont(labelFont);
 		jLabel.setForeground(Color.blue);
 		jLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -4190,17 +4265,66 @@ class TableModelReadOnly extends DefaultTableModel {
 	}
 }
 
+
+class HeaderBorder implements Border {
+	public Insets getBorderInsets(Component c){
+		return new Insets(2, 2, 2, 2);
+	}
+	public boolean isBorderOpaque(){
+		return false;
+	}
+	public void paintBorder (Component c, Graphics g, int x, int y, int width, int height){
+		g.setColor(Color.white);
+		g.drawLine(x, y, x+width, y);
+		g.drawLine(x, y, x, y+height);
+		g.setColor(Color.gray);
+		g.drawLine(x, y+height-1, x+width, y+height-1);
+		g.drawLine(x+width-1, y+height, x+width-1, y);
+	}
+}
+
+class WidthChangerBorder implements Border {
+	public Insets getBorderInsets(Component c){
+		return new Insets(2, 2, 2, 2);
+	}
+	public boolean isBorderOpaque(){
+		return false;
+	}
+	public void paintBorder (Component c, Graphics g, int x, int y, int width, int height){
+		g.setColor(Color.white);
+		g.drawLine(x, y, x+width, y);
+		g.drawLine(x+1, y, x+1, y+height);
+		g.setColor(Color.gray);
+		g.drawLine(x, y, x, y+height);
+		g.drawLine(x, y+height-1, x+width, y+height-1);
+		g.drawLine(x+width-1, y+height, x+width-1, y);
+	}
+}
+
+class CellBorder implements Border {
+	public Insets getBorderInsets(Component c){
+		return new Insets(0, 0, 0, 1);
+	}
+	public boolean isBorderOpaque(){
+		return false;
+	}
+	public void paintBorder (Component c, Graphics g, int x, int y, int width, int height){
+		g.setColor(Color.gray);
+		g.drawLine(x+width-1, y+height+1, x+width-1, y);
+	}
+}
+
 class TableCellReadOnly extends Object {
 	private static final long serialVersionUID = 1L;
 	private Object internalValue_ = null;
 	private Object externalValue_ = null;
 	private Color color_ = null;
-	private boolean isImage_ = false;
-	public TableCellReadOnly(Object internalValue, Object externalValue, Color color, boolean isImage) {
+	private String valueType_ = "";
+	public TableCellReadOnly(Object internalValue, Object externalValue, Color color, String valueType) {
 		internalValue_ = internalValue;
 		externalValue_ = externalValue;
 		color_ = color;
-		isImage_ = isImage;
+		valueType_ = valueType;
 	}
 	public Object getInternalValue() {
 		return internalValue_;
@@ -4211,73 +4335,17 @@ class TableCellReadOnly extends Object {
 	public Color getColor() {
 		return color_;
 	}
-	public boolean isImage() {
-		return isImage_;
-	}
-}
-
-class TableCellRendererReadOnly extends DefaultTableCellRenderer {
-	private static final long serialVersionUID = 1L;
-	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
-		TableCellReadOnly cell = (TableCellReadOnly)value;
-		if (cell.isImage()) {
-			setIcon((Icon)cell.getExternalValue());
-			setHorizontalAlignment(SwingConstants.CENTER);
-		} else {
-			setText((String)cell.getExternalValue());
-			setFont(new java.awt.Font("Dialog", 0, 14));
-		}
-		if (isSelected) {
-			setBackground(table.getSelectionBackground());
-			setForeground(table.getSelectionForeground());
-		} else {
-			if (row%2==0) {
-				setBackground(table.getBackground());
-			} else {
-				setBackground(XFUtility.ODD_ROW_COLOR);
-			}
-			setForeground(table.getForeground());
-		}
-		if (!cell.getColor().equals(table.getForeground())) {
-			setForeground(cell.getColor());
-		}
-		validate();
-		return this;
-	}
-	
-}
-
-class TableCellRendererWithCheckBox extends XFCheckBox implements TableCellRenderer {
-	private static final long serialVersionUID = 1L;
-	public TableCellRendererWithCheckBox(String dataTypeOptions) {
-		super(dataTypeOptions);
-	}
-	public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column){
-		TableCellReadOnly cell = (TableCellReadOnly)value;
-		this.setValue((String)cell.getExternalValue());
-		this.setOpaque(true);
-		if (isSelected) {
-			this.setBackground(table.getSelectionBackground());
-		} else {
-			if (row%2==0) {
-				this.setBackground(table.getBackground());
-			} else {
-				this.setBackground(XFUtility.ODD_ROW_COLOR);
-			}
-		}
-		validate();
-		return this;
+	public String getValueType() {
+		return valueType_;
 	}
 }
 
 class ElementComparator implements java.util.Comparator<org.w3c.dom.Element> {
 	private String attName_ = "";
-	//
 	public ElementComparator (String attName) {
 		super();
 		attName_ = attName;
 	}
-	//
     public int compare(org.w3c.dom.Element element1, org.w3c.dom.Element element2 ) {
       String value1, value2;
       value1 = element1.getAttribute(attName_);
@@ -4323,14 +4391,14 @@ class XFScript extends Object {
 	private String eventP = "";
 	private String eventR = "";
 
-	public XFScript(String tableID, org.w3c.dom.Element scriptElement) {
+	public XFScript(String tableID, org.w3c.dom.Element scriptElement, NodeList tableNodeList) {
 		super();
 		this.tableID = tableID;
 		eventP = scriptElement.getAttribute("EventP");
 		eventR = scriptElement.getAttribute("EventR");
 		scriptName = scriptElement.getAttribute("Name");
 		scriptText = XFUtility.substringLinesWithTokenOfEOL(scriptElement.getAttribute("Text"), "\n");
-		fieldList = XFUtility.getFieldListInScriptText(XFUtility.removeCommentsFromScriptText(scriptText));
+		fieldList = XFUtility.getDSNameListInScriptText(XFUtility.removeCommentsFromScriptText(scriptText), tableNodeList);
 	}
 	
 	public String getScriptText() {
@@ -4340,12 +4408,22 @@ class XFScript extends Object {
 	public boolean isToBeRunAtEvent(String event1, String event2) {
 		boolean result = false;
 		//
-		if (eventP.contains(event1)) {
-			if (event2.equals("")) {
-				result = true;
-			} else {
-				if (event2.equals(eventR)) {
+		ArrayList<String> event1List = new ArrayList<String>();
+		StringTokenizer workTokenizer = new StringTokenizer(event1, ",");
+		while (workTokenizer.hasMoreTokens()) {
+			event1List.add(workTokenizer.nextToken());
+		}
+		//
+		for (int i = 0; i < event1List.size(); i++) {
+			if (eventP.contains(event1List.get(i))) {
+				if (event2.equals("")) {
 					result = true;
+					break;
+				} else {
+					if (event2.equals(eventR)) {
+						result = true;
+						break;
+					}
 				}
 			}
 		}
@@ -4364,7 +4442,6 @@ class XFScript extends Object {
 	
 class XFCalendar extends JDialog {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private Session session_;
     private DateButton[] dateButtonArray = new DateButton[42];
     private JPanel jPanelMain = new JPanel();
@@ -4393,7 +4470,7 @@ class XFCalendar extends JDialog {
     public XFCalendar(Session session, Component parent) {
 		super();
 		this.setModal(true);
-		this.setTitle(res.getString("Calendar"));
+		this.setTitle(XFUtility.RESOURCE.getString("Calendar"));
 		this.session_ = session;
 		this.parent_ = parent;
 		jPanelMain.setLayout(new BorderLayout());
@@ -4504,7 +4581,7 @@ class XFCalendar extends JDialog {
 		jTextAreaBottom.setFont(new java.awt.Font("Dialog", 0, 12));
 		jTextAreaBottom.setEditable(false);
 		jTextAreaBottom.setBackground(SystemColor.control);
-		normalMessage = res.getString("CalendarComment");
+		normalMessage = XFUtility.RESOURCE.getString("CalendarComment");
 		jTextAreaBottom.setText(normalMessage);
 		//
 		try {

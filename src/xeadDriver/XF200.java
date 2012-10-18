@@ -47,7 +47,6 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.hssf.util.*;
@@ -55,7 +54,6 @@ import org.w3c.dom.*;
 
 public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionElement_ = null;
 	private HashMap<String, Object> parmMap_ = null;
 	private HashMap<String, Object> returnMap_ = new HashMap<String, Object>();
@@ -193,7 +191,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelInfo.add(jLabelSessionID);
 		jPanelInfo.add(jLabelFunctionID);
 		jProgressBar.setStringPainted(true);
-		jProgressBar.setString(res.getString("ChrossCheck"));
+		jProgressBar.setString(XFUtility.RESOURCE.getString("ChrossCheck"));
 		gridLayoutButtons.setColumns(7);
 		gridLayoutButtons.setRows(1);
 		gridLayoutButtons.setHgap(2);
@@ -339,7 +337,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					returnMap_.put("RETURN_CODE", "21");
 					this.setTitle(functionElement_.getAttribute("Name"));
 					if (initialMsg.equals("")) {
-						messageList.add(res.getString("FunctionMessage24"));
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage24"));
 					} else {
 						messageList.add(initialMsg);
 					}
@@ -347,9 +345,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					panelMode_ = "DISPLAY";
 					returnMap_.put("RETURN_CODE", "00");
-					this.setTitle(res.getString("FunctionMessage10") + dataName + res.getString("FunctionMessage11"));
+					this.setTitle(XFUtility.RESOURCE.getString("FunctionMessage10") + dataName + XFUtility.RESOURCE.getString("FunctionMessage11"));
 					if (initialMsg.equals("")) {
-						messageList.add(res.getString("FunctionMessage12"));
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage12"));
 					} else {
 						messageList.add(initialMsg);
 					}
@@ -357,9 +355,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			} else {
 				panelMode_ = "ADD";
 				returnMap_.put("RETURN_CODE", "11");
-				this.setTitle(res.getString("FunctionMessage13") + dataName + res.getString("FunctionMessage14"));
+				this.setTitle(XFUtility.RESOURCE.getString("FunctionMessage13") + dataName + XFUtility.RESOURCE.getString("FunctionMessage14"));
 				if (initialMsg.equals("")) {
-					messageList.add(res.getString("FunctionMessage15"));
+					messageList.add(XFUtility.RESOURCE.getString("FunctionMessage15"));
 				} else {
 					messageList.add(initialMsg);
 				}
@@ -502,6 +500,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			//
 			jPanelFields.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeightOfMainPanel + 10));
+
+			////////////////////////////////////////////
+			// Setup panel sizes if AUTO is specified //
+			////////////////////////////////////////////
 			if (functionElement_.getAttribute("Size").equals("AUTO")) {
 				int workWidth = biggestWidth + 50;
 				if (workWidth < 800) {
@@ -578,7 +580,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						if (!existsInColumnList(workTableID, workAlias, workFieldID)) {
 							workElement = session_.getFieldElement(workTableID, workFieldID);
 							if (workElement == null) {
-								String msg = res.getString("FunctionError1") + primaryTable_.getTableID() + res.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + res.getString("FunctionError3") + workAlias + "_" + workFieldID + res.getString("FunctionError4");
+								String msg = XFUtility.RESOURCE.getString("FunctionError1") + primaryTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
 								JOptionPane.showMessageDialog(this, msg);
 								throw new Exception(msg);
 							} else {
@@ -698,7 +700,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			setupFunctionKeysAndButtons();
 
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5"));
+			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError5"));
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
 		} finally {
@@ -782,7 +784,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	public void cancelWithScriptException(ScriptException e, String scriptName) {
-		JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + scriptName + res.getString("FunctionError8"));
+		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError7") + scriptName + XFUtility.RESOURCE.getString("FunctionError8"));
 		exceptionHeader = "'" + scriptName + "' Script error\n";
 		e.printStackTrace(exceptionStream);
 		this.rollback();
@@ -790,7 +792,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	public void cancelWithException(Exception e) {
-		JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError5") + "\n" + e.getMessage());
 		e.printStackTrace(exceptionStream);
 		this.rollback();
 		setErrorAndCloseFunction();
@@ -947,7 +949,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				}
 				//
 				if (panelMode_.equals("ADD") && element.getAttribute("Action").equals("EDIT")) {
-					XFUtility.setCaptionToButton(jButtonArray[workIndex], element, res.getString("Add"));
+					XFUtility.setCaptionToButton(jButtonArray[workIndex], element, XFUtility.RESOURCE.getString("Add"));
 				} else {
 					XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "");
 				}
@@ -997,7 +999,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				primaryTable_.setUpdateCounterValue(operatorPrimary);
 				//
 			} else {
-				JOptionPane.showMessageDialog(this, res.getString("FunctionError30"));
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError30"));
 				returnMap_.put("RETURN_CODE", "01");
 				isToBeCanceled = true;
 			}
@@ -1183,7 +1185,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					hasNoError = false;
 					for (int i = 0; i < fieldList.size(); i++) {
 						if (fieldList.get(i).isKey()) {
-							fieldList.get(i).setError(res.getString("FunctionError31"));
+							fieldList.get(i).setError(XFUtility.RESOURCE.getString("FunctionError31"));
 						}
 					}
 				}
@@ -1193,7 +1195,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				hasNoError = false;
 				for (int i = 0; i < fieldList.size(); i++) {
 					if (fieldList.get(i).isKey() && !fieldList.get(i).isError()) {
-						fieldList.get(i).setError(res.getString("FunctionError32"));
+						fieldList.get(i).setError(XFUtility.RESOURCE.getString("FunctionError32"));
 					}
 				}
 			}
@@ -1218,7 +1220,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 							hasNoError = false;
 							for (int j = 0; j < fieldList.size(); j++) {
 								if (keyFieldList.contains(fieldList.get(j).getFieldID()) && !fieldList.get(i).isError()) {
-									fieldList.get(j).setError(res.getString("FunctionError22"));
+									fieldList.get(j).setError(XFUtility.RESOURCE.getString("FunctionError22"));
 								}
 							}
 						}
@@ -1235,7 +1237,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError5") + "\n" + e.getMessage());
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
 		}
@@ -1252,7 +1254,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					fieldList.get(i).requestFocus();
 					isFirstErrorField = false;
 				}
-				messageList.add(fieldList.get(i).getCaption() + res.getString("Colon") + fieldList.get(i).getError());
+				messageList.add(fieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + fieldList.get(i).getError());
 			}
 			/////////////////////////////////////////////////////////
 			// required step to set focus on the first error field //
@@ -1365,7 +1367,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				if (hasNoErrorWithKey("INSERT")) {
 					//
 					if (this.isCheckOnly) {
-						messageList.add(res.getString("FunctionMessage16"));
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage16"));
 					} else {
 						//
 						for (int i = 0; i < fieldList.size(); i++) {
@@ -1399,8 +1401,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 								if (functionAfterInsert.equals("")) {
 									//
 									if (functionElement_.getAttribute("ContinueAdd").equals("T")) {
-										Object[] bts = {res.getString("Exit"), res.getString("Continue")} ;
-										int reply = JOptionPane.showOptionDialog(jPanelMain, res.getString("FunctionMessage17") + dataName + res.getString("FunctionMessage18"), res.getString("CheckToContinue"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+										Object[] bts = {XFUtility.RESOURCE.getString("Exit"), XFUtility.RESOURCE.getString("Continue")} ;
+										int reply = JOptionPane.showOptionDialog(jPanelMain, XFUtility.RESOURCE.getString("FunctionMessage17") + dataName + XFUtility.RESOURCE.getString("FunctionMessage18"), XFUtility.RESOURCE.getString("CheckToContinue"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 										if (reply == 1) {
 											for (int i = 0; i < fieldList.size(); i++) {
 												if (fieldList.get(i).isAutoNumberField() || fieldList.get(i).isAutoDetailRowNumber()) {
@@ -1408,7 +1410,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 												}
 											}
 											if (initialMsg.equals("")) {
-												messageList.add(res.getString("FunctionMessage19"));
+												messageList.add(XFUtility.RESOURCE.getString("FunctionMessage19"));
 											} else {
 												messageList.add(initialMsg);
 											}
@@ -1443,7 +1445,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 								}
 							}
 						} else {
-							String message = res.getString("FunctionError50");
+							String message = XFUtility.RESOURCE.getString("FunctionError50");
 							JOptionPane.showMessageDialog(this, message);
 							exceptionHeader = message;
 							this.rollback();
@@ -1471,7 +1473,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			if (countOfErrors == 0) {
 				if (hasNoErrorWithKey("UPDATE")) {
 					if (this.isCheckOnly) {
-						messageList.add(res.getString("FunctionMessage9"));
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage9"));
 					} else {
 						XFTableOperator operator = createTableOperator(primaryTable_.getSQLToUpdate());
 						int recordCount = operator.execute();
@@ -1485,7 +1487,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 								returnMap_.put("RETURN_CODE", "20");
 							}
 						} else {
-							String errorMessage = res.getString("FunctionError19");
+							String errorMessage = XFUtility.RESOURCE.getString("FunctionError19");
 							JOptionPane.showMessageDialog(jPanelMain, errorMessage);
 							exceptionHeader = errorMessage.replace("\n", " ");
 							this.rollback();
@@ -1505,7 +1507,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	void doButtonActionSetEditMode() {
-		this.setTitle(res.getString("FunctionMessage22") + dataName + res.getString("FunctionMessage23"));
+		this.setTitle(XFUtility.RESOURCE.getString("FunctionMessage22") + dataName + XFUtility.RESOURCE.getString("FunctionMessage23"));
 		panelMode_ = "EDIT";
 		returnMap_.put("RETURN_CODE", "21");
 		//
@@ -1519,7 +1521,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		setFocusOnComponent();
 		//
-		buttonToEdit.setText(functionKeyToEdit + " " + res.getString("Update"));
+		buttonToEdit.setText(functionKeyToEdit + " " + XFUtility.RESOURCE.getString("Update"));
 		if (buttonToCopy != null) {
 			buttonToCopy.setVisible(false);
 		}
@@ -1527,11 +1529,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			buttonToDelete.setVisible(false);
 		}
 		//
-		messageList.add(res.getString("FunctionMessage24"));
+		messageList.add(XFUtility.RESOURCE.getString("FunctionMessage24"));
 	}
 		
 	void doButtonActionSetCopyMode() {
-		this.setTitle(res.getString("FunctionMessage25") + dataName + res.getString("FunctionMessage26"));
+		this.setTitle(XFUtility.RESOURCE.getString("FunctionMessage25") + dataName + XFUtility.RESOURCE.getString("FunctionMessage26"));
 		panelMode_ = "COPY";
 		returnMap_.put("RETURN_CODE", "11");
 		//
@@ -1546,19 +1548,19 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		setFocusOnComponent();
 		//
-		buttonToEdit.setText(functionKeyToEdit + " " + res.getString("Add"));
+		buttonToEdit.setText(functionKeyToEdit + " " + XFUtility.RESOURCE.getString("Add"));
 		buttonToCopy.setVisible(false);
 		if (buttonToDelete != null) {
 			buttonToDelete.setVisible(false);
 		}
 		//
 		messageList.clear();
-		messageList.add(res.getString("FunctionMessage15"));
+		messageList.add(XFUtility.RESOURCE.getString("FunctionMessage15"));
 	}
 	
 	void doButtonActionDelete() {
-		Object[] bts = {res.getString("Yes"), res.getString("No")} ;
-		int reply = JOptionPane.showOptionDialog(jPanelMain, res.getString("FunctionMessage27") + dataName + res.getString("FunctionMessage28"), res.getString("CheckToDelete"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+		Object[] bts = {XFUtility.RESOURCE.getString("Yes"), XFUtility.RESOURCE.getString("No")} ;
+		int reply = JOptionPane.showOptionDialog(jPanelMain, XFUtility.RESOURCE.getString("FunctionMessage27") + dataName + XFUtility.RESOURCE.getString("FunctionMessage28"), XFUtility.RESOURCE.getString("CheckToDelete"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 		if (reply == 0) {
 			try {
 				setCursor(new Cursor(Cursor.WAIT_CURSOR));
@@ -1580,7 +1582,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 							returnMap_.put("RETURN_CODE", "30");
 						}
 					} else {
-						String errorMessage = res.getString("FunctionError33");
+						String errorMessage = XFUtility.RESOURCE.getString("FunctionError33");
 						JOptionPane.showMessageDialog(jPanelMain, errorMessage);
 						exceptionHeader = errorMessage.replace("\n", " ");
 						this.rollback();
@@ -1638,26 +1640,26 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		HSSFFont fontHeader = workBook.createFont();
 		fontHeader = workBook.createFont();
-		fontHeader.setFontName(res.getString("XLSFontHDR"));
+		fontHeader.setFontName(XFUtility.RESOURCE.getString("XLSFontHDR"));
 		fontHeader.setFontHeightInPoints((short)11);
 		//
 		HSSFFont fontDataBlack = workBook.createFont();
-		fontDataBlack.setFontName(res.getString("XLSFontDTL"));
+		fontDataBlack.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
 		fontDataBlack.setFontHeightInPoints((short)11);
 		HSSFFont fontDataRed = workBook.createFont();
-		fontDataRed.setFontName(res.getString("XLSFontDTL"));
+		fontDataRed.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
 		fontDataRed.setFontHeightInPoints((short)11);
 		fontDataRed.setColor(HSSFColor.RED.index);
 		HSSFFont fontDataBlue = workBook.createFont();
-		fontDataBlue.setFontName(res.getString("XLSFontDTL"));
+		fontDataBlue.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
 		fontDataBlue.setFontHeightInPoints((short)11);
 		fontDataBlue.setColor(HSSFColor.BLUE.index);
 		HSSFFont fontDataGreen = workBook.createFont();
-		fontDataGreen.setFontName(res.getString("XLSFontDTL"));
+		fontDataGreen.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
 		fontDataGreen.setFontHeightInPoints((short)11);
 		fontDataGreen.setColor(HSSFColor.GREEN.index);
 		HSSFFont fontDataOrange = workBook.createFont();
-		fontDataOrange.setFontName(res.getString("XLSFontDTL"));
+		fontDataOrange.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
 		fontDataOrange.setFontHeightInPoints((short)11);
 		fontDataOrange.setColor(HSSFColor.ORANGE.index);
 		//
@@ -1723,10 +1725,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			//
 			workBook.write(fileOutputStream);
 			//
-			messageList.add(res.getString("XLSComment1"));
+			messageList.add(XFUtility.RESOURCE.getString("XLSComment1"));
 			//
 		} catch(Exception e) {
-			messageList.add(res.getString("XLSErrorMessage"));
+			messageList.add(XFUtility.RESOURCE.getString("XLSErrorMessage"));
 			e.printStackTrace(exceptionStream);
 		} finally {
 			try {
@@ -1994,7 +1996,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 
 class XF200_Field extends XFFieldScriptable {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element functionFieldElement_ = null;
 	org.w3c.dom.Element tableElement = null;
 	private String fieldName = "";
@@ -2090,7 +2091,7 @@ class XF200_Field extends XFFieldScriptable {
 		//
 		org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID_, fieldID_);
 		if (workElement == null) {
-			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + res.getString("FunctionError11"));
+			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
 		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
@@ -2377,7 +2378,7 @@ class XF200_Field extends XFFieldScriptable {
 		//
 		org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID_, fieldID_);
 		if (workElement == null) {
-			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + res.getString("FunctionError11"));
+			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
@@ -2838,7 +2839,7 @@ class XF200_Field extends XFFieldScriptable {
 				}
 				//
 				if (isError) {
-					this.setError(res.getString("FunctionError16"));
+					this.setError(XFUtility.RESOURCE.getString("FunctionError16"));
 				}
 			}
 		}
@@ -2893,7 +2894,6 @@ class XF200_Field extends XFFieldScriptable {
 
 class XF200_ComboBox extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private String dataTypeOptions_ = "";
 	private String tableID = "";
 	private String tableAlias = "";
@@ -3005,7 +3005,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 					}
 					fieldWidth = fieldWidth + 30;
 					if (jComboBox.getItemCount() == 0) {
-						JOptionPane.showMessageDialog(this, res.getString("FunctionError24") + dataSourceName + res.getString("FunctionError25"));
+						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError24") + dataSourceName + XFUtility.RESOURCE.getString("FunctionError25"));
 					}
 				} catch(Exception e) {
 					e.printStackTrace(dialog_.getExceptionStream());
@@ -3017,7 +3017,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 					keyFieldList = referTable_.getKeyFieldIDList();
 					workElement = dialog_.getSession().getFieldElement(tableID, fieldID);
 					if (workElement == null) {
-						JOptionPane.showMessageDialog(this, tableID + "." + fieldID + res.getString("FunctionError11"));
+						JOptionPane.showMessageDialog(this, tableID + "." + fieldID + XFUtility.RESOURCE.getString("FunctionError11"));
 					}
 					ArrayList<String> workDataTypeOptionList = XFUtility.getOptionList(workElement.getAttribute("TypeOptions"));
 					int dataSize = Integer.parseInt(workElement.getAttribute("Size"));
@@ -3247,7 +3247,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 
 class XF200_PromptCallField extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private String tableID = "";
 	private String tableAlias = "";
 	private String fieldID = "";
@@ -3291,7 +3290,7 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		//
 		org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, fieldID);
 		if (workElement == null) {
-			JOptionPane.showMessageDialog(this, tableID + "." + fieldID + res.getString("FunctionError11"));
+			JOptionPane.showMessageDialog(this, tableID + "." + fieldID + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		String dataType = workElement.getAttribute("Type");
 		String dataTypeOptions = workElement.getAttribute("TypeOptions");
@@ -3583,7 +3582,7 @@ class XF200_PrimaryTable extends Object {
 		SortableDomElementListModel sortList = XFUtility.getSortedListModel(workList, "Order");
 		for (int i = 0; i < sortList.size(); i++) {
 	        element = (org.w3c.dom.Element)sortList.getElementAt(i);
-	        scriptList.add(new XFScript(tableID, element));
+	        scriptList.add(new XFScript(tableID, element, dialog_.getSession().getTableNodeList()));
 		}
 	}
 	
@@ -4040,7 +4039,6 @@ class XF200_PrimaryTable extends Object {
 
 class XF200_ReferTable extends Object {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element referElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF200 dialog_ = null;
@@ -4363,7 +4361,7 @@ class XF200_ReferTable extends Object {
 						&& dialog_.getFieldList().get(j).isEditable()
 						&& dialog_.getFieldList().get(j).getDataSourceName().equals(withKeyFieldIDList.get(i))
 						&& !dialog_.getFieldList().get(j).isError()) {
-					dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + res.getString("FunctionError45"));
+					dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 					noneOfKeyFieldsWereSetError = false;
 					break;
 				}
@@ -4382,7 +4380,7 @@ class XF200_ReferTable extends Object {
 							&& dialog_.getFieldList().get(j).getFieldID().equals(fieldIDList.get(i))
 							&& dialog_.getFieldList().get(j).getTableAlias().equals(this.tableAlias)
 							&& !dialog_.getFieldList().get(j).isError()) {
-						dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + res.getString("FunctionError45"));
+						dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 						noneOfKeyFieldsWereSetError = false;
 						break;
 					}
@@ -4399,7 +4397,7 @@ class XF200_ReferTable extends Object {
 				for (int j = 0; j < dialog_.getFieldList().size(); j++) {
 					if (dialog_.getFieldList().get(j).getDataSourceName().equals(withKeyFieldIDList.get(i))
 							&& !dialog_.getFieldList().get(j).isError()) {
-						dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + res.getString("FunctionError45"));
+						dialog_.getFieldList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 						break;
 					}
 				}

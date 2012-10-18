@@ -36,7 +36,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
-
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -46,7 +45,6 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import org.w3c.dom.*;
 import com.lowagie.text.*;
@@ -55,7 +53,6 @@ import com.lowagie.text.pdf.*;
 
 public class XF290 extends Component implements XFExecutable, XFScriptable {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	private org.w3c.dom.Element functionElement_ = null;
 	private HashMap<String, Object> parmMap_ = null;
 	private HashMap<String, Object> returnMap_ = new HashMap<String, Object>();
@@ -201,7 +198,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 						if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
 							workElement = session_.getFieldElement(workTableID, workFieldID);
 							if (workElement == null) {
-								String msg = res.getString("FunctionError1") + primaryTable_.getTableID() + res.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + res.getString("FunctionError3") + workAlias + "_" + workFieldID + res.getString("FunctionError4");
+								String msg = XFUtility.RESOURCE.getString("FunctionError1") + primaryTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
 								JOptionPane.showMessageDialog(null, msg);
 								throw new Exception(msg);
 							} else {
@@ -247,7 +244,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			}
 
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError5"));
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionError5"));
 			e.printStackTrace(exceptionStream);
 			setErrorAndCloseFunction();
 		} finally {
@@ -288,7 +285,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	}
 	
 	public void cancelWithScriptException(ScriptException e, String scriptName) {
-		JOptionPane.showMessageDialog(this, res.getString("FunctionError7") + scriptName + res.getString("FunctionError8"));
+		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError7") + scriptName + XFUtility.RESOURCE.getString("FunctionError8"));
 		exceptionHeader = "'" + scriptName + "' Script error\n";
 		e.printStackTrace(exceptionStream);
 		this.rollback();
@@ -296,7 +293,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	}
 	
 	public void cancelWithException(Exception e) {
-		JOptionPane.showMessageDialog(this, res.getString("FunctionError5") + "\n" + e.getMessage());
+		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError5") + "\n" + e.getMessage());
 		e.printStackTrace(exceptionStream);
 		this.rollback();
 		setErrorAndCloseFunction();
@@ -557,7 +554,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 				chunk = new Chunk(image, x, y, true);
 			}
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, res.getString("FunctionError39") + keyword + res.getString("FunctionError40") + e.toString());
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionError39") + keyword + XFUtility.RESOURCE.getString("FunctionError40") + e.toString());
 		}
 		//
 		return chunk;
@@ -582,7 +579,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 				}
 				fetchReferTableRecords("AR", "");
 			} else {
-				JOptionPane.showMessageDialog(null, res.getString("FunctionError30"));
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionError30"));
 				returnMap_.put("RETURN_CODE", "01");
 				isToBeCanceled = true;
 			}
@@ -842,7 +839,6 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 
 class XF290_Field extends XFColumnScriptable {
 	private static final long serialVersionUID = 1L;
-	private static ResourceBundle res = ResourceBundle.getBundle("xeadDriver.Res");
 	org.w3c.dom.Element tableElement = null;
 	private String dataSourceName_ = "";
 	private String tableID_ = "";
@@ -921,7 +917,7 @@ class XF290_Field extends XFColumnScriptable {
 		//
 		org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID_, fieldID_);
 		if (workElement == null) {
-			JOptionPane.showMessageDialog(null, tableID_ + "." + fieldID_ + res.getString("FunctionError11"));
+			JOptionPane.showMessageDialog(null, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
@@ -1444,7 +1440,7 @@ class XF290_PrimaryTable extends Object {
 		SortableDomElementListModel sortList = XFUtility.getSortedListModel(workList, "Order");
 		for (int i = 0; i < sortList.size(); i++) {
 	        element = (org.w3c.dom.Element)sortList.getElementAt(i);
-	        scriptList.add(new XFScript(tableID, element));
+	        scriptList.add(new XFScript(tableID, element, dialog_.getSession().getTableNodeList()));
 		}
 	}
 	

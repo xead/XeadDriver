@@ -49,6 +49,10 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 
+////////////////////////////////////////////////////////////////
+// This is a public class used in Table-Script.               //
+// Note that public classes are defined in its own java file. //
+////////////////////////////////////////////////////////////////
 public class XFOptionDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 	private static final int LIST_CELL_HEIGHT = 20;

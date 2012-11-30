@@ -47,7 +47,6 @@ import java.util.EventObject;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.StringTokenizer;
-import java.text.DecimalFormat;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
@@ -2914,7 +2913,7 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
-			fieldCaption = wrkStr;
+			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		jLabelField.setText(fieldCaption);
 		jLabelField.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -3691,6 +3690,105 @@ class XF110_SubListCellEditorWithDateField extends XFDateField implements XFTabl
 	}
 }            
 
+class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTableColumnEditor {
+	private static final long serialVersionUID = 1L;
+	private JTextField jTextField;
+	private JButton jButton = new JButton();
+	private String fieldCaption_ = "";
+	private ArrayList<String> dataTypeOptionList_ = null;
+    private XF110_SubList dialog_;
+
+	public XF110_SubListCellEditorWithLongTextEditor(String fieldCaption, ArrayList<String> dataTypeOptionList, XF110_SubList dialog){
+		super();
+		fieldCaption_ = fieldCaption;
+		dataTypeOptionList_ = dataTypeOptionList;
+		dialog_ = dialog;
+
+		jTextField = new JTextField();
+		jTextField.setOpaque(true);
+		jTextField.setBorder(null);
+		jTextField.setEditable(false);
+		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF310.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
+		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
+		jButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String edittedText = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, jTextField.getText());
+				jTextField.setText(edittedText);
+			}
+		});
+		jButton.addKeyListener(new java.awt.event.KeyAdapter() {
+			public void keyPressed(KeyEvent e)  {
+			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						jButton.doClick();
+					}
+				}
+				if (e.getKeyCode() == KeyEvent.VK_TAB) {
+					e.setSource(dialog_.getJTableMain());
+					dialog_.getJTableMain().dispatchEvent(e);
+				}
+			}
+		});
+
+		this.setLayout(new BorderLayout());
+		this.setFocusable(true);
+		this.addFocusListener(new java.awt.event.FocusAdapter() {
+			public void focusGained(FocusEvent e) {
+				dialog_.getCellsEditor().updateActiveColumnIndex();
+				jButton.requestFocus();
+			}
+		});
+		this.add(jTextField, BorderLayout.CENTER);
+		this.add(jButton, BorderLayout.EAST);
+	}
+
+	public void setHorizontalAlignment(int alignment) {
+	}
+	
+	public void setEditable(boolean isEditable) {
+		jButton.setEnabled(isEditable);
+	}
+	
+	public boolean isEditable() {
+		return jButton.isEnabled();
+	}
+
+	public Object getInternalValue() {
+		return jTextField.getText();
+	}
+
+	public Object getExternalValue() {
+		return jTextField.getText();
+	}
+	
+	public void setValue(Object obj) {
+		if (obj == null) {
+			jTextField.setText("");
+		} else {
+			jTextField.setText(obj.toString());
+		}
+	}
+	
+	public void setColorOfError() {
+		jTextField.setBackground(XFUtility.ERROR_COLOR);
+	}
+	
+	public void setColorOfNormal(int row) {
+		if (jButton.isEnabled()) {
+			if (row%2==0) {
+				jTextField.setBackground(SystemColor.text);
+			} else {
+				jTextField.setBackground(XFUtility.ODD_ROW_COLOR);
+			}
+		} else {
+			jTextField.setBackground(SystemColor.control);
+		}
+	}
+}            
+
 class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
 	private JComboBox jComboBoxYear = new JComboBox();
@@ -4284,7 +4382,6 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 		if (isEditable) {
 			this.add(jComboBox, BorderLayout.CENTER);
 		} else {
-			jLabel.setText(this.getExternalValue().toString());
 			this.add(jLabel, BorderLayout.CENTER);
 		}
 	}
@@ -4326,25 +4423,31 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 				jComboBox.removeAllItems();
 
 				boolean blankItemRequired = false;
-				XFHashMap keyValues = new XFHashMap();
+				XFHashMap blankKeyValues = new XFHashMap();
 				for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 					for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
 						if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
 							if (dialog_.getDetailColumnList().get(j).isNullable()) {
 								blankItemRequired = true;
-								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
+								//blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
+								if (dialog_.getDetailColumnList().get(j).isVisibleOnPanel()) {
+									blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getValue());
+								} else {
+									blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
+								}
 							} else {
-								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getValue());
+								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getValue());
 							}
 						}
 					}
 				}
 				if (blankItemRequired) {
-					tableKeyValuesList.add(keyValues);
+					tableKeyValuesList.add(blankKeyValues);
 					jComboBox.addItem("");
 				}
 
 				String wrk;
+				XFHashMap keyValues;
 				XFTableOperator operator = dialog_.createTableOperator(referTable_.getSelectSQL(true));
 				while (operator.next()) {
 					keyValues = new XFHashMap();
@@ -4421,6 +4524,9 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 					}
 				}
 			}
+		}
+		if (jComboBox.getSelectedIndex() >= 0) {
+			jLabel.setText(this.getExternalValue().toString());
 		}
 	}
 	
@@ -4802,14 +4908,6 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 	private boolean isRangeKeyFieldExpire = false;
 	private String valueType = "STRING";
 	private String flagTrue = "";
-	private DecimalFormat integerFormat = new DecimalFormat("#,##0");
-	private DecimalFormat floatFormat0 = new DecimalFormat("#,##0");
-	private DecimalFormat floatFormat1 = new DecimalFormat("#,##0.0");
-	private DecimalFormat floatFormat2 = new DecimalFormat("#,##0.00");
-	private DecimalFormat floatFormat3 = new DecimalFormat("#,##0.000");
-	private DecimalFormat floatFormat4 = new DecimalFormat("#,##0.0000");
-	private DecimalFormat floatFormat5 = new DecimalFormat("#,##0.00000");
-	private DecimalFormat floatFormat6 = new DecimalFormat("#,##0.000000");
 	private ArrayList<String> kubunValueList = new ArrayList<String>();
 	private ArrayList<String> kubunTextList = new ArrayList<String>();
 	private ArrayList<String> additionalHiddenFieldList = new ArrayList<String>();
@@ -4835,11 +4933,12 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		tableID_ = dialog.getTableIDOfTableAlias(tableAlias_);
 		fieldID_ =workTokenizer.nextToken();
 
+		isVisibleOnPanel = true;
 		if (tableID_.equals(dialog_.getDetailTable().getTableID()) && tableAlias_.equals(tableID_)) {
 			isFieldOnDetailTable = true;
-			if (fieldOptionList.contains("LIST1")) {
-				isVisibleOnPanel = false;
-			}
+			//if (fieldOptionList.contains("LIST1")) {
+			//	isVisibleOnPanel = false;
+			//}
 			ArrayList<String> keyNameList = dialog_.getDetailTable().getKeyFieldIDList();
 			for (int i = 0; i < keyNameList.size(); i++) {
 				if (keyNameList.get(i).equals(fieldID_)) {
@@ -4849,13 +4948,13 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 				}
 			}
 		} else {
-			if (fieldOptionList.contains("LIST1")) {
-				isVisibleOnPanel = false;
-			} else {
+			//if (fieldOptionList.contains("LIST1")) {
+			//	isVisibleOnPanel = false;
+			//} else {
 				if (!fieldOptionList.contains("PROMPT_LIST")) {
 					isNonEditableField = true;
 				}
-			}
+			//}
 		}
 
 		org.w3c.dom.Element workElement = dialog.getSession().getFieldElement(tableID_, fieldID_);
@@ -4874,7 +4973,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		}
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
-			fieldCaption = wrkStr;
+			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (!workElement.getAttribute("Decimal").equals("")) {
@@ -4977,7 +5076,8 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 							dialog_.setErrorAndCloseFunction();
 						}
 					} else {
-						if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
+						if ((dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS"))
+								&& !dataType.equals("VARCHAR") && !dataType.equals("LONG VARCHAR")) {
 							fieldWidth = dataSize * 14 + 5;
 							editor = new XF110_SubListCellEditorWithTextField(this, dialog_);
 						} else {
@@ -4994,7 +5094,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 										editor = new XF110_SubListCellEditorWithFYearBox(dialog_);
 									} else {
 										if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-											fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList.contains("ACCEPT_MINUS")) * 7 + 21;
+											fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * 7 + 21;
 											editor = new XF110_SubListCellEditorWithTextField(this, dialog_);
 										} else {
 											if (basicType.equals("DATE")) {
@@ -5007,8 +5107,14 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 													fieldRows = 2;
 													editor = new XF110_SubListCellEditorWithImageField(dialog_);
 												} else {
-													fieldWidth = dataSize * 7 + 15;
-													editor = new XF110_SubListCellEditorWithTextField(this, dialog_);
+													if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
+														fieldWidth = 320;
+														editor = new XF110_SubListCellEditorWithLongTextEditor(fieldCaption, dataTypeOptionList, dialog_);
+
+													} else {
+														fieldWidth = dataSize * 7 + 15;
+														editor = new XF110_SubListCellEditorWithTextField(this, dialog_);
+													}
 												}
 											}
 										}
@@ -5292,40 +5398,14 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 			if (value_ == null || value_.toString().equals("")) {
 				value = "";
 			} else {
-				String wrkStr = value_.toString();
-				int pos = wrkStr.indexOf(".");
-				if (pos >= 0) {
-					wrkStr = wrkStr.substring(0, pos);
-				}
-				value = integerFormat.format(Long.parseLong(wrkStr));
+				value = XFUtility.getFormattedIntegerValue(value_.toString(), dataTypeOptionList, dataSize);
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
 				if (value_ == null || value_.toString().equals("")) {
 					value = "";
 				} else {
-					double doubleWrk = Double.parseDouble(value_.toString());
-					if (decimalSize == 0) {
-						value = floatFormat0.format(doubleWrk);
-					}
-					if (decimalSize == 1) {
-						value = floatFormat1.format(doubleWrk);
-					}
-					if (decimalSize == 2) {
-						value = floatFormat2.format(doubleWrk);
-					}
-					if (decimalSize == 3) {
-						value = floatFormat3.format(doubleWrk);
-					}
-					if (decimalSize == 4) {
-						value = floatFormat4.format(doubleWrk);
-					}
-					if (decimalSize == 5) {
-						value = floatFormat5.format(doubleWrk);
-					}
-					if (decimalSize == 6) {
-						value = floatFormat6.format(doubleWrk);
-					}
+					value = XFUtility.getFormattedFloatValue(value_.toString(), decimalSize);
 				}
 			} else {
 				if (basicType.equals("DATE")) {
@@ -7207,30 +7287,37 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 			if (jComboBox.getSelectedIndex() >= 0) {
 				selectedItemValue = jComboBox.getItemAt(jComboBox.getSelectedIndex()).toString();
 			}
+
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
 
 			boolean blankItemRequired = false;
-			XFHashMap keyValues = new XFHashMap();
+			XFHashMap blankKeyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 				for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
 						if (dialog_.getBatchFieldList().get(j).isNullable()) {
 							blankItemRequired = true;
-							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getNullValue());
+							//blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getNullValue());
+							if (dialog_.getBatchFieldList().get(j).isVisibleOnPanel()) {
+								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
+							} else {
+								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getNullValue());
+							}
 						} else {
-							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
+							blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
 						}
 					}
 				}
 			}
 			if (blankItemRequired) {
-				tableKeyValuesList.add(keyValues);
+				tableKeyValuesList.add(blankKeyValues);
 				jComboBox.addItem("");
 			}
 
 			try {
 				String wrk = "";
+				XFHashMap keyValues;
 				XFTableOperator operator = dialog_.createTableOperator(referTable_.getSelectSQL(true));
 				while (operator.next()) {
 					if (referTable_.isRecordToBeSelected(operator)) {

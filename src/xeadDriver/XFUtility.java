@@ -119,6 +119,14 @@ public class XFUtility {
 	public static final ImageIcon ICON_CHECK_1D = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1D.PNG")));
 	public static final ImageIcon ICON_CHECK_0R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0R.PNG")));
 	public static final ImageIcon ICON_CHECK_1R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1R.PNG")));
+	public static final DecimalFormat INTEGER_FORMAT = new DecimalFormat("#,##0");
+	public static final DecimalFormat FLOAT_FORMAT0 = new DecimalFormat("#,##0");
+	public static final DecimalFormat FLOAT_FORMAT1 = new DecimalFormat("#,##0.0");
+	public static final DecimalFormat FLOAT_FORMAT2 = new DecimalFormat("#,##0.00");
+	public static final DecimalFormat FLOAT_FORMAT3 = new DecimalFormat("#,##0.000");
+	public static final DecimalFormat FLOAT_FORMAT4 = new DecimalFormat("#,##0.0000");
+	public static final DecimalFormat FLOAT_FORMAT5 = new DecimalFormat("#,##0.00000");
+	public static final DecimalFormat FLOAT_FORMAT6 = new DecimalFormat("#,##0.000000");
 	
 	static String getStringNumber(String text) {
 		char[] numberDigit = {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
@@ -142,7 +150,87 @@ public class XFUtility {
 		//
 		return numberString;
 	}
+	
+	static String getFormattedIntegerValue(String value, ArrayList<String> dataTypeOptionList, int size) {
+		String wrkValue, returnValue = "";
+		//
+		int pos = value.indexOf(".");
+		if (pos >= 0) {
+			wrkValue = value.substring(0, pos);
+		} else {
+			wrkValue = value;
+		}
+		wrkValue = wrkValue.replace("-", "");
+		//
+		if (dataTypeOptionList.contains("NO_EDIT")) {
+			StringBuffer bf = new StringBuffer();
+			if (value.startsWith("-")) {
+				bf.append("-");
+			}
+			int extra = size - wrkValue.length();
+			for (int i = 0; i < extra; i++) {
+				bf.append("0");
+			}
+			bf.append(wrkValue);
+			if (value.endsWith("-")) {
+				bf.append("-");
+			}
+			returnValue = bf.toString();
+		} else {
+			if (dataTypeOptionList.contains("ZERO_SUPPRESS")) {
+				StringBuffer bf = new StringBuffer();
+				if (value.startsWith("-")) {
+					bf.append("-");
+				}
+				bf.append(wrkValue);
+				if (value.endsWith("-")) {
+					bf.append("-");
+				}
+				returnValue = bf.toString();
+			} else {
+				returnValue = XFUtility.INTEGER_FORMAT.format(Long.parseLong(wrkValue));
+			}
+		}
+		//
+		return returnValue;
+	}
 
+	static String getFormattedFloatValue(String value, int decimalSize) {
+		String returnValue = "";
+		double doubleWrk;
+		//	
+		try {
+			doubleWrk = Double.parseDouble(value.toString());
+		} catch (NumberFormatException e) {
+			doubleWrk = 0;
+		}
+		//
+		if (decimalSize == 0) {
+			returnValue = XFUtility.FLOAT_FORMAT0.format(doubleWrk);
+		}
+		if (decimalSize == 1) {
+			returnValue = XFUtility.FLOAT_FORMAT1.format(doubleWrk);
+		}
+		if (decimalSize == 2) {
+			returnValue = XFUtility.FLOAT_FORMAT2.format(doubleWrk);
+		}
+		if (decimalSize == 3) {
+			returnValue = XFUtility.FLOAT_FORMAT3.format(doubleWrk);
+		}
+		if (decimalSize == 4) {
+			returnValue = XFUtility.FLOAT_FORMAT4.format(doubleWrk);
+		}
+		if (decimalSize == 5) {
+			returnValue = XFUtility.FLOAT_FORMAT5.format(doubleWrk);
+		}
+		if (decimalSize == 6) {
+			returnValue = XFUtility.FLOAT_FORMAT6.format(doubleWrk);
+		}
+		//
+		return returnValue;
+	}
+
+	
 	static Object getNullValueOfBasicType(String basicType){
 		Object value = null;
 		//
@@ -469,7 +557,19 @@ public class XFUtility {
 		//
 		return defaultValue;
 	}
-
+	
+	static String getCaptionValue(String keywordValue, Session session){
+		String captionValue = keywordValue;
+		StringTokenizer workTokenizer = new StringTokenizer(keywordValue, ":" );
+		if (workTokenizer.countTokens() == 2) {
+			String keyword = workTokenizer.nextToken();
+			String value = workTokenizer.nextToken().trim();
+			if (keyword.equals("SESSION_ATTRIBUTE")) {
+				captionValue = session.getAttribute(value);
+			}
+		}
+		return captionValue;
+	}
 	
 	static String getBasicTypeOf(String dataType){
 		String basicType = "STRING";
@@ -1585,20 +1685,40 @@ public class XFUtility {
 		return chunk;
 	}
 	
-	static int getLengthOfEdittedNumericValue(int dataSize, int decimalSize, boolean acceptMinus) {
+//	static int getLengthOfEdittedNumericValue(int dataSize, int decimalSize, boolean acceptMinus) {
+//		int length = dataSize;
+//		//
+//		if (decimalSize > 0) {
+//			length = length + 1;
+//		}
+//		if (acceptMinus) {
+//			length = length + 1;
+//		}
+//		//
+//		int intSize = dataSize - decimalSize;
+//		while (intSize > 3) {
+//			length = length + 1;
+//			intSize = intSize - 3;
+//		}
+//		//
+//		return length;
+//	}
+	static int getLengthOfEdittedNumericValue(int dataSize, int decimalSize, ArrayList<String> dataTypeOptionList) {
 		int length = dataSize;
 		//
 		if (decimalSize > 0) {
 			length = length + 1;
 		}
-		if (acceptMinus) {
+		if (dataTypeOptionList.contains("ACCEPT_MINUS")) {
 			length = length + 1;
 		}
 		//
-		int intSize = dataSize - decimalSize;
-		while (intSize > 3) {
-			length = length + 1;
-			intSize = intSize - 3;
+		if (!dataTypeOptionList.contains("NO_EDIT")) {
+			int intSize = dataSize - decimalSize;
+			while (intSize > 3) {
+				length = length + 1;
+				intSize = intSize - 3;
+			}
 		}
 		//
 		return length;
@@ -2617,7 +2737,6 @@ class XFDateField extends JPanel implements XFEditableField {
 				}
 			} 
 		});
-		//normalModeColor = dateTextField.getBackground();
 		//
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("prompt.png"));
 	 	jButton.setIcon(imageIcon);
@@ -2637,8 +2756,6 @@ class XFDateField extends JPanel implements XFEditableField {
 				}
 			} 
 		});
-		//
-		//jPanelDummy.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		//
 		this.setSize(new Dimension(XFUtility.getWidthOfDateValue(session.getDateFormat(), 14) + 26, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
@@ -2662,17 +2779,13 @@ class XFDateField extends JPanel implements XFEditableField {
 
 	public void setEditable(boolean editable) {
 		if (editable) {
-			//this.remove(jPanelDummy);
 			this.add(jButton, BorderLayout.EAST);
 			dateTextField.setFont(new java.awt.Font("SansSerif", 0, 12));
-			//dateTextField.setBackground(Color.white);
 			dateTextField.setBackground(SystemColor.text);
 			dateTextField.setFocusable(true);
 		} else {
 			this.remove(jButton);
-			//this.add(jPanelDummy, BorderLayout.EAST);
 			dateTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
-			//dateTextField.setBackground(normalModeColor);
 			dateTextField.setBackground(SystemColor.control);
 			dateTextField.setFocusable(false);
 		}
@@ -2728,6 +2841,7 @@ class XFDateField extends JPanel implements XFEditableField {
 				}
 			}
 		}
+		jButton.setToolTipText(dateTextField.getText());
 	}
 	
 	public void setWidth(int width) {
@@ -2763,6 +2877,7 @@ class XFDateField extends JPanel implements XFEditableField {
 		} else {
 			dateTextField.setText(XFUtility.getUserExpressionOfUtilDate(utilDate, session_.getDateFormat(), false));
 		}
+		jButton.setToolTipText(dateTextField.getText());
 	}
 
 	public int getRows() {
@@ -2812,14 +2927,6 @@ class XFTextField extends JTextField implements XFEditableField {
 	private ArrayList<String> dataTypeOptionList;
 	private String fieldOptions_;
 	private String autoNumberKey = "";
-	private DecimalFormat integerFormat = new DecimalFormat("#,##0");
-	private DecimalFormat floatFormat0 = new DecimalFormat("#,##0");
-	private DecimalFormat floatFormat1 = new DecimalFormat("#,##0.0");
-	private DecimalFormat floatFormat2 = new DecimalFormat("#,##0.00");
-	private DecimalFormat floatFormat3 = new DecimalFormat("#,##0.000");
-	private DecimalFormat floatFormat4 = new DecimalFormat("#,##0.0000");
-	private DecimalFormat floatFormat5 = new DecimalFormat("#,##0.00000");
-	private DecimalFormat floatFormat6 = new DecimalFormat("#,##0.000000");
 	private String oldValue = "";
 	//
 	public XFTextField(String basicType, int digits, int decimal, String dataTypeOptions, String fieldOptions) {
@@ -2834,31 +2941,33 @@ class XFTextField extends JTextField implements XFEditableField {
 		//
 		if (basicType_.equals("INTEGER")) {
 			this.setHorizontalAlignment(SwingConstants.RIGHT);
-			this.setText("0");
+			this.setText(this.getFormattedNumber("0"));
 		} else {
 			if (basicType_.equals("FLOAT")) {
 				this.setHorizontalAlignment(SwingConstants.RIGHT);
+				String wrkStr = "";
 				if (decimal_ == 0) {
-					this.setText("0");
+					wrkStr = "0";
 				}
 				if (decimal_ == 1) {
-					this.setText("0.0");
+					wrkStr = "0.0";
 				}
 				if (decimal_ == 2) {
-					this.setText("0.00");
+					wrkStr = "0.00";
 				}
 				if (decimal_ == 3) {
-					this.setText("0.000");
+					wrkStr = "0.000";
 				}
 				if (decimal_ == 4) {
-					this.setText("0.0000");
+					wrkStr = "0.0000";
 				}
 				if (decimal_ == 5) {
-					this.setText("0.00000");
+					wrkStr = "0.00000";
 				}
 				if (decimal_ == 6) {
-					this.setText("0.000000");
+					wrkStr = "0.000000";
 				}
+				this.setText(this.getFormattedNumber(wrkStr));
 			} else {
 				this.setHorizontalAlignment(SwingConstants.LEFT);
 			}
@@ -2881,7 +2990,8 @@ class XFTextField extends JTextField implements XFEditableField {
 			fieldWidth = digits_ * 14 + 10;
 		} else {
 			if (basicType_.equals("INTEGER") || basicType_.equals("FLOAT")) {
-				fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList.contains("ACCEPT_MINUS")) * 7 + 21;
+				//fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList.contains("ACCEPT_MINUS")) * 7 + 21;
+				fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList) * 7 + 21;
 			} else {
 				fieldWidth = digits_ * 7 + 10;
 			}
@@ -3034,34 +3144,37 @@ class XFTextField extends JTextField implements XFEditableField {
 	
 	public String getFormattedNumber(String text) {
 		String value = "0";
-		if (text != null && !text.equals("")) {
+		//if (text != null && !text.equals("")) {
+		if (text != null) {
 			if (basicType_.equals("INTEGER")) {
-				long numberValue = Long.parseLong(getStringNumber(text));
-				value = integerFormat.format(numberValue);
+//				long numberValue = Long.parseLong(getStringNumber(text));
+//				value = integerFormat.format(numberValue);
+				value = XFUtility.getFormattedIntegerValue(getStringNumber(text), dataTypeOptionList, digits_);
 			}
 			if (basicType_.equals("FLOAT")) {
-				double numberValue = Double.parseDouble(getStringNumber(text));
-				if (decimal_ == 0) {
-					value = floatFormat0.format(numberValue);
-				}
-				if (decimal_ == 1) {
-					value = floatFormat1.format(numberValue);
-				}
-				if (decimal_ == 2) {
-					value = floatFormat2.format(numberValue);
-				}
-				if (decimal_ == 3) {
-					value = floatFormat3.format(numberValue);
-				}
-				if (decimal_ == 4) {
-					value = floatFormat4.format(numberValue);
-				}
-				if (decimal_ == 5) {
-					value = floatFormat5.format(numberValue);
-				}
-				if (decimal_ == 6) {
-					value = floatFormat6.format(numberValue);
-				}
+//				double numberValue = Double.parseDouble(getStringNumber(text));
+//				if (decimal_ == 0) {
+//					value = floatFormat0.format(numberValue);
+//				}
+//				if (decimal_ == 1) {
+//					value = floatFormat1.format(numberValue);
+//				}
+//				if (decimal_ == 2) {
+//					value = floatFormat2.format(numberValue);
+//				}
+//				if (decimal_ == 3) {
+//					value = floatFormat3.format(numberValue);
+//				}
+//				if (decimal_ == 4) {
+//					value = floatFormat4.format(numberValue);
+//				}
+//				if (decimal_ == 5) {
+//					value = floatFormat5.format(numberValue);
+//				}
+//				if (decimal_ == 6) {
+//					value = floatFormat6.format(numberValue);
+//				}
+				value = XFUtility.getFormattedFloatValue(getStringNumber(text), decimal_);
 			}
 		}
 		return value;
@@ -3263,7 +3376,6 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 			private static final long serialVersionUID = 1L;
 			public void actionPerformed(ActionEvent e){
 				jTextArea.transferFocus();
-				//exitFromComponent();
 			}
 		};
 		actionMap.put("Exit", transferFocusAction);
@@ -3271,7 +3383,6 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 			private static final long serialVersionUID = 1L;
 			public void actionPerformed(ActionEvent e){
 				jTextArea.transferFocusBackward();
-				//exitFromComponent();
 			}
 		};
 		actionMap.put("Backward", transferFocusBackwardAction);
@@ -3302,10 +3413,6 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	public void setWidth(int width) {
 		this.setSize(width, this.getHeight());
 	}
-
-	//public void exitFromComponent() {
-	//	jTextArea.transferFocus();
-	//}
 
 	public boolean isEditable() {
 		return jTextArea.isEditable();

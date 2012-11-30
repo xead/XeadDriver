@@ -51,7 +51,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowEvent;
 import java.io.PrintStream;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1771,14 +1770,6 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 	private String flagTrue = "";
 	private ArrayList<String> kubunValueList = new ArrayList<String>();
 	private ArrayList<String> kubunTextList = new ArrayList<String>();
-	private DecimalFormat integerFormat = new DecimalFormat("#,##0");
-	private DecimalFormat floatFormat0 = new DecimalFormat("#,##0");
-	private DecimalFormat floatFormat1 = new DecimalFormat("#,##0.0");
-	private DecimalFormat floatFormat2 = new DecimalFormat("#,##0.00");
-	private DecimalFormat floatFormat3 = new DecimalFormat("#,##0.000");
-	private DecimalFormat floatFormat4 = new DecimalFormat("#,##0.0000");
-	private DecimalFormat floatFormat5 = new DecimalFormat("#,##0.00000");
-	private DecimalFormat floatFormat6 = new DecimalFormat("#,##0.000000");
 	private Object value_ = null;
 	private Color foreground = Color.black;
 	private int fieldRows = 1;
@@ -1812,7 +1803,7 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 		}
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
-			fieldCaption = wrkStr;
+			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (!workElement.getAttribute("Decimal").equals("")) {
@@ -1886,7 +1877,7 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 								fieldWidth = 50;
 							} else {
 								if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-									fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList.contains("ACCEPT_MINUS")) * 7 + 21;
+									fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * 7 + 21;
 								} else {
 									if (basicType.equals("DATE")) {
 										fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), 14);
@@ -2035,40 +2026,14 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 			if (value_ == null || value_.toString().equals("")) {
 				value = "";
 			} else {
-				String wrkStr = value_.toString();
-				int pos = wrkStr.indexOf(".");
-				if (pos >= 0) {
-					wrkStr = wrkStr.substring(0, pos);
-				}
-				value = integerFormat.format(Integer.parseInt(wrkStr));
+				value = XFUtility.getFormattedIntegerValue(value_.toString(), dataTypeOptionList, dataSize);
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
 				if (value_ == null || value_.toString().equals("")) {
 					value = "";
 				} else {
-					double doubleWrk = Double.parseDouble(value_.toString());
-					if (decimalSize == 0) {
-						value = floatFormat0.format(doubleWrk);
-					}
-					if (decimalSize == 1) {
-						value = floatFormat1.format(doubleWrk);
-					}
-					if (decimalSize == 2) {
-						value = floatFormat2.format(doubleWrk);
-					}
-					if (decimalSize == 3) {
-						value = floatFormat3.format(doubleWrk);
-					}
-					if (decimalSize == 4) {
-						value = floatFormat4.format(doubleWrk);
-					}
-					if (decimalSize == 5) {
-						value = floatFormat5.format(doubleWrk);
-					}
-					if (decimalSize == 6) {
-						value = floatFormat6.format(doubleWrk);
-					}
+					value = XFUtility.getFormattedFloatValue(value_.toString(), decimalSize);
 				}
 			} else {
 				if (basicType.equals("DATE")) {

@@ -798,7 +798,12 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(value)), fmt, false);
 					}
 					if (basicType.equals("INTEGER")) {
-						value = XFUtility.getEditValueOfLong(Long.parseLong(value), fmt, fieldList.get(i).getDataSize());
+						if (fieldList.get(i).getDataTypeOptionList().contains("NO_EDIT")
+								|| fieldList.get(i).getDataTypeOptionList().contains("ZERO_SUPPRESS")) {
+							value = XFUtility.getFormattedIntegerValue(value.toString(), fieldList.get(i).getDataTypeOptionList(), fieldList.get(i).getDataSize());
+						} else {
+							value = XFUtility.getEditValueOfLong(Long.parseLong(value), fmt, fieldList.get(i).getDataSize());
+						}
 					}
 					if (basicType.equals("FLOAT")) {
 						value = XFUtility.getEditValueOfDouble(Double.parseDouble(value), fmt, fieldList.get(i).getDecimalSize());

@@ -292,7 +292,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			jLabelFunctionID.setText("200" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
 			FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 			jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
-	        //Rectangle screenRect = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 	        Rectangle screenRect = session_.getMenuRectangle();
 			if (functionElement_.getAttribute("Size").equals("")) {
 				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
@@ -1387,6 +1386,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 							}
 						}
 						//
+						if (primaryTable_.getUpdateCounterID().equals("")) {
+							throw new Exception(XFUtility.RESOURCE.getString("FunctionError51"));
+						}
+						//
 						operator = createTableOperator(primaryTable_.getSQLToInsert());
 						int recordCount = operator.execute();
 						if (recordCount == 1) {
@@ -1475,6 +1478,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					if (this.isCheckOnly) {
 						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage9"));
 					} else {
+						if (primaryTable_.getUpdateCounterID().equals("")) {
+							throw new Exception(XFUtility.RESOURCE.getString("FunctionError51"));
+						}
+						//
 						XFTableOperator operator = createTableOperator(primaryTable_.getSQLToUpdate());
 						int recordCount = operator.execute();
 						if (recordCount == 1) {
@@ -1569,6 +1576,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				//
 				int countOfErrors = checkDeleteErrors();
 				if (countOfErrors == 0) {
+					if (primaryTable_.getUpdateCounterID().equals("")) {
+						throw new Exception(XFUtility.RESOURCE.getString("FunctionError51"));
+					}
 					//
 					XFTableOperator operator = createTableOperator(primaryTable_.getSQLToDelete());
 					int recordCount = operator.execute();
@@ -2127,7 +2137,7 @@ class XF200_Field extends XFFieldScriptable {
 		//
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
-			fieldCaption = wrkStr;
+			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		jLabelField.setText(fieldCaption);
 		jLabelField.setFocusable(false);
@@ -3071,25 +3081,31 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 //				}
 //			}
 			boolean blankItemRequired = false;
-			XFHashMap keyValues = new XFHashMap();
+			XFHashMap blankKeyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 				for (int j = 0; j < dialog_.getFieldList().size(); j++) {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
 						if (dialog_.getFieldList().get(j).isNullable()) {
 							blankItemRequired = true;
-							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
+							//blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
+							if (dialog_.getFieldList().get(j).isVisibleOnPanel()) {
+								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
+							} else {
+								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
+							}
 						} else {
-							keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
+							blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
 						}
 					}
 				}
 			}
 			if (blankItemRequired) {
-				tableKeyValuesList.add(keyValues);
+				tableKeyValuesList.add(blankKeyValues);
 				jComboBox.addItem("");
 			}
 			//
 			try {
+				XFHashMap keyValues;
 				XFTableOperator operator = dialog_.createTableOperator(referTable_.getSelectSQL(true));
 				while (operator.next()) {
 					if (referTable_.isRecordToBeSelected(operator)) {
@@ -3523,6 +3539,10 @@ class XF200_PrimaryTable extends Object {
 		updateCounterID = tableElement.getAttribute("UpdateCounter");
 		if (updateCounterID.equals("")) {
 			updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
+		} else {
+			if (updateCounterID.toUpperCase().equals("*NONE")) {
+				updateCounterID = "";
+			}
 		}
 		fixedWhere = functionElement_.getAttribute("FixedWhere");
 		//
@@ -3594,8 +3614,14 @@ class XF200_PrimaryTable extends Object {
 		return detailRowNoID;
 	}
 
+	public String getUpdateCounterID(){
+		return updateCounterID;
+	}
+
 	public void setUpdateCounterValue(XFTableOperator operator) throws Exception {
-		updateCounterValue = Long.parseLong(operator.getValueOf(updateCounterID).toString());
+		if (!updateCounterID.equals("")) {
+			updateCounterValue = Long.parseLong(operator.getValueOf(updateCounterID).toString());
+		}
 	}
 	
 	public String getSQLToSelect(){
@@ -3614,8 +3640,10 @@ class XF200_PrimaryTable extends Object {
 				firstField = false;
 			}
 		}
-		buf.append(",");
-		buf.append(updateCounterID);
+		if (!updateCounterID.equals("")) {
+			buf.append(",");
+			buf.append(updateCounterID);
+		}
 		//
 		buf.append(" from ");
 		buf.append(tableID);

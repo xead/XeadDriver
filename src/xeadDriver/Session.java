@@ -163,13 +163,13 @@ public class Session extends JFrame {
 	private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 	private Bindings globalScriptBindings = null;
     private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
-    //private HttpClient httpClient = new DefaultHttpClient();
 	private DOMParser responseDocParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
 	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
 	private Application application;
 	private XFOptionDialog optionDialog = new XFOptionDialog(this);
+	private XFLongTextEditor xfLongTextEditor = new XFLongTextEditor(this);
 
 	public Session(String[] args, Application app) {
 		String fileName = "";
@@ -727,6 +727,10 @@ public class Session extends JFrame {
 	
 	public XFOptionDialog getOptionDialog() {
 		return optionDialog;
+	}
+	
+	public XFLongTextEditor getLongTextEditor() {
+		return xfLongTextEditor;
 	}
 	
 	public String getCurrentMenuID() {

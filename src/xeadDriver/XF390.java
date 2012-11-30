@@ -1284,7 +1284,12 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					}
 					if (basicType.equals("INTEGER")) {
 						//value = XFUtility.getEditValueOfInteger(Integer.parseInt(value), fmt, headerFieldList.get(i).getDataSize());
-						value = XFUtility.getEditValueOfLong(Long.parseLong(value), fmt, headerFieldList.get(i).getDataSize());
+						if (headerFieldList.get(i).getDataTypeOptionList().contains("NO_EDIT")
+								|| headerFieldList.get(i).getDataTypeOptionList().contains("ZERO_SUPPRESS")) {
+							value = XFUtility.getFormattedIntegerValue(value, headerFieldList.get(i).getDataTypeOptionList(), headerFieldList.get(i).getDataSize());
+						} else {
+							value = XFUtility.getEditValueOfLong(Long.parseLong(value), fmt, headerFieldList.get(i).getDataSize());
+						}
 					}
 					if (basicType.equals("FLOAT")) {
 						//value = XFUtility.getEditValueOfFloat(Float.parseFloat(value), fmt, headerFieldList.get(i).getDecimalSize());
@@ -2758,7 +2763,7 @@ class XF390_DetailColumn extends XFColumnScriptable {
 		}
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
-			fieldCaption = wrkStr;
+			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (!workElement.getAttribute("Decimal").equals("")) {
@@ -2901,7 +2906,12 @@ class XF390_DetailColumn extends XFColumnScriptable {
 		//
 		String basicType = this.getBasicType();
 		if (basicType.equals("INTEGER")) {
-			value = XFUtility.getEditValueOfLong(summaryLong, editCode, dataSize);
+			if (dataTypeOptionList.contains("NO_EDIT")
+					|| dataTypeOptionList.contains("ZERO_SUPPRESS")) {
+				value = XFUtility.getFormattedIntegerValue(Long.toString(summaryLong), dataTypeOptionList, dataSize);
+			} else {
+				value = XFUtility.getEditValueOfLong(summaryLong, editCode, dataSize);
+			}
 		}
 		if (basicType.equals("FLOAT")) {
 			value = XFUtility.getEditValueOfDouble(summaryDouble, editCode, decimalSize);
@@ -2998,7 +3008,12 @@ class XF390_DetailColumn extends XFColumnScriptable {
 				if (dataTypeOptionList.contains("MSEQ")) {
 					value = XFUtility.getUserExpressionOfMSeq(Integer.parseInt(value_.toString()), dialog_.getSession());
 				} else {
-					value = XFUtility.getEditValueOfLong((Long)value_, editCode, dataSize);
+					if (dataTypeOptionList.contains("NO_EDIT")
+							|| dataTypeOptionList.contains("ZERO_SUPPRESS")) {
+						value = XFUtility.getFormattedIntegerValue(value_.toString(), dataTypeOptionList, dataSize);
+					} else {
+						value = XFUtility.getEditValueOfLong((Long)value_, editCode, dataSize);
+					}
 				}
 			}
 		} else {

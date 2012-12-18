@@ -367,6 +367,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		org.w3c.dom.Element workElement;
 		String workStr, workAlias, workTableID, workFieldID;
 		StringTokenizer workTokenizer;
+		int wrkInt, countOfDisplayedFilters;
 		org.w3c.dom.Element fieldElement;
 
 		try {
@@ -689,24 +690,26 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					jPanelFilter[i].removeAll();
 					anyFilterIsEditable[i] = false;
 					GridLayout gridLayoutFilter = new GridLayout();
-					NodeList FilterFieldList = workElement.getElementsByTagName("Filter");
-					workSortingList = XFUtility.getSortedListModel(FilterFieldList, "Order");
-					if (workSortingList.getSize() <= 2) {
+					NodeList filterFieldList = workElement.getElementsByTagName("Filter");
+					countOfDisplayedFilters = XFUtility.countNumberOfDisplayedFilters(filterFieldList);
+					if (countOfDisplayedFilters <= 2) {
 						gridLayoutFilter.setColumns(2);
 						gridLayoutFilter.setRows(1);
 						filterWidth[i] = (this.getPreferredSize().getWidth() - 90) / 2;
 					}
-					if (workSortingList.getSize() == 3) {
+					if (countOfDisplayedFilters == 3) {
 						gridLayoutFilter.setColumns(3);
 						gridLayoutFilter.setRows(1);
 						filterWidth[i] = (this.getPreferredSize().getWidth() - 90) / 3;
 					}
-					if (workSortingList.getSize() == 4) {
+					if (countOfDisplayedFilters >= 4) {
 						gridLayoutFilter.setColumns(4);
 						gridLayoutFilter.setRows(1);
 						filterWidth[i] = (this.getPreferredSize().getWidth() - 90) / 4;
 					}
 					jPanelFilter[i].setLayout(gridLayoutFilter);
+					wrkInt = 0;
+					workSortingList = XFUtility.getSortedListModel(filterFieldList, "Order");
 					for (int j = 0; j < workSortingList.getSize() && j < 4; j++) {
 						filterListArray[i].add(new XF300_Filter((org.w3c.dom.Element)workSortingList.getElementAt(j), this, i));
 						if (!filterListArray[i].get(j).isValidatedWithParmMapValue(parmMap_)) {
@@ -714,10 +717,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							isToBeCanceled = true;
 							break;
 						}
-						if (filterListArray[i].get(j).isEditable()) {
-							anyFilterIsEditable[i] = true;
+						if (!filterListArray[i].get(j).isHidden() && wrkInt < 8) {
+							wrkInt++;
+							jPanelFilter[i].add(filterListArray[i].get(j));
+							if (filterListArray[i].get(j).isEditable()) {
+								anyFilterIsEditable[i] = true;
+							}
 						}
-						jPanelFilter[i].add(filterListArray[i].get(j));
 					}
 
 					///////////////////////////////////////////
@@ -2738,14 +2744,35 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	boolean isTheRowToBeSelected(int index) {
-		boolean toBeSelected = true;
+//		boolean toBeSelected = true;
+//		for (int i = 0; i < filterListArray[index].size(); i++) {
+//			toBeSelected = filterListArray[index].get(i).isValidated();
+//			if (!toBeSelected) {
+//				break;
+//			}
+//		}
+//		return toBeSelected;
+		boolean isToBeSelected = true;
+		boolean isToBeSelectedInFilterGroup = false;
+		String filterGroupID = "";
 		for (int i = 0; i < filterListArray[index].size(); i++) {
-			toBeSelected = filterListArray[index].get(i).isValidated();
-			if (!toBeSelected) {
-				break;
+			if (!filterListArray[index].get(i).getStringValue().equals("")) {
+				if (!filterGroupID.equals(filterListArray[index].get(i).getFilterGroupID())) {
+					if (!filterGroupID.equals("")) {
+						isToBeSelected = isToBeSelectedInFilterGroup;
+					}
+					filterGroupID = filterListArray[index].get(i).getFilterGroupID();
+					isToBeSelectedInFilterGroup = false;
+				}
+				if (filterListArray[index].get(i).isValidated()) {
+					isToBeSelectedInFilterGroup = true;
+				}
 			}
 		}
-		return toBeSelected;
+		if (!filterGroupID.equals("")) {
+			isToBeSelected = isToBeSelectedInFilterGroup;
+		}
+		return isToBeSelected;
 	}
 }
 
@@ -3926,7 +3953,9 @@ class XF300_Filter extends JPanel {
 	private JComponent component = null;
 	private boolean isReflect = false;
 	private boolean isEditable_ = true;
+	private boolean isHidden = false;
 	private int index_ = 0;
+	private String filterGroupID = "";
 
 	public XF300_Filter(org.w3c.dom.Element fieldElement, XF300 dialog, int index){
 		super();
@@ -3989,6 +4018,8 @@ class XF300_Filter extends JPanel {
 		if (operandType.equals("REFLECT")) {
 			isReflect = true;
 		}
+
+		filterGroupID = tableAlias + "." + fieldID + ":" + operandType;
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
@@ -4141,14 +4172,9 @@ class XF300_Filter extends JPanel {
 									}
 
 									try {
-										StringBuffer buf = new StringBuffer();
-										buf.append("select ");
-										buf.append(fieldID);
-										buf.append(" from ");
-										buf.append(tableID);
-										buf.append(" order by ");
-										buf.append(fieldID);
-										operator = dialog_.createTableOperator(buf.toString());
+										operator = dialog_.createTableOperator("Select", tableID);
+										operator.setSelectFields(fieldID);
+										operator.setOrderBy(fieldID);
 										while (operator.next()) {
 											valueIndex++;
 											wrkKey = operator.getValueOf(fieldID).toString().trim();
@@ -4248,6 +4274,9 @@ class XF300_Filter extends JPanel {
 		if (fieldOptionList.contains("NON_EDITABLE")) {
 			this.setEditable(false);
 		}
+		if (fieldOptionList.contains("HIDDEN")) {
+			isHidden = true;
+		}
 
 		if (decimalSize > 0) {
 			wrkStr = "<html>" + fieldName + " " + tableAlias + "." + fieldID + " (" + dataSize + "," + decimalSize + ")<br>" + fieldRemarks;
@@ -4277,6 +4306,10 @@ class XF300_Filter extends JPanel {
 
 	public String getBasicType(){
 		return XFUtility.getBasicTypeOf(dataType);
+	}
+	
+	public boolean isHidden() {
+		return isHidden;
 	}
 
 	public String getCaption(){
@@ -4495,6 +4528,10 @@ class XF300_Filter extends JPanel {
 	public boolean isEditable() {
 		return isEditable_;
 	}
+	
+	public String getFilterGroupID() {
+		return filterGroupID;
+	}
 
 	public boolean isReflect(){
 		return isReflect;
@@ -4508,7 +4545,14 @@ class XF300_Filter extends JPanel {
 			if (componentType.equals("TEXTFIELD")) {
 				columnField.setValue((String)xFTextField.getInternalValue());
 			}
-			if (componentType.equals("KUBUN_LIST") || componentType.equals("RECORDS_LIST") || componentType.equals("VALUES_LIST")) {
+			//if (componentType.equals("KUBUN_LIST") || componentType.equals("RECORDS_LIST") || componentType.equals("VALUES_LIST")) {
+			//	columnField.setValue((String)jComboBox.getSelectedItem());
+			//}
+			if (componentType.equals("KUBUN_LIST")) {
+				columnField.setValue((String)keyValueList.get(jComboBox.getSelectedIndex()));
+			}
+			if (componentType.equals("RECORDS_LIST")
+					|| componentType.equals("VALUES_LIST")) {
 				columnField.setValue((String)jComboBox.getSelectedItem());
 			}
 			if (componentType.equals("BOOLEAN")) {
@@ -5020,6 +5064,48 @@ class XF300_Filter extends JPanel {
 		}
 
 		return validated;
+	}
+	
+	public String getStringValue(){
+		String value = "";
+		if (componentType.equals("TEXTFIELD")) {
+			value = xFTextField.getInternalValue().toString().trim();
+			if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+				try {
+					if (Double.parseDouble(value) == 0 && fieldOptionList.contains("IGNORE_IF_ZERO")) {
+						value = "";
+					}
+				} catch (NumberFormatException e) {
+					value = "";
+				}
+			}
+		}
+		if (componentType.equals("BOOLEAN")) {
+			value = (String)xFCheckBox.getInternalValue();
+		}
+		if (componentType.equals("DATE")) {
+			value = xFDateField.getInternalValue().toString();
+		}
+		if (componentType.equals("YMONTH")) {
+			value = xFYMonthBox.getInternalValue().toString();
+		}
+		if (componentType.equals("MSEQ")) {
+			value = xFMSeqBox.getInternalValue().toString();
+		}
+		if (componentType.equals("FYEAR")) {
+			value = xFFYearBox.getInternalValue().toString();
+		}
+		if (componentType.equals("KUBUN_LIST")) {
+			value = keyValueList.get(jComboBox.getSelectedIndex());
+		}
+		if (componentType.equals("RECORDS_LIST")
+				|| componentType.equals("VALUES_LIST")) {
+			value = (String)jComboBox.getSelectedItem();
+		}
+		if (componentType.equals("PROMPT_CALL")) {
+			value = xFPromptCall.getInternalValue().toString();
+		}
+		return value;
 	}
 }
 

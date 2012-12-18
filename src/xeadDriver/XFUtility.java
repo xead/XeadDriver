@@ -91,6 +91,7 @@ import org.apache.poi.hssf.usermodel.HSSFPatriarch;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.w3c.dom.*;
+
 import com.lowagie.text.BadElementException;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.PageSize;
@@ -104,6 +105,7 @@ import com.lowagie.text.pdf.PdfContentByte;
 public class XFUtility {
 	public static final ResourceBundle RESOURCE = ResourceBundle.getBundle("xeadDriver.Res");
 	public static final int FIELD_UNIT_HEIGHT = 24;
+	public static final int FIELD_VERTICAL_MARGIN = 5;
 	public static final int ROW_UNIT_HEIGHT = 24;
 	public static final int SEQUENCE_WIDTH = 30;
 	public static final String DEFAULT_UPDATE_COUNTER = "UPDCOUNTER";
@@ -359,6 +361,22 @@ public class XFUtility {
 	static public int countStringInText(String text, String searchString) {
         return (text.length() - text.replaceAll(searchString, "").length()) / searchString.length();
     }	
+	
+	static public int countNumberOfDisplayedFilters(NodeList filterFieldList) {
+		int count = 0;
+		String fieldOptions = "";
+		ArrayList<String> fieldOptionList;
+		org.w3c.dom.Element element;
+		for (int i = 0; i < filterFieldList.getLength(); i++) {
+			element = (org.w3c.dom.Element)filterFieldList.item(i);
+			fieldOptions = element.getAttribute("FieldOptions");
+			fieldOptionList = XFUtility.getOptionList(fieldOptions);
+			if (!fieldOptionList.contains("HIDDEN")) {
+				count++;
+			}
+		}
+		return count;
+	}
 
 	static ImageIcon createSmallIcon(String fileName, int iconHeight) {
 		ImageIcon icon = new ImageIcon();
@@ -3405,7 +3423,7 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 			fieldWidth = Integer.parseInt(wrkStr);
 		}
 		//
-		int fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT;
+		int fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT + (rows_-1) * XFUtility.FIELD_VERTICAL_MARGIN;
 		this.setSize(fieldWidth, fieldHeight);
 		this.addFocusListener(new ScrollPaneFocusListener());
 	}

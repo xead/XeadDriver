@@ -51,15 +51,16 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import xeadServer.Relation;
 
-////////////////////////////////////////////////////////////////
-// This is a public class used in Table-Script.               //
-// Note that public classes are defined in its own java file. //
-////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+// This is a public class that can be used in Table-Script.       //
+// Note that public classes must be defined in its own java file. //
+////////////////////////////////////////////////////////////////////
 public class XFTableOperator {
     private Session session_ = null;
     private Relation relation_ = null;
     private String operation_ = "";
     private String tableID_ = "";
+    private String moduleID = "";
     private String dbID = "";
     private String dbName = "";
     private String selectFields_ = "";
@@ -84,7 +85,12 @@ public class XFTableOperator {
     	tableID_ = tableID;
     	isAutoCommit_ = isAutoCommit;
     	//
-		dbID = session_.getTableElement(tableID_).getAttribute("DB");
+    	org.w3c.dom.Element tableElement = session_.getTableElement(tableID_);
+    	moduleID = tableElement.getAttribute("ModuleID");
+		if (moduleID.equals("")) {
+			moduleID = tableID_;
+		}
+    	dbID = tableElement.getAttribute("DB");
 		if (dbID.equals("")) {
 			dbName = session_.getDatabaseName();
 		} else {
@@ -145,7 +151,12 @@ public class XFTableOperator {
 		}
     	isAutoCommit_ = isAutoCommit;
     	//
-		dbID = session_.getTableElement(tableID_).getAttribute("DB");
+    	org.w3c.dom.Element tableElement = session_.getTableElement(tableID_);
+    	moduleID = tableElement.getAttribute("ModuleID");
+		if (moduleID.equals("")) {
+			moduleID = tableID_;
+		}
+		dbID = tableElement.getAttribute("DB");
 		if (dbID.equals("")) {
 			dbName = session_.getDatabaseName();
 		} else {
@@ -158,10 +169,12 @@ public class XFTableOperator {
 	}
 
     public void setSelectFields(String fields) {
+		sqlText_ = "";
     	selectFields_ = fields;
     }
 
     public void addValue(String fieldID, Object value) {
+		sqlText_ = "";
     	int index = fieldIDList_.indexOf(fieldID);
     	if (index > -1) {
     		fieldIDList_.remove(index);
@@ -191,6 +204,7 @@ public class XFTableOperator {
     }
     
     public void addKeyValue(String fieldID, Object value) {
+		sqlText_ = "";
     	String fieldID_ = fieldID;
     	String operand_ = " = ";
     	if (fieldID.contains("!=")) {
@@ -243,6 +257,7 @@ public class XFTableOperator {
     }
 
     public void addKeyValue(String prefix, String fieldID, Object value, String postfix) {
+		sqlText_ = "";
     	String fieldID_ = fieldID;
     	String operand_ = " = ";
     	if (fieldID.contains("!=")) {
@@ -292,6 +307,7 @@ public class XFTableOperator {
     }
 
     public void setOrderBy(String text) {
+		sqlText_ = "";
     	orderBy_ = text;
     }
 
@@ -300,7 +316,8 @@ public class XFTableOperator {
     }
     
     public String getSqlText() {
-        if (sqlText_.equals("")) {
+    	String text = sqlText_;
+        if (text.equals("")) {
         	//
             StringBuffer bf = new StringBuffer();
             //
@@ -312,7 +329,7 @@ public class XFTableOperator {
         			bf.append(selectFields_);
         		}
         		bf.append(" from ");
-        		bf.append(tableID_);
+        		bf.append(moduleID);
         		if (withKeyList_.size() > 0) {
         			bf.append(" where ");
         			for (int i = 0; i < withKeyList_.size(); i++) {
@@ -327,7 +344,7 @@ public class XFTableOperator {
         	//
         	if (operation_.toUpperCase().equals("COUNT")) {
         		bf.append("select count(*) from ");
-        		bf.append(tableID_);
+        		bf.append(moduleID);
         		if (withKeyList_.size() > 0) {
         			bf.append(" where ");
         			for (int i = 0; i < withKeyList_.size(); i++) {
@@ -340,7 +357,7 @@ public class XFTableOperator {
         		bf.append(operation_);
         		bf.append(" ");
         		bf.append(" into ");
-        		bf.append(tableID_);
+        		bf.append(moduleID);
         		bf.append(" (");
         		for (int i = 0; i < fieldIDList_.size(); i++) {
         			if (i > 0) {
@@ -362,7 +379,7 @@ public class XFTableOperator {
         	if (operation_.toUpperCase().equals("UPDATE")) {
         		bf.append(operation_);
         		bf.append(" ");
-        		bf.append(tableID_);
+        		bf.append(moduleID);
         		bf.append(" set ");
         		for (int i = 0; i < fieldIDList_.size(); i++) {
         			if (i > 0) {
@@ -384,7 +401,7 @@ public class XFTableOperator {
         		bf.append(operation_);
         		bf.append(" ");
         		bf.append(" from ");
-        		bf.append(tableID_);
+        		bf.append(moduleID);
         		if (withKeyList_.size() > 0) {
         			bf.append(" where ");
         			for (int i = 0; i < withKeyList_.size(); i++) {
@@ -393,13 +410,15 @@ public class XFTableOperator {
         		}
         	}
         	//
-        	sqlText_ = bf.toString();
+        	text = bf.toString();
     		if (dbName.contains("jdbc:mysql:")) {
-    			sqlText_ = sqlText_.replaceAll("\\\\", "\\\\\\\\");
+    			text = text.replaceAll("\\\\", "\\\\\\\\");
     		}
+        } else {
+        	text = text.replaceFirst(" " + tableID_ + " ", " " + moduleID + " ");
         }
         //
-        return sqlText_;
+        return text;
     }
     
     public int execute() throws Exception {
@@ -466,6 +485,16 @@ public class XFTableOperator {
 					XFUtility.appendLog(e.getMessage(), logBuf_);
 				}
 				throw new Exception(e.getMessage());
+			} catch (OutOfMemoryError e) {
+				if (logBuf_ != null) {
+					XFUtility.appendLog(e.getMessage(), logBuf_);
+				}
+				throw new Exception(e.getMessage());
+			} catch (Exception e) {
+				if (logBuf_ != null) {
+					XFUtility.appendLog(e.getMessage(), logBuf_);
+				}
+				throw e;
 			}
 		}
 		//

@@ -296,6 +296,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
 		String workAlias, workTableID, workFieldID, workStr;
 		StringTokenizer workTokenizer;
+		int wrkInt, countOfDisplayedFilters;
 		org.w3c.dom.Element workElement;
 
 		try {
@@ -483,49 +484,54 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			jPanelTop.remove(jPanelTopEast);
 			jPanelFilter.removeAll();
 			anyFilterIsEditable = false;
-			NodeList FilterFieldList = functionElement_.getElementsByTagName("Filter");
-			sortingList = XFUtility.getSortedListModel(FilterFieldList, "Order");
-			if (sortingList.getSize() <= 2) {
+			NodeList filterFieldList = functionElement_.getElementsByTagName("Filter");
+			countOfDisplayedFilters = XFUtility.countNumberOfDisplayedFilters(filterFieldList);
+			if (countOfDisplayedFilters <= 2) {
 				jPanelTop.setPreferredSize(new Dimension(600, 45));
 				gridLayoutFilter.setColumns(2);
 				gridLayoutFilter.setRows(1);
 				filterWidth = (this.getPreferredSize().getWidth() - 90) / 2;
 			}
-			if (sortingList.getSize() == 3) {
+			if (countOfDisplayedFilters == 3) {
 				jPanelTop.setPreferredSize(new Dimension(600, 45));
 				gridLayoutFilter.setColumns(3);
 				gridLayoutFilter.setRows(1);
 				filterWidth = (this.getPreferredSize().getWidth() - 90) / 3;
 			}
-			if (sortingList.getSize() == 4) {
+			if (countOfDisplayedFilters == 4) {
 				jPanelTop.setPreferredSize(new Dimension(600, 45));
 				gridLayoutFilter.setColumns(4);
 				gridLayoutFilter.setRows(1);
 				filterWidth = (this.getPreferredSize().getWidth() - 90) / 4;
 			}
-			if (sortingList.getSize() >= 5 && sortingList.getSize() <= 6) {
+			if (countOfDisplayedFilters >= 5 && sortingList.getSize() <= 6) {
 				jPanelTop.setPreferredSize(new Dimension(600, 75));
 				gridLayoutFilter.setColumns(3);
 				gridLayoutFilter.setRows(2);
 				filterWidth = (this.getPreferredSize().getWidth() - 90) / 3;
 			}
-			if (sortingList.getSize() >= 7) {
+			if (countOfDisplayedFilters >= 7) {
 				jPanelTop.setPreferredSize(new Dimension(600, 75));
 				gridLayoutFilter.setColumns(4);
 				gridLayoutFilter.setRows(2);
 				filterWidth = (this.getPreferredSize().getWidth() - 90) / 4;
 			}
-			for (int i = 0; i < sortingList.getSize() && i < 8; i++) {
+			wrkInt = 0;
+			sortingList = XFUtility.getSortedListModel(filterFieldList, "Order");
+			for (int i = 0; i < sortingList.getSize(); i++) {
 				filterList.add(new XF110_Filter((org.w3c.dom.Element)sortingList.getElementAt(i), this));
 				if (!filterList.get(i).isValidatedWithParmMapValue(parmMap_)) {
 					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError47") + filterList.get(i).getCaption() + XFUtility.RESOURCE.getString("FunctionError48"));
 					isToBeCanceled = true;
 					break;
 				}
-				if (filterList.get(i).isEditable()) {
-					anyFilterIsEditable = true;
+				if (!filterList.get(i).isHidden() && wrkInt < 8) {
+					wrkInt++;
+					jPanelFilter.add(filterList.get(i));
+					if (filterList.get(i).isEditable()) {
+						anyFilterIsEditable = true;
+					}
 				}
-				jPanelFilter.add(filterList.get(i));
 			}
 			if (anyFilterIsEditable) {
 				jPanelTop.add(jPanelTopEast, BorderLayout.EAST);
@@ -793,7 +799,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 
 				primaryTable_.runScript("AR", "BR()"); /* Script to be run AFTER READ primary table */
 
-				if (checkIfThisRowIsToBeSelected()) {
+				if (isTheRowToBeSelected()) {
 					toBeSelected = true;
 					for (int i = 0; i < referTableList.size(); i++) {
 						if (referTableList.get(i).isToBeExecuted()) {
@@ -810,7 +816,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 											}
 										}
 										primaryTable_.runScript("AR", "AR(" + referTableList.get(i).getTableAlias() + ")"); /* Script to be run AFTER READ */
-										if (!checkIfThisRowIsToBeSelected()) {
+										if (!isTheRowToBeSelected()) {
 											toBeSelected = false;
 											break;
 										}
@@ -827,7 +833,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 						for (int i = 0; i < columnList.size(); i++) {
 							columnList.get(i).setReadyToValidate(true);
 						}
-						if (checkIfThisRowIsToBeSelected()) {
+						if (isTheRowToBeSelected()) {
 
 							keyMap = new HashMap<String, Object>();
 							for (int i = 0; i < primaryTable_.getKeyFieldIDList().size(); i++) {
@@ -1050,17 +1056,36 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		return tableID;
 	}
 
-	boolean checkIfThisRowIsToBeSelected() {
-		boolean toBeSelected = true;
-		//
+	boolean isTheRowToBeSelected() {
+//		boolean toBeSelected = true;
+//		for (int i = 0; i < filterList.size(); i++) {
+//			toBeSelected = filterList.get(i).isValidated();
+//			if (!toBeSelected) {
+//				break;
+//			}
+//		}
+		boolean isToBeSelected = true;
+		boolean isToBeSelectedInFilterGroup = false;
+		String filterGroupID = "";
 		for (int i = 0; i < filterList.size(); i++) {
-			toBeSelected = filterList.get(i).isValidated();
-			if (!toBeSelected) {
-				break;
+			if (!filterList.get(i).isPrimaryWhere()
+					&& filterList.get(i).isConditioned()) {
+				if (!filterGroupID.equals(filterList.get(i).getFilterGroupID())) {
+					if (!filterGroupID.equals("")) {
+						isToBeSelected = isToBeSelectedInFilterGroup;
+					}
+					filterGroupID = filterList.get(i).getFilterGroupID();
+					isToBeSelectedInFilterGroup = false;
+				}
+				if (filterList.get(i).isValidated()) {
+					isToBeSelectedInFilterGroup = true;
+				}
 			}
 		}
-		//
-		return toBeSelected;
+		if (!filterGroupID.equals("")) {
+			isToBeSelected = isToBeSelectedInFilterGroup;
+		}
+		return isToBeSelected;
 	}
 
 	class WorkingRow extends Object {
@@ -1967,7 +1992,10 @@ class XF110_Filter extends JPanel {
 	private JComponent component = null;
 	private boolean isReflect = false;
 	private boolean isEditable_ = true;
+	private boolean isHidden = false;
 	private boolean isVirtualField = false;
+	private boolean isPrimaryWhere = false;
+	private String filterGroupID = "";
 
 	public XF110_Filter(org.w3c.dom.Element fieldElement, XF110 dialog){
 		super();
@@ -2006,6 +2034,10 @@ class XF110_Filter extends JPanel {
 
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
+		} else {
+			if (tableID.equals(dialog_.getPrimaryTableID())) {
+				isPrimaryWhere = true;
+			}
 		}
 
 		operandType = "EQ";
@@ -2042,6 +2074,8 @@ class XF110_Filter extends JPanel {
 		if (operandType.equals("REFLECT")) {
 			isReflect = true;
 		}
+
+		filterGroupID = tableAlias + "." + fieldID + ":" + operand;
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
@@ -2277,6 +2311,9 @@ class XF110_Filter extends JPanel {
 		if (fieldOptionList.contains("NON_EDITABLE")) {
 			this.setEditable(false);
 		}
+		if (fieldOptionList.contains("HIDDEN")) {
+			isHidden = true;
+		}
 
 		if (decimalSize > 0) {
 			wrkStr = "<html>" + fieldName + " " + tableAlias + "." + fieldID + " (" + dataSize + "," + decimalSize + ")<br>" + fieldRemarks;
@@ -2302,6 +2339,10 @@ class XF110_Filter extends JPanel {
 			}
 		}
 		return value;
+	}
+	
+	public boolean isHidden() {
+		return isHidden;
 	}
 
 	public String getBasicType(){
@@ -2487,6 +2528,10 @@ class XF110_Filter extends JPanel {
 	public boolean isEditable() {
 		return isEditable_;
 	}
+	
+	public String getFilterGroupID() {
+		return filterGroupID;
+	}
 
 	public boolean isVirtualField() {
 		return isVirtualField;
@@ -2499,97 +2544,74 @@ class XF110_Filter extends JPanel {
 	public String getOperand() {
 		return operand;
 	}
+	
+	public boolean isPrimaryWhere() {
+		return isPrimaryWhere;
+	}
 
 	public boolean isValidated(){
 		boolean validated = false;
-		XF110_Column columnField = dialog_.getColumnObjectByID(this.getTableID(), this.getTableAlias(), this.getFieldID());
-		if (this.isReflect) {
-			if (componentType.equals("TEXTFIELD")) {
-				columnField.setValue((String)xFTextField.getInternalValue());
-			}
-			if (componentType.equals("KUBUN_LIST") || componentType.equals("RECORDS_LIST") || componentType.equals("VALUES_LIST")) {
-				columnField.setValue((String)jComboBox.getSelectedItem());
-			}
-			if (componentType.equals("BOOLEAN")) {
-				columnField.setValue((String)xFCheckBox.getInternalValue());
-			}
-			if (componentType.equals("DATE")) {
-				columnField.setValue(xFDateField.getInternalValue());
-			}
-			if (componentType.equals("YMONTH")) {
-				columnField.setValue(xFYMonthBox.getInternalValue());
-			}
-			if (componentType.equals("MSEQ")) {
-				columnField.setValue(xFMSeqBox.getInternalValue());
-			}
-			if (componentType.equals("FYEAR")) {
-				columnField.setValue(xFFYearBox.getInternalValue());
-			}
+		if (isPrimaryWhere) {
 			validated = true;
 		} else {
-			String stringResultValue = "";
-			String stringFilterValue = "";
-			double doubleResultValue = 0;
-			double doubleFilterValue = 0;
-			if (columnField.isReadyToValidate()) {
+			XF110_Column columnField = dialog_.getColumnObjectByID(this.getTableID(), this.getTableAlias(), this.getFieldID());
+			if (this.isReflect) {
 				if (componentType.equals("TEXTFIELD")) {
-					if (columnField.getInternalValue() != null) {
-						stringResultValue = columnField.getInternalValue().toString().trim();
-					} 
-					stringFilterValue = (String)xFTextField.getInternalValue();
-					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-						//if (stringFilterValue.trim().equals("0") && fieldOptionList.contains("IGNORE_IF_ZERO")) {
-						if ((Double.parseDouble(stringFilterValue) == 0) && fieldOptionList.contains("IGNORE_IF_ZERO")) {
-							validated = true;
-						} else {
-							doubleResultValue = Double.parseDouble(stringResultValue);
-							String wrk = XFUtility.getStringNumber(stringFilterValue);
-							if (!wrk.equals("")) {
-								doubleFilterValue = Double.parseDouble(wrk);
-							}
-							if (operandType.equals("EQ")) {
-								if (doubleResultValue == doubleFilterValue) {
-									validated = true;
-								}
-							}
-							if (operandType.equals("GE")) {
-								if (doubleResultValue >= doubleFilterValue) {
-									validated = true;
-								}
-							}
-							if (operandType.equals("GT")) {
-								if (doubleResultValue > doubleFilterValue) {
-									validated = true;
-								}
-							}
-							if (operandType.equals("LE")) {
-								if (doubleResultValue <= doubleFilterValue) {
-									validated = true;
-								}
-							}
-							if (operandType.equals("LT")) {
-								if (doubleResultValue < doubleFilterValue) {
-									validated = true;
-								}
-							}
-						}
-					} else {
-						if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME") || this.getBasicType().equals("DATETIME")) {
-							if (stringFilterValue.equals("")) {
+					columnField.setValue((String)xFTextField.getInternalValue());
+				}
+				//if (componentType.equals("KUBUN_LIST") || componentType.equals("RECORDS_LIST") || componentType.equals("VALUES_LIST")) {
+				//	columnField.setValue((String)jComboBox.getSelectedItem());
+				//}
+				if (componentType.equals("KUBUN_LIST")) {
+					columnField.setValue((String)keyValueList.get(jComboBox.getSelectedIndex()));
+				}
+				if (componentType.equals("RECORDS_LIST")
+						|| componentType.equals("VALUES_LIST")) {
+					columnField.setValue((String)jComboBox.getSelectedItem());
+				}
+				if (componentType.equals("BOOLEAN")) {
+					columnField.setValue((String)xFCheckBox.getInternalValue());
+				}
+				if (componentType.equals("DATE")) {
+					columnField.setValue(xFDateField.getInternalValue());
+				}
+				if (componentType.equals("YMONTH")) {
+					columnField.setValue(xFYMonthBox.getInternalValue());
+				}
+				if (componentType.equals("MSEQ")) {
+					columnField.setValue(xFMSeqBox.getInternalValue());
+				}
+				if (componentType.equals("FYEAR")) {
+					columnField.setValue(xFFYearBox.getInternalValue());
+				}
+				validated = true;
+			} else {
+				String stringResultValue = "";
+				String stringFilterValue = "";
+				double doubleResultValue = 0;
+				double doubleFilterValue = 0;
+				if (columnField.isReadyToValidate()) {
+					if (componentType.equals("TEXTFIELD")) {
+						if (columnField.getInternalValue() != null) {
+							stringResultValue = columnField.getInternalValue().toString().trim();
+						} 
+						stringFilterValue = (String)xFTextField.getInternalValue();
+						if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+							//if (stringFilterValue.trim().equals("0") && fieldOptionList.contains("IGNORE_IF_ZERO")) {
+							if ((Double.parseDouble(stringFilterValue) == 0) && fieldOptionList.contains("IGNORE_IF_ZERO")) {
 								validated = true;
 							} else {
-								stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("-", "");
 								doubleResultValue = Double.parseDouble(stringResultValue);
-								stringFilterValue = XFUtility.getStringNumber(stringFilterValue).replace("-", "");
-								if (!stringFilterValue.equals("")) {
-									doubleFilterValue = Double.parseDouble(stringFilterValue);
+								String wrk = XFUtility.getStringNumber(stringFilterValue);
+								if (!wrk.equals("")) {
+									doubleFilterValue = Double.parseDouble(wrk);
 								}
 								if (operandType.equals("EQ")) {
 									if (doubleResultValue == doubleFilterValue) {
 										validated = true;
 									}
 								}
-								if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
+								if (operandType.equals("GE")) {
 									if (doubleResultValue >= doubleFilterValue) {
 										validated = true;
 									}
@@ -2609,297 +2631,135 @@ class XF110_Filter extends JPanel {
 										validated = true;
 									}
 								}
-								if (operandType.equals("GENERIC")) {
-									int lengthResultValue = stringResultValue.length();
-									int lengthFieldValue = stringFilterValue.length();
-									if (lengthResultValue >= lengthFieldValue) {
-										String wrk = stringResultValue.substring(0, lengthFieldValue);
-										if (wrk.equals(stringFilterValue)) {
+							}
+						} else {
+							if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME") || this.getBasicType().equals("DATETIME")) {
+								if (stringFilterValue.equals("")) {
+									validated = true;
+								} else {
+									stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("-", "");
+									doubleResultValue = Double.parseDouble(stringResultValue);
+									stringFilterValue = XFUtility.getStringNumber(stringFilterValue).replace("-", "");
+									if (!stringFilterValue.equals("")) {
+										doubleFilterValue = Double.parseDouble(stringFilterValue);
+									}
+									if (operandType.equals("EQ")) {
+										if (doubleResultValue == doubleFilterValue) {
 											validated = true;
 										}
 									}
-								}
-							}
-						} else {
-							if (stringFilterValue.equals("")) {
-								validated = true;
-							} else {
-								if (operandType.equals("EQ")) {
-									if (stringResultValue.equals(stringFilterValue)) {
-										validated = true;
-									}
-								}
-								if (operandType.equals("SCAN")) {
-									if (stringResultValue.contains(stringFilterValue)) {
-										validated = true;
-									}
-								}
-								if (operandType.equals("GENERIC")) {
-									int lengthResultValue = stringResultValue.length();
-									int lengthFieldValue = stringFilterValue.length();
-									if (lengthResultValue >= lengthFieldValue) {
-										String wrk = stringResultValue.substring(0, lengthFieldValue);
-										if (wrk.equals(stringFilterValue)) {
+									if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
+										if (doubleResultValue >= doubleFilterValue) {
 											validated = true;
+										}
+									}
+									if (operandType.equals("GT")) {
+										if (doubleResultValue > doubleFilterValue) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("LE")) {
+										if (doubleResultValue <= doubleFilterValue) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("LT")) {
+										if (doubleResultValue < doubleFilterValue) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("GENERIC")) {
+										int lengthResultValue = stringResultValue.length();
+										int lengthFieldValue = stringFilterValue.length();
+										if (lengthResultValue >= lengthFieldValue) {
+											String wrk = stringResultValue.substring(0, lengthFieldValue);
+											if (wrk.equals(stringFilterValue)) {
+												validated = true;
+											}
+										}
+									}
+								}
+							} else {
+								if (stringFilterValue.equals("")) {
+									validated = true;
+								} else {
+									if (operandType.equals("EQ")) {
+										if (stringResultValue.equals(stringFilterValue)) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("SCAN")) {
+										if (stringResultValue.contains(stringFilterValue)) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("GENERIC")) {
+										int lengthResultValue = stringResultValue.length();
+										int lengthFieldValue = stringFilterValue.length();
+										if (lengthResultValue >= lengthFieldValue) {
+											String wrk = stringResultValue.substring(0, lengthFieldValue);
+											if (wrk.equals(stringFilterValue)) {
+												validated = true;
+											}
 										}
 									}
 								}
 							}
 						}
 					}
-				}
 
-				if (componentType.equals("KUBUN_LIST") || componentType.equals("RECORDS_LIST")) {
-					String fieldValue = (String)jComboBox.getSelectedItem();
-					if (fieldValue.equals("")) {
-						validated = true;
-					} else {
-						String resultValue = (String)columnField.getExternalValue();
-						if (resultValue.equals(fieldValue)) {
+					if (componentType.equals("KUBUN_LIST") || componentType.equals("RECORDS_LIST")) {
+						String fieldValue = (String)jComboBox.getSelectedItem();
+						if (fieldValue.equals("")) {
 							validated = true;
 						} else {
-							if (fieldValue.equals("NULL") && resultValue.equals("")) {
+							String resultValue = (String)columnField.getExternalValue();
+							if (resultValue.equals(fieldValue)) {
 								validated = true;
+							} else {
+								if (fieldValue.equals("NULL") && resultValue.equals("")) {
+									validated = true;
+								}
+								if (fieldValue.equals("!NULL") && !resultValue.equals("")) {
+									validated = true;
+								}
 							}
-							if (fieldValue.equals("!NULL") && !resultValue.equals("")) {
+						}
+					}
+
+					if (componentType.equals("VALUES_LIST")) {
+						String fieldValue = (String)jComboBox.getSelectedItem();
+						if (fieldValue.equals("")) {
+							validated = true;
+						} else {
+							String resultValue = (String)columnField.getInternalValue();
+							if (resultValue.equals(fieldValue)) {
 								validated = true;
 							}
 						}
 					}
-				}
 
-				if (componentType.equals("VALUES_LIST")) {
-					String fieldValue = (String)jComboBox.getSelectedItem();
-					if (fieldValue.equals("")) {
-						validated = true;
-					} else {
+					if (componentType.equals("BOOLEAN")) {
+						String fieldValue = (String)xFCheckBox.getInternalValue();
 						String resultValue = (String)columnField.getInternalValue();
 						if (resultValue.equals(fieldValue)) {
 							validated = true;
 						}
 					}
-				}
 
-				if (componentType.equals("BOOLEAN")) {
-					String fieldValue = (String)xFCheckBox.getInternalValue();
-					String resultValue = (String)columnField.getInternalValue();
-					if (resultValue.equals(fieldValue)) {
-						validated = true;
-					}
-				}
-
-				if (componentType.equals("DATE")) {
-					stringFilterValue = (String)xFDateField.getInternalValue();
-					if (stringFilterValue == null) {
-						validated = true;
-					} else {
-						if (columnField.getInternalValue() != null) {
-							stringResultValue = columnField.getInternalValue().toString().trim();
-							stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("-", "");
-						} 
-						doubleResultValue = Double.parseDouble(stringResultValue);
-						stringFilterValue = XFUtility.getStringNumber(stringFilterValue).replace("-", "");
-						if (!stringFilterValue.equals("")) {
-							doubleFilterValue = Double.parseDouble(stringFilterValue);
-						}
-						if (operandType.equals("EQ")) {
-							if (doubleResultValue == doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GE")) {
-							if (doubleResultValue >= doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GT")) {
-							if (doubleResultValue > doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("LE")) {
-							if (doubleResultValue <= doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("LT")) {
-							if (doubleResultValue < doubleFilterValue) {
-								validated = true;
-							}
-						}
-
-					}
-				}
-
-				if (componentType.equals("YMONTH")) {
-					stringFilterValue = (String)xFYMonthBox.getInternalValue();
-					if (stringFilterValue.equals("")) {
-						validated = true;
-					} else {
-						if (columnField.getInternalValue() != null) {
-							stringResultValue = columnField.getInternalValue().toString().trim();
-							stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("/", "");
-						} 
-						doubleResultValue = Double.parseDouble(stringResultValue);
-						if (!stringFilterValue.equals("")) {
-							doubleFilterValue = Double.parseDouble(stringFilterValue);
-						}
-						if (operandType.equals("EQ")) {
-							if (doubleResultValue == doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
-							if (doubleResultValue >= doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GT")) {
-							if (doubleResultValue > doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("LE")) {
-							if (doubleResultValue <= doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("LT")) {
-							if (doubleResultValue < doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GENERIC")) {
-							int lengthResultValue = stringResultValue.length();
-							int lengthFieldValue = stringFilterValue.length();
-							if (lengthResultValue >= lengthFieldValue) {
-								String wrk = stringResultValue.substring(0, lengthFieldValue);
-								if (wrk.equals(stringFilterValue)) {
-									validated = true;
-								}
-							}
-						}
-
-					}
-				}
-
-				if (componentType.equals("MSEQ")) {
-					stringFilterValue = (String)xFMSeqBox.getInternalValue();
-					if (stringFilterValue.equals("0")) {
-						validated = true;
-					} else {
-						if (columnField.getInternalValue() != null) {
-							stringResultValue = columnField.getInternalValue().toString().trim();
-							stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("/", "");
-						} 
-						doubleResultValue = Double.parseDouble(stringResultValue);
-						if (!stringFilterValue.equals("")) {
-							doubleFilterValue = Double.parseDouble(stringFilterValue);
-						}
-						if (operandType.equals("EQ")) {
-							if (doubleResultValue == doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
-							if (doubleResultValue >= doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GT")) {
-							if (doubleResultValue > doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("LE")) {
-							if (doubleResultValue <= doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("LT")) {
-							if (doubleResultValue < doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GENERIC")) {
-							int lengthResultValue = stringResultValue.length();
-							int lengthFieldValue = stringFilterValue.length();
-							if (lengthResultValue >= lengthFieldValue) {
-								String wrk = stringResultValue.substring(0, lengthFieldValue);
-								if (wrk.equals(stringFilterValue)) {
-									validated = true;
-								}
-							}
-						}
-
-					}
-				}
-
-				if (componentType.equals("FYEAR")) {
-					stringFilterValue = (String)xFFYearBox.getInternalValue();
-					if (stringFilterValue.equals("0")) {
-						validated = true;
-					} else {
-						if (columnField.getInternalValue() != null) {
-							stringResultValue = columnField.getInternalValue().toString().trim();
-							stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("/", "");
-						} 
-						doubleResultValue = Double.parseDouble(stringResultValue);
-						if (!stringFilterValue.equals("")) {
-							doubleFilterValue = Double.parseDouble(stringFilterValue);
-						}
-						if (operandType.equals("EQ")) {
-							if (doubleResultValue == doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
-							if (doubleResultValue >= doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GT")) {
-							if (doubleResultValue > doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("LE")) {
-							if (doubleResultValue <= doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("LT")) {
-							if (doubleResultValue < doubleFilterValue) {
-								validated = true;
-							}
-						}
-						if (operandType.equals("GENERIC")) {
-							int lengthResultValue = stringResultValue.length();
-							int lengthFieldValue = stringFilterValue.length();
-							if (lengthResultValue >= lengthFieldValue) {
-								String wrk = stringResultValue.substring(0, lengthFieldValue);
-								if (wrk.equals(stringFilterValue)) {
-									validated = true;
-								}
-							}
-						}
-
-					}
-				}
-
-				if (componentType.equals("PROMPT_CALL")) {
-					if (columnField.getInternalValue() != null) {
-						stringResultValue = columnField.getInternalValue().toString().trim();
-					} 
-					stringFilterValue = (String)xFPromptCall.getInternalValue();
-					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-						if (stringFilterValue.equals("")) {
+					if (componentType.equals("DATE")) {
+						stringFilterValue = (String)xFDateField.getInternalValue();
+						if (stringFilterValue == null) {
 							validated = true;
 						} else {
+							if (columnField.getInternalValue() != null) {
+								stringResultValue = columnField.getInternalValue().toString().trim();
+								stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("-", "");
+							} 
 							doubleResultValue = Double.parseDouble(stringResultValue);
-							String wrk = XFUtility.getStringNumber(stringFilterValue);
-							if (!wrk.equals("")) {
-								doubleFilterValue = Double.parseDouble(wrk);
+							stringFilterValue = XFUtility.getStringNumber(stringFilterValue).replace("-", "");
+							if (!stringFilterValue.equals("")) {
+								doubleFilterValue = Double.parseDouble(stringFilterValue);
 							}
 							if (operandType.equals("EQ")) {
 								if (doubleResultValue == doubleFilterValue) {
@@ -2926,24 +2786,186 @@ class XF110_Filter extends JPanel {
 									validated = true;
 								}
 							}
+
 						}
-					} else {
-						if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME") || this.getBasicType().equals("DATETIME")) {
+					}
+
+					if (componentType.equals("YMONTH")) {
+						stringFilterValue = (String)xFYMonthBox.getInternalValue();
+						if (stringFilterValue.equals("")) {
+							validated = true;
+						} else {
+							if (columnField.getInternalValue() != null) {
+								stringResultValue = columnField.getInternalValue().toString().trim();
+								stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("/", "");
+							} 
+							doubleResultValue = Double.parseDouble(stringResultValue);
+							if (!stringFilterValue.equals("")) {
+								doubleFilterValue = Double.parseDouble(stringFilterValue);
+							}
+							if (operandType.equals("EQ")) {
+								if (doubleResultValue == doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
+								if (doubleResultValue >= doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GT")) {
+								if (doubleResultValue > doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("LE")) {
+								if (doubleResultValue <= doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("LT")) {
+								if (doubleResultValue < doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GENERIC")) {
+								int lengthResultValue = stringResultValue.length();
+								int lengthFieldValue = stringFilterValue.length();
+								if (lengthResultValue >= lengthFieldValue) {
+									String wrk = stringResultValue.substring(0, lengthFieldValue);
+									if (wrk.equals(stringFilterValue)) {
+										validated = true;
+									}
+								}
+							}
+
+						}
+					}
+
+					if (componentType.equals("MSEQ")) {
+						stringFilterValue = (String)xFMSeqBox.getInternalValue();
+						if (stringFilterValue.equals("0")) {
+							validated = true;
+						} else {
+							if (columnField.getInternalValue() != null) {
+								stringResultValue = columnField.getInternalValue().toString().trim();
+								stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("/", "");
+							} 
+							doubleResultValue = Double.parseDouble(stringResultValue);
+							if (!stringFilterValue.equals("")) {
+								doubleFilterValue = Double.parseDouble(stringFilterValue);
+							}
+							if (operandType.equals("EQ")) {
+								if (doubleResultValue == doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
+								if (doubleResultValue >= doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GT")) {
+								if (doubleResultValue > doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("LE")) {
+								if (doubleResultValue <= doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("LT")) {
+								if (doubleResultValue < doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GENERIC")) {
+								int lengthResultValue = stringResultValue.length();
+								int lengthFieldValue = stringFilterValue.length();
+								if (lengthResultValue >= lengthFieldValue) {
+									String wrk = stringResultValue.substring(0, lengthFieldValue);
+									if (wrk.equals(stringFilterValue)) {
+										validated = true;
+									}
+								}
+							}
+
+						}
+					}
+
+					if (componentType.equals("FYEAR")) {
+						stringFilterValue = (String)xFFYearBox.getInternalValue();
+						if (stringFilterValue.equals("0")) {
+							validated = true;
+						} else {
+							if (columnField.getInternalValue() != null) {
+								stringResultValue = columnField.getInternalValue().toString().trim();
+								stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("/", "");
+							} 
+							doubleResultValue = Double.parseDouble(stringResultValue);
+							if (!stringFilterValue.equals("")) {
+								doubleFilterValue = Double.parseDouble(stringFilterValue);
+							}
+							if (operandType.equals("EQ")) {
+								if (doubleResultValue == doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
+								if (doubleResultValue >= doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GT")) {
+								if (doubleResultValue > doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("LE")) {
+								if (doubleResultValue <= doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("LT")) {
+								if (doubleResultValue < doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("GENERIC")) {
+								int lengthResultValue = stringResultValue.length();
+								int lengthFieldValue = stringFilterValue.length();
+								if (lengthResultValue >= lengthFieldValue) {
+									String wrk = stringResultValue.substring(0, lengthFieldValue);
+									if (wrk.equals(stringFilterValue)) {
+										validated = true;
+									}
+								}
+							}
+
+						}
+					}
+
+					if (componentType.equals("PROMPT_CALL")) {
+						if (columnField.getInternalValue() != null) {
+							stringResultValue = columnField.getInternalValue().toString().trim();
+						} 
+						stringFilterValue = (String)xFPromptCall.getInternalValue();
+						if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
 							if (stringFilterValue.equals("")) {
 								validated = true;
 							} else {
-								stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("-", "");
 								doubleResultValue = Double.parseDouble(stringResultValue);
-								stringFilterValue = XFUtility.getStringNumber(stringFilterValue).replace("-", "");
-								if (!stringFilterValue.equals("")) {
-									doubleFilterValue = Double.parseDouble(stringFilterValue);
+								String wrk = XFUtility.getStringNumber(stringFilterValue);
+								if (!wrk.equals("")) {
+									doubleFilterValue = Double.parseDouble(wrk);
 								}
 								if (operandType.equals("EQ")) {
 									if (doubleResultValue == doubleFilterValue) {
 										validated = true;
 									}
 								}
-								if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
+								if (operandType.equals("GE")) {
 									if (doubleResultValue >= doubleFilterValue) {
 										validated = true;
 									}
@@ -2963,47 +2985,85 @@ class XF110_Filter extends JPanel {
 										validated = true;
 									}
 								}
-								if (operandType.equals("GENERIC")) {
-									int lengthResultValue = stringResultValue.length();
-									int lengthFieldValue = stringFilterValue.length();
-									if (lengthResultValue >= lengthFieldValue) {
-										String wrk = stringResultValue.substring(0, lengthFieldValue);
-										if (wrk.equals(stringFilterValue)) {
+							}
+						} else {
+							if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME") || this.getBasicType().equals("DATETIME")) {
+								if (stringFilterValue.equals("")) {
+									validated = true;
+								} else {
+									stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("-", "");
+									doubleResultValue = Double.parseDouble(stringResultValue);
+									stringFilterValue = XFUtility.getStringNumber(stringFilterValue).replace("-", "");
+									if (!stringFilterValue.equals("")) {
+										doubleFilterValue = Double.parseDouble(stringFilterValue);
+									}
+									if (operandType.equals("EQ")) {
+										if (doubleResultValue == doubleFilterValue) {
 											validated = true;
 										}
 									}
-								}
-							}
-						} else {
-							if (stringFilterValue.equals("")) {
-								validated = true;
-							} else {
-								if (operandType.equals("EQ")) {
-									if (stringResultValue.equals(stringFilterValue)) {
-										validated = true;
-									}
-								}
-								if (operandType.equals("SCAN")) {
-									if (stringResultValue.contains(stringFilterValue)) {
-										validated = true;
-									}
-								}
-								if (operandType.equals("GENERIC")) {
-									int lengthResultValue = stringResultValue.length();
-									int lengthFieldValue = stringFilterValue.length();
-									if (lengthResultValue >= lengthFieldValue) {
-										String wrk = stringResultValue.substring(0, lengthFieldValue);
-										if (wrk.equals(stringFilterValue)) {
+									if (operandType.equals("GE") && !operandType.equals("GENERIC")) {
+										if (doubleResultValue >= doubleFilterValue) {
 											validated = true;
+										}
+									}
+									if (operandType.equals("GT")) {
+										if (doubleResultValue > doubleFilterValue) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("LE")) {
+										if (doubleResultValue <= doubleFilterValue) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("LT")) {
+										if (doubleResultValue < doubleFilterValue) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("GENERIC")) {
+										int lengthResultValue = stringResultValue.length();
+										int lengthFieldValue = stringFilterValue.length();
+										if (lengthResultValue >= lengthFieldValue) {
+											String wrk = stringResultValue.substring(0, lengthFieldValue);
+											if (wrk.equals(stringFilterValue)) {
+												validated = true;
+											}
+										}
+									}
+								}
+							} else {
+								if (stringFilterValue.equals("")) {
+									validated = true;
+								} else {
+									if (operandType.equals("EQ")) {
+										if (stringResultValue.equals(stringFilterValue)) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("SCAN")) {
+										if (stringResultValue.contains(stringFilterValue)) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("GENERIC")) {
+										int lengthResultValue = stringResultValue.length();
+										int lengthFieldValue = stringFilterValue.length();
+										if (lengthResultValue >= lengthFieldValue) {
+											String wrk = stringResultValue.substring(0, lengthFieldValue);
+											if (wrk.equals(stringFilterValue)) {
+												validated = true;
+											}
 										}
 									}
 								}
 							}
 						}
 					}
+				} else {
+					validated = true;
 				}
-			} else {
-				validated = true;
 			}
 		}
 		return validated;
@@ -3018,9 +3078,6 @@ class XF110_Filter extends JPanel {
 				wrkStr = (String)xFTextField.getInternalValue();
 				if (!wrkStr.equals("")) {
 					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-//						if (!wrkStr.trim().equals("0") || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
-//							value = fieldID + operand + wrkStr;
-//						}
 						if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
 							value = fieldID + operand + wrkStr;
 						}
@@ -3083,6 +3140,66 @@ class XF110_Filter extends JPanel {
 			}
 		}
 		return value;
+	}
+	
+	public boolean isConditioned() {
+		boolean result = false;
+		String wrkStr;
+		if (componentType.equals("TEXTFIELD")) {
+			wrkStr = (String)xFTextField.getInternalValue();
+			if (!wrkStr.equals("")) {
+				if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+					if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+						result = true;
+					}
+				} else {
+					result = true;
+				}
+			}
+		}
+		if (componentType.equals("KUBUN_LIST")) {
+			wrkStr = (String)keyValueList.get(jComboBox.getSelectedIndex());
+			if (!wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("VALUES_LIST")) {
+			wrkStr = (String)jComboBox.getSelectedItem();
+			if (!wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("BOOLEAN")) {
+			wrkStr = (String)xFCheckBox.getInternalValue();
+			if (!wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("DATE")) {
+			wrkStr = (String)xFDateField.getInternalValue();
+			if (wrkStr != null && !wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("YMONTH")) {
+			wrkStr = (String)xFYMonthBox.getInternalValue();
+			if (!wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("MSEQ")) {
+			wrkStr = (String)xFMSeqBox.getInternalValue();
+			if (!wrkStr.equals("0")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("FYEAR")) {
+			wrkStr = (String)xFFYearBox.getInternalValue();
+			if (!wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		return result;
 	}
 }
 
@@ -4058,20 +4175,50 @@ class XF110_PrimaryTable extends Object {
 		///////////////////////
 		// Filter conditions //
 		///////////////////////
+//		for (int i = 0; i < dialog_.getFilterList().size(); i++) {
+//			if (dialog_.getFilterList().get(i).getTableID().equals(tableID)
+//					&& !dialog_.getFilterList().get(i).getSQLWhereValue().equals("")) {
+//				if (hasWhere) {
+//					buf.append(" and (");
+//				} else {
+//					hasWhere = true;
+//					if (activeWhere.equals("") && fixedWhere.equals("")) {
+//						buf.append(" where ((");
+//					}
+//				}
+//				buf.append(dialog_.getFilterList().get(i).getSQLWhereValue());
+//				buf.append(")");
+//			}
+//		}
+//		if (hasWhere) {
+//			buf.append(")");
+//		}
+		String filterGroupID = "";
 		for (int i = 0; i < dialog_.getFilterList().size(); i++) {
-			if (dialog_.getFilterList().get(i).getTableID().equals(tableID)
+			if (dialog_.getFilterList().get(i).isPrimaryWhere()
 					&& !dialog_.getFilterList().get(i).getSQLWhereValue().equals("")) {
 				if (hasWhere) {
-					buf.append(" and (");
 				} else {
 					hasWhere = true;
 					if (activeWhere.equals("") && fixedWhere.equals("")) {
-						buf.append(" where ((");
+						buf.append(" where (");
 					}
 				}
+				if (filterGroupID.equals(dialog_.getFilterList().get(i).getFilterGroupID())) {
+					buf.append(" or ");
+				} else {
+					if (filterGroupID.equals("")) {
+						buf.append("(");
+					} else {
+						buf.append(") and (");
+					}
+					filterGroupID = dialog_.getFilterList().get(i).getFilterGroupID();
+				}
 				buf.append(dialog_.getFilterList().get(i).getSQLWhereValue());
-				buf.append(")");
 			}
+		}
+		if (!filterGroupID.equals("")) {
+			buf.append(")");
 		}
 		if (hasWhere) {
 			buf.append(")");

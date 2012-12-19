@@ -6035,16 +6035,18 @@ class XF300_StructureTable extends Object {
 			}
 		}
 
-		Icon icon = null;
-		Object value = headerTableOperator.getValueOf(iconControlFieldID);
-		if (XFUtility.isLiteralRequiredBasicType(basicTypeOfIconControlField)) {
-			icon = nodeIconMap.get(value.toString());
-		} else {
-			int intValue = Integer.parseInt(value.toString());
-			icon = nodeIconMap.get(intValue);
-		}
-		if (icon == null) {
-			icon = defaultIcon;
+		Icon icon = defaultIcon;
+		if (!iconControlFieldID.equals("")) {
+			Object value = headerTableOperator.getValueOf(iconControlFieldID);
+			if (XFUtility.isLiteralRequiredBasicType(basicTypeOfIconControlField)) {
+				icon = nodeIconMap.get(value.toString().trim());
+			} else {
+				int intValue = Integer.parseInt(value.toString());
+				icon = nodeIconMap.get(intValue);
+			}
+			if (icon == null) {
+				icon = defaultIcon;
+			}
 		}
 
 		return new XF300_TreeNode(keyValueMap, sb.toString(), icon, dialog_);
@@ -6080,16 +6082,18 @@ class XF300_StructureTable extends Object {
 			}
 		}
 
-		Icon icon = null;
-		Object value = headerTableOperator.getValueOf(iconControlFieldID);
-		if (XFUtility.isLiteralRequiredBasicType(basicTypeOfIconControlField)) {
-			icon = nodeIconMap.get(value.toString());
-		} else {
-			int intValue = Integer.parseInt(value.toString());
-			icon = nodeIconMap.get(intValue);
-		}
-		if (icon == null) {
-			icon = defaultIcon;
+		Icon icon = defaultIcon;
+		if (!iconControlFieldID.equals("")) {
+			Object value = headerTableOperator.getValueOf(iconControlFieldID);
+			if (XFUtility.isLiteralRequiredBasicType(basicTypeOfIconControlField)) {
+				icon = nodeIconMap.get(value.toString().trim());
+			} else {
+				int intValue = Integer.parseInt(value.toString());
+				icon = nodeIconMap.get(intValue);
+			}
+			if (icon == null) {
+				icon = defaultIcon;
+			}
 		}
 
 		return new XF300_TreeNode(keyValueMap, sb.toString(), icon, dialog_);

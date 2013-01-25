@@ -47,6 +47,7 @@ import java.awt.RenderingHints;
 import java.awt.SystemColor;
 import java.awt.Toolkit;
 import java.awt.event.*;
+import java.awt.im.InputContext;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -91,7 +92,6 @@ import org.apache.poi.hssf.usermodel.HSSFPatriarch;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.w3c.dom.*;
-
 import com.lowagie.text.BadElementException;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.PageSize;
@@ -136,16 +136,28 @@ public class XFUtility {
 		String numberString = "";
 		//
 		if (text != null) {
-			for (int i = 0; i < text.length(); i++) {
-				charValidated = false;
-				for (int j = 0; j < numberDigit.length; j++) {
-					if (text.charAt(i) == numberDigit[j]) {
-						charValidated = true;
-						break;
-					}
+			if (text.contains("E")) {
+				/////////////
+				// IEEE754 //
+				/////////////
+				try {
+					double doubleValue = Double.parseDouble(text);
+					numberString = Double.toString(doubleValue);
+				} catch (NumberFormatException e) {
+					numberString = "0";
 				}
-				if (charValidated) {
-					numberString = numberString + text.charAt(i);
+			} else {
+				for (int i = 0; i < text.length(); i++) {
+					charValidated = false;
+					for (int j = 0; j < numberDigit.length; j++) {
+						if (text.charAt(i) == numberDigit[j]) {
+							charValidated = true;
+							break;
+						}
+					}
+					if (charValidated) {
+						numberString = numberString + text.charAt(i);
+					}
 				}
 			}
 		}
@@ -521,23 +533,23 @@ public class XFUtility {
 		return value;
 	}
 	
-	static String getLongestSegment(String caption) {
-		String value = "";
-		ArrayList<String> stringList = new ArrayList<String>();
-		String wrkStr = caption.toUpperCase();
-		wrkStr = wrkStr.replace("<HTML>", "");
-		wrkStr = wrkStr.replace("</HTML>", "");
-		StringTokenizer workTokenizer = new StringTokenizer(wrkStr, "<BR>");
-		while (workTokenizer.hasMoreTokens()) {
-			stringList.add(workTokenizer.nextToken());
-		}
-		for (int i = 0; i < stringList.size(); i++) {
-			if (stringList.get(i).length() > value.length()) {
-				value = stringList.get(i);
-			}
-		}
-		return value;
-	}
+//	static String getLongestSegment(String caption) {
+//		String value = "";
+//		ArrayList<String> stringList = new ArrayList<String>();
+//		String wrkStr = caption.toUpperCase();
+//		wrkStr = wrkStr.replace("<HTML>", "");
+//		wrkStr = wrkStr.replace("</HTML>", "");
+//		StringTokenizer workTokenizer = new StringTokenizer(wrkStr, "<BR>");
+//		while (workTokenizer.hasMoreTokens()) {
+//			stringList.add(workTokenizer.nextToken());
+//		}
+//		for (int i = 0; i < stringList.size(); i++) {
+//			if (stringList.get(i).length() > value.length()) {
+//				value = stringList.get(i);
+//			}
+//		}
+//		return value;
+//	}
 	
 	static String getDefaultValueOfFilterField(String keywordValue, Session session){
 		String defaultValue = null;
@@ -651,9 +663,15 @@ public class XFUtility {
 		Object returnValue = null;
 		//
 		if (basicType.equals("INTEGER")) {
+			if (value == null || value.toString().equals("")) {
+				value = 0;
+			}
 			returnValue = Long.parseLong(value.toString());
 		}
 		if (basicType.equals("FLOAT")) {
+			if (value == null || value.toString().equals("")) {
+				value = 0.0;
+			}
 			returnValue = Double.parseDouble(value.toString());
 		}
 		if (basicType.equals("STRING")) {
@@ -3008,7 +3026,6 @@ class XFTextField extends JTextField implements XFEditableField {
 			fieldWidth = digits_ * 14 + 10;
 		} else {
 			if (basicType_.equals("INTEGER") || basicType_.equals("FLOAT")) {
-				//fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList.contains("ACCEPT_MINUS")) * 7 + 21;
 				fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList) * 7 + 21;
 			} else {
 				fieldWidth = digits_ * 7 + 10;
@@ -3162,36 +3179,11 @@ class XFTextField extends JTextField implements XFEditableField {
 	
 	public String getFormattedNumber(String text) {
 		String value = "0";
-		//if (text != null && !text.equals("")) {
 		if (text != null) {
 			if (basicType_.equals("INTEGER")) {
-//				long numberValue = Long.parseLong(getStringNumber(text));
-//				value = integerFormat.format(numberValue);
 				value = XFUtility.getFormattedIntegerValue(getStringNumber(text), dataTypeOptionList, digits_);
 			}
 			if (basicType_.equals("FLOAT")) {
-//				double numberValue = Double.parseDouble(getStringNumber(text));
-//				if (decimal_ == 0) {
-//					value = floatFormat0.format(numberValue);
-//				}
-//				if (decimal_ == 1) {
-//					value = floatFormat1.format(numberValue);
-//				}
-//				if (decimal_ == 2) {
-//					value = floatFormat2.format(numberValue);
-//				}
-//				if (decimal_ == 3) {
-//					value = floatFormat3.format(numberValue);
-//				}
-//				if (decimal_ == 4) {
-//					value = floatFormat4.format(numberValue);
-//				}
-//				if (decimal_ == 5) {
-//					value = floatFormat5.format(numberValue);
-//				}
-//				if (decimal_ == 6) {
-//					value = floatFormat6.format(numberValue);
-//				}
 				value = XFUtility.getFormattedFloatValue(getStringNumber(text), decimal_);
 			}
 		}
@@ -3268,13 +3260,23 @@ class XFTextField extends JTextField implements XFEditableField {
 						getInputContext().setCharacterSubsets(subsets);
 						getInputContext().setCompositionEnabled(true);
 					} else {
-						getInputContext().setCharacterSubsets(subsets);
-						getInputContext().setCompositionEnabled(false);
+						//getInputContext().setCharacterSubsets(subsets);
+						//getInputContext().setCompositionEnabled(false);
+						InputContext ic = getInputContext();
+						if (ic != null) {
+							ic.setCharacterSubsets(subsets);
+							ic.setCompositionEnabled(false);
+						}
 					}
 				}
 			} else {
-				getInputContext().setCharacterSubsets(subsets);
-				getInputContext().setCompositionEnabled(false);
+				//getInputContext().setCharacterSubsets(subsets);
+				//getInputContext().setCompositionEnabled(false);
+				InputContext ic = getInputContext();
+				if (ic != null) {
+					ic.setCharacterSubsets(subsets);
+					ic.setCompositionEnabled(false);
+				}
 			}
 		}
 	}
@@ -3342,8 +3344,19 @@ class XFTextField extends JTextField implements XFEditableField {
 								}
 							}
 						} else {
-							if (offset < adaptee.digits_ && super.getLength() < adaptee.digits_) {
-								super.insertString( offset, str, attr );
+							if (basicType_.equals("FLOAT")) {
+								String wrkStr0 = super.getText(0, super.getLength());
+								wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
+								String wrkStr1 = wrkStr0.replace(".", "");
+								wrkStr1 = wrkStr1.replace(",", "");
+								wrkStr1 = wrkStr1.replace("-", "");
+								if (wrkStr1.length() <= adaptee.digits_) {
+									super.insertString( offset, str, attr );
+								}
+							} else {
+								if (offset < adaptee.digits_ && super.getLength() < adaptee.digits_) {
+									super.insertString( offset, str, attr );
+								}
 							}
 						}
 					}
@@ -4233,10 +4246,10 @@ class XFUrlField extends JPanel implements XFEditableField {
 	private String oldValue = "";
 	//
 	public XFUrlField(){
-		this(40);
+		this(40, "");
 	}
 	//
-	public XFUrlField(int digits){
+	public XFUrlField(int digits, String fieldOptions){
 		super();
 		//
 		jTextField.setFont(new java.awt.Font(XFUtility.RESOURCE.getString("URLFont"), 0, 14));
@@ -4253,7 +4266,12 @@ class XFUrlField extends JPanel implements XFEditableField {
 		this.add(jLabel, BorderLayout.CENTER);
 		//
 		int fieldWidth,  fieldHeight;
-		fieldWidth = digits * 7 + 10;
+		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "WIDTH");
+		if (!wrkStr.equals("")) {
+			fieldWidth = Integer.parseInt(wrkStr);
+		} else {
+			fieldWidth = digits * 7 + 10;
+		}
 		if (fieldWidth > 800) {
 			fieldWidth = 800;
 		}
@@ -4403,24 +4421,6 @@ class HeaderBorder implements Border {
 		g.drawLine(x, y, x+width, y);
 		g.drawLine(x, y, x, y+height);
 		g.setColor(Color.gray);
-		g.drawLine(x, y+height-1, x+width, y+height-1);
-		g.drawLine(x+width-1, y+height, x+width-1, y);
-	}
-}
-
-class WidthChangerBorder implements Border {
-	public Insets getBorderInsets(Component c){
-		return new Insets(2, 2, 2, 2);
-	}
-	public boolean isBorderOpaque(){
-		return false;
-	}
-	public void paintBorder (Component c, Graphics g, int x, int y, int width, int height){
-		g.setColor(Color.white);
-		g.drawLine(x, y, x+width, y);
-		g.drawLine(x+1, y, x+1, y+height);
-		g.setColor(Color.gray);
-		g.drawLine(x, y, x, y+height);
 		g.drawLine(x, y+height-1, x+width, y+height-1);
 		g.drawLine(x+width-1, y+height, x+width-1, y);
 	}
@@ -4687,7 +4687,6 @@ class XFCalendar extends JDialog {
 				dateButtonArray[i].setBounds(posX, 120, 48, 20);
 			}
 			jPanelCenter.add(dateButtonArray[i]);
-			//posX = posX + 46;
 			posX = posX + 48;
 		}
 		//
@@ -4749,11 +4748,7 @@ class XFCalendar extends JDialog {
     public Date getDateOnCalendar(Date date) {
     	selectedDate = date;
     	//
-    	if (date == null || date == maxValueDate) {
-            this.date = null;
-    	} else {
-            this.date = date;
-    	}
+    	this.date = date;
     	setupDates(this.date, 0);
     	//
     	super.setVisible(true);
@@ -4895,35 +4890,66 @@ class XFCalendar extends JDialog {
 	}
 	
 	void jButton_keyPressed(KeyEvent e) {
+		// Ctrl+9
 		if (e.getKeyCode() == KeyEvent.VK_9 && e.isControlDown()){
 			selectedDate = maxValueDate;
 			this.setVisible(false);
 		}
-		Component com = getFocusOwner();
-		for (int i = 0; i < 42; i++) {
-			if (com.equals(dateButtonArray[i])) {
-				if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0){
-					if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-						setFocusOnNextButton(i, "RIGHT");
-					}
-					if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-						setFocusOnNextButton(i, "LEFT");
-					}
-					if (e.getKeyCode() == KeyEvent.VK_UP) {
-						setFocusOnNextButton(i, "UP");
-					}
-					if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-						setFocusOnNextButton(i, "DOWN");
-					}
+		// Ctrl+P
+		if (e.getKeyCode() == KeyEvent.VK_P && e.isControlDown()){
+			SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd");
+			boolean ready = false;
+			String answer = "2000-01-01";
+	    	if (this.date != null) {
+				answer = sdf1.format(this.date);
+			}
+			String message = XFUtility.RESOURCE.getString("CalendarMessage1");
+			while (!ready) {
+				answer = JOptionPane.showInputDialog(null, message, answer);
+				if (answer == null || answer.equals("")) {
+					ready = true;
 				} else {
-					if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-						gotoNextMonth(dateButtonArray[i].getDate());
-					}
-					if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-						gotoPreviousMonth(dateButtonArray[i].getDate());
+					try {
+						selectedDate = sdf1.parse(answer);
+						ready = true;
+						this.setVisible(false);
+					} catch (ParseException e1) {
+						message = XFUtility.RESOURCE.getString("CalendarMessage2");
 					}
 				}
-				break;
+			}
+		}
+		// Arrows
+		if (e.getKeyCode() == KeyEvent.VK_RIGHT
+				|| e.getKeyCode() == KeyEvent.VK_LEFT
+				|| e.getKeyCode() == KeyEvent.VK_UP
+				|| e.getKeyCode() == KeyEvent.VK_DOWN){
+			Component com = getFocusOwner();
+			for (int i = 0; i < 42; i++) {
+				if (com.equals(dateButtonArray[i])) {
+					if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0){
+						if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+							setFocusOnNextButton(i, "RIGHT");
+						}
+						if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+							setFocusOnNextButton(i, "LEFT");
+						}
+						if (e.getKeyCode() == KeyEvent.VK_UP) {
+							setFocusOnNextButton(i, "UP");
+						}
+						if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+							setFocusOnNextButton(i, "DOWN");
+						}
+					} else {
+						if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+							gotoNextMonth(dateButtonArray[i].getDate());
+						}
+						if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+							gotoPreviousMonth(dateButtonArray[i].getDate());
+						}
+					}
+					break;
+				}
 			}
 		}
 	}

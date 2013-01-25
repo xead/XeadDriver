@@ -205,27 +205,28 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		header.setReorderingAllowed(false);
 		header.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
-				if (e.getX() >= headersRenderer.getWidth()-3 && e.getX() < headersRenderer.getWidth()) {
+				if (headersRenderer.hasMouseOnColumnBorder(e.getX())) {
 					isHeaderResizing = true;
-					Graphics2D g2 = (Graphics2D)jScrollPaneTable.getGraphics();
-					g2.setColor(Color.gray.darker());
-					g2.fillRect(headersRenderer.getWidth()-3,0,3,jTableMain.getHeight() + headersRenderer.getHeight());
+					headersRenderer.setSizingHeader(e.getX());
 				}
 			}
 			public void mouseReleased(MouseEvent e) {
 				if (isHeaderResizing) {
-					headersRenderer.setupColumnBoundsWithTotalWidthSpecified(e.getX());
-					TableColumn  column = jTableMain.getColumnModel().getColumn(0);
+					headersRenderer.setNewBoundsToHeaders(e.getX());
+					TableColumn column = jTableMain.getColumnModel().getColumn(0);
 					column.setPreferredWidth(headersRenderer.getWidth());
 					cellsRenderer.setupCellBounds();
 					jScrollPaneTable.updateUI();
 				}
 				isHeaderResizing = false;
 			}
+			public void mouseExited(MouseEvent e) {
+				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+			}
 		});
 		header.addMouseMotionListener(new MouseMotionAdapter() {
 			public void mouseMoved(MouseEvent e) {
-				if (e.getX() >= headersRenderer.getWidth()-3 && e.getX() < headersRenderer.getWidth()) {
+				if (headersRenderer.hasMouseOnColumnBorder(e.getX())) {
 					setCursor(new Cursor(Cursor.E_RESIZE_CURSOR));
 				} else {
 					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -1705,24 +1706,20 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		private static final long serialVersionUID = 1L;
 		private JLabel numberLabel = new JLabel("No.");
 		private JPanel centerPanel = new JPanel();
-		private JPanel widthChangerPanel = new JPanel();
 		private ArrayList<JLabel> headerList = new ArrayList<JLabel>();
-		private int originalTotalWidth = 0;
-		private int totalWidth = 0;
+		private int totalWidthOfCenterPanel = 0;
 		private int totalHeight = 0;
+		private Component sizingHeader = null;
 
 		public TableHeadersRenderer() {
-			setupColumnBoundsWithTotalWidthSpecified(0);
+			arrangeColumnsPosition(true);
 			centerPanel.setLayout(null);
-			widthChangerPanel.setPreferredSize(new Dimension(4, 10));
-			widthChangerPanel.setBorder(new WidthChangerBorder());
 			numberLabel.setFont(new java.awt.Font("SansSerif", 0, 14));
 			numberLabel.setBorder(new HeaderBorder());
 			numberLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			this.setLayout(new BorderLayout());
 			this.add(numberLabel, BorderLayout.WEST);
 			this.add(centerPanel, BorderLayout.CENTER);
-			this.add(widthChangerPanel, BorderLayout.EAST);
 		}
 		
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {  
@@ -1749,12 +1746,64 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			return headerList;
 		}
 		
-		public void setupColumnBoundsWithTotalWidthSpecified(int newTotalWidth) {
+		public boolean hasMouseOnColumnBorder(int headersPosX) {
+			boolean result = false;
+			double posX = headersPosX - numberLabel.getBounds().getWidth();
+			if (posX >= -3 && posX <= 0) {
+				result = true;
+			} else {
+				for (int i = 0; i < headerList.size(); i++) {
+					if (posX >= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
+							&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+						result = true;
+						break;
+					}
+				}
+			}
+			return result;
+		}
+		
+		public void setSizingHeader(int headersPosX) {
+			double posX = headersPosX - numberLabel.getBounds().getWidth();
+			sizingHeader = numberLabel;
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posX >= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
+						&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+					sizingHeader = headerList.get(i);
+					break;
+				}
+			}
+		}
+		
+		public void setNewBoundsToHeaders(int posXOnHeaders) {
+			if (sizingHeader == numberLabel) {
+				numberLabel.setPreferredSize(new Dimension(posXOnHeaders, totalHeight));
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + posXOnHeaders, totalHeight));
+			} else {
+				int posX = posXOnHeaders - numberLabel.getBounds().width;
+				int widthAdjusted = 0;
+				for (int i = 0; i < headerList.size(); i++) {
+					if (sizingHeader == headerList.get(i)) {
+						int newWidth = posX - headerList.get(i).getBounds().x;
+						if (newWidth > 0) {
+							columnList.get(i).setWidth(newWidth);
+							widthAdjusted = newWidth - headerList.get(i).getBounds().width;
+						}
+						break;
+					}
+				}
+				if (widthAdjusted != 0) {
+					arrangeColumnsPosition(false);
+				}
+			}
+		}
+		
+		public void arrangeColumnsPosition(boolean isWithDefaultSequenceWidth) {
 			int fromX = 0;
 			int fromY = 0;
 			int width, height, wrkInt1, wrkInt2;
 			JLabel header;
-			totalWidth = 0;
+			totalWidthOfCenterPanel = 0;
 			centerPanel.removeAll();
 			headerList.clear();
 			for (int i = 0; i < columnList.size(); i++) {
@@ -1777,14 +1826,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					}
 					header.setOpaque(true);
 
-					if (newTotalWidth == 0) {
-						width = columnList.get(i).getWidth();
-					} else {
-						if (newTotalWidth < XFUtility.SEQUENCE_WIDTH) {
-							newTotalWidth = XFUtility.SEQUENCE_WIDTH;
-						}
-						width = (int)Math.floor(columnList.get(i).getWidth() * (newTotalWidth) / originalTotalWidth);
-					}
+					width = columnList.get(i).getWidth();
 					height = XFUtility.ROW_UNIT_HEIGHT * columnList.get(i).getRows();
 					if (i > 0) {
 						fromX = headerList.get(i-1).getBounds().x + headerList.get(i-1).getBounds().width;
@@ -1820,23 +1862,19 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					headerList.add(header);
 					centerPanel.add(header);
 
-					if (fromX + width > totalWidth) {
-						totalWidth = fromX + width;
+					if (fromX + width > totalWidthOfCenterPanel) {
+						totalWidthOfCenterPanel = fromX + width;
 					}
 					if (fromY + height > totalHeight) {
 						totalHeight = fromY + height;
 					}
 				}
 			}
-			int sequenceWidth = XFUtility.SEQUENCE_WIDTH;
-			if (newTotalWidth == 0) {
-				originalTotalWidth = totalWidth + XFUtility.SEQUENCE_WIDTH;
-			} else {
-				sequenceWidth = (int)Math.floor(XFUtility.SEQUENCE_WIDTH * (newTotalWidth) / originalTotalWidth);
+			if (isWithDefaultSequenceWidth) {
+				numberLabel.setPreferredSize(new Dimension(XFUtility.SEQUENCE_WIDTH, totalHeight));
 			}
-			numberLabel.setPreferredSize(new Dimension(sequenceWidth, totalHeight));
-			centerPanel.setPreferredSize(new Dimension(totalWidth, totalHeight));
-			this.setPreferredSize(new Dimension(totalWidth + sequenceWidth, totalHeight));
+			centerPanel.setPreferredSize(new Dimension(totalWidthOfCenterPanel, totalHeight));
+			this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + numberLabel.getPreferredSize().width, totalHeight));
 		}
 		
 		public String getToolTipText(MouseEvent e) {
@@ -2431,7 +2469,7 @@ class XF100_Filter extends JPanel {
 			if (componentType.equals("PROMPT_CALL")) {
 				xFPromptCall.setValue(mapValue.toString());
 			}
-			if (mapValue.toString().equals("")) {
+			if (!this.isEditable_ && mapValue.toString().equals("")) {
 				isValidated = false;
 			}
 		} else {
@@ -3554,7 +3592,7 @@ class XF100_Column extends XFColumnScriptable {
 		if (!wrkStr.equals("")) {
 			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
-		int captionWidth = metrics.stringWidth(XFUtility.getLongestSegment(fieldCaption)) + 18;
+		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
 
 		ArrayList<String> fieldOptionList = XFUtility.getOptionList(fieldOptions);
 		if (fieldOptionList.contains("VERTICAL")) {
@@ -3882,6 +3920,10 @@ class XF100_Column extends XFColumnScriptable {
 		return fieldWidth;
 	}
 
+	public void setWidth(int width){
+		fieldWidth = width;
+	}
+
 	public int getRows(){
 		return fieldRows;
 	}
@@ -4174,45 +4216,30 @@ class XF100_PrimaryTable extends Object {
 		///////////////////////
 		// Filter conditions //
 		///////////////////////
-//		for (int i = 0; i < dialog_.getFilterList().size(); i++) {
-//			if (dialog_.getFilterList().get(i).getTableID().equals(tableID)
-//			&& !dialog_.getFilterList().get(i).getSQLWhereValue().equals("")) {
-//				if (hasWhere) {
-//					buf.append(" and (");
-//				} else {
-//					hasWhere = true;
-//					if (activeWhere.equals("") && fixedWhere.equals("")) {
-//						buf.append(" where ((");
-//					}
-//				}
-//				buf.append(dialog_.getFilterList().get(i).getSQLWhereValue());
-//				buf.append(")");
-//			}
-//		}
-//		if (hasWhere) {
-//			buf.append(")");
-//		}
+		count = 0;
 		String filterGroupID = "";
 		for (int i = 0; i < dialog_.getFilterList().size(); i++) {
 			if (dialog_.getFilterList().get(i).isPrimaryWhere()
 					&& !dialog_.getFilterList().get(i).getSQLWhereValue().equals("")) {
-				if (hasWhere) {
-				} else {
-					hasWhere = true;
-					if (activeWhere.equals("") && fixedWhere.equals("")) {
-						buf.append(" where (");
-					}
-				}
-				if (filterGroupID.equals(dialog_.getFilterList().get(i).getFilterGroupID())) {
+				if (filterGroupID.equals(dialog_.getFilterList().get(i).getFilterGroupID())
+						&& !filterGroupID.equals("")) {
 					buf.append(" or ");
 				} else {
-					if (filterGroupID.equals("")) {
-						buf.append("(");
-					} else {
+					if (count > 0) {
 						buf.append(") and (");
+					} else {
+						if (hasWhere) {
+							buf.append(" and (");
+						} else {
+							if (activeWhere.equals("") && fixedWhere.equals("")) {
+								buf.append(" where ((");
+							}
+						}
 					}
 					filterGroupID = dialog_.getFilterList().get(i).getFilterGroupID();
 				}
+				count++;
+				hasWhere = true;
 				buf.append(dialog_.getFilterList().get(i).getSQLWhereValue());
 			}
 		}

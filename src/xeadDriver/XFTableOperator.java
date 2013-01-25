@@ -248,12 +248,29 @@ public class XFTableOperator {
     		} else {
     			String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
     			if (XFUtility.isLiteralRequiredBasicType(basicType)) {
-    				withKeyList_.add(fieldID_ + operand_ + "'" + value + "'");
+    				//	withKeyList_.add(fieldID_ + operand_ + "'" + value + "'");
+        			int length = Integer.parseInt(workElement.getAttribute("Size"));
+        			withKeyList_.add(fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length));
     			} else {
     				withKeyList_.add(fieldID_ + operand_ + value);
     			}
     		}
 		}
+    }
+    
+    private String getLiteraledStringValue(String value, int length) {
+		StringBuffer bf = new StringBuffer();
+    	bf.append("'");
+    	if (value.length() > length) {
+	    	bf.append(value.substring(0, length));
+    	} else {
+	    	bf.append(value);
+    	    for (int i = 0; i < length - value.length(); i++) {
+    	    	bf.append(" ");
+    	    }
+    	}
+    	bf.append("'");
+    	return bf.toString();
     }
 
     public void addKeyValue(String prefix, String fieldID, Object value, String postfix) {

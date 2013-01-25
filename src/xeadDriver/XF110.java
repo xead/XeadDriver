@@ -33,6 +33,7 @@ package xeadDriver;
 
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -208,17 +209,15 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		header.setReorderingAllowed(false);
 		header.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
-				if (e.getX() >= headersRenderer.getWidth()-3 && e.getX() < headersRenderer.getWidth()) {
+				if (headersRenderer.hasMouseOnColumnBorder(e.getX())) {
 					isHeaderResizing = true;
-					Graphics2D g2 = (Graphics2D)jScrollPaneTable.getGraphics();
-					g2.setColor(Color.gray.darker());
-					g2.fillRect(headersRenderer.getWidth()-3,0,3,jTableMain.getHeight() + headersRenderer.getHeight());
+					headersRenderer.setSizingHeader(e.getX());
 				}
 			}
 			public void mouseReleased(MouseEvent e) {
 				if (isHeaderResizing) {
-					headersRenderer.setupColumnBoundsWithTotalWidthSpecified(e.getX());
-					TableColumn  column = jTableMain.getColumnModel().getColumn(0);
+					headersRenderer.setNewBoundsToHeaders(e.getX());
+					TableColumn column = jTableMain.getColumnModel().getColumn(0);
 					column.setPreferredWidth(headersRenderer.getWidth());
 					cellsRenderer.setupCellBounds();
 					jScrollPaneTable.updateUI();
@@ -229,10 +228,13 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				headersRenderer.checkSelection(e);
 				jScrollPaneTable.updateUI();
 			}
+			public void mouseExited(MouseEvent e) {
+				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+			}
 		});
 		header.addMouseMotionListener(new MouseMotionAdapter() {
 			public void mouseMoved(MouseEvent e) {
-				if (e.getX() >= headersRenderer.getWidth()-3 && e.getX() < headersRenderer.getWidth()) {
+				if (headersRenderer.hasMouseOnColumnBorder(e.getX())) {
 					setCursor(new Cursor(Cursor.E_RESIZE_CURSOR));
 				} else {
 					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -1660,14 +1662,12 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		private JCheckBox checkBox = new JCheckBox();
 		private JPanel centerPanel = new JPanel();
 		private ArrayList<JLabel> headerList = new ArrayList<JLabel>();
-		private JPanel widthChangerPanel = new JPanel();
-		private int originalTotalWidth = 0;
 		private int totalWidthOfCenterPanel = 0;
 		private int totalHeight = 0;
+		private Component sizingHeader = null;
 
 		public TableHeadersRenderer() {
-			setupColumnBoundsWithTotalWidthSpecified(0);
-
+			arrangeColumnsPosition(true);
 			GridLayout layout = new GridLayout();
 			layout.setColumns(2);
 			layout.setRows(1);
@@ -1682,15 +1682,10 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			checkBoxPanel.add(checkBox, BorderLayout.CENTER);
 			westPanel.add(numberLabel);
 			westPanel.add(checkBoxPanel);
-
 			centerPanel.setLayout(null);
-			widthChangerPanel.setPreferredSize(new Dimension(4, 10));
-			widthChangerPanel.setBorder(new WidthChangerBorder());
-
 			this.setLayout(new BorderLayout());
 			this.add(westPanel, BorderLayout.WEST);
 			this.add(centerPanel, BorderLayout.CENTER);
-			this.add(widthChangerPanel, BorderLayout.EAST);
 		}
 
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {  
@@ -1717,7 +1712,59 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			return headerList;
 		}
 		
-		public void setupColumnBoundsWithTotalWidthSpecified(int newTotalWidth) {
+		public boolean hasMouseOnColumnBorder(int headersPosX) {
+			boolean result = false;
+			double posX = headersPosX - westPanel.getBounds().getWidth();
+			if (posX >= -3 && posX <= 0) {
+				result = true;
+			} else {
+				for (int i = 0; i < headerList.size(); i++) {
+					if (posX >= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
+							&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+						result = true;
+						break;
+					}
+				}
+			}
+			return result;
+		}
+		
+		public void setSizingHeader(int headersPosX) {
+			double posX = headersPosX - westPanel.getBounds().getWidth();
+			sizingHeader = westPanel;
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posX >= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
+						&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+					sizingHeader = headerList.get(i);
+					break;
+				}
+			}
+		}
+		
+		public void setNewBoundsToHeaders(int posXOnHeaders) {
+			if (sizingHeader == westPanel) {
+				westPanel.setPreferredSize(new Dimension(posXOnHeaders, totalHeight));
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + posXOnHeaders, totalHeight));
+			} else {
+				int posX = posXOnHeaders - westPanel.getBounds().width;
+				int widthAdjusted = 0;
+				for (int i = 0; i < headerList.size(); i++) {
+					if (sizingHeader == headerList.get(i)) {
+						int newWidth = posX - headerList.get(i).getBounds().x;
+						if (newWidth > 0) {
+							columnList.get(i).setWidth(newWidth);
+							widthAdjusted = newWidth - headerList.get(i).getBounds().width;
+						}
+						break;
+					}
+				}
+				if (widthAdjusted != 0) {
+					arrangeColumnsPosition(false);
+				}
+			}
+		}
+		
+		public void arrangeColumnsPosition(boolean isWithDefaultSequenceWidth) {
 			int fromX = 0;
 			int fromY = 0;
 			int width, height, wrkInt1, wrkInt2;
@@ -1745,14 +1792,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					}
 					header.setOpaque(true);
 
-					if (newTotalWidth == 0) {
-						width = columnList.get(i).getWidth();
-					} else {
-						if (newTotalWidth < XFUtility.SEQUENCE_WIDTH*2) {
-							newTotalWidth = XFUtility.SEQUENCE_WIDTH*2;
-						}
-						width = (int)Math.floor(columnList.get(i).getWidth() * (newTotalWidth) / originalTotalWidth);
-					}
+					width = columnList.get(i).getWidth();
 					height = XFUtility.ROW_UNIT_HEIGHT * columnList.get(i).getRows();
 					if (i > 0) {
 						fromX = headerList.get(i-1).getBounds().x + headerList.get(i-1).getBounds().width;
@@ -1796,17 +1836,11 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			}
-
-			int westPanelWidth = XFUtility.SEQUENCE_WIDTH*2;
-			if (newTotalWidth == 0) {
-				originalTotalWidth = totalWidthOfCenterPanel + XFUtility.SEQUENCE_WIDTH*2;
-			} else {
-				westPanelWidth = (int)Math.floor(XFUtility.SEQUENCE_WIDTH*2 * (newTotalWidth) / originalTotalWidth);
+			if (isWithDefaultSequenceWidth) {
+				westPanel.setPreferredSize(new Dimension(XFUtility.SEQUENCE_WIDTH*2, totalHeight));
 			}
-
-			westPanel.setPreferredSize(new Dimension(westPanelWidth, totalHeight));
 			centerPanel.setPreferredSize(new Dimension(totalWidthOfCenterPanel, totalHeight));
-			this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + westPanelWidth, totalHeight));
+			this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + westPanel.getPreferredSize().width, totalHeight));
 		}
 
 		public String getToolTipText(MouseEvent e) {
@@ -3558,7 +3592,7 @@ class XF110_Column extends XFColumnScriptable {
 		if (!wrkStr.equals("")) {
 			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
-		int captionWidth = metrics.stringWidth(XFUtility.getLongestSegment(fieldCaption)) + 18;
+		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
 
 		ArrayList<String> fieldOptionList = XFUtility.getOptionList(fieldOptions);
 		if (fieldOptionList.contains("VERTICAL")) {
@@ -3904,6 +3938,10 @@ class XF110_Column extends XFColumnScriptable {
 		return fieldWidth;
 	}
 
+	public void setWidth(int width){
+		fieldWidth = width;
+	}
+
 	public int getRows(){
 		return fieldRows;
 	}
@@ -4175,45 +4213,30 @@ class XF110_PrimaryTable extends Object {
 		///////////////////////
 		// Filter conditions //
 		///////////////////////
-//		for (int i = 0; i < dialog_.getFilterList().size(); i++) {
-//			if (dialog_.getFilterList().get(i).getTableID().equals(tableID)
-//					&& !dialog_.getFilterList().get(i).getSQLWhereValue().equals("")) {
-//				if (hasWhere) {
-//					buf.append(" and (");
-//				} else {
-//					hasWhere = true;
-//					if (activeWhere.equals("") && fixedWhere.equals("")) {
-//						buf.append(" where ((");
-//					}
-//				}
-//				buf.append(dialog_.getFilterList().get(i).getSQLWhereValue());
-//				buf.append(")");
-//			}
-//		}
-//		if (hasWhere) {
-//			buf.append(")");
-//		}
+		count = 0;
 		String filterGroupID = "";
 		for (int i = 0; i < dialog_.getFilterList().size(); i++) {
 			if (dialog_.getFilterList().get(i).isPrimaryWhere()
 					&& !dialog_.getFilterList().get(i).getSQLWhereValue().equals("")) {
-				if (hasWhere) {
-				} else {
-					hasWhere = true;
-					if (activeWhere.equals("") && fixedWhere.equals("")) {
-						buf.append(" where (");
-					}
-				}
-				if (filterGroupID.equals(dialog_.getFilterList().get(i).getFilterGroupID())) {
+				if (filterGroupID.equals(dialog_.getFilterList().get(i).getFilterGroupID())
+						&& !filterGroupID.equals("")) {
 					buf.append(" or ");
 				} else {
-					if (filterGroupID.equals("")) {
-						buf.append("(");
-					} else {
+					if (count > 0) {
 						buf.append(") and (");
+					} else {
+						if (hasWhere) {
+							buf.append(" and (");
+						} else {
+							if (activeWhere.equals("") && fixedWhere.equals("")) {
+								buf.append(" where ((");
+							}
+						}
 					}
 					filterGroupID = dialog_.getFilterList().get(i).getFilterGroupID();
 				}
+				count++;
+				hasWhere = true;
 				buf.append(dialog_.getFilterList().get(i).getSQLWhereValue());
 			}
 		}

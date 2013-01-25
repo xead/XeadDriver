@@ -186,27 +186,28 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		header.setReorderingAllowed(false);
 		header.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
-				if (e.getX() >= headersRenderer.getWidth()-3 && e.getX() < headersRenderer.getWidth()) {
+				if (headersRenderer.hasMouseOnColumnBorder(e.getX())) {
 					isHeaderResizing = true;
-					Graphics2D g2 = (Graphics2D)jScrollPaneTable.getGraphics();
-					g2.setColor(Color.gray.darker());
-					g2.fillRect(headersRenderer.getWidth()-3,0,3,jTableMain.getHeight()+headersRenderer.getHeight());
+					headersRenderer.setSizingHeader(e.getX());
 				}
 			}
 			public void mouseReleased(MouseEvent e) {
 				if (isHeaderResizing) {
-					headersRenderer.setupColumnBoundsWithTotalWidthSpecified(e.getX());
-					TableColumn  column = jTableMain.getColumnModel().getColumn(0);
+					headersRenderer.setNewBoundsToHeaders(e.getX());
+					TableColumn column = jTableMain.getColumnModel().getColumn(0);
 					column.setPreferredWidth(headersRenderer.getWidth());
 					cellsRenderer.setupCellBounds();
 					jScrollPaneTable.updateUI();
 				}
 				isHeaderResizing = false;
 			}
+			public void mouseExited(MouseEvent e) {
+				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+			}
 		});
 		header.addMouseMotionListener(new MouseMotionAdapter() {
 			public void mouseMoved(MouseEvent e) {
-				if (e.getX() >= headersRenderer.getWidth()-3 && e.getX() < headersRenderer.getWidth()) {
+				if (headersRenderer.hasMouseOnColumnBorder(e.getX())) {
 					setCursor(new Cursor(Cursor.E_RESIZE_CURSOR));
 				} else {
 					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -1000,18 +1001,15 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		private JLabel numberLabel = new JLabel("No.");
 		private JLabel checkBoxLabel = null;
 		private JPanel westPanel = null;
-		private JPanel multiLinesPanel = new JPanel();
-		private JPanel widthChangerPanel = new JPanel();
+		private JPanel centerPanel = new JPanel();
 		private ArrayList<JLabel> headerList = new ArrayList<JLabel>();
-		private int originalTotalWidth = 0;
-		private int totalWidth = 0;
+		private int totalWidthOfCenterPanel = 0;
 		private int totalHeight = 0;
+		private Component sizingHeader = null;
 
 		public TableHeadersRenderer() {
-			setupColumnBoundsWithTotalWidthSpecified(0);
-			multiLinesPanel.setLayout(null);
-			widthChangerPanel.setPreferredSize(new Dimension(4, 10));
-			widthChangerPanel.setBorder(new WidthChangerBorder());
+			arrangeColumnsPosition(true);
+			centerPanel.setLayout(null);
 			this.setLayout(new BorderLayout());
 			numberLabel.setFont(new java.awt.Font("SansSerif", 0, 14));
 			numberLabel.setBorder(new HeaderBorder());
@@ -1029,8 +1027,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				westPanel.add(checkBoxLabel);
 				this.add(westPanel, BorderLayout.WEST);
 			}
-			this.add(multiLinesPanel, BorderLayout.CENTER);
-			this.add(widthChangerPanel, BorderLayout.EAST);
+			this.add(centerPanel, BorderLayout.CENTER);
 		}
 		
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {  
@@ -1057,13 +1054,65 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			return headerList;
 		}
 		
-		public void setupColumnBoundsWithTotalWidthSpecified(int newTotalWidth) {
+		public boolean hasMouseOnColumnBorder(int headersPosX) {
+			boolean result = false;
+			double posX = headersPosX - westPanel.getBounds().getWidth();
+			if (posX >= -3 && posX <= 0) {
+				result = true;
+			} else {
+				for (int i = 0; i < headerList.size(); i++) {
+					if (posX >= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
+							&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+						result = true;
+						break;
+					}
+				}
+			}
+			return result;
+		}
+		
+		public void setSizingHeader(int headersPosX) {
+			double posX = headersPosX - westPanel.getBounds().getWidth();
+			sizingHeader = westPanel;
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posX >= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
+						&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+					sizingHeader = headerList.get(i);
+					break;
+				}
+			}
+		}
+		
+		public void setNewBoundsToHeaders(int posXOnHeaders) {
+			if (sizingHeader == westPanel) {
+				westPanel.setPreferredSize(new Dimension(posXOnHeaders, totalHeight));
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + posXOnHeaders, totalHeight));
+			} else {
+				int posX = posXOnHeaders - westPanel.getBounds().width;
+				int widthAdjusted = 0;
+				for (int i = 0; i < headerList.size(); i++) {
+					if (sizingHeader == headerList.get(i)) {
+						int newWidth = posX - headerList.get(i).getBounds().x;
+						if (newWidth > 0) {
+							addRowListColumnList.get(i).setWidth(newWidth);
+							widthAdjusted = newWidth - headerList.get(i).getBounds().width;
+						}
+						break;
+					}
+				}
+				if (widthAdjusted != 0) {
+					arrangeColumnsPosition(false);
+				}
+			}
+		}
+		
+		public void arrangeColumnsPosition(boolean isWithDefaultSequenceWidth) {
 			int fromX = 0;
 			int fromY = 0;
 			int width, height, wrkInt1, wrkInt2;
 			JLabel header;
-			totalWidth = 0;
-			multiLinesPanel.removeAll();
+			totalWidthOfCenterPanel = 0;
+			centerPanel.removeAll();
 			headerList.clear();
 			for (int i = 0; i < addRowListColumnList.size(); i++) {
 				if (addRowListColumnList.get(i).isVisibleOnPanel()) {
@@ -1085,14 +1134,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 					}
 					header.setOpaque(true);
 
-					if (newTotalWidth == 0) {
-						width = addRowListColumnList.get(i).getWidth();
-					} else {
-						if (newTotalWidth < XFUtility.SEQUENCE_WIDTH) {
-							newTotalWidth = XFUtility.SEQUENCE_WIDTH;
-						}
-						width = (int)Math.floor(addRowListColumnList.get(i).getWidth() * (newTotalWidth) / originalTotalWidth);
-					}
+					width = addRowListColumnList.get(i).getWidth();
 					height = XFUtility.ROW_UNIT_HEIGHT * addRowListColumnList.get(i).getRows();
 					if (i > 0) {
 						fromX = headerList.get(i-1).getBounds().x + headerList.get(i-1).getBounds().width;
@@ -1126,29 +1168,28 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 					header.setBounds(new Rectangle(fromX, fromY, width, height));
 					header.setBorder(new HeaderBorder());
 					headerList.add(header);
-					multiLinesPanel.add(header);
+					centerPanel.add(header);
 
-					if (fromX + width > totalWidth) {
-						totalWidth = fromX + width;
+					if (fromX + width > totalWidthOfCenterPanel) {
+						totalWidthOfCenterPanel = fromX + width;
 					}
 					if (fromY + height > totalHeight) {
 						totalHeight = fromY + height;
 					}
 				}
 			}
-			int sequenceWidth = XFUtility.SEQUENCE_WIDTH;
-			if (newTotalWidth == 0) {
-				originalTotalWidth = totalWidth + XFUtility.SEQUENCE_WIDTH;
-			} else {
-				sequenceWidth = (int)Math.floor(XFUtility.SEQUENCE_WIDTH * (newTotalWidth) / originalTotalWidth);
+			if (isWithDefaultSequenceWidth) {
+				if (westPanel == null) {
+					numberLabel.setPreferredSize(new Dimension(XFUtility.SEQUENCE_WIDTH, totalHeight));
+				} else {
+					westPanel.setPreferredSize(new Dimension(XFUtility.SEQUENCE_WIDTH*2, totalHeight));
+				}
 			}
-			numberLabel.setPreferredSize(new Dimension(sequenceWidth, totalHeight));
-			multiLinesPanel.setPreferredSize(new Dimension(totalWidth, totalHeight));
+			centerPanel.setPreferredSize(new Dimension(totalWidthOfCenterPanel, totalHeight));
 			if (westPanel == null) {
-				this.setPreferredSize(new Dimension(totalWidth + sequenceWidth, totalHeight));
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + numberLabel.getPreferredSize().width, totalHeight));
 			} else {
-				westPanel.setPreferredSize(new Dimension(sequenceWidth * 2, totalHeight));
-				this.setPreferredSize(new Dimension(totalWidth + (sequenceWidth * 2), totalHeight));
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + westPanel.getPreferredSize().width, totalHeight));
 			}
 		}
 
@@ -1156,7 +1197,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			String text = "";
 			XF310_AddRowListColumn column;
 			if (e.getPoint().x > numberLabel.getPreferredSize().width) {
-				Component compo = multiLinesPanel.getComponentAt(e.getPoint().x-numberLabel.getPreferredSize().width, e.getPoint().y);
+				Component compo = centerPanel.getComponentAt(e.getPoint().x-numberLabel.getPreferredSize().width, e.getPoint().y);
 				if (compo != null) {
 					for (int i = 0; i < headerList.size(); i++) {
 						if (compo.equals(headerList.get(i))) {
@@ -1827,7 +1868,7 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 
 		JLabel jLabel = new JLabel();
 		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		int captionWidth = metrics.stringWidth(XFUtility.getLongestSegment(fieldCaption)) + 18;
+		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
 
 		ArrayList<String> fieldOptionList = XFUtility.getOptionList(fieldOptions);
 		if (fieldOptionList.contains("VERTICAL")) {
@@ -2132,6 +2173,10 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 
 	public int getWidth(){
 		return fieldWidth;
+	}
+
+	public void setWidth(int width){
+		fieldWidth = width;
 	}
 
 	public int getRows(){

@@ -98,7 +98,7 @@ public class XFOptionDialog extends JDialog {
     	int height = optionList.size() * LIST_CELL_HEIGHT + 5;
 		FontMetrics metricsTitle = jLabel.getFontMetrics(this.getFont());
 		int dialogWidth = width + 20;
-		int titleWidth = metricsTitle.stringWidth(title) + 70;
+		int titleWidth = metricsTitle.stringWidth(title) + 30;
 		if (dialogWidth < titleWidth) {
 			dialogWidth = titleWidth;
 			width = dialogWidth - 20;

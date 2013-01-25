@@ -309,6 +309,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					this.pack();
 				}
 			}
+			jPanelBottom.remove(jProgressBar);
+			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 
 			//////////////////////////////////////////////
 			// Setup the primary table and refer tables //
@@ -330,7 +332,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			/////////////////////////////
 			// Initializing panel mode //
 			/////////////////////////////
-			if (hasParmMapWithCompleteSetOfKeyFields()) {
+			if (hasParmMapWithCompleteKeySet()) {
 				if (functionElement_.getAttribute("UpdateOnly").equals("T")) {
 					panelMode_ = "EDIT";
 					returnMap_.put("RETURN_CODE", "21");
@@ -1017,17 +1019,20 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 
-	boolean hasParmMapWithCompleteSetOfKeyFields() {
-		boolean returnValue = true;
-		//
+	boolean hasParmMapWithCompleteKeySet() {
+		boolean hasCompleteKeySet = true;
 		for (int i = 0; i < primaryTable_.getKeyFieldList().size(); i++) {
 			if (!parmMap_.containsKey(primaryTable_.getKeyFieldList().get(i))) {
-				returnValue = false;
+				hasCompleteKeySet = false;
 				break;
 			}
 		}
-		//
-		return returnValue;
+		if (hasCompleteKeySet && parmMap_.containsKey("INSTANCE_MODE")) {
+			if (parmMap_.get("INSTANCE_MODE").toString().equals("ADD")) {
+				hasCompleteKeySet = false;
+			}
+		}
+		return hasCompleteKeySet;
 	}
 	
 	void initializeFieldValues() {
@@ -2196,7 +2201,7 @@ class XF200_Field extends XFFieldScriptable {
 							component.setLocation(5, 0);
 						} else {
 							if (dataTypeOptionList.contains("URL")) {
-								component = new XFUrlField(dataSize);
+								component = new XFUrlField(dataSize, fieldOptions);
 								component.setLocation(5, 0);
 							} else {
 								if (dataTypeOptionList.contains("IMAGE")) {

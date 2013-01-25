@@ -162,6 +162,7 @@ public class Session extends JFrame {
 	private HashMap<String, String> attributeMap = new HashMap<String, String>();
 	private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 	private Bindings globalScriptBindings = null;
+	private ScriptEngine scriptEngine = null;
     private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
 	private DOMParser responseDocParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
@@ -169,6 +170,7 @@ public class Session extends JFrame {
 	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
 	private Application application;
 	private XFOptionDialog optionDialog = new XFOptionDialog(this);
+	private XFInputDialog inputDialog = new XFInputDialog(this);
 	private XFLongTextEditor xfLongTextEditor = new XFLongTextEditor(this);
 
 	public Session(String[] args, Application app) {
@@ -623,7 +625,7 @@ public class Session extends JFrame {
 		////////////////////////////////////////////////////
 		globalScriptBindings = scriptEngineManager.getBindings();
 		globalScriptBindings.put("session", this);
-		ScriptEngine scriptEngine = scriptEngineManager.getEngineByName("js");
+		scriptEngine = scriptEngineManager.getEngineByName("js");
 		if (!loginScript.equals("")) {
 			scriptEngine.eval(loginScript);
 		}
@@ -727,6 +729,15 @@ public class Session extends JFrame {
 	
 	public XFOptionDialog getOptionDialog() {
 		return optionDialog;
+	}
+	
+	public XFInputDialog getInputDialog() {
+		if (inputDialog.isVisible()) {
+			return new XFInputDialog(this);
+		} else {
+			inputDialog.clear();
+			return inputDialog;
+		}
 	}
 	
 	public XFLongTextEditor getLongTextEditor() {
@@ -1350,14 +1361,16 @@ public class Session extends JFrame {
 	}
 
 	void closeSession(boolean isToWriteLogAndClose) {
-		//
+
+		///////////////////////
+		// Write session log //
+		///////////////////////
 		if (isToWriteLogAndClose) {
 			if (noErrorsOccured) {
 				sessionStatus = "END";
 			} else {
 				sessionStatus = "ERR";
 			}
-			//
 			try {
 				String sql = "update " + sessionTable
 				+ " set DTLOGOUT=CURRENT_TIMESTAMP, KBSESSIONSTATUS='"
@@ -1368,9 +1381,26 @@ public class Session extends JFrame {
 				e.printStackTrace();
 			}
 		}
-		//
+
+		////////////////////////////////
+		// Commit pending transaction //
+		////////////////////////////////
 		this.commit(true, null);
-		//
+
+		///////////////////////////////////////////
+		// Execute login-script to close session //
+		///////////////////////////////////////////
+		if (!loginScript.equals("")) {
+			try {
+				scriptEngine.eval(loginScript);
+			} catch (ScriptException e) {
+				e.printStackTrace();
+			}
+		}
+
+		///////////////////////////////
+		// Close local DB connection //
+		///////////////////////////////
 		if (appServerName.equals("")) {
 			try {
 				connectionManualCommit.close();
@@ -1395,7 +1425,8 @@ public class Session extends JFrame {
 					systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 			if (rtn == 0) {
 				super.processWindowEvent(e);
-				closeSession(true);
+				this.closeSession(true);
+				this.setVisible(false);
 				System.exit(0);
 			}
 		} else {
@@ -1426,9 +1457,14 @@ public class Session extends JFrame {
 			for (int i = 0; i < 20; i++) {
 				if (com.equals(jButtonMenuOptionArray[i])) {
 					if (menuOptionArray[jTabbedPaneMenu.getSelectedIndex()][i].isLogoutOption) {
-						this.closeSession(true);
-						this.setVisible(false);
-						System.exit(0);
+						Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
+						int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
+								systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+						if (rtn == 0) {
+							this.closeSession(true);
+							this.setVisible(false);
+							System.exit(0);
+						}
 					} else {
 						HashMap<String, Object> returnMap = menuOptionArray[jTabbedPaneMenu.getSelectedIndex()][i].call();
 						if (returnMap != null && returnMap.get("RETURN_CODE") != null) {
@@ -1973,19 +2009,29 @@ public class Session extends JFrame {
 		return subDBConnectionList.get(subDBIDList.indexOf(id));
 	}
 	
+	public void commit() {
+		this.commit(true, null);
+	}
+	
 	public void commit(boolean isCommit, StringBuffer logBuf) {
 		if (appServerName.equals("")) {
 			try {
 				if (isCommit) {
 					connectionManualCommit.commit();
-					XFUtility.appendLog("Local-commit succeeded.", logBuf);
+					if (logBuf != null) {
+						XFUtility.appendLog("Local-commit succeeded.", logBuf);
+					}
 				} else {
 					connectionManualCommit.rollback();
-			     	XFUtility.appendLog("Local-rollback succeeded.", logBuf);
+					if (logBuf != null) {
+						XFUtility.appendLog("Local-rollback succeeded.", logBuf);
+					}
 				}
 			} catch (SQLException e) {
 				JOptionPane.showMessageDialog(null, e.getMessage());
-		     	XFUtility.appendLog(e.getMessage(), logBuf);
+				if (logBuf != null) {
+					XFUtility.appendLog(e.getMessage(), logBuf);
+				}
 			}
 		} else {
 			HttpClient httpClient = new DefaultHttpClient();
@@ -2003,10 +2049,12 @@ public class Session extends JFrame {
 				//
 				HttpResponse response = httpClient.execute(httpPost);
 				HttpEntity responseEntity = response.getEntity();
-				if (responseEntity == null) {
-					XFUtility.appendLog("Response is NULL.", logBuf);
-				} else {
-			     	XFUtility.appendLog(EntityUtils.toString(responseEntity), logBuf);
+				if (logBuf != null) {
+					if (responseEntity == null) {
+						XFUtility.appendLog("Response is NULL.", logBuf);
+					} else {
+						XFUtility.appendLog(EntityUtils.toString(responseEntity), logBuf);
+					}
 				}
 			} catch (Exception e) {
 				String msg = "";
@@ -2016,7 +2064,9 @@ public class Session extends JFrame {
 					msg = "Connection failed to rollback with the servlet '" + appServerName + "'";
 				}
 				JOptionPane.showMessageDialog(null, msg);
-		     	XFUtility.appendLog(e.getMessage(), logBuf);
+				if (logBuf != null) {
+					XFUtility.appendLog(e.getMessage(), logBuf);
+				}
 			} finally {
 				httpClient.getConnectionManager().shutdown();
 				if (httpPost != null) {
@@ -2339,8 +2389,6 @@ public class Session extends JFrame {
 		//
 		if (databaseName.contains("jdbc:derby:")) {
 			try {
-				//setCursor(new Cursor(Cursor.WAIT_CURSOR));
-				//
 				if (appServerName.equals("")) {
 					statement = connectionManualCommit.createStatement();
 				}
@@ -2401,13 +2449,16 @@ public class Session extends JFrame {
 						e.printStackTrace();
 					}
 				}
-				//setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}
 		}
 	}
 
 	public String getSessionID() {
 		return sessionID;
+	}
+
+	public String getStatus() {
+		return sessionStatus;
 	}
 
 	public String getUserID() {

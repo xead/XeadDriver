@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -276,6 +276,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			initialMsg = functionElement_.getAttribute("InitialMsg");
 			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 			operatorList.clear();
+			threadToSetupReferChecker = null;
 
 			//////////////////////////////////////
 			// Setup Script Engine and Bindings //
@@ -748,7 +749,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		instanceIsAvailable_ = true;
 		messageList.clear();
 		try {
-			threadToSetupReferChecker.join();
+			if (threadToSetupReferChecker != null) {
+				threadToSetupReferChecker.join();
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -850,8 +853,16 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
-		return new XFTableOperator(session_, processLog, oparation, tableID);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, processLog, oparation, tableID);
+		} catch (Exception e) {
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		}
+		return operator;
 	}
+
 	public XFTableOperator createTableOperator(String sqlText) {
 		return createTableOperator(sqlText, false);
 	}

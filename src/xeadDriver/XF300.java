@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -81,18 +81,15 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private NodeList headerReferElementList;
 	private XF300_StructureTable structureTable_ = null;
 	private String headerFunctionID = "";
-	private JPanel jPanelCenter = new JPanel();
+	private JSplitPane jSplitPaneTop = new JSplitPane();
 	private JPanel jPanelTop = new JPanel();
 	private JPanel jPanelTopEast = new JPanel();
-	private JPanel jPanelTopCenter = new JPanel();
-	private JPanel jPanelTopNorthMargin = new JPanel();
-	private JPanel jPanelTopSouthMargin = new JPanel();
-	private JPanel jPanelTopEastMargin = new JPanel();
-	private JPanel jPanelTopWestMargin = new JPanel();
+	private JPanel jPanelCenter = new JPanel();
 	private JButton jButtonList = new JButton();
-	private JPanel jPanelFilter[] = new JPanel[10];
-	private double filterWidth[] = new double[10];
-	private boolean anyFilterIsEditable[] = new boolean[10];
+	private JPanel jPanelFilters[] = new JPanel[10];
+	private JScrollPane jScrollPaneFilters[] = new JScrollPane[10];
+	private XF300_Filter firstEditableFilter[] = new XF300_Filter[10];
+	private int rowsOfDisplayedFilters[] = new int[10];
 	@SuppressWarnings("unchecked")
 	private ArrayList<XF300_Filter> filterListArray[] = new ArrayList[10];
 	@SuppressWarnings("unchecked")
@@ -194,29 +191,19 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelHeaderFields.setLayout(null);
 		jPanelHeaderFields.setFocusable(false);
 		jPanelCenter.setLayout(new BorderLayout());
+		jPanelCenter.setBorder(null);
 		jPanelTop.setPreferredSize(new Dimension(600, 45));
 		jPanelTop.setLayout(new BorderLayout());
-		jPanelTopNorthMargin.setPreferredSize(new Dimension(600, 8));
-		jPanelTopSouthMargin.setPreferredSize(new Dimension(600, 8));
-		jPanelTopEastMargin.setPreferredSize(new Dimension(8, 20));
-		jPanelTopWestMargin.setPreferredSize(new Dimension(8, 20));
 		jPanelTopEast.setPreferredSize(new Dimension(80, 80));
-		jPanelTopEast.setLayout(new BorderLayout());
-		jPanelTopEast.add(jButtonList, BorderLayout.CENTER);
-		jPanelTopEast.add(jPanelTopEastMargin, BorderLayout.EAST);
-		jPanelTopEast.add(jPanelTopWestMargin, BorderLayout.WEST);
+		jPanelTopEast.setLayout(null);
+		jPanelTopEast.add(jButtonList);
 		jButtonList.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
 		jButtonList.setText(XFUtility.RESOURCE.getString("Search"));
 		jButtonList.addActionListener(new XF300_jButtonList_actionAdapter(this));
 		jButtonList.addKeyListener(new XF300_keyAdapter(this));
-		jPanelTopCenter.setLayout(new BorderLayout());
+		jButtonList.setBounds(new Rectangle(6, 6, 66, 28));
 		jPanelTop.setBorder(BorderFactory.createEtchedBorder());
-		jPanelTop.add(jPanelTopCenter, BorderLayout.CENTER);
-		jPanelTop.add(jPanelTopNorthMargin, BorderLayout.NORTH);
-		jPanelTop.add(jPanelTopSouthMargin, BorderLayout.SOUTH);
-		jPanelTop.add(jPanelTopEast, BorderLayout.EAST);
-		jPanelCenter.add(jPanelTop, BorderLayout.NORTH);
-		jPanelCenter.add(jScrollPaneTable, BorderLayout.CENTER);
+		jSplitPaneTop.setOrientation(JSplitPane.VERTICAL_SPLIT);
 
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
@@ -236,7 +223,11 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			workingRowListArray[i] = new ArrayList<WorkingRow>();
 			detailColumnListArray[i] = new ArrayList<XF300_DetailColumn>();
 			detailReferTableListArray[i] = new ArrayList<XF300_DetailReferTable>();
-			jPanelFilter[i] = new JPanel();
+			jPanelFilters[i] = new JPanel();
+			jPanelFilters[i].setLayout(null);
+			jScrollPaneFilters[i] = new JScrollPane();
+			jScrollPaneFilters[i].getViewport().add(jPanelFilters[i]);
+			jScrollPaneFilters[i].setBorder(null);
 			jTableMainArray[i] = new JTable();
 			jTableMainArray[i].setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
 			jTableMainArray[i].setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -368,7 +359,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		org.w3c.dom.Element workElement;
 		String workStr, workAlias, workTableID, workFieldID;
 		StringTokenizer workTokenizer;
-		int wrkInt, countOfDisplayedFilters;
 		org.w3c.dom.Element fieldElement;
 
 		try {
@@ -685,48 +675,57 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					detailScriptBindingsArray[i] = scriptEngine.createBindings();
 					detailScriptBindingsArray[i].putAll(headerScriptBindings);
 
-					///////////////////////////
-					// Setup Filter fields ////
-					///////////////////////////
+					/////////////////////////
+					// Setup Filter fields //
+					/////////////////////////
+					XF300_Filter filter;
+					int filtersWidth = 0;
+					posX = 0;
+					posY = 8;
+					int wrkInt = 0;
+					rowsOfDisplayedFilters[i] = 0;
+					dimOfPriviousField = new Dimension(0,0);
 					filterListArray[i].clear();
-					jPanelFilter[i].removeAll();
-					anyFilterIsEditable[i] = false;
-					GridLayout gridLayoutFilter = new GridLayout();
+					jPanelFilters[i].removeAll();
+					firstEditableFilter[i] = null;
 					NodeList filterFieldList = workElement.getElementsByTagName("Filter");
-					countOfDisplayedFilters = XFUtility.countNumberOfDisplayedFilters(filterFieldList);
-					if (countOfDisplayedFilters <= 2) {
-						gridLayoutFilter.setColumns(2);
-						gridLayoutFilter.setRows(1);
-						filterWidth[i] = (this.getPreferredSize().getWidth() - 90) / 2;
-					}
-					if (countOfDisplayedFilters == 3) {
-						gridLayoutFilter.setColumns(3);
-						gridLayoutFilter.setRows(1);
-						filterWidth[i] = (this.getPreferredSize().getWidth() - 90) / 3;
-					}
-					if (countOfDisplayedFilters >= 4) {
-						gridLayoutFilter.setColumns(4);
-						gridLayoutFilter.setRows(1);
-						filterWidth[i] = (this.getPreferredSize().getWidth() - 90) / 4;
-					}
-					jPanelFilter[i].setLayout(gridLayoutFilter);
-					wrkInt = 0;
 					workSortingList = XFUtility.getSortedListModel(filterFieldList, "Order");
-					for (int j = 0; j < workSortingList.getSize() && j < 4; j++) {
-						filterListArray[i].add(new XF300_Filter((org.w3c.dom.Element)workSortingList.getElementAt(j), this, i));
-						if (!filterListArray[i].get(j).isValidatedWithParmMapValue(parmMap_)) {
+					for (int j = 0; j < workSortingList.getSize(); j++) {
+						filter = new XF300_Filter((org.w3c.dom.Element)workSortingList.getElementAt(j), this, i);
+						filterListArray[i].add(filter);
+						if (!filter.isValidatedWithParmMapValue(parmMap_)) {
 							JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError47") + filterListArray[i].get(j).getCaption() + XFUtility.RESOURCE.getString("FunctionError48"));
 							isToBeCanceled = true;
 							break;
 						}
-						if (!filterListArray[i].get(j).isHidden() && wrkInt < 8) {
-							wrkInt++;
-							jPanelFilter[i].add(filterListArray[i].get(j));
-							if (filterListArray[i].get(j).isEditable()) {
-								anyFilterIsEditable[i] = true;
+						if (!filter.isHidden()) {
+							jPanelFilters[i].add(filter);
+							if (filter.isEditable() && firstEditableFilter[i] == null) {
+								firstEditableFilter[i] = filter;
 							}
+							if (wrkInt == 0) {
+								rowsOfDisplayedFilters[i]++;
+							} else {
+								if (filter.isVerticalPosition()) {
+									posX = 0;
+									posY = posY + dimOfPriviousField.height + filter.getVerticalMargin();
+									rowsOfDisplayedFilters[i]++;
+								} else {
+									posX = posX + dimOfPriviousField.width;
+								}
+							}
+
+							dim = filter.getPreferredSize();
+							filter.setBounds(posX, posY, dim.width, dim.height);
+							if (posX + dim.width > filtersWidth) {
+								filtersWidth = posX + dim.width;
+							}
+							dimOfPriviousField = new Dimension(dim.width, dim.height);
+
+							wrkInt++;
 						}
 					}
+					jPanelFilters[i].setPreferredSize(new Dimension(filtersWidth, posY + dimOfPriviousField.height));
 
 					///////////////////////////////////////////
 					// Setup components for JTable of Detail //
@@ -870,7 +869,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				// Select Detail records and setup JTables //
 				/////////////////////////////////////////////
 				for (int i = 0; i < detailTabSortingList.getSize(); i++) {
-					if (filterListArray[i].size() == 0 || !anyFilterIsEditable[i]) {
+					if (filterListArray[i].size() == 0 || firstEditableFilter[i] == null) {
 						selectDetailRecordsAndSetupTableRows(i, true);
 					} else {
 						clearTableRows(i);
@@ -1141,7 +1140,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				parmMap_ = currentTreeNode.getKeyMap();
 				fetchHeaderRecord(true);
 				for (int i = 0; i < jTabbedPane.getTabCount(); i++) {
-					if (filterListArray[i].size() == 0 || !anyFilterIsEditable[i]) {
+					if (filterListArray[i].size() == 0 || firstEditableFilter[i] == null) {
 						selectDetailRecordsAndSetupTableRows(i, false);
 					} else {
 						rowCount = tableModelMainArray[i].getRowCount();
@@ -1469,7 +1468,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						if (returnMap.get("RETURN_CODE").equals("20")) {
 							fetchHeaderRecord(true);
 							for (int i = 0; i < jTabbedPane.getTabCount(); i++) {
-								if (filterListArray[i].size() == 0 || !anyFilterIsEditable[i]) {
+								if (filterListArray[i].size() == 0 || firstEditableFilter[i] == null) {
 									selectDetailRecordsAndSetupTableRows(i, false);
 								}
 							}
@@ -1491,7 +1490,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						messageList.add(returnMap.get("RETURN_MESSAGE").toString());
 					}
 					if (returnMap.get("RETURN_CODE").equals("10")) {
-						if (filterListArray[jTabbedPane.getSelectedIndex()].size() == 0 || !anyFilterIsEditable[jTabbedPane.getSelectedIndex()]) {
+						if (filterListArray[jTabbedPane.getSelectedIndex()].size() == 0 || firstEditableFilter[jTabbedPane.getSelectedIndex()] == null) {
 							selectDetailRecordsAndSetupTableRows(jTabbedPane.getSelectedIndex(), false);
 						}
 						returnMap_.put("RETURN_CODE", returnMap.get("RETURN_CODE"));
@@ -1525,7 +1524,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 								|| returnMap.get("RETURN_CODE").equals("20")) {
 							fetchHeaderRecord(true);
 							for (int i = 0; i < jTabbedPane.getTabCount(); i++) {
-								if (filterListArray[i].size() == 0 || !anyFilterIsEditable[i]) {
+								if (filterListArray[i].size() == 0 || firstEditableFilter[i] == null) {
 									selectDetailRecordsAndSetupTableRows(i, false);
 								}
 							}
@@ -2352,17 +2351,25 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	void jTabbedPane_stateChanged(ChangeEvent e) {
 		if (tablesReadyToUse) {
 			int index = jTabbedPane.getSelectedIndex();
-			jPanelTopCenter.removeAll();
+			jPanelCenter.removeAll();
+			jPanelTop.removeAll();
 			jPanelTop.setVisible(false);
-			jPanelTopEast.setVisible(false);
 			if (filterListArray[index].size() > 0) {
 				jPanelTop.setVisible(true);
-				jPanelTopCenter.add(jPanelFilter[index], BorderLayout.CENTER);
-				jPanelTopEast.setVisible(anyFilterIsEditable[index]);
-				if (anyFilterIsEditable[index]) {
-					jPanelTopEast.setVisible(true);
+				jPanelTop.add(jScrollPaneFilters[index], BorderLayout.CENTER);
+				if (firstEditableFilter[index] != null) {
+					jPanelTop.add(jPanelTopEast, BorderLayout.EAST);
+					firstEditableFilter[index].requestFocus();
 				}
+				jSplitPaneTop.add(jPanelTop, JSplitPane.TOP);
+				jSplitPaneTop.add(jScrollPaneTable, JSplitPane.BOTTOM);
+				jSplitPaneTop.setDividerLocation(30 * rowsOfDisplayedFilters[index] + 16);
+				jSplitPaneTop.updateUI();
+				jPanelCenter.add(jSplitPaneTop, BorderLayout.CENTER);
+			} else {
+				jPanelCenter.add(jScrollPaneTable, BorderLayout.CENTER);
 			}
+			jPanelCenter.updateUI();
 			jScrollPaneTable.getViewport().add(jTableMainArray[index], null);
 			messageList.clear();
 			if (jTableMainArray[index].getRowCount() > 0) {
@@ -2373,8 +2380,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			} else {
 				if (initialMsgArray[index].equals("")) {
-					if (filterListArray[index].size() > 0 && anyFilterIsEditable[index]) {
-						//messageList.add(XFUtility.RESOURCE.getString("FunctionMessage1"));
+					if (filterListArray[index].size() > 0 && firstEditableFilter[index] != null) {
 						StringBuffer buf = new StringBuffer();
 						buf.append(XFUtility.RESOURCE.getString("FunctionMessage1"));
 						buf.append(detailTableArray[index].getOrderByDescription());
@@ -2589,7 +2595,14 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
-		return new XFTableOperator(session_, processLog, oparation, tableID);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, processLog, oparation, tableID);
+		} catch (Exception e) {
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		}
+		return operator;
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
@@ -2730,10 +2743,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	
 	public ArrayList<XF300_Filter> getFilterList(int tabIndex) {
 		return filterListArray[tabIndex];
-	}
-	
-	public double getFilterWidth(int tabIndex) {
-		return filterWidth[tabIndex];
 	}
 
 	public XF300_DetailColumn getDetailColumnObjectByID(int tabIndex, String tableID, String tableAlias, String fieldID) {
@@ -3991,6 +4000,9 @@ class XF300_Filter extends JPanel {
 	private XF300_PromptCallField xFPromptCall = null;
 	private ArrayList<String> keyValueList = new ArrayList<String>();
 	private JComponent component = null;
+	private boolean isVertical = false;
+	private int verticalMargin = 5;
+	private int horizontalMargin = 45;
 	private boolean isReflect = false;
 	private boolean isEditable_ = true;
 	private boolean isHidden = false;
@@ -4033,6 +4045,19 @@ class XF300_Filter extends JPanel {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
 
+		if (fieldOptionList.contains("VERTICAL")) {
+			isVertical = true;
+		}
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "VERTICAL");
+		if (!wrkStr.equals("")) {
+			isVertical = true;
+			verticalMargin = Integer.parseInt(wrkStr);
+		}
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "HORIZONTAL");
+		if (!wrkStr.equals("")) {
+			horizontalMargin = Integer.parseInt(wrkStr) + 5;
+		}
+
 		operandType = "EQ";
 		if (fieldOptionList.contains("GE")) {
 			operandType = "GE";
@@ -4066,27 +4091,31 @@ class XF300_Filter extends JPanel {
 			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		jLabelField = new JLabel(fieldCaption);
-		jLabelField.setPreferredSize(new Dimension(90, 20));
 		jLabelField.setHorizontalAlignment(SwingConstants.RIGHT);
+		jLabelField.setFont(new java.awt.Font("Dialog", 0, 14));
 		FontMetrics metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		if (metrics1.stringWidth(fieldCaption) > 90) {
+		if (metrics1.stringWidth(fieldCaption) > 110) {
 			jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
 			metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-			if (metrics1.stringWidth(fieldCaption) > 90) {
+			if (metrics1.stringWidth(fieldCaption) > 110) {
 				jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
+				metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 10));
 			} else {
 				jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
 			}
 		} else {
 			jLabelField.setFont(new java.awt.Font("Dialog", 0, 14));
 		}
+		if (isVertical || dialog_.getFilterList(index_).size() == 0) {
+			jLabelField.setPreferredSize(new Dimension(110, 20));
+		} else {
+			jLabelField.setPreferredSize(new Dimension(metrics1.stringWidth(fieldCaption) + horizontalMargin, 20));
+		}
 
 		jPanelField.setLayout(null);
 		this.setLayout(new BorderLayout());
 		this.add(jLabelField, BorderLayout.WEST);
 		this.add(jPanelField, BorderLayout.CENTER);
-
-		int fieldWidthMax = (int)dialog_.getFilterWidth(index_) - 110;
 
 		XFTableOperator operator;
 
@@ -4107,7 +4136,7 @@ class XF300_Filter extends JPanel {
 			// PROMPT_LIST1 is the list with blank row, PROMPT_LIST2 is without blank row //
 			////////////////////////////////////////////////////////////////////////////////
 			if (fieldOptionList.contains("PROMPT_LIST1") || fieldOptionList.contains("PROMPT_LIST2")) {
-				FontMetrics metrics2 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
+				FontMetrics metrics2 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
 				int valueIndex = -1;
 				int selectIndex = 0;
 				String wrkText, wrkKey;
@@ -4119,7 +4148,6 @@ class XF300_Filter extends JPanel {
 					jComboBox = new JComboBox();
 					jComboBox.addKeyListener(new XF300_keyAdapter(dialog));
 					component = jComboBox;
-					fieldWidthMax = fieldWidthMax - 28;
 					int fieldWidth = 20;
 
 					if (fieldOptionList.contains("PROMPT_LIST1")) {
@@ -4146,11 +4174,8 @@ class XF300_Filter extends JPanel {
 							}
 						}
 
-						if (fieldWidth > fieldWidthMax) {
-							fieldWidth = fieldWidthMax;
-						}
-						jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 28, 24));
-						jComboBox.setFont(new java.awt.Font("Dialog", 0, 12));
+						jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 30, 24));
+						jComboBox.setFont(new java.awt.Font("Dialog", 0, 14));
 						jComboBox.setSelectedIndex(selectIndex);
 					} catch(Exception e) {
 						e.printStackTrace(dialog_.getExceptionStream());
@@ -4165,7 +4190,6 @@ class XF300_Filter extends JPanel {
 						jComboBox = new JComboBox();
 						jComboBox.addKeyListener(new XF300_keyAdapter(dialog));
 						component = jComboBox;
-						fieldWidthMax = fieldWidthMax - 28;
 						int fieldWidth = 20;
 
 						if (fieldOptionList.contains("PROMPT_LIST1")) {
@@ -4186,11 +4210,8 @@ class XF300_Filter extends JPanel {
 							}
 						}
 
-						if (fieldWidth > fieldWidthMax) {
-							fieldWidth = fieldWidthMax;
-						}
-						jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 28, 24));
-						jComboBox.setFont(new java.awt.Font("Dialog", 0, 12));
+						jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 30, 24));
+						jComboBox.setFont(new java.awt.Font("Dialog", 0, 14));
 						jComboBox.setSelectedIndex(selectIndex);
 
 					} else {
@@ -4199,7 +4220,6 @@ class XF300_Filter extends JPanel {
 						jComboBox = new JComboBox();
 						jComboBox.addKeyListener(new XF300_keyAdapter(dialog));
 						component = jComboBox;
-						fieldWidthMax = fieldWidthMax - 28;
 						int fieldWidth = 20;
 
 						ArrayList<XF300_DetailReferTable> referTableList = dialog_.getDetailReferTableList(index);
@@ -4227,11 +4247,8 @@ class XF300_Filter extends JPanel {
 											}
 										}
 
-										if (fieldWidth > fieldWidthMax) {
-											fieldWidth = fieldWidthMax;
-										}
-										jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 28, 24));
-										jComboBox.setFont(new java.awt.Font("Dialog", 0, 12));
+										jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 30, 24));
+										jComboBox.setFont(new java.awt.Font("Dialog", 0, 14));
 										jComboBox.setSelectedIndex(selectIndex);
 									} catch(Exception e) {
 										e.printStackTrace(dialog_.getExceptionStream());
@@ -4261,9 +4278,6 @@ class XF300_Filter extends JPanel {
 						xFDateField.setLocation(5, 0);
 						xFDateField.setEditable(true);
 						xFDateField.setValue(getDefaultValue());
-						if (xFDateField.getWidth() > fieldWidthMax) {
-							xFDateField.setNarrower(fieldWidthMax);
-						}
 						component = xFDateField;
 					} else {
 						if (dataTypeOptionList.contains("YMONTH")) {
@@ -4296,11 +4310,7 @@ class XF300_Filter extends JPanel {
 									componentType = "TEXTFIELD";
 									xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions);
 									xFTextField.addKeyListener(new XF300_keyAdapter(dialog));
-									if (xFTextField.getWidth() > fieldWidthMax) {
-										xFTextField.setBounds(new Rectangle(5, 0, fieldWidthMax, xFTextField.getHeight()));
-									} else {
-										xFTextField.setLocation(5, 0);
-									}
+									xFTextField.setLocation(5, 0);
 									xFTextField.setValue(getDefaultValue());
 									component = xFTextField;
 								}
@@ -4326,6 +4336,16 @@ class XF300_Filter extends JPanel {
 		this.setToolTipText(wrkStr);
 		component.setToolTipText(wrkStr);
 		jPanelField.add(component);
+
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "WIDTH");
+		if (wrkStr.equals("")) {
+			if (component.getBounds().width > 200) {
+				component.setBounds(new Rectangle(component.getBounds().x, component.getBounds().y, 200, component.getBounds().height));
+			}
+		} else {
+			component.setBounds(new Rectangle(component.getBounds().x, component.getBounds().y, Integer.parseInt(wrkStr), component.getBounds().height));
+		}
+		this.setPreferredSize(new Dimension(jLabelField.getPreferredSize().width + component.getBounds().width + 5, component.getBounds().height));
 	}
 
 	Object getDefaultValue() {
@@ -4350,6 +4370,14 @@ class XF300_Filter extends JPanel {
 	
 	public boolean isHidden() {
 		return isHidden;
+	}
+
+	public boolean isVerticalPosition(){
+		return isVertical;
+	}
+
+	public int getVerticalMargin(){
+		return verticalMargin;
 	}
 
 	public String getCaption(){
@@ -4585,9 +4613,6 @@ class XF300_Filter extends JPanel {
 			if (componentType.equals("TEXTFIELD")) {
 				columnField.setValue((String)xFTextField.getInternalValue());
 			}
-			//if (componentType.equals("KUBUN_LIST") || componentType.equals("RECORDS_LIST") || componentType.equals("VALUES_LIST")) {
-			//	columnField.setValue((String)jComboBox.getSelectedItem());
-			//}
 			if (componentType.equals("KUBUN_LIST")) {
 				columnField.setValue((String)keyValueList.get(jComboBox.getSelectedIndex()));
 			}
@@ -5302,12 +5327,7 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
 			}
 		});
 
-		int fieldWidth = (int)dialog_.getFilterWidth(index_) - 100 - 27;
-		if (fieldWidth < xFTextField.getWidth()) {
-			this.setSize(new Dimension(fieldWidth + 27, XFUtility.FIELD_UNIT_HEIGHT));
-		} else {
-			this.setSize(new Dimension(xFTextField.getWidth() + 27, XFUtility.FIELD_UNIT_HEIGHT));
-		}
+		this.setSize(new Dimension(xFTextField.getWidth() + 27, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(xFTextField, BorderLayout.CENTER);
 		this.add(jButton, BorderLayout.EAST);

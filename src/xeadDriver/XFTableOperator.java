@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -73,11 +73,11 @@ public class XFTableOperator {
     private boolean hasFoundRecord_ = false;
     private boolean isAutoCommit_ = false;
 
-	public XFTableOperator(Session session, StringBuffer logBuf, String operation, String tableID) {
+	public XFTableOperator(Session session, StringBuffer logBuf, String operation, String tableID) throws Exception {
 		this(session, logBuf, operation, tableID, false);
 	}
 	
-	public XFTableOperator(Session session, StringBuffer logBuf, String operation, String tableID, boolean isAutoCommit) {
+	public XFTableOperator(Session session, StringBuffer logBuf, String operation, String tableID, boolean isAutoCommit) throws Exception {
 		super();
 		session_ = session;
 		logBuf_ = logBuf;
@@ -86,16 +86,20 @@ public class XFTableOperator {
     	isAutoCommit_ = isAutoCommit;
     	//
     	org.w3c.dom.Element tableElement = session_.getTableElement(tableID_);
-    	moduleID = tableElement.getAttribute("ModuleID");
-		if (moduleID.equals("")) {
-			moduleID = tableID_;
-		}
-    	dbID = tableElement.getAttribute("DB");
-		if (dbID.equals("")) {
-			dbName = session_.getDatabaseName();
-		} else {
-			dbName = session_.getSubDBName(dbID);
-		}
+    	if (tableElement == null) {
+			throw new Exception("'" + tableID_ + "' is invalid to get Table-Operator.");
+    	} else {
+    		moduleID = tableElement.getAttribute("ModuleID");
+    		if (moduleID.equals("")) {
+    			moduleID = tableID_;
+    		}
+    		dbID = tableElement.getAttribute("DB");
+    		if (dbID.equals("")) {
+    			dbName = session_.getDatabaseName();
+    		} else {
+    			dbName = session_.getSubDBName(dbID);
+    		}
+    	}
 	}
 
 	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText) {

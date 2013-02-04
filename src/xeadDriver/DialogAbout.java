@@ -43,20 +43,9 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M17";
-	//17の変更
-	//・明細一覧系の機能タイプでカラムの幅を変更できるようにした
-	//・カレンダーダイアログで日付値を直接入力できるようにした
-	//・スクリプト中で値入力用ダイアログ(session.getInputDialog())を利用できるようにした
-	//・XF200で'INSTANCE_MODE'のパラメータ値に応答するためのステップを追加
-	//・URLタイプのフィールドで幅指定されるように修正
-	//・ログアウトボタンを押したときにも確認ダイアログを出すようにした
-	//・ログインスクリプトをセッションの開始時だけでなく終了時にも実行されるようにするとともに、スクリプト内でいずれかに実行されるように条件づけできるようにした。
-	//・TableOperatorのaddKeyValueメソッドで、文字フィールドの長さ不足分をブランク桁で補うステップを追加
-	//・数値項目をキーとするテーブルを扱うプロンプタが異常終了することのある問題を修正
-	//・XF110,200,310で「クロスチェック中」の情報が表示されっぱなしになることがある問題を修正
+	public static final String FULL_VERSION  = "V1.R1.M18";
 	public static final String FORMAT_VERSION  = "1.1";
-	public static final String COPYRIGHT = "Copyright 2012 DBC,Ltd.";
+	public static final String COPYRIGHT = "Copyright 2013 DBC,Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
 	/**
 	 * Components on dialog

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -706,6 +706,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 
 			reply_ = "";
 			readyToShowDialog = true;
+	        threadToSetupReferChecker = null;
 
 			selectDetailRecordsAndSetupTableRows();
 
@@ -825,7 +826,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 
 	void closeFunction(String code) {
 		try {
-			threadToSetupReferChecker.join();
+			if (threadToSetupReferChecker != null) {
+				threadToSetupReferChecker.join();
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

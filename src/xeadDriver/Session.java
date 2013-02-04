@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -2210,7 +2210,12 @@ public class Session extends JFrame {
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
-		return new XFTableOperator(this, null, oparation, tableID);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(this, null, oparation, tableID);
+		} catch (Exception e) {
+		}
+		return operator;
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {

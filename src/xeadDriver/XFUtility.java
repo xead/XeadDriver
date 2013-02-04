@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -202,7 +202,15 @@ public class XFUtility {
 				}
 				returnValue = bf.toString();
 			} else {
-				returnValue = XFUtility.INTEGER_FORMAT.format(Long.parseLong(wrkValue));
+				StringBuffer bf = new StringBuffer();
+				if (value.startsWith("-")) {
+					bf.append("-");
+				}
+				bf.append(XFUtility.INTEGER_FORMAT.format(Long.parseLong(wrkValue)));
+				if (value.endsWith("-")) {
+					bf.append("-");
+				}
+				returnValue = bf.toString();
 			}
 		}
 		//
@@ -214,32 +222,45 @@ public class XFUtility {
 		double doubleWrk;
 		//	
 		try {
-			doubleWrk = Double.parseDouble(value.toString());
+			String wrkStr = value.toString();
+			wrkStr = wrkStr.replace("-", "");
+			doubleWrk = Double.parseDouble(wrkStr);
 		} catch (NumberFormatException e) {
 			doubleWrk = 0;
 		}
 		//
+		StringBuffer bf = new StringBuffer();
+		if (value.startsWith("-")) {
+			bf.append("-");
+		}
+		//
 		if (decimalSize == 0) {
-			returnValue = XFUtility.FLOAT_FORMAT0.format(doubleWrk);
+			bf.append(XFUtility.FLOAT_FORMAT0.format(doubleWrk));
 		}
 		if (decimalSize == 1) {
-			returnValue = XFUtility.FLOAT_FORMAT1.format(doubleWrk);
+			bf.append(XFUtility.FLOAT_FORMAT1.format(doubleWrk));
 		}
 		if (decimalSize == 2) {
-			returnValue = XFUtility.FLOAT_FORMAT2.format(doubleWrk);
+			bf.append(XFUtility.FLOAT_FORMAT2.format(doubleWrk));
 		}
 		if (decimalSize == 3) {
-			returnValue = XFUtility.FLOAT_FORMAT3.format(doubleWrk);
+			bf.append(XFUtility.FLOAT_FORMAT3.format(doubleWrk));
 		}
 		if (decimalSize == 4) {
-			returnValue = XFUtility.FLOAT_FORMAT4.format(doubleWrk);
+			bf.append(XFUtility.FLOAT_FORMAT4.format(doubleWrk));
 		}
 		if (decimalSize == 5) {
-			returnValue = XFUtility.FLOAT_FORMAT5.format(doubleWrk);
+			bf.append(XFUtility.FLOAT_FORMAT5.format(doubleWrk));
 		}
 		if (decimalSize == 6) {
-			returnValue = XFUtility.FLOAT_FORMAT6.format(doubleWrk);
+			bf.append(XFUtility.FLOAT_FORMAT6.format(doubleWrk));
 		}
+		//
+		if (value.endsWith("-")) {
+			bf.append("-");
+		}
+		//
+		returnValue = bf.toString();
 		//
 		return returnValue;
 	}
@@ -2439,7 +2460,13 @@ class XFSessionForScript {
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
-		return new XFTableOperator(session_, null, oparation, tableID);
+		//return new XFTableOperator(session_, null, oparation, tableID);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, null, oparation, tableID);
+		} catch (Exception e) {
+		}
+		return operator;
 	}
 	public XFTableOperator createTableOperator(String sqlText) {
 		return new XFTableOperator(session_, null, sqlText);

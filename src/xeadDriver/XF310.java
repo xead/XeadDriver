@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -361,6 +361,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			threadToSetupReferChecker = null;
 			keyInputDialog = null;
 			anyRecordsDeleted = false;
+			threadToSetupReferChecker = null;
 
 			//////////////////////////////////////
 			// Setup Script Engine and Bindings //
@@ -3010,7 +3011,15 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
-		return new XFTableOperator(session_, processLog, oparation, tableID);
+		//return new XFTableOperator(session_, processLog, oparation, tableID);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, processLog, oparation, tableID);
+		} catch (Exception e) {
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		}
+		return operator;
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {

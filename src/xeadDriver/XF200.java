@@ -1293,7 +1293,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		//
 		int heightOfErrorMessages = (messageList.size() + 1) * 20;
 		if (heightOfErrorMessages <= 40) {
-			jSplitPaneMain.setDividerLocation(this.getHeight() - 40 - 80);
+			jSplitPaneMain.setDividerLocation(this.getHeight() - 125);
 		}
 		if (heightOfErrorMessages > 40 && heightOfErrorMessages <= 240) {
 			jSplitPaneMain.setDividerLocation(this.getHeight() - heightOfErrorMessages - 80);
@@ -1787,26 +1787,56 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				cellValue.setCellStyle(style);
 				cellValue.setCellValue(new HSSFRichTextString((String)object.getExternalValue()));
 			} else {
-				cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+				//cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
 				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
 				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
-				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+				if (!object.getTypeOptionList().contains("NO_EDIT")
+					&& !object.getTypeOptionList().contains("ZERO_SUPPRESS")) {
+					style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+				}
 				cellValue.setCellStyle(style);
 				if (rowIndexInCell==0) {
-					wrkStr = object.getInternalValue().toString().replace(",", "");
-					cellValue.setCellValue(Long.parseLong(wrkStr));
+					//wrkStr = object.getInternalValue().toString().replace(",", "");
+					//cellValue.setCellValue(Long.parseLong(wrkStr));
+					if (object.getExternalValue() == null) {
+						wrkStr = "";
+					} else {
+						wrkStr = XFUtility.getStringNumber(object.getExternalValue().toString());
+					}
+					if (wrkStr.equals("") || object.getTypeOptionList().contains("NO_EDIT")) {
+						cellValue.setCellType(HSSFCell.CELL_TYPE_STRING);
+						cellValue.setCellValue(new HSSFRichTextString(wrkStr));
+					} else {
+						cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+						cellValue.setCellValue(Double.parseDouble(wrkStr));
+					}
 				}
 			}
 		} else {
 			if (object.getBasicType().equals("FLOAT")) {
-				cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+				//cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
 				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
 				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
-				style.setDataFormat(XFUtility.getFloatFormat(workBook, object.getDecimalSize()));
+				if (!object.getTypeOptionList().contains("NO_EDIT")
+					&& !object.getTypeOptionList().contains("ZERO_SUPPRESS")) {
+					style.setDataFormat(XFUtility.getFloatFormat(workBook, object.getDecimalSize()));
+				}
 				cellValue.setCellStyle(style);
 				if (rowIndexInCell==0) {
-					wrkStr = object.getInternalValue().toString().replace(",", "");
-					cellValue.setCellValue(Double.parseDouble(wrkStr));
+					//wrkStr = object.getInternalValue().toString().replace(",", "");
+					//cellValue.setCellValue(Double.parseDouble(wrkStr));
+					if (object.getExternalValue() == null) {
+						wrkStr = "";
+					} else {
+						wrkStr = XFUtility.getStringNumber(object.getExternalValue().toString());
+					}
+					if (wrkStr.equals("") || object.getTypeOptionList().contains("NO_EDIT")) {
+						cellValue.setCellType(HSSFCell.CELL_TYPE_STRING);
+						cellValue.setCellValue(new HSSFRichTextString(wrkStr));
+					} else {
+						cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+						cellValue.setCellValue(Double.parseDouble(wrkStr));
+					}
 				}
 			} else {
 				cellValue.setCellType(HSSFCell.CELL_TYPE_STRING);
@@ -1936,6 +1966,16 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 
 	public Bindings getEngineScriptBindings() {
 		return 	engineScriptBindings;
+	}
+	
+	public Object getFieldObjectByID(String tableID, String fieldID) {
+		String id = tableID + "_" + fieldID;
+		if (engineScriptBindings.containsKey(id)) {
+			return engineScriptBindings.get(id);
+		} else {
+			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
+			return null;
+		}
 	}
 	
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {

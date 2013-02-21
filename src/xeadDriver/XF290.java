@@ -36,6 +36,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
+
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -689,6 +690,16 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 
 	public Bindings getEngineScriptBindings() {
 		return 	engineScriptBindings;
+	}
+	
+	public Object getFieldObjectByID(String tableID, String fieldID) {
+		String id = tableID + "_" + fieldID;
+		if (engineScriptBindings.containsKey(id)) {
+			return engineScriptBindings.get(id);
+		} else {
+			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
+			return null;
+		}
 	}
 	
 	public void evalScript(String scriptName, String scriptText) throws ScriptException {

@@ -134,7 +134,6 @@ public class XFUtility {
 		char[] numberDigit = {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
 		boolean charValidated = false;
 		String numberString = "";
-		//
 		if (text != null) {
 			if (text.contains("E")) {
 				/////////////
@@ -142,7 +141,8 @@ public class XFUtility {
 				/////////////
 				try {
 					double doubleValue = Double.parseDouble(text);
-					numberString = Double.toString(doubleValue);
+					//numberString = Double.toString(doubleValue);
+					numberString = new java.text.DecimalFormat("####0.0#############################").format(doubleValue);
 				} catch (NumberFormatException e) {
 					numberString = "0";
 				}
@@ -161,7 +161,6 @@ public class XFUtility {
 				}
 			}
 		}
-		//
 		return numberString;
 	}
 	
@@ -696,7 +695,8 @@ public class XFUtility {
 			returnValue = Double.parseDouble(value.toString());
 		}
 		if (basicType.equals("STRING")) {
-			returnValue = "'" + value.toString() + "'";
+			String strValue = value.toString().replaceAll("'","''");
+			returnValue = "'" + strValue + "'";
 		}
 		if (basicType.equals("DATE")) {
 			if (value == null) {
@@ -774,11 +774,12 @@ public class XFUtility {
 					valueReturn = "";
 				} else {
 					wrkStr = value.toString();
-					int pos = wrkStr.indexOf(".");
-					if (pos >= 0) {
-						wrkStr = wrkStr.substring(0, pos);
-					}
+//					int pos = wrkStr.indexOf(".");
+//					if (pos >= 0) {
+//						wrkStr = wrkStr.substring(0, pos);
+//					}
 					wrkStr = XFUtility.getStringNumber(wrkStr);
+					wrkStr = wrkStr.replace(".0", "");
 					if (wrkStr.equals("")) {
 						valueReturn = "";
 					} else {
@@ -816,11 +817,12 @@ public class XFUtility {
 					editableField.setValue(valueObject);
 				} else {
 					wrkStr = valueObject.toString();
-					int pos = wrkStr.indexOf(".");
-					if (pos >= 0) {
-						wrkStr = wrkStr.substring(0, pos);
-					}
+//					int pos = wrkStr.indexOf(".");
+//					if (pos >= 0) {
+//						wrkStr = wrkStr.substring(0, pos);
+//					}
 					wrkStr = XFUtility.getStringNumber(wrkStr);
+					wrkStr = wrkStr.replace(".0", "");
 					if (wrkStr.equals("")) {
 						editableField.setValue("");
 					} else {
@@ -877,11 +879,12 @@ public class XFUtility {
 				editableField.setOldValue("");
 			} else {
 				wrkStr = valueObject.toString();
-				int pos = wrkStr.indexOf(".");
-				if (pos >= 0) {
-					wrkStr = wrkStr.substring(0, pos);
-				}
+//				int pos = wrkStr.indexOf(".");
+//				if (pos >= 0) {
+//					wrkStr = wrkStr.substring(0, pos);
+//				}
 				wrkStr = XFUtility.getStringNumber(wrkStr);
+				wrkStr = wrkStr.replace(".0", "");
 				if (wrkStr.equals("")) {
 					editableField.setOldValue("");
 				} else {
@@ -2494,6 +2497,7 @@ interface XFScriptable {
 	public void incrementProgress();
 	public XFTableOperator createTableOperator(String oparation, String tableID);
 	public XFTableOperator createTableOperator(String sqlText);
+	public Object getFieldObjectByID(String tableID, String fieldID);
 }
 
 //interface XFTableCellEditor extends TableCellEditor {
@@ -2838,6 +2842,7 @@ class XFDateField extends JPanel implements XFEditableField {
 	
 	public void addKeyListener(KeyAdapter adapter) {
 		jButton.addKeyListener(adapter);
+		dateTextField.addKeyListener(adapter);
 	}
 
 	public void setEditable(boolean editable) {
@@ -4271,14 +4276,14 @@ class XFUrlField extends JPanel implements XFEditableField {
 	private Desktop desktop = Desktop.getDesktop();
 	private int rows_ = 1;
 	private String oldValue = "";
-	//
+
 	public XFUrlField(){
 		this(40, "");
 	}
-	//
+
 	public XFUrlField(int digits, String fieldOptions){
 		super();
-		//
+
 		jTextField.setFont(new java.awt.Font(XFUtility.RESOURCE.getString("URLFont"), 0, 14));
 		jTextField.setDocument(new LimitedDocument(digits));
 		jTextField.setEditable(false);
@@ -4291,7 +4296,7 @@ class XFUrlField extends JPanel implements XFEditableField {
 		jLabel.setBorder(jTextField.getBorder());
 		this.setLayout(new BorderLayout());
 		this.add(jLabel, BorderLayout.CENTER);
-		//
+
 		int fieldWidth,  fieldHeight;
 		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "WIDTH");
 		if (!wrkStr.equals("")) {
@@ -4396,13 +4401,15 @@ class XFUrlField extends JPanel implements XFEditableField {
 		}
 		public void mousePressed(MouseEvent e) {
 			try {
-				if (jTextField.getText().contains("@")) {
-					adaptee.desktop.browse(new URI("mailto:" + jTextField.getText()));
-				} else {
-					if (jTextField.getText().contains("http://") || jTextField.getText().contains("https://")) {
-						adaptee.desktop.browse(new URI(jTextField.getText()));
+				if (!jTextField.getText().equals("")) {
+					if (jTextField.getText().contains("@")) {
+						adaptee.desktop.browse(new URI("mailto:" + jTextField.getText()));
 					} else {
-						adaptee.desktop.browse(new URI("http://" + jTextField.getText()));
+						if (jTextField.getText().contains("http://") || jTextField.getText().contains("https://")) {
+							adaptee.desktop.browse(new URI(jTextField.getText()));
+						} else {
+							adaptee.desktop.browse(new URI("http://" + jTextField.getText()));
+						}
 					}
 				}
 			} catch (IOException e1) {
@@ -4414,7 +4421,9 @@ class XFUrlField extends JPanel implements XFEditableField {
 		public void mouseReleased(MouseEvent e) {
 		}
 		public void mouseEntered(MouseEvent e) {
-			setCursor(new Cursor(Cursor.HAND_CURSOR));
+			if (!jTextField.getText().equals("")) {
+				setCursor(new Cursor(Cursor.HAND_CURSOR));
+			}
 		}
 		public void mouseExited(MouseEvent e) {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -4434,7 +4443,6 @@ class TableModelReadOnly extends DefaultTableModel {
 		return getValueAt(0, col).getClass();
 	}
 }
-
 
 class HeaderBorder implements Border {
 	public Insets getBorderInsets(Component c){

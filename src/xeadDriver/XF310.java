@@ -611,7 +611,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			// Set size of header fields panel //
 			/////////////////////////////////////
 			jPanelHeaderFields.setPreferredSize(new Dimension(biggestWidth, biggestHeight));
-			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 118);
+			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 125);
 			this.pack();
 
 			/////////////////////////
@@ -1705,16 +1705,31 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		/////////////////////////////
 		// Initialize field values //
 		/////////////////////////////
+//		for (int i = 0; i < detailColumnList.size(); i++) {
+//			if (detailColumnList.get(i).getTableID().equals(detailTable.getTableID())
+//					&& detailColumnList.get(i).getFieldID().equals(detailTable.getDetailRowNoID())) {
+//				detailColumnList.get(i).setValue(detailRowNoLastValue);
+//			} else {
+//				if (detailColumnList.get(i).isAutoNumberField()) {
+//					detailColumnList.get(i).setValue(detailColumnList.get(i).getAutoNumberValue());
+//				} else {
+//					detailColumnList.get(i).setValue(detailColumnList.get(i).getNullValue());
+//				}
+//			}
+//		}
 		for (int i = 0; i < detailColumnList.size(); i++) {
-			if (detailColumnList.get(i).getTableID().equals(detailTable.getTableID())
-					&& detailColumnList.get(i).getFieldID().equals(detailTable.getDetailRowNoID())) {
-				detailColumnList.get(i).setValue(detailRowNoLastValue);
-			} else {
-				if (detailColumnList.get(i).isAutoNumberField()) {
-					detailColumnList.get(i).setValue(detailColumnList.get(i).getAutoNumberValue());
+			if (detailColumnList.get(i).getTableID().equals(detailTable.getTableID())) {
+				if (detailColumnList.get(i).getFieldID().equals(detailTable.getDetailRowNoID())) {
+					detailColumnList.get(i).setValue(detailRowNoLastValue);
 				} else {
-					detailColumnList.get(i).setValue(detailColumnList.get(i).getNullValue());
+					if (detailColumnList.get(i).isAutoNumberField()) {
+						detailColumnList.get(i).setValue(detailColumnList.get(i).getAutoNumberValue());
+					} else {
+						detailColumnList.get(i).setValue(detailColumnList.get(i).getNullValue());
+					}
 				}
+			} else {
+				detailColumnList.get(i).setValue(detailColumnList.get(i).getNullValue());
 			}
 		}
 
@@ -2001,17 +2016,15 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					if (detailColumnList.get(i).getValueType().equals("IMAGE")
 							|| detailColumnList.get(i).getValueType().equals("FLAG")) {
 						header.setHorizontalAlignment(SwingConstants.CENTER);
-						header.setText(detailColumnList.get(i).getCaption());
 					} else {
 						if (detailColumnList.get(i).getBasicType().equals("INTEGER")
 								|| detailColumnList.get(i).getBasicType().equals("FLOAT")) {
 							header.setHorizontalAlignment(SwingConstants.RIGHT);
-							header.setText(detailColumnList.get(i).getCaption() + " ");
 						} else {
 							header.setHorizontalAlignment(SwingConstants.LEFT);
-							header.setText(detailColumnList.get(i).getCaption());
 						}
 					}
+					header.setText(detailColumnList.get(i).getCaption());
 					header.setOpaque(true);
 
 					width = detailColumnList.get(i).getWidth();
@@ -2714,18 +2727,21 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				cellValue.setCellStyle(style);
 				cellValue.setCellValue(new HSSFRichTextString((String)object.getExternalValue()));
 			} else {
+				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
 				wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
-				if (wrk.equals("")) {
+				if (wrk.equals("") || object.getTypeOptionList().contains("NO_EDIT")) {
 					cellValue.setCellType(HSSFCell.CELL_TYPE_STRING);
 					cellValue.setCellStyle(style);
 					if (rowIndexInCell==0) {
-						cellValue.setCellValue(new HSSFRichTextString(""));
+						cellValue.setCellValue(new HSSFRichTextString(wrk));
 					}
 				} else {
 					cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-					style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-					style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-					style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+					if (!object.getTypeOptionList().contains("NO_EDIT")
+						&& !object.getTypeOptionList().contains("ZERO_SUPPRESS")) {
+						style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+					}
 					cellValue.setCellStyle(style);
 					if (rowIndexInCell==0) {
 						cellValue.setCellValue(Double.parseDouble(wrk));
@@ -2734,18 +2750,21 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		} else {
 			if (basicType.equals("FLOAT")) {
+				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
 				wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
-				if (wrk.equals("")) {
+				if (wrk.equals("") || object.getTypeOptionList().contains("NO_EDIT")) {
 					cellValue.setCellType(HSSFCell.CELL_TYPE_STRING);
 					cellValue.setCellStyle(style);
 					if (rowIndexInCell==0) {
-						cellValue.setCellValue(new HSSFRichTextString(""));
+						cellValue.setCellValue(new HSSFRichTextString(wrk));
 					}
 				} else {
 					cellValue.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-					style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-					style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-					style.setDataFormat(XFUtility.getFloatFormat(workBook, object.getDecimalSize()));
+					if (!object.getTypeOptionList().contains("NO_EDIT")
+							&& !object.getTypeOptionList().contains("ZERO_SUPPRESS")) {
+						style.setDataFormat(XFUtility.getFloatFormat(workBook, object.getDecimalSize()));
+					}
 					cellValue.setCellStyle(style);
 					if (rowIndexInCell==0) {
 						cellValue.setCellValue(Double.parseDouble(wrk));
@@ -2819,7 +2838,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			} else {
 				wrk = XFUtility.getStringNumber(value.toString());
 			}
-			if (wrk.equals("")) {
+			if (wrk.equals("") || column.getTypeOptionList().contains("NO_EDIT")) {
 				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
 				cell.setCellStyle(style);
 				cell.setCellValue(new HSSFRichTextString(wrk));
@@ -2827,7 +2846,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
 				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
 				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+				if (!column.getTypeOptionList().contains("NO_EDIT")
+						&& !column.getTypeOptionList().contains("ZERO_SUPPRESS")) {
+					style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+				}
 				cell.setCellStyle(style);
 				cell.setCellValue(Double.parseDouble(wrk));
 			}
@@ -2839,7 +2861,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					wrk = XFUtility.getStringNumber(value.toString());
 				}
-				if (wrk.equals("")) {
+				if (wrk.equals("") || column.getTypeOptionList().contains("NO_EDIT")) {
 					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
 					cell.setCellStyle(style);
 					cell.setCellValue(new HSSFRichTextString(wrk));
@@ -2847,7 +2869,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
 					style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
 					style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-					style.setDataFormat(XFUtility.getFloatFormat(workBook, column.getDecimalSize()));
+					if (!column.getTypeOptionList().contains("NO_EDIT")
+							&& !column.getTypeOptionList().contains("ZERO_SUPPRESS")) {
+						style.setDataFormat(XFUtility.getFloatFormat(workBook, column.getDecimalSize()));
+					}
 					cell.setCellStyle(style);
 					cell.setCellValue(Double.parseDouble(wrk));
 				}
@@ -2925,7 +2950,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 		int heightOfErrorMessages = (messageList.size() + 1) * 20;
 		if (heightOfErrorMessages <= 40) {
-			jSplitPaneMain.setDividerLocation(this.getHeight() - 40 - 80);
+			jSplitPaneMain.setDividerLocation(this.getHeight() - 125);
 		}
 		if (heightOfErrorMessages > 40 && heightOfErrorMessages <= 240) {
 			jSplitPaneMain.setDividerLocation(this.getHeight() - heightOfErrorMessages - 80);
@@ -2981,6 +3006,16 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 	public Bindings getEngineScriptBindings() {
 		return 	engineScriptBindings;
+	}
+	
+	public Object getFieldObjectByID(String tableID, String fieldID) {
+		String id = tableID + "_" + fieldID;
+		if (engineScriptBindings.containsKey(id)) {
+			return engineScriptBindings.get(id);
+		} else {
+			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
+			return null;
+		}
 	}
 
 	public void evalScript(String scriptName, String scriptText, Bindings bindings) throws ScriptException {

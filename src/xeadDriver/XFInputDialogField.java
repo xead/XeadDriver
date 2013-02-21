@@ -288,6 +288,14 @@ public class XFInputDialogField extends JPanel {
 		}
    }
    
+   public Object getItem() {
+		if (inputType_.equals("LISTBOX")) {
+			return ((JComboBox)component).getItemAt(((JComboBox)component).getSelectedIndex());
+		} else {
+			return null;
+		}
+   }
+   
    public void setPrompter(String functionID, String sendFrom, String sendTo, String receiveFrom, String receiveTo) {
 		if (inputType_.equals("ALPHA") || inputType_.equals("NUMERIC")) {
 			//

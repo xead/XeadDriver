@@ -186,9 +186,11 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		header.setReorderingAllowed(false);
 		header.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent e) {
-				if (headersRenderer.hasMouseOnColumnBorder(e.getX())) {
+				if (headersRenderer.hasMouseOnColumnBorder(e.getX(), e.getY())) {
 					isHeaderResizing = true;
 					headersRenderer.setSizingHeader(e.getX());
+				} else {
+					headersRenderer.resortRowsByColumnAt(e.getX(), e.getY());
 				}
 			}
 			public void mouseReleased(MouseEvent e) {
@@ -203,15 +205,18 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			}
 			public void mouseExited(MouseEvent e) {
 				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				headersRenderer.resetUnderlineOfColumns();
 			}
 		});
 		header.addMouseMotionListener(new MouseMotionAdapter() {
 			public void mouseMoved(MouseEvent e) {
-				if (headersRenderer.hasMouseOnColumnBorder(e.getX())) {
+				if (headersRenderer.hasMouseOnColumnBorder(e.getX(), e.getY())) {
 					setCursor(new Cursor(Cursor.E_RESIZE_CURSOR));
 				} else {
 					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				}
+				headersRenderer.setUnderlineOnColumnAt(e.getX(), e.getY());
+				jScrollPaneTable.updateUI();
 			}
 			public void mouseDragged(MouseEvent e) {
 				Graphics2D g2 = (Graphics2D)jScrollPaneTable.getGraphics();
@@ -321,7 +326,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				addRowListColumnList.get(j).setColumnIndex(columnIndex);
 			}
 		}
-		headersRenderer = new TableHeadersRenderer(); 
+		headersRenderer = new TableHeadersRenderer(this); 
 		cellsRenderer = new TableCellsRenderer(headersRenderer); 
 		jTableMain.setRowHeight(headersRenderer.getHeight());
 		tableModelMain.addColumn(""); //column index:0 //
@@ -505,7 +510,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		for (int i = 0; i < rowCount; i++) {
 			tableModelMain.removeRow(0);
 		}
-		ArrayList<Object> orderByValueList = new ArrayList<Object>();
+		ArrayList<Object> orderByValueList;
+		ArrayList<String> orderByFieldTypeList;
 		ArrayList<WorkingRow> tableRowList = new ArrayList<WorkingRow>();
 		int countOfRows = 0;
 		int workIndex;
@@ -539,9 +545,9 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 					if (workIndex > -1) {
 						returnFieldMap.put(addRowListTable.getReturnToDetailDataSourceList().get(workIndex), addRowListColumnList.get(i).getInternalValue());
 					}
-					if (addRowListColumnList.get(i).isVisibleOnPanel()) {
+					//if (addRowListColumnList.get(i).isVisibleOnPanel()) {
 						cellObjectList.add(addRowListColumnList.get(i).getCellObject());
-					}
+					//}
 				}
 
 				if (addRowListTable.isOrderByInSelectSQL()) {
@@ -549,18 +555,20 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 					cell[0] = new XF310_AddRowListNumber(countOfRows + 1, columnValueMap, returnFieldMap, cellObjectList);
 					tableModelMain.addRow(cell);
 				} else {
+					orderByFieldTypeList = new ArrayList<String>();
 					orderByValueList = new ArrayList<Object>();
 					for (int i = 0; i < addRowListTable.getOrderByFieldIDList().size(); i++) {
 						workStr = addRowListTable.getOrderByFieldIDList().get(i).replace("(D)", "");
 						workStr = workStr.replace("(A)", "");
 						for (int j = 0; j < addRowListColumnList.size(); j++) {
 							if (addRowListColumnList.get(j).getDataSourceName().equals(workStr)) {
+								orderByFieldTypeList.add(addRowListColumnList.get(j).getBasicType());
 								orderByValueList.add(addRowListColumnList.get(j).getExternalValue());
 								break;
 							}
 						}
 					}
-					tableRowList.add(new WorkingRow(columnValueMap, returnFieldMap, orderByValueList, cellObjectList));
+					tableRowList.add(new WorkingRow(cellObjectList, columnValueMap, returnFieldMap, orderByValueList, orderByFieldTypeList));
 				}
 
 				countOfRows++;
@@ -576,6 +584,53 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				tableModelMain.addRow(cell);
 			}
 		}
+	}
+	
+	public void resortTableRowsByColumnIndex(int col, boolean isAscending) {
+		String workStr;
+		ArrayList<Object> orderByValueList;
+		ArrayList<String> orderByFieldTypeList;
+		ArrayList<String> orderByFieldList = addRowListTable.getOrderByFieldIDList();
+		ArrayList<WorkingRow> tableRowList = new ArrayList<WorkingRow>();
+		workStr = addRowListColumnList.get(col).getDataSourceName();
+		if (!isAscending) {
+			workStr = workStr + "(D)";
+		}
+		orderByFieldList.add(0, workStr);
+		
+		int rowCount = tableModelMain.getRowCount();
+		for (int i = 0; i < rowCount; i++) {
+			orderByValueList =new ArrayList<Object>();
+			orderByFieldTypeList =new ArrayList<String>();
+			XF310_AddRowListNumber cell = (XF310_AddRowListNumber)tableModelMain.getValueAt(i, 0);
+			for (int j = 0; j < orderByFieldList.size(); j++) {
+				workStr = orderByFieldList.get(j).replace("(D)", "");
+				workStr = workStr.replace("(A)", "");
+				for (int k = 0; k < addRowListColumnList.size(); k++) {
+					if (addRowListColumnList.get(k).getDataSourceName().equals(workStr)) {
+						TableCellReadOnly cellObject = cell.getCellObjectList().get(k);
+						orderByValueList.add(cellObject.getInternalValue());
+						orderByFieldTypeList.add(addRowListColumnList.get(k).getBasicType());
+						break;
+					}
+				}
+			}
+			tableRowList.add(new WorkingRow(cell.getCellObjectList(), cell.getColumnMap(), cell.getReturnFieldMap(), orderByValueList, orderByFieldTypeList));
+		}
+
+		for (int i = 0; i < rowCount; i++) {
+			tableModelMain.removeRow(0);
+		}
+
+		WorkingRow[] workingRowArray = tableRowList.toArray(new WorkingRow[0]);
+		Arrays.sort(workingRowArray, new WorkingRowComparator());
+		for (int i = 0; i < workingRowArray.length; i++) {
+			Object[] cell = new Object[1];
+			cell[0] = new XF310_AddRowListNumber(i + 1, workingRowArray[i].getColumnMap(), workingRowArray[i].getReturnFieldMap(), workingRowArray[i].getCellObjectList());
+			tableModelMain.addRow(cell);
+		}
+
+		orderByFieldList.remove(0);
 	}
 
 	boolean isInvalid() {
@@ -820,6 +875,16 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		return engineScriptBindings;
 	}
 	
+	public Object getFieldObjectByID(String tableID, String fieldID) {
+		String id = tableID + "_" + fieldID;
+		if (engineScriptBindings.containsKey(id)) {
+			return engineScriptBindings.get(id);
+		} else {
+			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
+			return null;
+		}
+	}
+	
 	public void evalScript(String name, String text) throws ScriptException {
 		dialog_.evalScript(name, text, engineScriptBindings);
 	}
@@ -959,12 +1024,17 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		private HashMap<String, Object> columnMap_;
 		private HashMap<String, Object> returnFieldMap_;
 		private ArrayList<Object> orderByValueList_;
+		private ArrayList<String> orderByFieldTypeList_ = null;
 		private ArrayList<TableCellReadOnly> cellObjectList_;
-		public WorkingRow(HashMap<String, Object> columnMap, HashMap<String, Object> returnFieldMap, ArrayList<Object> orderByValueList, ArrayList<TableCellReadOnly> cellObjectList) {
+		public WorkingRow(ArrayList<TableCellReadOnly> cellObjectList, HashMap<String, Object> columnMap, HashMap<String, Object> returnFieldMap, ArrayList<Object> orderByValueList, ArrayList<String> orderByFieldTypeList) {
+			cellObjectList_ = cellObjectList;
 			columnMap_ = columnMap;
 			returnFieldMap_ = returnFieldMap;
 			orderByValueList_ = orderByValueList;
-			cellObjectList_ = cellObjectList;
+			orderByFieldTypeList_ = orderByFieldTypeList;
+		}
+		public ArrayList<TableCellReadOnly> getCellObjectList() {
+			return cellObjectList_;
 		}
 		public HashMap<String, Object> getReturnFieldMap() {
 			return returnFieldMap_;
@@ -975,16 +1045,33 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		public ArrayList<Object> getOrderByValueList() {
 			return orderByValueList_;
 		}
-		public ArrayList<TableCellReadOnly> getCellObjectList() {
-			return cellObjectList_;
+		public ArrayList<String> getOrderByFieldTypeList() {
+			return orderByFieldTypeList_;
 		}
 	}
 
 	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
 		public int compare(WorkingRow row1, WorkingRow row2){
 			int compareResult = 0;
+			double doubleNumber1, doubleNumber2;
+			String wrkStr;
 			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
-				compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
+				if (row1.getOrderByFieldTypeList().get(i).equals("INTEGER")
+						|| row1.getOrderByFieldTypeList().get(i).equals("FLOAT")) {
+					wrkStr = XFUtility.getStringNumber(row1.getOrderByValueList().get(i).toString());
+					doubleNumber1 = Double.parseDouble(wrkStr);
+					wrkStr = XFUtility.getStringNumber(row2.getOrderByValueList().get(i).toString());
+					doubleNumber2 = Double.parseDouble(wrkStr);
+					compareResult = 0;
+					if (doubleNumber1 > doubleNumber2) {
+						compareResult = 1;
+					}
+					if (doubleNumber1 < doubleNumber2) {
+						compareResult = -1;
+					}
+				} else {
+					compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
+				}
 				if (addRowListTable.getOrderByFieldIDList().get(i).contains("(D)")) {
 					compareResult = compareResult * -1;
 				}
@@ -1006,8 +1093,12 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		private int totalWidthOfCenterPanel = 0;
 		private int totalHeight = 0;
 		private Component sizingHeader = null;
+		private JLabel sortingColumn = null;
+		private boolean isAscendingColumnSorting = true;
+		private XF310_AddRowList dialog_;
 
-		public TableHeadersRenderer() {
+		public TableHeadersRenderer(XF310_AddRowList dialog) {
+			dialog_ = dialog;
 			arrangeColumnsPosition(true);
 			centerPanel.setLayout(null);
 			this.setLayout(new BorderLayout());
@@ -1054,21 +1145,80 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			return headerList;
 		}
 		
-		public boolean hasMouseOnColumnBorder(int headersPosX) {
+		public boolean hasMouseOnColumnBorder(int headerPosX, int headerPosY) {
 			boolean result = false;
-			double posX = headersPosX - westPanel.getBounds().getWidth();
+			double posX;
+			if (westPanel == null) {
+				posX = headerPosX - numberLabel.getBounds().getWidth();
+			} else {
+				posX = headerPosX - westPanel.getBounds().getWidth();
+			}
 			if (posX >= -3 && posX <= 0) {
 				result = true;
 			} else {
 				for (int i = 0; i < headerList.size(); i++) {
 					if (posX >= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
-							&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+						&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)
+						&& headerPosY >= headerList.get(i).getBounds().y
+						&& headerPosY <= (headerList.get(i).getBounds().y + headerList.get(i).getBounds().height)) {
 						result = true;
 						break;
 					}
 				}
 			}
 			return result;
+		}
+		
+		public void setUnderlineOnColumnAt(int headerPosX, int headerPosY) {
+			double posX;
+			if (westPanel == null) {
+				posX = headerPosX - numberLabel.getBounds().getWidth();
+			} else {
+				posX = headerPosX - westPanel.getBounds().getWidth();
+			}
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posX >= headerList.get(i).getBounds().x
+				&& posX < (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)
+				&& headerPosY >= headerList.get(i).getBounds().y
+				&& headerPosY < (headerList.get(i).getBounds().y + headerList.get(i).getBounds().height)) {
+					headerList.get(i).setText("<html><u>"+headerList.get(i).getText());
+				} else {
+					if (!headerList.get(i).equals(sortingColumn)) {
+						headerList.get(i).setText(headerList.get(i).getText().replace("<html><u>", ""));
+					}
+				}
+			}
+		}
+		
+		public void resetUnderlineOfColumns() {
+			for (int i = 0; i < headerList.size(); i++) {
+				if (!headerList.get(i).equals(sortingColumn)) {
+					headerList.get(i).setText(headerList.get(i).getText().replace("<html><u>", ""));
+				}
+			}
+		}
+		
+		public void clearSortingColumn() {
+			sortingColumn = null;
+			resetUnderlineOfColumns();
+		}
+
+		public void resortRowsByColumnAt(int headerPosX, int headerPosY) {
+			double posX = headerPosX - numberLabel.getBounds().getWidth();
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posX >= headerList.get(i).getBounds().x
+						&& posX < (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
+						&& headerPosY >= headerList.get(i).getBounds().y
+						&& headerPosY < (headerList.get(i).getBounds().y + headerList.get(i).getBounds().height)) {
+					if (headerList.get(i).equals(sortingColumn)) {
+						isAscendingColumnSorting = !isAscendingColumnSorting;
+					} else {
+						isAscendingColumnSorting = true;
+						sortingColumn = headerList.get(i);
+					}
+					dialog_.resortTableRowsByColumnIndex(i, isAscendingColumnSorting);
+				}
+			}
 		}
 		
 		public void setSizingHeader(int headersPosX) {
@@ -1121,17 +1271,15 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 					if (addRowListColumnList.get(i).getValueType().equals("IMAGE")
 							|| addRowListColumnList.get(i).getValueType().equals("FLAG")) {
 						header.setHorizontalAlignment(SwingConstants.CENTER);
-						header.setText(addRowListColumnList.get(i).getCaption());
 					} else {
 						if (addRowListColumnList.get(i).getBasicType().equals("INTEGER")
 								|| addRowListColumnList.get(i).getBasicType().equals("FLOAT")) {
 							header.setHorizontalAlignment(SwingConstants.RIGHT);
-							header.setText(addRowListColumnList.get(i).getCaption() + " ");
 						} else {
 							header.setHorizontalAlignment(SwingConstants.LEFT);
-							header.setText(addRowListColumnList.get(i).getCaption());
 						}
 					}
+					header.setText(addRowListColumnList.get(i).getCaption());
 					header.setOpaque(true);
 
 					width = addRowListColumnList.get(i).getWidth();

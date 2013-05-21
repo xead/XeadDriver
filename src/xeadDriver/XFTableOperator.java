@@ -187,20 +187,37 @@ public class XFTableOperator {
     	//
     	fieldIDList_.add(fieldID);
     	if (value.toString().trim().startsWith("'") && value.toString().trim().endsWith("'")) {
-    		fieldValueList_.add(value);
+    		if (value.toString().contains("''")) {
+        		fieldValueList_.add(value.toString());
+    		} else {
+    			String strValue = value.toString().substring(1, value.toString().length());
+    			strValue = strValue.substring(0, strValue.length()-1);
+    			strValue = strValue.replaceAll("'","''");
+    			fieldValueList_.add("'" + strValue + "'");
+    		}
     	} else {
     		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID);
     		if (workElement == null) { //UPDCOUNTER //
 				fieldValueList_.add(value);
     		} else {
-    			String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-    			if (basicType.equals("DATETIME") && value.equals("CURRENT_TIMESTAMP")) {
-    				fieldValueList_.add(value);
+    			if ((workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME"))
+    					&& value.toString().trim().equals("")) {
+    				fieldValueList_.add("NULL");
     			} else {
-    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
-    					fieldValueList_.add("'" + value + "'");
-    				} else {
+    				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
+    				if (basicType.equals("DATETIME") && value.equals("CURRENT_TIMESTAMP")) {
     					fieldValueList_.add(value);
+    				} else {
+    					if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+    						if (value.toString().contains("''")) {
+    							fieldValueList_.add("'" + value.toString() + "'");
+    						} else {
+    							String strValue = value.toString().replaceAll("'","''");
+    							fieldValueList_.add("'" + strValue + "'");
+    						}
+    					} else {
+    						fieldValueList_.add(value);
+    					}
     				}
     			}
     		}
@@ -250,13 +267,17 @@ public class XFTableOperator {
     		if (workElement == null) { //UPDCOUNTER//
 				withKeyList_.add(fieldID_ + operand_ + value);
     		} else {
-    			String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-    			if (XFUtility.isLiteralRequiredBasicType(basicType)) {
-    				//	withKeyList_.add(fieldID_ + operand_ + "'" + value + "'");
-        			int length = Integer.parseInt(workElement.getAttribute("Size"));
-        			withKeyList_.add(fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length));
+    			if ((workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME"))
+    					&& operand_.equals(" = ") && value.toString().trim().equals("")) {
+    				withKeyList_.add(fieldID_ + " is NULL");
     			} else {
-    				withKeyList_.add(fieldID_ + operand_ + value);
+    				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
+    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+    					int length = Integer.parseInt(workElement.getAttribute("Size"));
+    					withKeyList_.add(fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length));
+    				} else {
+    					withKeyList_.add(fieldID_ + operand_ + value);
+    				}
     			}
     		}
 		}
@@ -317,11 +338,24 @@ public class XFTableOperator {
     		if (workElement == null) { //UPDCOUNTER//
 				withKeyList_.add(prefix + " " + fieldID_ + operand_ + value + " " + postfix);
     		} else {
-    			String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-    			if (XFUtility.isLiteralRequiredBasicType(basicType)) {
-    				withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);
+    			if (workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME")) {
+    				if (value.toString().trim().equals("")) {
+    					if (operand_.equals(" = ")) {
+    						withKeyList_.add(prefix + " " + fieldID_ + " is NULL " + postfix);
+    					}
+    					if (operand_.equals(" != ")) {
+    						withKeyList_.add(prefix + " " + fieldID_ + " is not NULL " + postfix);
+    					}
+    				} else {
+    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);
+    				}
     			} else {
-    				withKeyList_.add(prefix + " " + fieldID_ + operand_ + value + " " + postfix);
+    				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
+    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);
+    				} else {
+    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + value + " " + postfix);
+    				}
     			}
     		}
 		}

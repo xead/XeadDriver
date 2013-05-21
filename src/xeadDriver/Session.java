@@ -171,6 +171,7 @@ public class Session extends JFrame {
 	private Application application;
 	private XFOptionDialog optionDialog = new XFOptionDialog(this);
 	private XFInputDialog inputDialog = new XFInputDialog(this);
+	private XFCheckListDialog checkListDialog = new XFCheckListDialog();
 	private XFLongTextEditor xfLongTextEditor = new XFLongTextEditor(this);
 
 	public Session(String[] args, Application app) {
@@ -740,6 +741,10 @@ public class Session extends JFrame {
 		}
 	}
 	
+	public XFCheckListDialog getCheckListDialog() {
+		return checkListDialog;
+	}
+	
 	public XFLongTextEditor getLongTextEditor() {
 		return xfLongTextEditor;
 	}
@@ -828,9 +833,72 @@ public class Session extends JFrame {
 		} 
 		return message;
 	}
+	
+	private String getOffsetTime(String hhmmFrom, int minutes) {
+        double days = 0;
+        double hh = Double.parseDouble(hhmmFrom.substring(0,2));
+        double mm = Double.parseDouble(hhmmFrom.substring(3,5)) + minutes;
 
+        if (mm >= 60) {
+        	hh = hh + Math.ceil(mm / 60);
+        	mm = mm % 60;
+        }
+        if (mm <= -60) {
+        	hh = hh + Math.ceil(mm / 60);
+        	mm = (mm % 60) * -1;
+        } else {
+        	if (mm < 0) {
+        		hh = hh + - 1;
+        		mm = mm + 60;
+        	}
+        }
+        
+        if (hh >= 24) {
+        	days = Math.ceil(hh / 24);
+        	hh = hh % 24;
+        }
+        if (hh <= -24) {
+        	days = Math.ceil(hh / 24);
+        	hh = (hh % 24) * -1;
+        } else {
+        	if (hh < 0) {
+        		days = days - 1;
+        		hh = hh + 24;
+        	}
+        }
+        
+        String strDays = Double.toString(days).replace(".0", "");
+        String strHH = Double.toString(hh).replace(".0", "");
+        if (hh < 10) {
+        	strHH = "0" + strHH;
+        }
+        String strMM = Double.toString(mm).replace(".0", "");
+        if (mm < 10) {
+        	strMM = "0" + strMM;
+        }
+        return strDays + ":" + strHH + ":" + strMM;//-days:hh:mm//
+	}
 
-	public String getOffsetDate(String dateFrom, int offset, int countType) {
+	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes, int countType) {
+		String dateTime = "";
+		String daysHhMm = getOffsetTime(timeFrom, minutes); //timeFrom format is hh:mm//
+		StringTokenizer workTokenizer = new StringTokenizer(daysHhMm, ":" );//-days:hh:mm//
+        String date;
+		String hh;
+		String mm;
+		try {
+			int days = Integer.parseInt(workTokenizer.nextToken());
+			date = getOffsetDate(dateFrom, days, countType);
+			hh = workTokenizer.nextToken();
+			mm = workTokenizer.nextToken();
+			dateTime = date + " " + hh + ":" + mm;
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(null, "Failed to get offset date-time.\n" + e.getMessage());
+		}
+		return dateTime; //yyyy-mm-dd hh:mm//
+	}
+
+	public String getOffsetDate(String dateFrom, int days, int countType) {
 		String offsetDate = "";
 		Date workDate;
 		SimpleDateFormat dfm = new SimpleDateFormat("yyyy-MM-dd");
@@ -844,15 +912,15 @@ public class Session extends JFrame {
 		cal.set(y, m-1, d);
 		//
 		if (countType == 0) {
-			cal.add(Calendar.DATE, offset);
+			cal.add(Calendar.DATE, days);
 		}
 		//
 		if (countType == 1) {
-			for (int i = 0; i < offset; i++) {
+			for (int i = 0; i < days; i++) {
 				cal.add(Calendar.DATE, 1);
 				workDate = cal.getTime();
 				if (offDateList.contains(dfm.format(workDate))) {
-					offset++;
+					days++;
 				}
 			}
 		}
@@ -861,6 +929,38 @@ public class Session extends JFrame {
 		offsetDate = dfm.format(workDate);
 		//
 		return offsetDate;
+	}
+
+	public String getOffsetYearMonth(String yearMonthFrom, int months) {
+		String offsetYearMonth = "";
+        try {
+			int year = Integer.parseInt(yearMonthFrom.substring(0,4));
+			int month = Integer.parseInt(yearMonthFrom.substring(4,6));
+			if (months > 0) {
+				for (int i = 0; i < months; i++) {
+					month++;
+					if (month > 12) {
+						month = 1;
+						year++;
+					}
+				}
+			} else {
+				for (int i = 0; i > months; i--) {
+					month--;
+					if (month < 1) {
+						month = 12;
+						year--;
+					}
+				}
+			}
+			if (month >= 10) {
+				offsetYearMonth = Integer.toString(year) + Integer.toString(month);
+			} else {
+				offsetYearMonth = Integer.toString(year) + "0" + Integer.toString(month);
+			}
+		} catch (NumberFormatException e) {
+		}
+		return offsetYearMonth;
 	}
 
 	public int getDaysBetweenDates(String strDateFrom, String strDateThru, int countType) {
@@ -962,6 +1062,61 @@ public class Session extends JFrame {
 		return offDateList.contains(date);
 	}
 
+	public boolean isValidTime(String time, String format) {
+		boolean result = false;
+		try {
+			if (format.toUpperCase().equals("HH:MM")) {
+				if (time.length() == 5) {
+					if (time.substring(2, 3).equals(":")) {
+						int hour = Integer.parseInt(time.substring(0,2));
+						int min = Integer.parseInt(time.substring(3,5));
+						if (hour >= 0 && hour <= 24
+								&& min >= 0 && min <= 60) {
+							result = true;
+						}
+					}
+				}
+			}
+			if (format.toUpperCase().equals("HH:MM:SS")) {
+				if (time.length() >= 7 && time.length() <= 12) {
+					if (time.substring(2, 3).equals(":")
+							&& time.substring(5, 6).equals(":")) {
+						int hour = Integer.parseInt(time.substring(0,2));
+						int min = Integer.parseInt(time.substring(3,5));
+						float sec = Float.parseFloat(time.substring(6,time.length()));
+						if (hour >= 0 && hour <= 24
+								&& min >= 0 && min < 60
+								&& sec >= 0 && sec < 60) {
+							result = true;
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+		}
+		return result;
+	}
+
+	public Object getMinutesBetweenTimes(String timeFrom, String timeThru) {
+		int minDiff = 0;
+		try {
+			if (timeFrom.substring(2, 3).equals(":") && timeThru.substring(2, 3).equals(":")) {
+				int hourFrom = Integer.parseInt(timeFrom.substring(0,2));
+				int minFrom = Integer.parseInt(timeFrom.substring(3,5));
+				int hourThru = Integer.parseInt(timeThru.substring(0,2));
+				int minThru = Integer.parseInt(timeThru.substring(3,5));
+				minDiff = ((hourThru - hourFrom) * 60) + (minThru - minFrom);
+			} else {
+				JOptionPane.showMessageDialog(null, "Invalid time format.");
+				return null;
+			}
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Invalid time format.\n" + e.getMessage());
+			return null;
+		}
+		return minDiff;
+	}
+
 	public String getNextNumber(String numberID) {
 		String nextNumber = "";
 		/////////////////////////////////////////////////////////////
@@ -993,6 +1148,26 @@ public class Session extends JFrame {
 			e.printStackTrace();
 		}
 		return nextNumber;
+	}
+
+	public void setNextNumber(String numberID, int nextNumber) {
+		try {
+			String sql = "select * from " + numberingTable + " where IDNUMBER = '" + numberID + "'";
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			if (operator.next()) {
+				sql = "update " + numberingTable + 
+				" set NRCURRENT = " + nextNumber +
+				", UPDCOUNTER = " + (Integer.parseInt(operator.getValueOf("UPDCOUNTER").toString()) + 1) +
+				" where IDNUMBER = '" + numberID + "'" +
+				" and UPDCOUNTER = " + Integer.parseInt(operator.getValueOf("UPDCOUNTER").toString());
+				operator = new XFTableOperator(this, null, sql, true);
+				operator.execute();
+			} else {
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError13") + numberID + XFUtility.RESOURCE.getString("SessionError14"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private String getFormattedNextNumber(int number, int digit, String prefix, String withCD) {
@@ -1031,31 +1206,31 @@ public class Session extends JFrame {
 	private int countUpNumber(int number, int digit) {
 		number++;
 		if (digit == 1 && number == 10) {
-			number = 0;
+			number = 1;
 		}
 		if (digit == 2 && number == 100) {
-			number = 10;
+			number = 1;
 		}
 		if (digit == 3 && number == 1000) {
-			number = 100;
+			number = 1;
 		}
 		if (digit == 4 && number == 10000) {
-			number = 1000;
+			number = 1;
 		}
 		if (digit == 5 && number == 100000) {
-			number = 10000;
+			number = 1;
 		}
 		if (digit == 6 && number == 1000000) {
-			number = 100000;
+			number = 1;
 		}
 		if (digit == 7 && number == 10000000) {
-			number = 1000000;
+			number = 1;
 		}
 		if (digit == 8 && number == 100000000) {
-			number = 10000000;
+			number = 1;
 		}
 		if (digit == 9 && number == 1000000000) {
-			number = 100000000;
+			number = 1;
 		}
 		return number;
 	}
@@ -1116,6 +1291,30 @@ public class Session extends JFrame {
 			e.printStackTrace();
 		}
 		return floatValue;
+	}
+
+	public void setSystemVariant(String itemID, String value) {
+		try {
+			String sql = "select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'";
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			if (operator.next()) {
+				sql = "update " + variantsTable + 
+				" set TXVALUE = '" + value + "'" +
+				", UPDCOUNTER = " + (Integer.parseInt(operator.getValueOf("UPDCOUNTER").toString()) + 1) +
+				" where IDVARIANT = '" + itemID + "'" +
+				" and UPDCOUNTER = " + Integer.parseInt(operator.getValueOf("UPDCOUNTER").toString());
+				operator = new XFTableOperator(this, null, sql, true);
+				operator.execute();
+			} else {
+				sql = "insert into " + variantsTable
+				+ " (IDVARIANT, TXNAME, TXTYPE, TXVALUE) values ("
+				+ "'" + itemID + "', '" + itemID.substring(0, 10) + "', 'STRING', '" + value + "')";
+				operator = new XFTableOperator(this, null, sql, true);
+				operator.execute();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public float getAnnualExchangeRate(String currencyCode, int fYear, String type) {
@@ -1183,13 +1382,11 @@ public class Session extends JFrame {
 	public int getTaxAmount(String date, int amount) {
 		int fromDate = 0;
 		int taxAmount = 0;
-		//
 		if (!date.equals("") && date != null) {
 			int targetDate = Integer.parseInt(date.replaceAll("-", "").replaceAll("/", ""));
 			float rate = 0;
-			//
 			try {
-				String sql = "select * from " + taxTable + " order by DTSTART";
+				String sql = "select * from " + taxTable + " order by DTSTART DESC";
 				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 				while (operator.next()) {
 					fromDate = Integer.parseInt(operator.getValueOf("DTSTART").toString().replaceAll("-", ""));
@@ -1203,7 +1400,6 @@ public class Session extends JFrame {
 				e.printStackTrace();
 			}
 		}
-		//
 		return taxAmount;
 	}
 

@@ -571,6 +571,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			}
 		}
 
+		batchFunctionID = "";
+		jCheckBoxToExecuteBatchFunction.setSelected(false);
 		if (!functionElement_.getAttribute("BatchRecordFunction").equals("")) {
 			batchFunctionID = functionElement_.getAttribute("BatchRecordFunction");
 			jCheckBoxToExecuteBatchFunction.setSelected(true);
@@ -801,6 +803,13 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			}
 		}
 
+		////////////////////////////////////////////////////////////////////////////////////////
+		// These steps are required to set value to field according to related ComboBox-field //
+		////////////////////////////////////////////////////////////////////////////////////////
+		for (int i = 0; i < batchFieldList.size(); i++) {
+			batchFieldList.get(i).setValue(batchFieldList.get(i).getInternalValue());
+		}
+
 		fetchBatchReferRecords(false);
 	}
 	
@@ -971,14 +980,18 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
 			}
 
-			countOfErrors = countOfErrors + batchTable.runScript("BC", "AR()"); /* Script to be run AFTER READ */
+			////////////////////////////////////////////////////////////////
+			// Run Script for BeforeCreate and AfterRead-all-refer-tables //
+			////////////////////////////////////////////////////////////////
+			countOfErrors = countOfErrors + batchTable.runScript("BC", "AR()");
 
-			//////////////////////////////////////////////////
-			// check if prompt-key is EditControlled or not //
-			//////////////////////////////////////////////////
-			for (int i = 0; i < batchFieldList.size(); i++) {
-				batchFieldList.get(i).checkPromptKeyEdit();
-			}
+//			//////////////////////////////////////////////////
+//			// check if prompt-key is EditControlled or not //
+//			//////////////////////////////////////////////////
+//			for (int i = 0; i < batchFieldList.size(); i++) {
+//				batchFieldList.get(i).checkPromptKeyEdit();
+//			}
+
 		} catch(ScriptException e) {
 			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch (Exception e) {
@@ -1038,11 +1051,18 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
 			}
 
+			///////////////////////////////////////////////
+			// Run Script for AfterRead-all-refer-tables //
+			///////////////////////////////////////////////
 			countOfErrors = countOfErrors + detailTable.runScript(event, "AR()", columnValueMap, columnOldValueMap); /* Script to be run AFTER READ */
 
-			for (int i = 0; i < detailColumnList.size(); i++) {
-				detailColumnList.get(i).checkPromptKeyEdit();
-			}
+//			//////////////////////////////////////////////////
+//			// Check if prompt-key is EditControlled or not //
+//			//////////////////////////////////////////////////
+//			for (int i = 0; i < detailColumnList.size(); i++) {
+//				detailColumnList.get(i).checkPromptKeyEdit();
+//			}
+
 		} catch(ScriptException e) {
 			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch (Exception e) {
@@ -1116,6 +1136,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	void selectDetailRecordsAndSetupTableRows() {
 		HashMap<String, Object> keyValueMap;
 		HashMap<String, Object> columnValueMap;
+		HashMap<String, Boolean> columnEditableMap;
 		XFTableOperator operator;
 
 		try {
@@ -1154,12 +1175,19 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 						columnValueMap.put(detailTable.getUpdateCounterID(), Long.parseLong(operator.getValueOf(detailTable.getUpdateCounterID()).toString()));
 
+						detailTable.runScript("BU", "BR()", columnValueMap, null); /* Detail Table Script to be run BEFORE UPDATE */
+
 						fetchDetailReferRecords("AR", false, "", columnValueMap, null);
 
 						detailTable.runScript("BU", "AR()", columnValueMap, null); /* Detail Table Script to be run BEFORE UPDATE */
 
+						columnEditableMap = new HashMap<String, Boolean>();
+						for (int i = 0; i < detailColumnList.size(); i++) {
+							columnEditableMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).isEditable());
+						}
+						
 						Object[] cell = new Object[1];
-						cell[0] = new XF110_SubListDetailRowNumber(countOfRows + 1, keyValueMap, columnValueMap, this);
+						cell[0] = new XF110_SubListDetailRowNumber(countOfRows + 1, keyValueMap, columnValueMap, columnEditableMap, this);
 						tableModelMain.addRow(cell);
 
 						countOfRows++;
@@ -1171,6 +1199,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					}
 				}
 			}
+		} catch(ScriptException e) {
+			this.cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError5") + "\n" + e.getMessage());
 			e.printStackTrace(dialog_.getExceptionStream());
@@ -1255,7 +1285,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 
 						try {
-							if (batchTable != null && jCheckBoxToExecuteBatchFunction.isSelected()) {
+							if (batchTable != null && !batchFunctionID.equals("") && jCheckBoxToExecuteBatchFunction.isSelected()) {
 								for (int i = 0; i < batchTable.getKeyMapList().size(); i++) {
 									session_.executeFunction(batchFunctionID, batchTable.getKeyMapList().get(i).getHashMap());
 								}
@@ -1708,14 +1738,23 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					cellList.get(i).setIcon((Icon)detailColumnList.get(i).getExternalValue());
 				} else {
 					cellList.get(i).setText((String)detailColumnList.get(i).getExternalValue());
-					if (detailColumnList.get(i).getColor().equals(Color.black)) {
-						if (isSelected) {
-							cellList.get(i).setForeground(table.getSelectionForeground());
-						} else {
-							cellList.get(i).setForeground(table.getForeground());
-						}
+//					if (detailColumnList.get(i).getColor().equals(Color.black)) {
+//						if (isSelected) {
+//							cellList.get(i).setForeground(table.getSelectionForeground());
+//						} else {
+//							cellList.get(i).setForeground(table.getForeground());
+//						}
+//					} else {
+//						cellList.get(i).setForeground(Color.getColor(detailColumnList.get(i).getColor()));
+//					}
+					if (isSelected) {
+						cellList.get(i).setForeground(table.getSelectionForeground());
 					} else {
-						cellList.get(i).setForeground(Color.getColor(detailColumnList.get(i).getColor()));
+						if (detailColumnList.get(i).getColor().equals(Color.black)) {
+							cellList.get(i).setForeground(table.getForeground());
+						} else {
+							cellList.get(i).setForeground(Color.getColor(detailColumnList.get(i).getColor()));
+						}
 					}
 				}
 				if (rowObject.getErrorCellIndexList().contains(i)) {
@@ -2219,6 +2258,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					Rectangle rect = headersRenderer.getColumnHeaderList().get(j).getBounds();
 					workSheet.setColumnWidth(j+1, rect.width * 40);
 					wrkStr = XFUtility.getCaptionForCell(headersRenderer.getColumnHeaderList().get(j).getText());
+					wrkStr = wrkStr.replaceAll("<html>" , "");
+					wrkStr = wrkStr.replaceAll("<u>" , "");
 					cell.setCellValue(new HSSFRichTextString(wrkStr));
 				} else {
 					break;
@@ -3268,18 +3309,18 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 		refferComponent = compo;
 	}
 
-	public void checkPromptKeyEdit(){
-		if (!XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL").equals("")) {
-			if (((XF110_SubListBatchPromptCall)component).hasEditControlledKey()) {
-				this.setEditable(false);
-			}
-		}
-		if (fieldOptionList.contains("PROMPT_LIST")) {
-			if (((XF110_SubListBatchComboBox)component).hasEditControlledKey()) {
-				this.setEditable(false);
-			}
-		}
-	}
+//	public void checkPromptKeyEdit(){
+//		if (!XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL").equals("")) {
+//			if (((XF110_SubListBatchPromptCall)component).hasEditControlledKey()) {
+//				this.setEditable(false);
+//			}
+//		}
+//		if (fieldOptionList.contains("PROMPT_LIST")) {
+//			if (((XF110_SubListBatchComboBox)component).hasEditControlledKey()) {
+//				this.setEditable(false);
+//			}
+//		}
+//	}
 
 	public boolean isPromptListField(){
 		return fieldOptionList.contains("PROMPT_LIST");
@@ -4456,20 +4497,20 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 		jLabel.setHorizontalAlignment(alignment);
 	}
 	
-	public boolean hasEditControlledKey() {
-		boolean anyOfKeysAreEditControlled = false;
-		for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
-			for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
-				if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
-					if (!dialog_.getDetailColumnList().get(j).isEditable() && dialog_.getDetailTable().getTableID().equals(dialog_.getDetailColumnList().get(j).getTableAlias())) {
-						anyOfKeysAreEditControlled = true;
-						break;
-					}
-				}
-			}
-		}
-		return anyOfKeysAreEditControlled;
-	}
+//	public boolean hasEditControlledKey() {
+//		boolean anyOfKeysAreEditControlled = false;
+//		for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
+//			for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
+//				if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
+//					if (!dialog_.getDetailColumnList().get(j).isEditable() && dialog_.getDetailTable().getTableID().equals(dialog_.getDetailColumnList().get(j).getTableAlias())) {
+//						anyOfKeysAreEditControlled = true;
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		return anyOfKeysAreEditControlled;
+//	}
 
 	public void setupRecordList() {
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
@@ -4612,6 +4653,13 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
     private XF110_SubList dialog_;
     private String functionID_;
     private org.w3c.dom.Element fieldElement_;
+	private String tableID = "";
+	private String tableAlias = "";
+	private String fieldID = "";
+	private String dataType = "";
+	private String dataTypeOptions = "";
+	private ArrayList<String> dataTypeOptionList;
+    private ArrayList<XF110_SubListDetailReferTable> referTableList_;
     private ArrayList<String> fieldsToPutList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
@@ -4629,7 +4677,26 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 		jTextField.setEditable(false);
 		jTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
 
-		StringTokenizer workTokenizer;
+		StringTokenizer workTokenizer = new StringTokenizer(fieldElement_.getAttribute("DataSource"), "." );
+		tableAlias = workTokenizer.nextToken();
+		fieldID =workTokenizer.nextToken();
+		tableID = tableAlias;
+		referTableList_ = dialog_.getDetailReferTableList();
+		for (int i = 0; i < referTableList_.size(); i++) {
+			if (referTableList_.get(i).getTableAlias().equals(tableAlias)) {
+				tableID = referTableList_.get(i).getTableID();
+				break;
+			}
+		}
+
+		org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, fieldID);
+		if (workElement == null) {
+			JOptionPane.showMessageDialog(this, tableID + "." + fieldID + XFUtility.RESOURCE.getString("FunctionError11"));
+		}
+		dataType = workElement.getAttribute("Type");
+		dataTypeOptions = workElement.getAttribute("TypeOptions");
+		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
+
 		String fieldOptions = fieldElement_.getAttribute("FieldOptions");
 		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");
 		if (!wrkStr.equals("")) {
@@ -4744,23 +4811,34 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 		return jButton.isEnabled();
 	}
 	
-	public boolean hasEditControlledKey() {
-		boolean anyOfKeysAreEditControlled = false;
-		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
-			for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
-				if (fieldsToGetToList_.get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
-					if (!dialog_.getDetailColumnList().get(j).isEditable() && dialog_.getDetailTable().getTableID().equals(dialog_.getDetailColumnList().get(j).getTableAlias())) {
-						anyOfKeysAreEditControlled = true;
-						break;
-					}
-				}
-			}
-		}
-		return anyOfKeysAreEditControlled;
-	}
+//	public boolean hasEditControlledKey() {
+//		boolean anyOfKeysAreEditControlled = false;
+//		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
+//			for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
+//				if (fieldsToGetToList_.get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
+//					if (!dialog_.getDetailColumnList().get(j).isEditable() && dialog_.getDetailTable().getTableID().equals(dialog_.getDetailColumnList().get(j).getTableAlias())) {
+//						anyOfKeysAreEditControlled = true;
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		return anyOfKeysAreEditControlled;
+//	}
 
 	public Object getInternalValue() {
-		return jTextField.getText();
+		//return jTextField.getText();
+		String text = "";
+		String basicType = XFUtility.getBasicTypeOf(dataType);
+		if (basicType.equals("INTEGER")
+				|| basicType.equals("FLOAT")
+				|| dataTypeOptionList.contains("DIAL")
+				|| dataTypeOptionList.contains("ZIPNO")) {
+			text = XFUtility.getStringNumber(jTextField.getText());
+		} else {
+			text = jTextField.getText();
+		}
+		return text;
 	}
 
 	public Object getExternalValue() {
@@ -4799,14 +4877,16 @@ class XF110_SubListDetailRowNumber extends Object {
 	private HashMap<String, Object> keyValueMap_;
 	private HashMap<String, Object> columnValueMapWithDSName_;
 	private HashMap<String, Object> columnOldValueMapWithDSName_;
+	private HashMap<String, Boolean> columnEditableMapWithDSName_;
 	private ArrayList<Integer> errorCellIndexList = new ArrayList<Integer>();
 	private XF110_SubList dialog_ = null;
 
-	public XF110_SubListDetailRowNumber(int num, HashMap<String, Object> keyMap, HashMap<String, Object> columnMap, XF110_SubList dialog) {
+	public XF110_SubListDetailRowNumber(int num, HashMap<String, Object> keyMap, HashMap<String, Object> columnMap, HashMap<String, Boolean> columnEditableMap, XF110_SubList dialog) {
 		number_ = num;
 		keyValueMap_ = keyMap;
 		columnValueMapWithDSName_ = columnMap;
 		columnOldValueMapWithDSName_ = (HashMap<String, Object>)columnMap.clone();
+		columnEditableMapWithDSName_ = columnEditableMap;
 		dialog_ = dialog;
 	}
 
@@ -4850,6 +4930,7 @@ class XF110_SubListDetailRowNumber extends Object {
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			dialog_.getDetailColumnList().get(i).setValue(columnValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 			dialog_.getDetailColumnList().get(i).setOldValue(columnOldValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
+			dialog_.getDetailColumnList().get(i).setEditable(columnEditableMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 		}
 	}
 
@@ -5288,20 +5369,20 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		}
 	}
 
-	public void checkPromptKeyEdit(){
-		if (!XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL").equals("")
-				&& !isNonEditableField) {
-			if (((XF110_SubListCellEditorWithPromptCall)editor).hasEditControlledKey()) {
-				this.setEditable(false);
-			}
-		}
-		if (fieldOptionList.contains("PROMPT_LIST")
-				&& !isNonEditableField) {
-			if (((XF110_SubListCellEditorWithComboBox)editor).hasEditControlledKey()) {
-				this.setEditable(false);
-			}
-		}
-	}
+//	public void checkPromptKeyEdit(){
+//		if (!XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL").equals("")
+//				&& !isNonEditableField) {
+//			if (((XF110_SubListCellEditorWithPromptCall)editor).hasEditControlledKey()) {
+//				this.setEditable(false);
+//			}
+//		}
+//		if (fieldOptionList.contains("PROMPT_LIST")
+//				&& !isNonEditableField) {
+//			if (((XF110_SubListCellEditorWithComboBox)editor).hasEditControlledKey()) {
+//				this.setEditable(false);
+//			}
+//		}
+//	}
 	
 	public boolean isNullError(Object object){
 		String basicType = this.getBasicType();
@@ -6310,7 +6391,7 @@ class XF110_SubListBatchReferTable extends Object {
 						&& dialog_.getBatchFieldList().get(j).isEditable()
 						&& dialog_.getBatchFieldList().get(j).getDataSourceName().equals(withKeyFieldIDList.get(i))
 						&& !dialog_.getBatchFieldList().get(j).isError()) {
-					dialog_.getBatchFieldList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
+					dialog_.getBatchFieldList().get(j).setError(XFUtility.RESOURCE.getString("FunctionError53") + tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 					noneOfKeyFieldsWereSetError = false;
 					break;
 				}
@@ -6328,7 +6409,7 @@ class XF110_SubListBatchReferTable extends Object {
 							&& dialog_.getBatchFieldList().get(j).getFieldID().equals(fieldIDList.get(i))
 							&& dialog_.getBatchFieldList().get(j).getTableAlias().equals(this.tableAlias)
 							&& !dialog_.getBatchFieldList().get(j).isError()) {
-						dialog_.getBatchFieldList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
+						dialog_.getBatchFieldList().get(j).setError(XFUtility.RESOURCE.getString("FunctionError53") + tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 						noneOfKeyFieldsWereSetError = false;
 						break;
 					}
@@ -6344,7 +6425,7 @@ class XF110_SubListBatchReferTable extends Object {
 				for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
 					if (dialog_.getBatchFieldList().get(j).getDataSourceName().equals(withKeyFieldIDList.get(i))
 							&& !dialog_.getBatchFieldList().get(j).isError()) {
-						dialog_.getBatchFieldList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
+						dialog_.getBatchFieldList().get(j).setError(XFUtility.RESOURCE.getString("FunctionError53") + tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 						break;
 					}
 				}
@@ -6749,19 +6830,23 @@ class XF110_SubListDetailTable extends Object {
 				validScriptList.add(script);
 			}
 		}
-		if (validScriptList.size() > 0) {
-			for (int i = 0; i < validScriptList.size(); i++) {
-				dialog_.evalScript(validScriptList.get(i).getName(), validScriptList.get(i).getScriptText());
-			}
-			for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
-				columnValueMap.put(dialog_.getDetailColumnList().get(i).getDataSourceName(), dialog_.getDetailColumnList().get(i).getInternalValue());
-				if (columnOldValueMap != null) {
-					columnOldValueMap.put(dialog_.getDetailColumnList().get(i).getDataSourceName(), dialog_.getDetailColumnList().get(i).getOldValue());
+		try {
+			if (validScriptList.size() > 0) {
+				for (int i = 0; i < validScriptList.size(); i++) {
+					dialog_.evalScript(validScriptList.get(i).getName(), validScriptList.get(i).getScriptText());
 				}
-				if (dialog_.getDetailColumnList().get(i).isError()) {
-					countOfErrors++;
+				for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+					columnValueMap.put(dialog_.getDetailColumnList().get(i).getDataSourceName(), dialog_.getDetailColumnList().get(i).getInternalValue());
+					if (columnOldValueMap != null) {
+						columnOldValueMap.put(dialog_.getDetailColumnList().get(i).getDataSourceName(), dialog_.getDetailColumnList().get(i).getOldValue());
+					}
+					if (dialog_.getDetailColumnList().get(i).isError()) {
+						countOfErrors++;
+					}
 				}
 			}
+		} catch (Exception e) {
+			throw new ScriptException("Failed to setup variants in script. " + e.getMessage());
 		}
 		return countOfErrors;
 	}
@@ -7164,7 +7249,7 @@ class XF110_SubListDetailReferTable extends Object {
 						&& dialog_.getDetailColumnList().get(j).isEditable()
 						&& dialog_.getDetailColumnList().get(j).getDataSourceName().equals(withKeyFieldIDList.get(i))
 						&& !dialog_.getDetailColumnList().get(j).isError()) {
-					dialog_.getDetailColumnList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
+					dialog_.getDetailColumnList().get(j).setError(XFUtility.RESOURCE.getString("FunctionError53") + tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 					noneOfKeyFieldsWereSetError = false;
 					break;
 				}
@@ -7182,7 +7267,7 @@ class XF110_SubListDetailReferTable extends Object {
 							&& dialog_.getDetailColumnList().get(j).getFieldID().equals(fieldIDList.get(i))
 							&& dialog_.getDetailColumnList().get(j).getTableAlias().equals(this.tableAlias)
 							&& !dialog_.getDetailColumnList().get(j).isError()) {
-						dialog_.getDetailColumnList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
+						dialog_.getDetailColumnList().get(j).setError(XFUtility.RESOURCE.getString("FunctionError53") + tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 						noneOfKeyFieldsWereSetError = false;
 						break;
 					}
@@ -7198,7 +7283,7 @@ class XF110_SubListDetailReferTable extends Object {
 				for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
 					if (dialog_.getDetailColumnList().get(j).getDataSourceName().equals(withKeyFieldIDList.get(i))
 							&& !dialog_.getDetailColumnList().get(j).isError()) {
-						dialog_.getDetailColumnList().get(j).setError(tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
+						dialog_.getDetailColumnList().get(j).setError(XFUtility.RESOURCE.getString("FunctionError53") + tableElement.getAttribute("Name") + XFUtility.RESOURCE.getString("FunctionError45"));
 						break;
 					}
 				}
@@ -7405,20 +7490,20 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 		}
 	}
 	
-	public boolean hasEditControlledKey() {
-		boolean anyOfKeysAreEditControlled = false;
-		for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
-			for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
-				if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
-					if (!dialog_.getBatchFieldList().get(j).isEditable() && dialog_.getBatchTable().getTableID().equals(dialog_.getBatchFieldList().get(j).getTableAlias())) {
-						anyOfKeysAreEditControlled = true;
-						break;
-					}
-				}
-			}
-		}
-		return anyOfKeysAreEditControlled;
-	}
+//	public boolean hasEditControlledKey() {
+//		boolean anyOfKeysAreEditControlled = false;
+//		for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
+//			for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
+//				if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
+//					if (!dialog_.getBatchFieldList().get(j).isEditable() && dialog_.getBatchTable().getTableID().equals(dialog_.getBatchFieldList().get(j).getTableAlias())) {
+//						anyOfKeysAreEditControlled = true;
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		return anyOfKeysAreEditControlled;
+//	}
 	
 	public void setFollowingField(XFEditableField field) {
 	}
@@ -7539,6 +7624,9 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 	private String tableID = "";
 	private String tableAlias = "";
 	private String fieldID = "";
+	private String dataType = "";
+	private String dataTypeOptions = "";
+	private ArrayList<String> dataTypeOptionList;
 	private int rows_ = 1;
 	private XFTextField xFTextField;
 	private JButton jButton = new JButton();
@@ -7563,7 +7651,6 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 		StringTokenizer workTokenizer = new StringTokenizer(fieldElement_.getAttribute("DataSource"), "." );
 		tableAlias = workTokenizer.nextToken();
 		fieldID =workTokenizer.nextToken();
-
 		tableID = tableAlias;
 		referTableList_ = dialog_.getHeaderReferTableList();
 		for (int i = 0; i < referTableList_.size(); i++) {
@@ -7577,8 +7664,9 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(this, tableID + "." + fieldID + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
-		String dataType = workElement.getAttribute("Type");
-		String dataTypeOptions = workElement.getAttribute("TypeOptions");
+		dataType = workElement.getAttribute("Type");
+		dataTypeOptions = workElement.getAttribute("TypeOptions");
+		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		int dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (dataSize > 50) {
 			dataSize = 50;
@@ -7588,6 +7676,8 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
 		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions);
+		xFTextField.setEditable(false);
+		xFTextField.setFocusable(false);
 		xFTextField.setLocation(5, 0);
 
 		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");
@@ -7675,25 +7765,26 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 		this.add(jButton, BorderLayout.EAST);
 	}
 	
-	public boolean hasEditControlledKey() {
-		boolean anyOfKeysAreEditControlled = false;
-		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
-			for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
-				if (fieldsToGetToList_.get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
-					if (!dialog_.getBatchFieldList().get(j).isEditable() && dialog_.getBatchTable().getTableID().equals(dialog_.getBatchFieldList().get(j).getTableAlias())) {
-						anyOfKeysAreEditControlled = true;
-						break;
-					}
-				}
-			}
-		}
-		return anyOfKeysAreEditControlled;
-	}
+//	public boolean hasEditControlledKey() {
+//		boolean anyOfKeysAreEditControlled = false;
+//		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
+//			for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
+//				if (fieldsToGetToList_.get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
+//					if (!dialog_.getBatchFieldList().get(j).isEditable() && dialog_.getBatchTable().getTableID().equals(dialog_.getBatchFieldList().get(j).getTableAlias())) {
+//						anyOfKeysAreEditControlled = true;
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		return anyOfKeysAreEditControlled;
+//	}
 
 	public void setEditable(boolean editable) {
 		isEditable = editable;
-		xFTextField.setEditable(isEditable);
-		xFTextField.setFocusable(isEditable);
+		//xFTextField.setEditable(isEditable);
+		//xFTextField.setFocusable(isEditable);
+		jButton.setEnabled(isEditable);
 	}
 	
 	public void setToolTipText(String text) {
@@ -7702,7 +7793,18 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 	}
 
 	public Object getInternalValue() {
-		return xFTextField.getText();
+		//return xFTextField.getText();
+		String text = "";
+		String basicType = XFUtility.getBasicTypeOf(dataType);
+		if (basicType.equals("INTEGER")
+				|| basicType.equals("FLOAT")
+				|| dataTypeOptionList.contains("DIAL")
+				|| dataTypeOptionList.contains("ZIPNO")) {
+			text = XFUtility.getStringNumber(xFTextField.getText());
+		} else {
+			text = xFTextField.getText();
+		}
+		return text;
 	}
 
 	public Object getExternalValue() {

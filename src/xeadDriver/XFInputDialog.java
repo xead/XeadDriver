@@ -69,6 +69,7 @@ public class XFInputDialog extends JDialog {
     private int reply;
 	private int nextLocationTopY = 6;
 	private int nextLocationCenterY = 6;
+	private int messageHeight = 100;
 	private Session session_;
 
     public XFInputDialog(Session session) {
@@ -112,11 +113,22 @@ public class XFInputDialog extends JDialog {
     	nextLocationTopY = 6;
     	nextLocationCenterY = 6;
     	jTextArea.setText("");
+    	messageHeight = 100;
+    	jButtonClose.requestFocus();
     }
 
     public void setMessage(String message) {
     	jTextArea.setText(message);
     }
+
+    public void setMessageHeight(int height) {
+    	messageHeight = height;
+    }
+
+    public XFInputDialogField addField(String caption, String inputType) {
+    	return addField(caption, inputType, 0, "");
+    }
+
     public XFInputDialogField addField(String caption, String inputType, int areaIndex) {
     	return addField(caption, inputType, areaIndex, "");
     }
@@ -173,37 +185,40 @@ public class XFInputDialog extends JDialog {
 	    } else {
 		    if (firstEditableFieldOnCenterPanel != null) {
 		    	firstEditableFieldOnCenterPanel.requestFocus();
+		    } else {
+		    	jButtonClose.requestFocus();
 		    }
 	    }
 	    //
 	    if (nextLocationTopY > 6 && nextLocationCenterY > 6) {
-	    	dlgSize = new Dimension(width, nextLocationTopY + 2 + nextLocationCenterY + 4 + 84 + 32);
+	    	dlgSize = new Dimension(width, nextLocationTopY + 2 + nextLocationCenterY + 4 + messageHeight + 32);
 	    	jPanelTop.setPreferredSize(new Dimension(width, nextLocationTopY + 2));
 	    	this.getContentPane().add(jPanelTop,  BorderLayout.NORTH);
 	    	this.getContentPane().add(jPanelCenter,  BorderLayout.CENTER);
 	    }
 	    if (nextLocationTopY == 6 && nextLocationCenterY > 6) {
-	    	dlgSize = new Dimension(width, nextLocationCenterY + 2 + 84 + 32);
+	    	dlgSize = new Dimension(width, nextLocationCenterY + 2 + messageHeight + 32);
 			this.getContentPane().remove(jPanelTop);
 	    	this.getContentPane().add(jPanelCenter,  BorderLayout.CENTER);
 	    }
 	    if (nextLocationTopY > 6 && nextLocationCenterY == 6) {
-	    	dlgSize = new Dimension(width, nextLocationTopY + 4 + 84 + 32);
+	    	dlgSize = new Dimension(width, nextLocationTopY + 4 + messageHeight + 32);
 	    	this.getContentPane().add(jPanelTop,  BorderLayout.CENTER);
 			this.getContentPane().remove(jPanelCenter);
 	    }
 	    if (nextLocationTopY == 6 && nextLocationCenterY == 6) {
-	    	dlgSize = new Dimension(width, 84 + 32);
+	    	dlgSize = new Dimension(width, messageHeight + 32);
 			this.getContentPane().remove(jPanelTop);
 			this.getContentPane().remove(jPanelCenter);
 	    }
-    	jPanelBottom.setPreferredSize(new Dimension(width, 84));
+    	jPanelBottom.setPreferredSize(new Dimension(width, messageHeight));
     	jPanelButtons.setPreferredSize(new Dimension(width, 34));
 		//
 		wrkInt = (width - 220) / 2;
 		jButtonClose.setBounds(wrkInt, 2, 80, 30);
 		jButtonOK.setBounds(wrkInt + 140, 2, 80, 30);
-		//
+    	jTextArea.setCaretPosition(0);
+    	//
 		JLabel jLabel = new JLabel();
 		FontMetrics metricsTitle = jLabel.getFontMetrics(this.getFont());
 		int titleWidth = metricsTitle.stringWidth(title) + 20;
@@ -260,7 +275,6 @@ public class XFInputDialog extends JDialog {
 		this.setVisible(false);
 	}
 }
-
 
 class XFInputDialog_jButtonOK_actionAdapter implements java.awt.event.ActionListener {
 	XFInputDialog adaptee;

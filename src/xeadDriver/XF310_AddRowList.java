@@ -127,7 +127,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		}
 	};
 	
-	public XF310_AddRowList(XF310 dialog) throws Exception {
+	//public XF310_AddRowList(XF310 dialog) throws Exception {
+	public XF310_AddRowList(XF310 dialog) {
 		super(dialog, "", true);
 		dialog_ = dialog;
 		jPanelMain.setLayout(new BorderLayout());
@@ -326,6 +327,12 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				addRowListColumnList.get(j).setColumnIndex(columnIndex);
 			}
 		}
+		if (columnIndex == 0) {
+			isInvalid = true;
+			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError52"));
+			return;
+			//throw new Exception();
+		}
 		headersRenderer = new TableHeadersRenderer(this); 
 		cellsRenderer = new TableCellsRenderer(headersRenderer); 
 		jTableMain.setRowHeight(headersRenderer.getHeight());
@@ -400,7 +407,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 							isInvalid = true;
 							String msg = XFUtility.RESOURCE.getString("FunctionError1") + addRowListTable.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + addRowListTable.getScriptList().get(j).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
 							JOptionPane.showMessageDialog(this, msg);
-							throw new Exception();
+							return;
+							//throw new Exception();
 						} else {
 							addRowListColumnList.add(new XF310_AddRowListColumn(workTableID, workAlias, workFieldID, this));
 						}
@@ -1107,6 +1115,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			numberLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			if (addSelectedActionName.equals("")) {
 				this.add(numberLabel, BorderLayout.WEST);
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + numberLabel.getPreferredSize().width, totalHeight));
 			} else {
 				westPanel = new JPanel();
 				westPanel.setLayout(new GridLayout(1,2));
@@ -1117,6 +1126,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				westPanel.add(numberLabel);
 				westPanel.add(checkBoxLabel);
 				this.add(westPanel, BorderLayout.WEST);
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + westPanel.getPreferredSize().width, totalHeight));
 			}
 			this.add(centerPanel, BorderLayout.CENTER);
 		}
@@ -1427,14 +1437,23 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 					cellList.get(i).setIcon((Icon)rowObject.getCellObjectList().get(i).getExternalValue());
 				} else {
 					cellList.get(i).setText((String)rowObject.getCellObjectList().get(i).getExternalValue());
-					if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
-						if (isSelected) {
-							cellList.get(i).setForeground(table.getSelectionForeground());
-						} else {
-							cellList.get(i).setForeground(table.getForeground());
-						}
+//					if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
+//						if (isSelected) {
+//							cellList.get(i).setForeground(table.getSelectionForeground());
+//						} else {
+//							cellList.get(i).setForeground(table.getForeground());
+//						}
+//					} else {
+//						cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+//					}
+					if (isSelected) {
+						cellList.get(i).setForeground(table.getSelectionForeground());
 					} else {
-						cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+						if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
+							cellList.get(i).setForeground(table.getForeground());
+						} else {
+							cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+						}
 					}
 				}
 			}
@@ -1638,6 +1657,7 @@ class XF310_AddRowListTable extends Object {
 		///////////////////
 		// Where section //
 		///////////////////
+		if (withFieldIDList.size() > 0) {
 		buf.append(" where ") ;
 		count = -1;
 		for (int i = 0; i < withFieldIDList.size(); i++) {
@@ -1664,15 +1684,26 @@ class XF310_AddRowListTable extends Object {
 				}
 			}
 		}
+		}
 		if (!activeWhere.equals("")) {
-			buf.append(" and (");
-			buf.append(activeWhere);
-			buf.append(") ");
+			if (withFieldIDList.size() > 0) {
+				buf.append(" and (");
+				buf.append(activeWhere);
+				buf.append(") ");
+			} else {
+				buf.append(" where ") ;
+				buf.append(activeWhere);
+			}
 		}
 		if (!additionalWhere.equals("")) {
-			buf.append(" and (");
-			buf.append(additionalWhere);
-			buf.append(") ");
+			if (withFieldIDList.size() > 0 || !activeWhere.equals("")) {
+				buf.append(" and (");
+				buf.append(additionalWhere);
+				buf.append(") ");
+			} else {
+				buf.append(" where ") ;
+				buf.append(additionalWhere);
+			}
 		}
 		
 		//////////////////////

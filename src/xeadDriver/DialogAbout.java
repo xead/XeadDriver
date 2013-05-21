@@ -43,7 +43,49 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M20";
+	public static final String FULL_VERSION  = "V1.R1.M21";
+	//21
+	//＜改善点＞
+	//・InputDialogのaddFieldメソッドにおいて表示域のデフォルトを0（上部配置）とした
+	//・「固定Where」にセッション属性を組み込めるようにした
+	//・Session関数setNextNumber(id, nextNumber)を組み込んだ
+	//・Session関数isValidTime(time, format)を組み込んだ
+	//・Session関数getMinutesBetweenTimes(timeFrom, timeThru)を組み込んだ
+	//・Session関数getOffsetDateTime(date, time, minutes, countType)を組み込んだ
+	//・Session関数getOffsetYearMonth(yearMonth, months)を組み込んだ
+	//・Session関数setSystemVariant(id, value)を組み込んだ
+	//・URLタイプのフィールドにローカルファイル名を指定できるようにした
+	//・XF200が"EDIT"のINSTANCE_MODEを渡せば編集モードで起動されるようにした
+	//・XF200,310で、プロンプタ関数から受け取るフィールドが含まれない場合に非表示フィールドとして組み込むようにした
+	//・XF310の行追加リストに明細項目が指定されていない場合にはメッセージ出力して終了するようにした
+	//・XF310の行追加リストでWhere条件が指定されていないケースに対応した
+	//・XF310で追加された直後にはエラー表示しないようにした
+	//・XF100,110,300について、初期表示オプションに対応した
+	//・XF100から機能を起動した後の終了コードの値にしたがって明細一覧を更新するようにした
+	//・XF100,110,300,310について、セルの配色設定を改善した
+	//・TableOperatorでシングルクォーテーションを含むデータを扱えるようにした
+	//・TableOperatorで日付項目=''のaddKeyValueがされた場合に、内部で'is NULL'に置き換えるようにした(!=''の場合には'is not NULL') 
+	//・TableOperatorで日付項目''のaddValueがされた場合に、内部で'NULL'に置き換えるようにした
+	//・検索条件フィールドに複数のOR条件を設定するために、session.getCheckListDialog()を追加した
+	//・Sessionの自動採番処理のロジックを改善した
+	//・XF110,200,310で、リストボックスかプロンプタが設定されているフィールドについて、これらによって値設定されるフィールドのうちの一部が編集不可であれば無効にしていたが、これをやめた。編集不可であっても値を更新したいケースがあるため。
+	//＜修正された問題＞
+	//・Sessionの税額計算関数の検索ロジックのバグを修正した
+	//・XF100,110,300で、カラム別のソートを指定した場合、EXCEL出力をすると見出しに<u>が付加されてしまうバグを修正した
+	//・数字フィールドに対して自動採番を設定すると*AUTOが表示されないバグを修正した
+	//・VARCHAR項目を１行表示にした場合、スクロールバーが常時表示されていたバグを修正した
+	//・XF100,110,200,300,310について、数字フィールドにプロンプト設定した際の動きに関するバグを修正した
+	//・XF110,310について、明細行毎の編集可／不可設定が正しく反映されていなかったバグを修正した
+	//・XF290,390で例外メッセージをダイアログ表示するステップの細かいバグを修正した
+	//・XF310で「値リストフィールド」に関する扱いが抜け落ちていたバグを修正した
+	//・XF310を連続実行した場合、DividerLocationの位置が再設定されないことのあるバグを修正した
+	//・XF310で見出し域に入力可能項目が存在しない場合、明細行のエラー項目にフォーカスが当たらないバグを修正
+	//・XF310で新規追加された明細行についてのユニーク制約チェックに関するバグを修正した
+	//・XF110で一次テーブルの「結合テーブル読み込み前・更新前スクリプト」の実行ステップが抜けていたバグを修正
+	//・XF110でバッチテーブル処理機能がブランクでも実行されてしまうバグを修正
+	//・XF110で検索条件をゼロ個にすると表示がおかしくなるバグを修正
+	//・XF110で見出し域のリストボックスについて、選択初期値が関連するバッチフィールドに反映されないバグを修正
+	//・XF100,110で年月型フィールドで検索条件を指定すると異常終了するバグを修正した
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String COPYRIGHT = "Copyright 2013 DBC,Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";

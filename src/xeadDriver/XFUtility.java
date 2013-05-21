@@ -54,7 +54,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -621,6 +620,43 @@ public class XFUtility {
 		return captionValue;
 	}
 	
+	static String getFixedWhereValue(String keywordValue, Session session){
+		int pos1, pos2;
+		String wrkStr, id, value;
+		StringTokenizer workTokenizer;
+		String fixedWhereValue = keywordValue.replace("\"", "'");;
+		if (keywordValue.contains("SESSION_ATTRIBUTE:")) {
+			for (int i = 0; i < keywordValue.length(); i++) {
+				pos1 = keywordValue.indexOf("SESSION_ATTRIBUTE:", i);
+				if (pos1 == -1) {
+					i = keywordValue.length();
+				} else {
+					pos2 = keywordValue.indexOf(" ", pos1);
+					if (pos2 == -1) {
+						pos2 = keywordValue.length();
+						i = keywordValue.length();
+					}
+					wrkStr = keywordValue.substring(pos1, pos2);
+					wrkStr = wrkStr.replace("'", "");
+					wrkStr = wrkStr.replace("\"", "");
+					workTokenizer = new StringTokenizer(wrkStr, ":" );
+					if (workTokenizer.countTokens() == 2) {
+						workTokenizer.nextToken();
+						id = workTokenizer.nextToken().trim();
+						value = session.getAttribute(id);
+						if (value == null) {
+							JOptionPane.showMessageDialog(null, "Session attribute not found with id of '" + id + "'.");
+						} else {
+							fixedWhereValue = fixedWhereValue.replace(wrkStr, value);
+						}
+					}
+					i = pos1 + 1;
+				}
+			}
+		}
+		return fixedWhereValue;
+	}
+	
 	static String getBasicTypeOf(String dataType){
 		String basicType = "STRING";
 		if (dataType.equals("INTEGER")
@@ -817,10 +853,6 @@ public class XFUtility {
 					editableField.setValue(valueObject);
 				} else {
 					wrkStr = valueObject.toString();
-//					int pos = wrkStr.indexOf(".");
-//					if (pos >= 0) {
-//						wrkStr = wrkStr.substring(0, pos);
-//					}
 					wrkStr = XFUtility.getStringNumber(wrkStr);
 					wrkStr = wrkStr.replace(".0", "");
 					if (wrkStr.equals("")) {
@@ -2332,20 +2364,6 @@ class XFHashMap extends Object {
 	}
 }
 
-//interface XFScriptableField {
-//	public Object getValue();
-//	public void setValue(Object value);
-//	public Object getOldValue();
-//	public void setOldValue(Object value);
-//	public boolean isValueChanged();
-//	public String getColor();
-//	public void setColor(String colorName);
-//	public boolean isEditable();
-//	public void setEditable(boolean isEditable);
-//	public String getError();
-//	public void setError(String message);
-//}
-
 class XFSessionForScript {
 	private Session session_;
 	
@@ -2396,6 +2414,9 @@ class XFSessionForScript {
 	public String getNextNumber(String id) {
 		return session_.getNextNumber(id);
 	}
+	public void setNextNumber(String id, int nextNumber) {
+		session_.setNextNumber(id, nextNumber);
+	}
 	public float getSystemVariantFloat(String id) {
 		return session_.getSystemVariantFloat(id);
 	}
@@ -2405,6 +2426,9 @@ class XFSessionForScript {
 	public String getSystemVariantString(String id) {
 		return session_.getSystemVariantString(id);
 	}
+	public void setSystemVariant(String id, String value) {
+		session_.setSystemVariant(id, value);
+	}
 	public int getTaxAmount(String date, int amount) {
 		return session_.getTaxAmount(date, amount);
 	}
@@ -2412,8 +2436,17 @@ class XFSessionForScript {
 	public int getDaysBetweenDates(String dateFrom, String dateThru, int countType) {
 		return session_.getDaysBetweenDates(dateFrom, dateThru, countType);
 	}
-	public String getOffsetDate(String date, int offset, int countType) {
-		return session_.getOffsetDate(date, offset, countType);
+	public Object getMinutesBetweenTimes(String timeFrom, String timeThru) {
+		return session_.getMinutesBetweenTimes(timeFrom, timeThru);
+	}
+	public String getOffsetDate(String date, int days, int countType) {
+		return session_.getOffsetDate(date, days, countType);
+	}
+	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes, int countType) {
+		return session_.getOffsetDateTime(dateFrom, timeFrom, minutes, countType);
+	}
+	public String getOffsetYearMonth(String yearMonthFrom, int offsetMonths) {
+		return session_.getOffsetYearMonth(yearMonthFrom, offsetMonths);
 	}
 	public String getTimeStamp() {
 		return session_.getTimeStamp();
@@ -2432,6 +2465,9 @@ class XFSessionForScript {
 	}
 	public boolean isValidDateFormat(String date, String separator) {
 		return session_.isValidDateFormat(date, separator);
+	}
+	public boolean isValidTime(String time, String format) {
+		return session_.isValidTime(time, format);
 	}
 	public int getMSeqOfDate(String date) {
 		return session_.getMSeqOfDate(date);
@@ -2499,12 +2535,6 @@ interface XFScriptable {
 	public XFTableOperator createTableOperator(String sqlText);
 	public Object getFieldObjectByID(String tableID, String fieldID);
 }
-
-//interface XFTableCellEditor extends TableCellEditor {
-//	public Object getInternalValue();
-//	public Object getExternalValue();
-//	public void setBackground(Color color);
-//}
 
 interface XFTableColumnEditor {
 	public Object getInternalValue();
@@ -3371,8 +3401,8 @@ class XFTextField extends JTextField implements XFEditableField {
 								String wrkStr1 = wrkStr0.replace(".", "");
 								wrkStr1 = wrkStr1.replace(",", "");
 								wrkStr1 = wrkStr1.replace("-", "");
-								if (wrkStr1.length() <= adaptee.digits_) {
-									super.insertString( offset, str, attr );
+								if (wrkStr1.length() <= adaptee.digits_ || wrkStr1.equals("*AUTO")) {
+									super.insertString(offset, str, attr );
 								}
 							}
 						} else {
@@ -3469,6 +3499,9 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		}
 		//
 		int fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT + (rows_-1) * XFUtility.FIELD_VERTICAL_MARGIN;
+		if (rows_ == 1) {
+			fieldHeight = XFUtility.FIELD_UNIT_HEIGHT + XFUtility.FIELD_VERTICAL_MARGIN;
+		}
 		this.setSize(fieldWidth, fieldHeight);
 		this.addFocusListener(new ScrollPaneFocusListener());
 	}
@@ -4400,22 +4433,23 @@ class XFUrlField extends JPanel implements XFEditableField {
 			this.adaptee = adaptee;
 		}
 		public void mousePressed(MouseEvent e) {
+			String fileName = jTextField.getText();
 			try {
-				if (!jTextField.getText().equals("")) {
-					if (jTextField.getText().contains("@")) {
-						adaptee.desktop.browse(new URI("mailto:" + jTextField.getText()));
+				if (!fileName.equals("")) {
+					if (fileName.contains("@")) {
+						adaptee.desktop.browse(new URI("mailto:" + fileName));
 					} else {
-						if (jTextField.getText().contains("http://") || jTextField.getText().contains("https://")) {
-							adaptee.desktop.browse(new URI(jTextField.getText()));
+						if (fileName.contains("http://") || fileName.contains("https://")) {
+							adaptee.desktop.browse(new URI(fileName));
 						} else {
-							adaptee.desktop.browse(new URI("http://" + jTextField.getText()));
+							fileName = fileName.replaceAll(" ", "%20");
+							fileName = fileName.replace("file:", "");
+							adaptee.desktop.browse(new URI("file:" + fileName));
 						}
 					}
 				}
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			} catch (URISyntaxException e1) {
-				e1.printStackTrace();
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(null, "Failed to browse the file called '" + jTextField.getText() + "'.");
 			}
 		}
 		public void mouseReleased(MouseEvent e) {

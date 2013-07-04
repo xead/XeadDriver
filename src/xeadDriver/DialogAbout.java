@@ -43,7 +43,15 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M21";
+	public static final String FULL_VERSION  = "V1.R1.M22";
+	//22
+	//＜改善点＞
+	//・メニュータブの選択時に下部に表示されるメッセージを、操作援助用URLが指定されているかどうかで切り替えるようにした
+	//・XFTextFieldのタイプがDATETIMEの場合のフィールド幅を広げた
+	//・XF310でのブランク行追加のロジックを改善した
+	//・XF300から明細行をXF200でコピーした後で一覧をリフレッシュするようにした
+	//・CheckListDialogで戻るボタンを使うとリストがクリアされないバグを修正
+	//
 	//21
 	//＜改善点＞
 	//・InputDialogのaddFieldメソッドにおいて表示域のデフォルトを0（上部配置）とした

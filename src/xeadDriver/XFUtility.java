@@ -3090,7 +3090,11 @@ class XFTextField extends JTextField implements XFEditableField {
 			if (basicType_.equals("INTEGER") || basicType_.equals("FLOAT")) {
 				fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList) * 7 + 21;
 			} else {
-				fieldWidth = digits_ * 7 + 10;
+				if (basicType_.equals("DATETIME")) {
+					fieldWidth = 24 * 7;
+				} else {
+					fieldWidth = digits_ * 7 + 10;
+				}
 			}
 		}
 		if (fieldWidth > 800) {

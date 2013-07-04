@@ -523,7 +523,7 @@ public class Session extends JFrame {
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
 	    jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, 14));
-		jTextAreaMessages.setText(XFUtility.RESOURCE.getString("SessionMessage"));
+		//jTextAreaMessages.setText(XFUtility.RESOURCE.getString("SessionMessage"));
 		jTextAreaMessages.setFocusable(false);
 	    jTextAreaMessages.setLineWrap(true);
 	    jSplitPane2.setOrientation(JSplitPane.VERTICAL_SPLIT);
@@ -785,6 +785,13 @@ public class Session extends JFrame {
 				} else {
 					jButtonMenuOptionArray[i].setText(menuOptionArray[tabNumber][i].getMenuOptionName());
 					jButtonMenuOptionArray[i].setVisible(true);
+				}
+			}
+			if (helpURLArray[tabNumber] != null) {
+				if (helpURLArray[tabNumber].equals("")) {
+					jTextAreaMessages.setText(XFUtility.RESOURCE.getString("SessionMessage1"));
+				} else {
+					jTextAreaMessages.setText(XFUtility.RESOURCE.getString("SessionMessage2"));
 				}
 			}
 		}
@@ -1586,7 +1593,7 @@ public class Session extends JFrame {
 		///////////////////////////////////////////
 		// Execute login-script to close session //
 		///////////////////////////////////////////
-		if (!loginScript.equals("")) {
+		if (scriptEngine != null && !loginScript.equals("")) {
 			try {
 				scriptEngine.eval(loginScript);
 			} catch (ScriptException e) {

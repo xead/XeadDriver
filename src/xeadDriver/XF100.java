@@ -1641,11 +1641,6 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 
 						try {
 							HashMap<String, Object> returnMap = session_.executeFunction(detailFunctionID, workMap);
-//							if (returnMap.get("RETURN_MESSAGE") == null) {
-//								messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
-//							} else {
-//								messageList.add(returnMap.get("RETURN_MESSAGE").toString());
-//							}
 							if (returnMap.get("RETURN_CODE").equals("10")
 									|| returnMap.get("RETURN_CODE").equals("20")
 									|| returnMap.get("RETURN_CODE").equals("30")) {
@@ -1663,10 +1658,6 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 							setErrorAndCloseFunction();
 						}
 					}
-
-					//if (filterList.size() == 0) {
-					//	selectRowsAndList();
-					//}
 				} finally {
 					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 				}

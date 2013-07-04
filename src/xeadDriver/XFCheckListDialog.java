@@ -234,6 +234,7 @@ public class XFCheckListDialog extends JDialog {
     }
     
     public void jButtonCancel_actionPerformed(ActionEvent e) {
+		clear();
     	this.setVisible(false);
     }
 

@@ -173,7 +173,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private PrintStream exceptionStream;
 	private String exceptionHeader = "";
 	private long detailRowNoLastValue = 0;
-	private boolean isAbleToSetupKeysOfNewRecord;
 	private boolean hasNoErrorInTableRows;
 	private String addRowListTitle = "";
 	private KeyStroke keyStrokeToUpdate = null;
@@ -790,15 +789,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							}
 						}
 					}
-				}
-				
-				////////////////////////////////////////////
-				// Analyze if adding blank row is allowed //
-				////////////////////////////////////////////
-				if ((headerTable.getKeyFieldIDList().size() + 1) == detailTable.getKeyFieldIDList().size() && !detailTable.getDetailRowNoID().equals("")) {
-					isAbleToSetupKeysOfNewRecord = true;
-				} else {
-					isAbleToSetupKeysOfNewRecord = false;
 				}
 
 				/////////////////////////////////////
@@ -1690,10 +1680,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	
-	boolean isAbleToSetupKeysOfNewRecord() {
-		return isAbleToSetupKeysOfNewRecord;
-	}
-	
 	void addRow() {
 		try {
 			threadToSetupReferChecker.join();
@@ -1713,11 +1699,13 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			}
 
 			if (addRowListDialog == null) {
-				if (isAbleToSetupKeysOfNewRecord) {
-					setupNewRowAndAddToJTable(null);
+				int countOfAdded = setupNewRowAndAddToJTable(null);
+				if (countOfAdded > 0) {
+					checkErrorsToUpdate(true, false);
+					messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
 					messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
 				} else {
-					messageList.add(XFUtility.RESOURCE.getString("FunctionError43"));
+					messageList.add(XFUtility.RESOURCE.getString("FunctionMessage60"));
 				}
 			} else {
 				ArrayList<XF310_AddRowListNumber> addRowListNumberList = addRowListDialog.getDefaultRow();
@@ -1797,7 +1785,39 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			detailColumn = getDetailColumnObjectByID(detailTable.getTableID(), "", detailTable.getKeyFieldIDList().get(i));
 			detailColumn.setValue(headerField.getInternalValue());
 		}
-		if (rowNumber != null) {
+		if (rowNumber == null) {
+			for (int i = 0; i < detailColumnList.size(); i++) {
+				if (detailColumnList.get(i).isDetailKey()
+						&& detailColumnList.get(i).isNull()) {
+					String message = XFUtility.RESOURCE.getString("FunctionMessage58")
+						+ detailColumnList.get(i).getFieldName()
+						+ XFUtility.RESOURCE.getString("FunctionMessage59");
+					String value = "";
+					value = JOptionPane.showInputDialog(message, value);
+					if (value == null || value.equals("")) {
+						return 0;
+					} else {
+						if (value.length() > detailColumnList.get(i).getDataSize()) {
+							value = value.substring(0, detailColumnList.get(i).getDataSize());
+						}
+						if (detailColumnList.get(i).getBasicType().equals("INTEGER")
+								|| detailColumnList.get(i).getBasicType().equals("FLOAT")) {
+							try {
+								double work = Double.parseDouble(value);
+								if (work == 0) {
+									JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionError23"));
+									return 0;
+								}
+							} catch (NumberFormatException e) {
+								JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionError23"));
+								return 0;
+							}
+						}
+					}
+					detailColumnList.get(i).setValue(value);
+				}
+			}
+		} else {
 			for (int i = 0; i < detailColumnList.size(); i++) {
 				if (rowNumber.getReturnFieldMap().containsKey(detailColumnList.get(i).getDataSourceName())) {
 					detailColumnList.get(i).setValue(rowNumber.getReturnFieldMap().get(detailColumnList.get(i).getDataSourceName()));
@@ -1828,6 +1848,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		HashMap<String, Boolean> columnEditableMap = new HashMap<String, Boolean>();
 		for (int i = 0; i < detailColumnList.size(); i++) {
 			columnEditableMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).isEditable());
+
+			columnValueMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getInternalValue());
+			if (detailColumnList.get(i).isKey()) {
+				keyValueMap.put(detailColumnList.get(i).getFieldID(), detailColumnList.get(i).getInternalValue());
+			}
 		}
 		
 		/////////////////////////////////////////////////////
@@ -1846,6 +1871,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 		if (duplicatedKey) {
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionError22"));
 			countOfAdded = 0;
 		} else {
 			countOfAdded = 1;
@@ -5510,6 +5536,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 	private int fieldWidth = 50;
 	private int columnIndex = -1;
 	private boolean isKey = false;
+	private boolean isDetailKey = false;
 	private boolean isNullable = true;
 	private boolean isFieldOnDetailTable = false;
 	private boolean isVisibleOnPanel = true;
@@ -5548,11 +5575,15 @@ class XF310_DetailColumn extends XFColumnScriptable {
 
 		if (tableID_.equals(dialog_.getDetailTable().getTableID()) && tableID_.equals(tableAlias_)) {
 			isFieldOnDetailTable = true;
+			int headerTableKeyCount = dialog_.getHeaderTable().getKeyFieldIDList().size();
 			ArrayList<String> keyNameList = dialog_.getDetailTable().getKeyFieldIDList();
 			for (int i = 0; i < keyNameList.size(); i++) {
 				if (keyNameList.get(i).equals(fieldID_)) {
 					isKey = true;
 					isNonEditableField = true;
+					if (i >= headerTableKeyCount) {
+						isDetailKey = true;
+					}
 					break;
 				}
 			}
@@ -5804,11 +5835,15 @@ class XF310_DetailColumn extends XFColumnScriptable {
 
 		if (tableID_.equals(dialog_.getDetailTable().getTableID()) && tableID_.equals(tableAlias_)) {
 			isFieldOnDetailTable = true;
+			int headerTableKeyCount = dialog_.getHeaderTable().getKeyFieldIDList().size();
 			ArrayList<String> keyNameList = dialog_.getDetailTable().getKeyFieldIDList();
 			for (int i = 0; i < keyNameList.size(); i++) {
 				if (keyNameList.get(i).equals(fieldID_)) {
 					isKey = true;
 					isNonEditableField = true;
+					if (i >= headerTableKeyCount) {
+						isDetailKey = true;
+					}
 					break;
 				}
 			}
@@ -5825,8 +5860,10 @@ class XF310_DetailColumn extends XFColumnScriptable {
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (workElement.getAttribute("Name").equals("")) {
 			fieldCaption = workElement.getAttribute("ID");
+			fieldName = workElement.getAttribute("ID");
 		} else {
 			fieldCaption = workElement.getAttribute("Name");
+			fieldName = workElement.getAttribute("Name");
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (workElement.getAttribute("Nullable").equals("F")) {
@@ -6014,6 +6051,10 @@ class XF310_DetailColumn extends XFColumnScriptable {
 
 	public boolean isKey(){
 		return isKey;
+	}
+
+	public boolean isDetailKey(){
+		return isDetailKey;
 	}
 
 	public boolean isFieldOnDetailTable(){

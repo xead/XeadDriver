@@ -2663,32 +2663,25 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						returnMap_.putAll(keyMap);
 						closeFunction();
 					} else {
-						//if (detailFunctionIDArray[jTabbedPane.getSelectedIndex()].equals("NONE")) {
-						//	messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-						//} else {	
-							keyMap.putAll(parmMap_);
-							try {
-								HashMap<String, Object> returnMap = session_.executeFunction(detailFunctionIDArray[jTabbedPane.getSelectedIndex()], keyMap);
-//								if (returnMap.get("RETURN_MESSAGE") == null) {
-//									messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
-//								} else {
-//									messageList.add(returnMap.get("RETURN_MESSAGE").toString());
-//								}
-								if (returnMap.get("RETURN_CODE").equals("20") || returnMap.get("RETURN_CODE").equals("30")) {
-									fetchHeaderRecord(true);
-									selectDetailRecordsAndSetupTableRows(jTabbedPane.getSelectedIndex(), false);
-									messageList.clear();
-								}
-								if (returnMap.get("RETURN_MESSAGE") == null) {
-									messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
-								} else {
-									messageList.add(returnMap.get("RETURN_MESSAGE").toString());
-								}
-							} catch (Exception e) {
-								JOptionPane.showMessageDialog(null, e.getMessage());
-								messageList.add(XFUtility.RESOURCE.getString("FunctionError15"));
+						keyMap.putAll(parmMap_);
+						try {
+							HashMap<String, Object> returnMap = session_.executeFunction(detailFunctionIDArray[jTabbedPane.getSelectedIndex()], keyMap);
+							if (returnMap.get("RETURN_CODE").equals("10")
+									|| returnMap.get("RETURN_CODE").equals("20")
+									|| returnMap.get("RETURN_CODE").equals("30")) {
+								fetchHeaderRecord(true);
+								selectDetailRecordsAndSetupTableRows(jTabbedPane.getSelectedIndex(), false);
+								messageList.clear();
 							}
-						//}
+							if (returnMap.get("RETURN_MESSAGE") == null) {
+								messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
+							} else {
+								messageList.add(returnMap.get("RETURN_MESSAGE").toString());
+							}
+						} catch (Exception e) {
+							JOptionPane.showMessageDialog(null, e.getMessage());
+							messageList.add(XFUtility.RESOURCE.getString("FunctionError15"));
+						}
 					}
 				}
 			} finally {

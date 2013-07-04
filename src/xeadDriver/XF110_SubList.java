@@ -3574,18 +3574,19 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 	}
 
 	public Object getNullValue(){
-		Object value = null;
-		String basicType = this.getBasicType();
-		if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-			value = 0;
-		}
-		if (basicType.equals("STRING") || basicType.equals("DATETIME") || basicType.equals("TIME")) {
-			value = "";
-		}
-		if (basicType.equals("DATE")) {
-			value = null;
-		}
-		return value;
+//		Object value = null;
+//		String basicType = this.getBasicType();
+//		if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
+//			value = 0;
+//		}
+//		if (basicType.equals("STRING") || basicType.equals("DATETIME") || basicType.equals("TIME")) {
+//			value = "";
+//		}
+//		if (basicType.equals("DATE")) {
+//			value = null;
+//		}
+//		return value;
+		return XFUtility.getNullValueOfBasicType(this.getBasicType());
 	}
 
 	public Object getValue() {

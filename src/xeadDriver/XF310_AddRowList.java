@@ -645,6 +645,10 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		return isInvalid;
 	}
 	
+	public boolean isAvailable() {
+		return dialog_.isAvailable();
+	}
+	
 	protected void processWindowEvent(WindowEvent e) {
 		super.processWindowEvent(e);
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {

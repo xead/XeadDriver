@@ -823,6 +823,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	boolean isInvalid() {
 		return isInvalid;
 	}
+	
+	public boolean isAvailable() {
+		return dialog_.isAvailable();
+	}
 
 	void setErrorAndCloseFunction() {
 		reply_ = "ERROR";

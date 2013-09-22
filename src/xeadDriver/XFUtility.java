@@ -37,6 +37,7 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -61,10 +62,12 @@ import java.util.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
+import java.util.Vector;
 import java.awt.*;
 import javax.imageio.ImageIO;
 import javax.script.ScriptException;
@@ -76,8 +79,11 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 import javax.swing.AbstractAction;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -620,6 +626,42 @@ public class XFUtility {
 		return captionValue;
 	}
 	
+//	static String getFixedWhereValue(String keywordValue, Session session){
+//		int pos1, pos2;
+//		String wrkStr, id, value;
+//		StringTokenizer workTokenizer;
+//		String fixedWhereValue = keywordValue.replace("\"", "'");;
+//		if (keywordValue.contains("SESSION_ATTRIBUTE:")) {
+//			for (int i = 0; i < keywordValue.length(); i++) {
+//				pos1 = keywordValue.indexOf("SESSION_ATTRIBUTE:", i);
+//				if (pos1 == -1) {
+//					i = keywordValue.length();
+//				} else {
+//					pos2 = keywordValue.indexOf(" ", pos1);
+//					if (pos2 == -1) {
+//						pos2 = keywordValue.length();
+//						i = keywordValue.length();
+//					}
+//					wrkStr = keywordValue.substring(pos1, pos2);
+//					wrkStr = wrkStr.replace("'", "");
+//					wrkStr = wrkStr.replace("\"", "");
+//					workTokenizer = new StringTokenizer(wrkStr, ":" );
+//					if (workTokenizer.countTokens() == 2) {
+//						workTokenizer.nextToken();
+//						id = workTokenizer.nextToken().trim();
+//						value = session.getAttribute(id);
+//						if (value == null) {
+//							JOptionPane.showMessageDialog(null, "Session attribute not found with id of '" + id + "'.");
+//						} else {
+//							fixedWhereValue = fixedWhereValue.replace(wrkStr, value);
+//						}
+//					}
+//					i = pos1 + 1;
+//				}
+//			}
+//		}
+//		return fixedWhereValue;
+//	}
 	static String getFixedWhereValue(String keywordValue, Session session){
 		int pos1, pos2;
 		String wrkStr, id, value;
@@ -646,6 +688,35 @@ public class XFUtility {
 						value = session.getAttribute(id);
 						if (value == null) {
 							JOptionPane.showMessageDialog(null, "Session attribute not found with id of '" + id + "'.");
+						} else {
+							fixedWhereValue = fixedWhereValue.replace(wrkStr, value);
+						}
+					}
+					i = pos1 + 1;
+				}
+			}
+		}
+		if (keywordValue.contains("USER_ATTRIBUTE:")) {
+			for (int i = 0; i < keywordValue.length(); i++) {
+				pos1 = keywordValue.indexOf("USER_ATTRIBUTE:", i);
+				if (pos1 == -1) {
+					i = keywordValue.length();
+				} else {
+					pos2 = keywordValue.indexOf(" ", pos1);
+					if (pos2 == -1) {
+						pos2 = keywordValue.length();
+						i = keywordValue.length();
+					}
+					wrkStr = keywordValue.substring(pos1, pos2);
+					wrkStr = wrkStr.replace("'", "");
+					wrkStr = wrkStr.replace("\"", "");
+					workTokenizer = new StringTokenizer(wrkStr, ":" );
+					if (workTokenizer.countTokens() == 2) {
+						workTokenizer.nextToken();
+						id = workTokenizer.nextToken().trim();
+						value = session.getAttribute(id);
+						if (value == null) {
+							JOptionPane.showMessageDialog(null, "User attribute not found with type of '" + id + "'.");
 						} else {
 							fixedWhereValue = fixedWhereValue.replace(wrkStr, value);
 						}
@@ -2513,7 +2584,7 @@ class XFSessionForScript {
 }
 
 interface XFExecutable {
-	boolean isAvailable();
+	public boolean isAvailable();
 	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parameterList);
 }
 
@@ -2534,6 +2605,7 @@ interface XFScriptable {
 	public XFTableOperator createTableOperator(String oparation, String tableID);
 	public XFTableOperator createTableOperator(String sqlText);
 	public Object getFieldObjectByID(String tableID, String fieldID);
+	public boolean isAvailable();
 }
 
 interface XFTableColumnEditor {
@@ -3360,8 +3432,16 @@ class XFTextField extends JTextField implements XFEditableField {
 				int integerSizeOfField = adaptee.digits_ - adaptee.decimal_;
 				//
 				if (adaptee.decimal_ > 0 && str.length() == 1) {
-					if (adaptee.isEditable() && !dataTypeOptionList.contains("ACCEPT_MINUS") && str.contains("-")) {
-						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError"));
+//					if (adaptee.isEditable()
+//							&& !basicType_.equals("DATE")
+//							&& !basicType_.equals("TIME")
+//							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
+//							&& str.contains("-")) {
+					if (adaptee.isEditable()
+							&& (basicType_.equals("INTEGER") || basicType_.equals("FLOAT"))
+							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
+							&& str.contains("-")) {
+						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError") + ": " + str);
 					} else {
 						String wrkStr0 = super.getText(0, super.getLength());
 						wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
@@ -3393,8 +3473,17 @@ class XFTextField extends JTextField implements XFEditableField {
 						}
 					}
 				} else {
-					if (adaptee.isEditable() && dataTypeOptionList.contains("NO_MINUS") && str.contains("-")) {
-						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError"));
+					//if (adaptee.isEditable() && dataTypeOptionList.contains("NO_MINUS") && str.contains("-")) {
+//					if (adaptee.isEditable()
+//							&& !basicType_.equals("DATE")
+//							&& !basicType_.equals("TIME")
+//							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
+//							&& str.contains("-")) {
+					if (adaptee.isEditable()
+							&& (basicType_.equals("INTEGER") || basicType_.equals("FLOAT"))
+							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
+							&& str.contains("-")) {
+						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError") + ": " + str);
 					} else {
 						if (basicType_.equals("INTEGER")) {
 							if (str.contains(".")) {
@@ -3630,6 +3719,190 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 				e.printStackTrace();
 			}
 		}
+	}
+}
+
+class XFInputAssistField extends JComboBox implements XFEditableField {
+	private static final long serialVersionUID = 1L;
+	private String tableID_ = "";
+	private String fieldID_ = "";
+	private Vector<String> valueList = new Vector<String>();
+	private int rows_ = 1;
+    private Session session_;
+    private String oldValue = "";
+
+	public XFInputAssistField(String tableID, String fieldID, Session session){
+		super();
+		tableID_ = tableID;
+		fieldID_ = fieldID;
+		session_ = session;
+
+		org.w3c.dom.Element workElement = session_.getFieldElement(tableID, fieldID);
+		if (workElement == null) {
+			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
+		}
+		int dataSize = Integer.parseInt(workElement.getAttribute("Size"));
+		if (dataSize > 50) {
+			dataSize = 50;
+		}
+		String wrkStr;
+		int fieldWidth = dataSize * 7;
+		FontMetrics metrics = this.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
+		String sql = "select distinct " + fieldID_ + " from " + tableID_ + " order by " + fieldID;
+		XFTableOperator operator = new XFTableOperator(session_, null, sql, true);
+		try {
+			while (operator.next()) {
+				wrkStr = operator.getValueOf(fieldID).toString().trim();
+				valueList.add(wrkStr);
+				if (metrics.stringWidth(wrkStr) > fieldWidth) {
+					fieldWidth = metrics.stringWidth(wrkStr);
+				}
+			}
+		} catch (Exception e) {
+		}
+		if (fieldWidth > 200) {
+			fieldWidth = 200;
+		}
+		DefaultComboBoxModel model = new DefaultComboBoxModel(valueList);
+		this.setModel(model);
+		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
+		this.setFont(new java.awt.Font("Dialog", 0, 14));
+		this.setEditable(true);
+		this.setSelectedIndex(-1);
+		JTextField field = (JTextField)this.getEditor().getEditorComponent();
+		field.setText("");
+		field.addKeyListener(new ComboKeyHandler(this));
+	}
+	
+	@Override public void updateUI() {
+		super.updateUI();
+		setUI(new javax.swing.plaf.basic.BasicComboBoxUI() {
+			@Override protected JButton createArrowButton() {
+				JButton button = new JButton() {
+					private static final long serialVersionUID = 1L;
+					@Override public int getWidth() {
+						return 0;
+					}
+				};
+				button.setBorder(BorderFactory.createEmptyBorder());
+				button.setVisible(false);
+				return button;
+			}
+			@Override public void configureArrowButton() {}
+		});
+		for(MouseListener ml:getMouseListeners()) {
+			removeMouseListener(ml);
+		}
+	}
+	
+	class ComboKeyHandler extends KeyAdapter{
+		private final JComboBox comboBox;
+		private final Vector<String> list = new Vector<String>();
+		public ComboKeyHandler(JComboBox combo) {
+			this.comboBox = combo;
+			for(int i=0;i<comboBox.getModel().getSize();i++) {
+				list.addElement((String)comboBox.getItemAt(i));
+			}
+		}
+		private boolean shouldHide = false;
+		@Override public void keyTyped(final KeyEvent e) {
+			EventQueue.invokeLater(new Runnable() {
+				@Override public void run() {
+					String text = ((JTextField)e.getSource()).getText();
+					if(text.length()==0) {
+						setSuggestionModel(comboBox, new DefaultComboBoxModel(list), "");
+						comboBox.hidePopup();
+					}else{
+						ComboBoxModel m = getSuggestedModel(list, text);
+						if(m.getSize()==0 || shouldHide) {
+							comboBox.hidePopup();
+						}else{
+							setSuggestionModel(comboBox, m, text);
+							comboBox.showPopup();
+						}
+					}
+				}
+			});
+		}
+		@Override public void keyPressed(KeyEvent e) {
+			JTextField textField = (JTextField)e.getSource();
+			String text = textField.getText();
+			shouldHide = false;
+			switch(e.getKeyCode()) {
+			case KeyEvent.VK_RIGHT:
+				for(String s: list) {
+					if(s.startsWith(text)) {
+						textField.setText(s);
+						return;
+					}
+				}
+				break;
+			case KeyEvent.VK_ENTER:
+				if(!list.contains(text)) {
+					list.addElement(text);
+					Collections.sort(list);
+					setSuggestionModel(comboBox, getSuggestedModel(list, text), text);
+				}
+				shouldHide = true;
+				break;
+			case KeyEvent.VK_ESCAPE:
+				shouldHide = true;
+				break;
+			}
+		}
+		private void setSuggestionModel(JComboBox comboBox, ComboBoxModel mdl, String str) {
+			comboBox.setModel(mdl);
+			comboBox.setSelectedIndex(-1);
+			((JTextField)comboBox.getEditor().getEditorComponent()).setText(str);
+		}
+		private ComboBoxModel getSuggestedModel(Vector<String> list, String text) {
+			DefaultComboBoxModel m = new DefaultComboBoxModel();
+			for(String s: list) {
+				if(s.startsWith(text)) m.addElement(s);
+			}
+			return m;
+		}
+	}
+
+	public Object getInternalValue() {
+		Object value = this.getItemAt(this.getSelectedIndex());
+		if (value == null) {
+			value = "";
+		}
+		return value;
+	}
+
+	public Object getExternalValue() {
+		return this.getInternalValue();
+	}
+	
+	public void setOldValue(Object obj) {
+		oldValue = (String)obj;
+	}
+
+	public Object getOldValue() {
+		return oldValue;
+	}
+
+	public String getValueClass() {
+		return "String";
+	}
+	
+	public void setValue(Object obj) {
+		JTextField field = (JTextField)this.getEditor().getEditorComponent();
+		field.setText(obj.toString());
+	}
+	
+	public void setWidth(int width) {
+		setWidth(width);
+	}
+
+	public int getRows() {
+		return rows_;
+	}
+
+	public boolean isComponentFocusable() {
+		return isFocusable();
 	}
 }
 

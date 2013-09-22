@@ -784,13 +784,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	void closeFunction() {
 		instanceIsAvailable_ = true;
 		messageList.clear();
-		try {
-			if (threadToSetupReferChecker != null) {
-				threadToSetupReferChecker.join();
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			if (threadToSetupReferChecker != null) {
+//				threadToSetupReferChecker.join();
+//			}
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
 		if (returnMap_.get("RETURN_CODE").equals("00")) {
 			if (panelMode_.equals("EDIT")) {
 				returnMap_.put("RETURN_CODE", "21");

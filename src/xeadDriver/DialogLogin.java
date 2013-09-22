@@ -124,11 +124,11 @@ public class DialogLogin extends JDialog {
 
 		String password = new String(jPasswordField.getPassword());
 		if (jTextFieldUserID.getText().equals("") || password.equals("")) {
-			EventQueue.invokeLater(new Runnable() {
-				@Override public void run() {
-					session.getApplication().hideSplash();
-				}
-			});
+//			EventQueue.invokeLater(new Runnable() {
+//				@Override public void run() {
+//					session.getApplication().hideSplash();
+//				}
+//			});
 			super.setVisible(true);
 		} else {
 			jButtonOK_actionPerformed(null);

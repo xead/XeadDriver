@@ -83,7 +83,9 @@ public class Application {
 	}
 	
 	public void setTextOnSplash(String text) {
-		splashLabel.setText(text);
+		if (splashLabel != null) {
+			splashLabel.setText(text);
+		}
 	}
 
 	public void hideSplash() {

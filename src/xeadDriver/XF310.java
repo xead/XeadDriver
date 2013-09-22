@@ -239,6 +239,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					TableColumn column = jTableMain.getColumnModel().getColumn(0);
 					column.setPreferredWidth(headersRenderer.getWidth());
 					cellsRenderer.setupCellBounds();
+					cellsEditor.updateCellWidths();
 					jScrollPaneTable.updateUI();
 				}
 				isHeaderResizing = false;
@@ -892,13 +893,13 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void closeFunction() {
-		try {
-			if (threadToSetupReferChecker != null) {
-				threadToSetupReferChecker.join();
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			if (threadToSetupReferChecker != null) {
+//				threadToSetupReferChecker.join();
+//			}
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
 		instanceIsAvailable = true;
 		if (anyRecordsDeleted && !returnMap_.get("RETURN_CODE").toString().equals("99")) {
 			returnMap_.put("RETURN_CODE", "20");

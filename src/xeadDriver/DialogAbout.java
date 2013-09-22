@@ -43,9 +43,19 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M22";
+	public static final String FULL_VERSION  = "V1.R1.M23";
+	//23
+	//・マイナス不可の数値フィールドでマイナス入力が可能になることがあるバグを修正
+	//・XF100,110,300の一覧順にエイリアス指定されたフィールドを含めると異状終了するバグを修正
+	//・XF310でカラムサイズを変更しても、編集選択行のカラムサイズが変化しないバグを修正
+	//・クロスチェッカーのログイン時ロードの仕様を組み込んだ
+	//・機能の終了時にクロスチェッカーの生成スレッドをキャンセルするようにした
+	//・XF100,110,300の検索条件のプロンプトオプション「候補リスト」に対応した
+	//・処理テーブルの「固定Where」にセッション属性の他にユーザ属性も指定できるようにした
+	//・XF390で、指定によって合計値や合計行の設定がおかしくなるバグを修正
+	//・XF000で、実行時刻にLIST式やREPEAT式を指定できるようにした
+	//
 	//22
-	//＜改善点＞
 	//・メニュータブの選択時に下部に表示されるメッセージを、操作援助用URLが指定されているかどうかで切り替えるようにした
 	//・XFTextFieldのタイプがDATETIMEの場合のフィールド幅を広げた
 	//・XF310でのブランク行追加のロジックを改善した
@@ -53,7 +63,6 @@ public class DialogAbout extends JDialog implements ActionListener {
 	//・CheckListDialogで戻るボタンを使うとリストがクリアされないバグを修正
 	//
 	//21
-	//＜改善点＞
 	//・InputDialogのaddFieldメソッドにおいて表示域のデフォルトを0（上部配置）とした
 	//・「固定Where」にセッション属性を組み込めるようにした
 	//・Session関数setNextNumber(id, nextNumber)を組み込んだ

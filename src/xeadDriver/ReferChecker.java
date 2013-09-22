@@ -67,11 +67,10 @@ public class ReferChecker extends Object {
 		super();
 		//
 		session_ = session;
+		targetTableID_ = targetTableID;
 		targetTableElement_ = session_.getTableElement(targetTableID);
 		function_ = function;
 		StringTokenizer workTokenizer;
-		//
-		targetTableID_ = targetTableElement_.getAttribute("ID");
 		//
 		String wrkStr = targetTableElement_.getAttribute("RangeKey");
 		if (wrkStr.equals("")) {
@@ -102,7 +101,22 @@ public class ReferChecker extends Object {
 		//
 		NodeList tableList, referList;
 		org.w3c.dom.Element tableElement, referElement;
-		tableList = session.getDomDocument().getElementsByTagName("Table");
+		tableList = session.getTableNodeList();
+		int countOfSubjectTables = 0;
+		int countWork = 0;
+		int progressRate = 0;
+		for (int i = 0; i < tableList.getLength(); i++) {
+			tableElement = (org.w3c.dom.Element)tableList.item(i);
+			referList = tableElement.getElementsByTagName("Refer");
+			for (int j = 0; j < referList.getLength(); j++) {
+				referElement = (org.w3c.dom.Element)referList.item(j);
+				if (referElement.getAttribute("ToTable").equals(targetTableID_)
+						&& !referElement.getAttribute("Optional").equals("T")) {
+					countOfSubjectTables++;
+				}
+			}
+		}
+		//tableList = session.getDomDocument().getElementsByTagName("Table");
 		for (int i = 0; i < tableList.getLength(); i++) {
 			tableElement = (org.w3c.dom.Element)tableList.item(i);
 			referList = tableElement.getElementsByTagName("Refer");
@@ -111,6 +125,9 @@ public class ReferChecker extends Object {
 				if (referElement.getAttribute("ToTable").equals(targetTableID_)
 						&& !referElement.getAttribute("Optional").equals("T")) {
 					subjectTableList_.add(new ReferChecker_SubjectTable(tableElement, referElement, this));
+					countWork++;
+					progressRate = Math.round(countWork * 100 / countOfSubjectTables);
+					session.getApplication().setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2") + " " + targetTableID_ + " (" + progressRate + "%)");
 				}
 			}
 		}
@@ -126,6 +143,10 @@ public class ReferChecker extends Object {
 	
 	public Session getSession() {
 		return session_;
+	}
+	
+	public void setFunction(XFScriptable function) {
+		function_ = function;
 	}
 	
 	public XFScriptable getFunction() {

@@ -126,6 +126,7 @@ public class Session extends JFrame {
 	private String[] helpURLArray = new String[20];
 	private MenuOption[][] menuOptionArray = new MenuOption[20][20];
 	private JButton[] jButtonMenuOptionArray = new JButton[20];
+	private ArrayList<String> loadingChekerIDList = new ArrayList<String>();
 
 	private JLabel jLabelUser = new JLabel();
 	private JLabel jLabelSession = new JLabel();
@@ -205,12 +206,15 @@ public class Session extends JFrame {
 					System.exit(0);
 				} else {
 					if (loginDialog.userIsValidated()) {
+
 						userID = loginDialog.getUserID();
 						userName = loginDialog.getUserName();
 						userEmployeeNo = loginDialog.getUserEmployeeNo();
 						userEmailAddress = loginDialog.getUserEmailAddress();
 						userMenus = loginDialog.getUserMenus();
+
 						setupSessionAndMenus();
+
 						EventQueue.invokeLater(new Runnable() {
 							@Override public void run() {
 								application.hideSplash();
@@ -229,6 +233,7 @@ public class Session extends JFrame {
 			closeSession(false);
 			System.exit(0);
 		} catch(Exception e) {
+			e.printStackTrace();
 			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("LogInError3") + "\n" + e.getMessage());
 			noErrorsOccured = false;
 			closeSession(false);
@@ -630,6 +635,18 @@ public class Session extends JFrame {
 		if (!loginScript.equals("")) {
 			scriptEngine.eval(loginScript);
 		}
+		
+		/////////////////////////////////////////////////////////
+		// Construct Cross-Checkers to be loaded at logging-in //
+		/////////////////////////////////////////////////////////
+		org.w3c.dom.Element element;
+		for (int i = 0; i < tableList.getLength(); i++) {
+			element = (org.w3c.dom.Element)tableList.item(i);
+			if (loadingChekerIDList.contains(element.getAttribute("ID"))) {
+				ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
+				referCheckerList.add(checker);
+			}
+		}
 	}
 	
 	private String getIpAddress() {
@@ -686,6 +703,8 @@ public class Session extends JFrame {
 		org.w3c.dom.Element optionElement = null;
 		org.w3c.dom.Element workElement = null;
 		int menuIndex;
+		StringTokenizer tokenizer;
+		String wrkStr;
 		//
 		for (int i = 0; i < sortingList.getSize(); i++) {
 			menuElement = (org.w3c.dom.Element)sortingList.getElementAt(i);
@@ -699,6 +718,13 @@ public class Session extends JFrame {
 				menuIDArray[menuIndex] = menuElement.getAttribute("ID");
 				menuCaptionArray[menuIndex] = menuElement.getAttribute("Name");
 				helpURLArray[menuIndex] = menuElement.getAttribute("HelpURL");
+				tokenizer = new StringTokenizer(menuElement.getAttribute("CrossCheckersToBeLoaded"), ";" );
+				while (tokenizer.hasMoreTokens()) {
+					wrkStr = tokenizer.nextToken();
+					if (!loadingChekerIDList.contains(wrkStr)) {
+						loadingChekerIDList.add(wrkStr);
+					}
+				}
 				//
 				optionList = menuElement.getElementsByTagName("Option");
 				for (int j = 0; j < optionList.getLength(); j++) {
@@ -2286,14 +2312,19 @@ public class Session extends JFrame {
 	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
 		ReferChecker checker = null;
 		for (int i = 0; i < referCheckerList.size(); i++) {
-			if (referCheckerList.get(i).getTargetTableID().equals(tableID)
-					&& referCheckerList.get(i).getFunction().getFunctionID().equals(function.getFunctionID())) {
+			//if (referCheckerList.get(i).getTargetTableID().equals(tableID)
+			//		&& referCheckerList.get(i).getFunction().getFunctionID().equals(function.getFunctionID())) {
+			if (referCheckerList.get(i).getTargetTableID().equals(tableID)) {
 				checker = referCheckerList.get(i);
+				checker.setFunction(function);
+				break;
 			}
 		}
 		if (checker == null) {
 			checker = new ReferChecker(this, tableID, function);
-			referCheckerList.add(checker);
+			if (function != null && !function.isAvailable()) {
+				referCheckerList.add(checker);
+			}
 		}
 		return checker;
 	}

@@ -795,17 +795,32 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					//
 					for (int j = 0; j < detailColumnList.size(); j++) {
 						if (detailColumnList.get(j).isVisibleColumn()) {
+							detailColumnList.get(j).setValue(workingRowArray[i].getColumnValueList().get(j));
 							fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
 							if (detailColumnList.get(j).getBarcodeType().equals("")) {
+//								if (detailColumnList.get(j).isImage()) {
+//									imageFileName = session_.getImageFileFolder() + detailColumnList.get(j).getExternalValue().toString();
+//									if (imageFileName.startsWith("http://")) {
+//										imageFileName = imageFileName.replace("\\", "/");
+//									}
+//									cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
+//								} else {
+//									fontTableCellData.setColor(detailColumnList.get(j).getForeground());
+//									cell = new Cell(new Phrase(workingRowArray[i].getColumnValueList().get(j), fontTableCellData));
+//								}
 								if (detailColumnList.get(j).isImage()) {
 									imageFileName = session_.getImageFileFolder() + detailColumnList.get(j).getExternalValue().toString();
 									if (imageFileName.startsWith("http://")) {
 										imageFileName = imageFileName.replace("\\", "/");
 									}
-									cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
+									try {
+										cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
+									} catch (Exception e) {
+										cell = new Cell(detailColumnList.get(j).getExternalValue().toString());
+									}
 								} else {
 									fontTableCellData.setColor(detailColumnList.get(j).getForeground());
-									cell = new Cell(new Phrase(workingRowArray[i].getColumnValueList().get(j), fontTableCellData));
+									cell = new Cell(new Phrase(detailColumnList.get(j).getExternalValue().toString(), fontTableCellData));
 								}
 								cell.setHorizontalAlignment(detailColumnList.get(j).getAlignment());
 								if (i % 2 != 0) {
@@ -820,8 +835,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 								cell.setHorizontalAlignment(detailColumnList.get(j).getAlignment());
 								table.addCell(cell);
 							}
-							if (detailColumnList.get(i).isWithTotal()) {
-								detailColumnList.get(i).summarize();
+							if (detailColumnList.get(j).isWithTotal()) {
+								detailColumnList.get(j).summarize();
 							}
 						}
 					}
@@ -837,7 +852,11 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					if (detailColumnList.get(i).isWithTotal()) {
 						if (!isWithTotalHeading) {
 							cell = new Cell(new Phrase(XFUtility.RESOURCE.getString("Total"), fontTableCell));
-							cell.setColspan(wrkInt);
+							if (tableRowNoWidth == 0) {
+								cell.setColspan(wrkInt-1);
+							} else {
+								cell.setColspan(wrkInt);
+							}
 							cell.setHorizontalAlignment(com.lowagie.text.Element.ALIGN_RIGHT);
 							table.addCell(cell);
 							isWithTotalHeading = true;

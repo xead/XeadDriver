@@ -1052,12 +1052,17 @@ class ReferChecker_ReferTable extends Object {
 					break;
 				}
 			} else {
-				wrkInt = Integer.parseInt(subjectTable_.getValueWithDataSourceName(withKeyFieldTableAliasList.get(i) + "." + withKeyFieldIDList.get(i)).toString());
-				if (wrkInt == 0) {
+				wrkStr = subjectTable_.getValueWithDataSourceName(withKeyFieldTableAliasList.get(i) + "." + withKeyFieldIDList.get(i)).toString();
+				if (wrkStr.trim().equals("")) {
 					isToBeChecked = false;
 					break;
+				} else {
+					wrkInt = Integer.parseInt(wrkStr);
+					if (wrkInt == 0) {
+						isToBeChecked = false;
+						break;
+					}
 				}
-				
 			}
 		}
 		return isToBeChecked;

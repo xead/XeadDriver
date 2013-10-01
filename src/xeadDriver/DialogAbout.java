@@ -43,7 +43,17 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M23";
+	public static final String FULL_VERSION  = "V1.R1.M25";
+	//25
+	//・日付フィールドが利用するカレンダーコンポーネントをセッション共有オブジェクトにした
+	//・カレンダーコンポーネントの表示位置の制御ロジックを改善した
+	//・カレンダーコンポーネントがカレンダー区分を受け取れるようにした（日付フィールドの修正については未完）
+	//
+	//24
+	//・ReferCheckerでFKに含まれる数字フィールドがNULLであった場合に対応
+	//・カレンダーコンポーネントで、休日テーブルとユーザ定義区分の「カレンダー区分」を処理するようにした
+	//・日付処理系の３つのセッション関数で、休日テーブルの「カレンダー区分」を処理するようにした
+	//
 	//23
 	//・マイナス不可の数値フィールドでマイナス入力が可能になることがあるバグを修正
 	//・XF100,110,300の一覧順にエイリアス指定されたフィールドを含めると異状終了するバグを修正

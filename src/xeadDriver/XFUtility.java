@@ -73,6 +73,8 @@ import javax.imageio.ImageIO;
 import javax.script.ScriptException;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.AttributeSet;
@@ -2507,11 +2509,17 @@ class XFSessionForScript {
 	public int getDaysBetweenDates(String dateFrom, String dateThru, int countType) {
 		return session_.getDaysBetweenDates(dateFrom, dateThru, countType);
 	}
+	public int getDaysBetweenDates(String dateFrom, String dateThru, int countType, String kbCalendar) {
+		return session_.getDaysBetweenDates(dateFrom, dateThru, countType, kbCalendar);
+	}
 	public Object getMinutesBetweenTimes(String timeFrom, String timeThru) {
 		return session_.getMinutesBetweenTimes(timeFrom, timeThru);
 	}
 	public String getOffsetDate(String date, int days, int countType) {
 		return session_.getOffsetDate(date, days, countType);
+	}
+	public String getOffsetDate(String date, int days, int countType, String kbCalendar) {
+		return session_.getOffsetDate(date, days, countType, kbCalendar);
 	}
 	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes, int countType) {
 		return session_.getOffsetDateTime(dateFrom, timeFrom, minutes, countType);
@@ -2530,6 +2538,9 @@ class XFSessionForScript {
 	}
 	public boolean isOffDate(String date) {
 		return session_.isOffDate(date);
+	}
+	public boolean isOffDate(String date, String kbCalendar) {
+		return session_.isOffDate(date, kbCalendar);
 	}
 	public boolean isValidDate(String date) {
 		return session_.isValidDate(date);
@@ -2874,7 +2885,7 @@ class XFDateField extends JPanel implements XFEditableField {
     private java.util.Date date;
     private Session session_;
     private Object oldValue = null;
-	private XFCalendar xFCalendar;
+	//private XFCalendar xFCalendar;
 
 	public XFDateField(Session session){
 		super();
@@ -2931,7 +2942,7 @@ class XFDateField extends JPanel implements XFEditableField {
 		this.add(dateTextField, BorderLayout.CENTER);
 		this.add(jButton, BorderLayout.EAST);
 		//
-		xFCalendar = new XFCalendar(session_, this);
+		//xFCalendar = new XFCalendar(session_, this);
 	}
 	
 	public void setInternalBorder(Border border) {
@@ -3073,7 +3084,11 @@ class XFDateField extends JPanel implements XFEditableField {
 	}
 	
 	public java.util.Date getDateOnCalendar(java.util.Date date) {
-		return xFCalendar.getDateOnCalendar(date);
+		//return xFCalendar.getDateOnCalendar(date);
+		Point position = jButton.getLocationOnScreen();
+		position.x = position.x + Math.round(jButton.getWidth() / 2);
+		position.y = position.y + Math.round(jButton.getHeight() / 2);
+		return session_.getDateOnCalendar(date, "", position);
 	}
 	
 	class DateTextField extends JTextField {
@@ -4919,6 +4934,7 @@ class XFCalendar extends JDialog {
     private JPanel jPanelTop = new JPanel();
     private JTextArea jTextAreaBottom = new JTextArea();
     private JPanel jPanelCenter = new JPanel();
+    private JTabbedPane jTabbedPaneCenter = new JTabbedPane();
     private JLabel jLabelYearMonth = new JLabel();
     private JLabel jLabelSun = new JLabel();
     private JLabel jLabelMon = new JLabel();
@@ -4934,27 +4950,32 @@ class XFCalendar extends JDialog {
     private SimpleDateFormat yyyyMMdd = new SimpleDateFormat("yyyy-MM-dd");
     private Date date = new Date();
     private Date selectedDate = null;
+    private ArrayList<String> kbCalendarList = new ArrayList<String>(); 
     private HashMap<String, String> offDateMap = new HashMap<String,String>();
     private String normalMessage;
-    private Component parent_;
-    
-    public XFCalendar(Session session, Component parent) {
+    //private Component parent_;
+	private Color lightRedGray = new Color(228, 192, 192);
+	//private Color lightGreenGray = new Color(185, 216, 165);
+
+    //public XFCalendar(Session session, Component parent) {
+    public XFCalendar(Session session) {
 		super();
 		this.setModal(true);
 		this.setTitle(XFUtility.RESOURCE.getString("Calendar"));
 		this.session_ = session;
-		this.parent_ = parent;
+		//this.parent_ = parent;
 		jPanelMain.setLayout(new BorderLayout());
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		//
+
 		jPanelTop.setPreferredSize(new Dimension(346, 20));
 		jPanelTop.setLayout(null);
 		jLabelYearMonth.setFont(new java.awt.Font("Dialog", 0, 18));
 		jLabelYearMonth.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelYearMonth.setBounds(0, 0, 344, 20);
 		jPanelTop.add(jLabelYearMonth);
-		//
-		jPanelCenter.setBorder(BorderFactory.createEtchedBorder());
+
+		jPanelCenter.setBackground(Color.white);
+		jPanelCenter.setBorder(null);
 		jPanelCenter.setLayout(null);
 		jPanelCenter.setPreferredSize(new Dimension(332, 158));
 		jLabelSun.setFont(new java.awt.Font("Dialog", 0, 12));
@@ -4985,7 +5006,7 @@ class XFCalendar extends JDialog {
 		jLabelSat.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelSat.setBounds(290, 2, 48, 13);
 		jPanelCenter.add(jLabelSat);
-		//
+
 		String language = session_.getDateFormat().substring(0, 2);
 		if (language.equals("en")) {
 			jLabelSun.setText("Sun");
@@ -5005,7 +5026,7 @@ class XFCalendar extends JDialog {
 			jLabelFri.setText("金");
 			jLabelSat.setText("土");
 		}
-		//
+
 		int posX = 2;
 		for(int i = 0; i < 42; i++) {
 			dateButtonArray[i] = new DateButton();
@@ -5035,10 +5056,10 @@ class XFCalendar extends JDialog {
 			jPanelCenter.add(dateButtonArray[i]);
 			posX = posX + 48;
 		}
-		//
+
 		calendarForToday = Calendar.getInstance();
 		calendarForToday.setTime(new Date());
-		//
+
 		try {
 			SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy'年'MM'月'dd'日'");
 			String str1 = "9999年12月31日";
@@ -5046,71 +5067,108 @@ class XFCalendar extends JDialog {
 		} catch (ParseException e1) {
 			e1.printStackTrace();
 		}
-		//
+
 		jTextAreaBottom.setPreferredSize(new Dimension(346, 40));
 		jTextAreaBottom.setFont(new java.awt.Font("Dialog", 0, 12));
 		jTextAreaBottom.setEditable(false);
 		jTextAreaBottom.setBackground(SystemColor.control);
 		normalMessage = XFUtility.RESOURCE.getString("CalendarComment");
 		jTextAreaBottom.setText(normalMessage);
-		//
+
 		try {
 			StringBuffer statementBuf = new StringBuffer();
 			statementBuf.append("select * from ");
 			statementBuf.append(session_.getTableNameOfCalendar());
 			XFTableOperator operator = new XFTableOperator(session_, null, statementBuf.toString(), true);
 			while (operator.next()) {
-				offDateMap.put(operator.getValueOf("DTOFF").toString(), operator.getValueOf("TXOFF").toString().trim());
+				offDateMap.put(operator.getValueOf("KBCALENDAR").toString().trim()+";"+operator.getValueOf("DTOFF").toString(), operator.getValueOf("TXOFF").toString().trim());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		//
+
+		int count = 0;
+		jTabbedPaneCenter.setTabPlacement(JTabbedPane.BOTTOM);
+		jTabbedPaneCenter.addChangeListener(new XFCalendar_changeAdapter(this));
+		try {
+			StringBuffer statementBuf = new StringBuffer();
+			statementBuf.append("select * from ");
+			statementBuf.append(session_.getTableNameOfUserVariants());
+			statementBuf.append(" where IDUSERKUBUN = 'KBCALENDAR' order by SQLIST");
+			XFTableOperator operator = new XFTableOperator(session_, null, statementBuf.toString(), true);
+			while (operator.next()) {
+				kbCalendarList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+				if (count == 0) {
+					jTabbedPaneCenter.addTab(operator.getValueOf("TXUSERKUBUN").toString().trim(), jPanelCenter);
+				} else {
+					jTabbedPaneCenter.addTab(operator.getValueOf("TXUSERKUBUN").toString().trim(), null);
+				}
+				count++;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (count == 0) {
+			jTabbedPaneCenter.addTab("User variants for calendar are missing", jPanelCenter);
+		}
+
 		jPanelMain.add(jPanelTop, BorderLayout.NORTH);
-		jPanelMain.add(jPanelCenter, BorderLayout.CENTER);
+		jPanelMain.add(jTabbedPaneCenter, BorderLayout.CENTER);
 		jPanelMain.add(jTextAreaBottom, BorderLayout.SOUTH);
 		this.getContentPane().add(jPanelMain);
-		dlgSize = new Dimension(346,240);
+		//dlgSize = new Dimension(346,240);
+		dlgSize = new Dimension(352,259);
 		this.setPreferredSize(dlgSize);
 		this.setResizable(false);
-		//
-		int posY;
-    	if (parent_ != null && parent_.isValid()) {
-    		Rectangle rec = parent_.getBounds();
-    		Point point = parent_.getLocationOnScreen();
-    		posX = point.x;
-    		posY = point.y + rec.height;
-    		if (posY + dlgSize.height > scrSize.height) {
-    			posY = point.y - dlgSize.height;
-    		}
-    		this.setLocation(posX, posY);
-    	} else {
-    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
-    	}
-		//
+//		int posY;
+//    	if (parent_ != null && parent_.isValid()) {
+//    		Rectangle rec = parent_.getBounds();
+//    		Point point = parent_.getLocationOnScreen();
+//    		posX = point.x;
+//    		posY = point.y + rec.height;
+//    		if (posY + dlgSize.height > scrSize.height) {
+//    			posY = point.y - dlgSize.height;
+//    		}
+//    		this.setLocation(posX, posY);
+//    	} else {
+//    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
+//    	}
 		this.pack();
     }
 
-    public Date getDateOnCalendar(Date date) {
+    public Date getDateOnCalendar(Date date, String kbCalendar, Point position) {
     	selectedDate = date;
-    	//
     	this.date = date;
+
+    	int index = kbCalendarList.indexOf(kbCalendar);
+    	if (index >= 0) {
+    		jTabbedPaneCenter.setSelectedIndex(index);
+    	}
     	setupDates(this.date, 0);
-    	//
+
+		int posX = position.x;
+		int posY = position.y;
+		if (position.y + dlgSize.height > scrSize.height) {
+			posY = position.y - dlgSize.height;
+		}
+		if (position.x + dlgSize.width > scrSize.width) {
+			posX = position.x - dlgSize.width;
+		}
+		this.setLocation(posX, posY);
+    	
     	super.setVisible(true);
-    	//
     	return selectedDate;
     }
     
 	public void setupDates(Date focusedDate, int offset) {
 		int shownMonth = 0;
 		int indexOfFocusedDate = 0;
-		//
+
 		Calendar cal = Calendar.getInstance();
 		if (focusedDate == null) {
 			focusedDate = cal.getTime();
 		}
-		//
+
 		cal.setTime(focusedDate);
 		if (offset < 0) {
 			cal.add(Calendar.DATE, offset);
@@ -5124,50 +5182,46 @@ class XFCalendar extends JDialog {
 		}
 		cal.set(Calendar.DATE, 1);
 		shownMonth = cal.get(Calendar.MONTH);
-		//
+
 		jLabelYearMonth.setText(getYearMonthText(cal));
-		//
-		Color lightRedGray = new Color(228, 192, 192);
-		Color lightCyan = new Color(184, 223, 223);
+
 		String strWrk = "";
 		cal.add(Calendar.DATE, -cal.get(Calendar.DAY_OF_WEEK) + 1);
 		for (int i = 0; i < 42; i++) {
-				dateButtonArray[i].setEnabled(true);
-				strWrk = yyyyMMdd.format(cal.getTime());
-				if (offDateMap.containsKey(strWrk)) {
-					dateButtonArray[i].setToolTipText(offDateMap.get(strWrk));
-					if (cal.get(Calendar.MONTH) == shownMonth) {
-						dateButtonArray[i].setForeground(Color.red);
-					} else {
-						dateButtonArray[i].setEnabled(false);
-						dateButtonArray[i].setForeground(lightRedGray);
-					}
+			dateButtonArray[i].setEnabled(true);
+			strWrk = kbCalendarList.get(jTabbedPaneCenter.getSelectedIndex());
+			strWrk = strWrk + ";" +yyyyMMdd.format(cal.getTime());
+			if (offDateMap.containsKey(strWrk)) {
+				dateButtonArray[i].setToolTipText(offDateMap.get(strWrk));
+				if (cal.get(Calendar.MONTH) == shownMonth) {
+					dateButtonArray[i].setForeground(Color.red);
 				} else {
-					dateButtonArray[i].setToolTipText("");
-					if (cal.get(Calendar.MONTH) == shownMonth) {
-						dateButtonArray[i].setForeground(Color.black);
-					} else {
-						dateButtonArray[i].setEnabled(false);
-						dateButtonArray[i].setForeground(Color.lightGray);
-					}
+					dateButtonArray[i].setEnabled(false);
+					dateButtonArray[i].setForeground(lightRedGray);
 				}
-				if(cal.get(Calendar.YEAR) == calendarForToday.get(Calendar.YEAR) &&
-						   cal.get(Calendar.MONTH) == calendarForToday.get(Calendar.MONTH) &&
-						   cal.get(Calendar.DATE) == calendarForToday.get(Calendar.DATE)) {
-					if (cal.get(Calendar.MONTH) == shownMonth) {
-						dateButtonArray[i].setForeground(Color.cyan);
-					} else {
-						dateButtonArray[i].setForeground(lightCyan);
-					}
+			} else {
+				dateButtonArray[i].setToolTipText("");
+				if (cal.get(Calendar.MONTH) == shownMonth) {
+					dateButtonArray[i].setForeground(Color.black);
+				} else {
+					dateButtonArray[i].setEnabled(false);
+					dateButtonArray[i].setForeground(Color.lightGray);
 				}
-				if(cal.getTime().equals(focusedDate)) {
-					indexOfFocusedDate = i;
-				}
+			}
+
+			if(cal.getTime().equals(focusedDate)) {
+				indexOfFocusedDate = i;
+			}
 			dateButtonArray[i].setDate(cal.getTime());
-			//
+			if(cal.get(Calendar.YEAR) == calendarForToday.get(Calendar.YEAR) &&
+					cal.get(Calendar.MONTH) == calendarForToday.get(Calendar.MONTH) &&
+					cal.get(Calendar.DATE) == calendarForToday.get(Calendar.DATE)) {
+				dateButtonArray[i].setText("<html><u>" + dateButtonArray[i].getText());
+			}
+
 			cal.add(Calendar.DATE,+1);
 		}
-		//
+
 		dateButtonArray[indexOfFocusedDate].requestFocus();
 		if (dateButtonArray[indexOfFocusedDate].getToolTipText().equals("")) {
 			jTextAreaBottom.setText(normalMessage);
@@ -5177,12 +5231,13 @@ class XFCalendar extends JDialog {
 	}
 	
 	String getYearMonthText(Calendar cal) {
+
 		////////////////////////////
 		//en00 06/17/10           //
 		//en01 Thur,06/17/01      //
 		//en10 Jun17,2010         //
 		//en11 Thur,Jun17,2001    //
-		//                        //
+		////////////////////////////
 		//jp00 10/06/17           //
 		//jp01 10/06/17(木)       //
 		//jp10 2010/06/17         //
@@ -5196,16 +5251,17 @@ class XFCalendar extends JDialog {
 		//jp50 平成22年06月17日          //
 		//jp51 平成22年06月17日(水)//
 		///////////////////////////
+
 		String result = "";
 		String dateFormat = session_.getDateFormat();
 		String language = session_.getDateFormat().substring(0, 2);
 		SimpleDateFormat formatter;
-		//
+
 		if (language.equals("en")) {
 			formatter = new SimpleDateFormat("MMMMM, yyyy", new Locale("en", "US", "US"));
 			result = formatter.format(cal.getTime());
 		}
-		//
+
 		if (dateFormat.equals("jp00")
 				|| dateFormat.equals("jp01")
 				|| dateFormat.equals("jp10")
@@ -5215,7 +5271,7 @@ class XFCalendar extends JDialog {
 			formatter = new SimpleDateFormat("yyyy年 M月");
 			result = formatter.format(cal.getTime());
 		}
-		//
+
 		if (dateFormat.equals("jp30")
 				|| dateFormat.equals("jp31")
 				|| dateFormat.equals("jp40")
@@ -5225,10 +5281,23 @@ class XFCalendar extends JDialog {
 			formatter = new SimpleDateFormat("GGGGy年 M月", new Locale("ja", "JP", "JP"));
 			result = formatter.format(cal.getTime());
 		}
-		//
+
 		return result;
 	}
     
+	void jTabbedPaneCenter_stateChanged(ChangeEvent e) {
+		if (this.isVisible()) {
+			Component com = getFocusOwner();
+			for (int i = 0; i < 42; i++) {
+				if (com.equals(dateButtonArray[i])) {
+					DateButton button = (DateButton)dateButtonArray[i];
+					setupDates(button.getDate(), 0);
+					break;
+				}
+			}
+		}
+	}
+   
 	void jButton_actionPerformed(ActionEvent e) {
 		DateButton button = (DateButton)e.getSource();
 		selectedDate = button.getDate();
@@ -5236,12 +5305,18 @@ class XFCalendar extends JDialog {
 	}
 	
 	void jButton_keyPressed(KeyEvent e) {
-		// Ctrl+9
+
+		////////////
+		// Ctrl+9 //
+		////////////
 		if (e.getKeyCode() == KeyEvent.VK_9 && e.isControlDown()){
 			selectedDate = maxValueDate;
 			this.setVisible(false);
 		}
-		// Ctrl+P
+
+		////////////
+		// Ctrl+P //
+		////////////
 		if (e.getKeyCode() == KeyEvent.VK_P && e.isControlDown()){
 			SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd");
 			boolean ready = false;
@@ -5265,7 +5340,10 @@ class XFCalendar extends JDialog {
 				}
 			}
 		}
-		// Arrows
+
+		////////////
+		// Arrows //
+		////////////
 		if (e.getKeyCode() == KeyEvent.VK_RIGHT
 				|| e.getKeyCode() == KeyEvent.VK_LEFT
 				|| e.getKeyCode() == KeyEvent.VK_UP
@@ -5338,10 +5416,9 @@ class XFCalendar extends JDialog {
 	class DateButton extends JButton {
 		private static final long serialVersionUID = 1L;
 		private Date date;
-		
 		public DateButton() {
 			super();
-			this.setFont(new java.awt.Font("Dialog", 0, 12));
+			this.setFont(new java.awt.Font("Dialog", java.awt.Font.BOLD, 12));
 			this.addFocusListener(new DateButton_FocusAdapter());
 		}
 		public void setDate(Date date) {
@@ -5388,6 +5465,16 @@ class XFImageField_jButton_keyAdapter extends java.awt.event.KeyAdapter {
 	  }
 	  public void keyPressed(KeyEvent e) {
 	    adaptee.jButton_keyPressed(e);
+	  }
+}
+
+class XFCalendar_changeAdapter implements ChangeListener {
+	  XFCalendar adaptee;
+	  XFCalendar_changeAdapter(XFCalendar adaptee) {
+	    this.adaptee = adaptee;
+	  }
+	  public void stateChanged(ChangeEvent e) {
+	    adaptee.jTabbedPaneCenter_stateChanged(e);
 	  }
 }
 

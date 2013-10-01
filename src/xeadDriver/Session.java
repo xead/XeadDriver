@@ -127,6 +127,7 @@ public class Session extends JFrame {
 	private MenuOption[][] menuOptionArray = new MenuOption[20][20];
 	private JButton[] jButtonMenuOptionArray = new JButton[20];
 	private ArrayList<String> loadingChekerIDList = new ArrayList<String>();
+	private XFCalendar xfCalendar = null;
 
 	private JLabel jLabelUser = new JLabel();
 	private JLabel jLabelSession = new JLabel();
@@ -606,7 +607,7 @@ public class Session extends JFrame {
 		//////////////////////////////////////
 		operator = new XFTableOperator(this, null, "select * from " + calendarTable, true);
 		while (operator.next()) {
-			offDateList.add(operator.getValueOf("DTOFF").toString());
+			offDateList.add(operator.getValueOf("KBCALENDAR").toString() + ";" +operator.getValueOf("DTOFF").toString());
 		}
 
 		///////////////////////////////////////////////
@@ -635,6 +636,8 @@ public class Session extends JFrame {
 		if (!loginScript.equals("")) {
 			scriptEngine.eval(loginScript);
 		}
+		
+		xfCalendar = new XFCalendar(this);
 		
 		/////////////////////////////////////////////////////////
 		// Construct Cross-Checkers to be loaded at logging-in //
@@ -694,6 +697,10 @@ public class Session extends JFrame {
 	
 	public BaseFont getBaseFontWithID(String id) {
 		return baseFontMap.get(id);
+	}
+
+	public java.util.Date getDateOnCalendar(java.util.Date date, String kbCalendar, Point position) {
+		return xfCalendar.getDateOnCalendar(date, kbCalendar, position);
 	}
 	
 	private void buildMenuWithID(String id) {
@@ -930,8 +937,11 @@ public class Session extends JFrame {
 		}
 		return dateTime; //yyyy-mm-dd hh:mm//
 	}
-
 	public String getOffsetDate(String dateFrom, int days, int countType) {
+		return getOffsetDate(dateFrom, days, countType, "00");
+	}
+
+	public String getOffsetDate(String dateFrom, int days, int countType, String kbCalendar) {
 		String offsetDate = "";
 		Date workDate;
 		SimpleDateFormat dfm = new SimpleDateFormat("yyyy-MM-dd");
@@ -952,7 +962,7 @@ public class Session extends JFrame {
 			for (int i = 0; i < days; i++) {
 				cal.add(Calendar.DATE, 1);
 				workDate = cal.getTime();
-				if (offDateList.contains(dfm.format(workDate))) {
+				if (offDateList.contains(kbCalendar + ";" + dfm.format(workDate))) {
 					days++;
 				}
 			}
@@ -997,6 +1007,10 @@ public class Session extends JFrame {
 	}
 
 	public int getDaysBetweenDates(String strDateFrom, String strDateThru, int countType) {
+		return getDaysBetweenDates(strDateFrom, strDateThru, countType, "00");
+	}
+
+	public int getDaysBetweenDates(String strDateFrom, String strDateThru, int countType, String kbCalendar) {
 		int days = 0;
 		int y, m, d;
 		Date dateFrom, dateThru;
@@ -1037,7 +1051,7 @@ public class Session extends JFrame {
 				long timeWork = dateFrom.getTime();
 				while (timeThru > timeWork) {
 					cal.add(Calendar.DATE, 1);
-					if (!offDateList.contains(dfm.format(cal.getTime()))) {
+					if (!offDateList.contains(kbCalendar + ";" + dfm.format(cal.getTime()))) {
 						days++;
 					}
 					timeWork = cal.getTime().getTime();
@@ -1053,7 +1067,7 @@ public class Session extends JFrame {
 				long timeFrom = dateFrom.getTime();
 				while (timeFrom > timeWork) {
 					cal.add(Calendar.DATE, 1);
-					if (!offDateList.contains(dfm.format(cal.getTime()))) {
+					if (!offDateList.contains(kbCalendar + ";" + dfm.format(cal.getTime()))) {
 						days++;
 					}
 					timeWork = cal.getTime().getTime();
@@ -1092,7 +1106,11 @@ public class Session extends JFrame {
 	}
 
 	public boolean isOffDate(String date) {
-		return offDateList.contains(date);
+		return isOffDate(date, "00");
+	}
+
+	public boolean isOffDate(String date, String kbCalendar) {
+		return offDateList.contains(kbCalendar + ";" + date);
 	}
 
 	public boolean isValidTime(String time, String format) {

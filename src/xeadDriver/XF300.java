@@ -4020,7 +4020,7 @@ class XF300_DetailColumn extends XFColumnScriptable {
 							if (valueType.equals("IMAGE")) {
 								String fileName = dialog_.getSession().getImageFileFolder() + value_.toString().trim();
 								int iconHeight = fieldRows * XFUtility.ROW_UNIT_HEIGHT;
-								value = XFUtility.createSmallIcon(fileName, iconHeight);
+								value = XFUtility.createSmallIcon(fileName, fieldWidth, iconHeight);
 							}
 							if (valueType.equals("FLAG")) {
 								if (value_.toString().trim().equals(flagTrue)) {

@@ -186,9 +186,13 @@ public class XFInputDialogField extends JPanel {
 	   if (inputType_.equals("ALPHA")
 			   || inputType_.equals("KANJI")
 			   || inputType_.equals("NUMERIC")) {
-		   if (inputType_.equals("ALPHA")
-				   || inputType_.equals("KANJI")) {
-			   ((JTextField)component).setText(value.toString());
+		   if (inputType_.equals("ALPHA") || inputType_.equals("KANJI")) {
+			   //((JTextField)component).setText(value.toString());
+			   String strValue = value.toString();
+			   if (strValue.length() > size_) {
+				   strValue = strValue.substring(0, size_);
+			   }
+			   ((JTextField)component).setText(strValue);
 		   }
 		   if (inputType_.equals("NUMERIC")) {
 			   String stringValue = "";

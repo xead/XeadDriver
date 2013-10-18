@@ -1820,7 +1820,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		
 		public void setUnderlineOnColumnAt(int headerPosX, int headerPosY) {
-			double posX = headerPosX - numberLabel.getBounds().getWidth();
+			double posX = headerPosX - numberLabel.getBounds().getWidth() - checkBox.getBounds().getWidth();
 			for (int i = 0; i < headerList.size(); i++) {
 				headerList.get(i).setText(headerList.get(i).getText().replace("<html><u>", ""));
 				if (posX >= headerList.get(i).getBounds().x
@@ -1846,7 +1846,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		}
 
 		public void resortRowsByColumnAt(int headerPosX, int headerPosY) {
-			double posX = headerPosX - numberLabel.getBounds().getWidth();
+			double posX = headerPosX - numberLabel.getBounds().getWidth() - checkBox.getBounds().getWidth();
 			for (int i = 0; i < headerList.size(); i++) {
 				if (posX >= headerList.get(i).getBounds().x
 						&& posX < (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
@@ -4251,7 +4251,7 @@ class XF110_Column extends XFColumnScriptable {
 										if (valueType.equals("IMAGE")) {
 											String fileName = dialog_.getSession().getImageFileFolder() + value_.toString().trim();
 											int iconHeight = fieldRows * XFUtility.ROW_UNIT_HEIGHT;
-											value = XFUtility.createSmallIcon(fileName, iconHeight);
+											value = XFUtility.createSmallIcon(fileName, fieldWidth, iconHeight);
 										}
 										if (valueType.equals("FLAG")) {
 											if (value_.toString().trim().equals(flagTrue)) {

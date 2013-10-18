@@ -645,7 +645,7 @@ public class Session extends JFrame {
 		org.w3c.dom.Element element;
 		for (int i = 0; i < tableList.getLength(); i++) {
 			element = (org.w3c.dom.Element)tableList.item(i);
-			if (loadingChekerIDList.contains(element.getAttribute("ID"))) {
+			if (loadingChekerIDList.contains(element.getAttribute("ID")) && !element.getAttribute("SkipReferCheck").equals("T")) {
 				ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
 				referCheckerList.add(checker);
 			}
@@ -2329,19 +2329,20 @@ public class Session extends JFrame {
 	
 	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
 		ReferChecker checker = null;
-		for (int i = 0; i < referCheckerList.size(); i++) {
-			//if (referCheckerList.get(i).getTargetTableID().equals(tableID)
-			//		&& referCheckerList.get(i).getFunction().getFunctionID().equals(function.getFunctionID())) {
-			if (referCheckerList.get(i).getTargetTableID().equals(tableID)) {
-				checker = referCheckerList.get(i);
-				checker.setFunction(function);
-				break;
+		org.w3c.dom.Element element = getTableElement(tableID);
+		if (!element.getAttribute("SkipReferCheck").equals("T")) {
+			for (int i = 0; i < referCheckerList.size(); i++) {
+				if (referCheckerList.get(i).getTargetTableID().equals(tableID)) {
+					checker = referCheckerList.get(i);
+					checker.setFunction(function);
+					break;
+				}
 			}
-		}
-		if (checker == null) {
-			checker = new ReferChecker(this, tableID, function);
-			if (function != null && !function.isAvailable()) {
-				referCheckerList.add(checker);
+			if (checker == null) {
+				checker = new ReferChecker(this, tableID, function);
+				if (function != null && !function.isAvailable()) {
+					referCheckerList.add(checker);
+				}
 			}
 		}
 		return checker;

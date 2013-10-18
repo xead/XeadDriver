@@ -1378,7 +1378,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 							break;
 						}
 					}
-					if (hasNoError && !isCheckOnly) {
+					if (hasNoError && !isCheckOnly && referChecker != null) {
 						ArrayList<String> errorMsgList = referChecker.getOperationErrors("UPDATE", tableRowNumber.getColumnValueMapWithFieldID(), tableRowNumber.getColumnOldValueMapWithFieldID(), rowSequence);
 						for (int i = 0; i < errorMsgList.size(); i++) {
 							hasNoError = false;
@@ -4107,7 +4107,7 @@ class XF110_SubListCellEditorWithImageField extends JPanel implements XFTableCol
 	public void setValue(Object obj) {
 		imageFileName_ = obj.toString();
 		String fileName = dialog_.getSession().getImageFileFolder() + imageFileName_;
-		jLabel.setIcon(XFUtility.createSmallIcon(fileName, this.getHeight()));
+		jLabel.setIcon(XFUtility.createSmallIcon(fileName, this.getWidth(), this.getHeight()));
 		jButton.setToolTipText(imageFileName_);
 		jLabel.setToolTipText(imageFileName_);
 	}
@@ -5600,7 +5600,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 							if (valueType.equals("IMAGE")) {
 								String fileName = dialog_.getSession().getImageFileFolder() + value_.toString().trim();
 								int iconHeight = fieldRows * XFUtility.ROW_UNIT_HEIGHT;
-								value = XFUtility.createSmallIcon(fileName, iconHeight);
+								value = XFUtility.createSmallIcon(fileName, fieldWidth, iconHeight);
 							}
 							if (valueType.equals("FLAG")) {
 								if (value_.toString().trim().equals(flagTrue)) {

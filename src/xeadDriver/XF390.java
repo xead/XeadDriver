@@ -3049,7 +3049,8 @@ class XF390_DetailColumn extends XFColumnScriptable {
 							|| dataTypeOptionList.contains("ZERO_SUPPRESS")) {
 						value = XFUtility.getFormattedIntegerValue(value_.toString(), dataTypeOptionList, dataSize);
 					} else {
-						value = XFUtility.getEditValueOfLong((Long)value_, editCode, dataSize);
+						Long longValue = Long.parseLong(value_.toString());
+						value = XFUtility.getEditValueOfLong((Long)longValue, editCode, dataSize);
 					}
 				}
 			}

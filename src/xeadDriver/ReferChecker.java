@@ -111,7 +111,8 @@ public class ReferChecker extends Object {
 			for (int j = 0; j < referList.getLength(); j++) {
 				referElement = (org.w3c.dom.Element)referList.item(j);
 				if (referElement.getAttribute("ToTable").equals(targetTableID_)
-						&& !referElement.getAttribute("Optional").equals("T")) {
+						&& !referElement.getAttribute("Optional").equals("T")
+						&& XFUtility.isStaticRefer(tableElement.getAttribute("ID"), referElement)) {
 					countOfSubjectTables++;
 				}
 			}
@@ -123,7 +124,8 @@ public class ReferChecker extends Object {
 			for (int j = 0; j < referList.getLength(); j++) {
 				referElement = (org.w3c.dom.Element)referList.item(j);
 				if (referElement.getAttribute("ToTable").equals(targetTableID_)
-						&& !referElement.getAttribute("Optional").equals("T")) {
+						&& !referElement.getAttribute("Optional").equals("T")
+						&& XFUtility.isStaticRefer(tableElement.getAttribute("ID"), referElement)) {
 					subjectTableList_.add(new ReferChecker_SubjectTable(tableElement, referElement, this));
 					countWork++;
 					progressRate = Math.round(countWork * 100 / countOfSubjectTables);
@@ -449,83 +451,10 @@ class ReferChecker_SubjectTable extends Object {
 		boolean isFound, hasError = false;
 		XFTableOperator operatorSubjectTable, operatorReferTable;
 		int countOfErrors;
-		String sql;
 		//
-		operatorSubjectTable = this.getReferChecker().createTableOperator(this.getSelectSQL(), true);
-		while (operatorSubjectTable.next()) {
-			//
-			countOfErrors = 0;
-			for (int i = 0; i < fieldList.size(); i++) {
-				fieldList.get(i).initialize();
-			}
-			//
-			countOfErrors = countOfErrors + this.runScript("BR", "");
-			//
-			for (int i = 0; i < fieldList.size(); i++) {
-				if (fieldList.get(i).getTableID().equals(subjectTableID)) {
-					if (operatorSubjectTable.hasValueOf(fieldList.get(i).getTableID(), fieldList.get(i).getFieldID())) {
-						fieldList.get(i).setValueOfResultSet(operatorSubjectTable);
-					}
-				}
-			}
-			//
-			countOfErrors = countOfErrors + this.runScript("BU", "BR()");
-			//
-			for (int i = 0; i < referTableList.size(); i++) {
-				if (referTableList.get(i).isToBeChecked()) {
-					//
-					countOfErrors = countOfErrors + this.runScript("BU", "BR(" + referTableList.get(i).getTableAlias() + ")");
-					//
-					isFound = false;
-					sql = referTableList.get(i).getSelectSQL();
-					operatorReferTable = this.getReferChecker().createTableOperator(sql, true);
-					while (operatorReferTable.next()) {
-						if (referTableList.get(i).getTableAlias().equals(targetTableChecker_.getTargetTableID())) {
-							if (referTableList.get(i).newRecordIsToBeSelectedHere(operatorReferTable)) {
-								for (int j = 0; j < fieldList.size(); j++) {
-									if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
-										fieldList.get(j).setValueOfColumnValueMap();
-									}
-								}
-								isFound = true;
-								break;
-							}
-						}
-						if (referTableList.get(i).isRecordToBeSelected(operatorReferTable, false)) {
-							for (int j = 0; j < fieldList.size(); j++) {
-								if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
-									fieldList.get(j).setValueOfResultSet(operatorReferTable);
-								}
-							}
-							isFound = true;
-							break;
-						}
-					}
-					if (!isFound) {
-						countOfErrors++;
-						break;
-					}
-					countOfErrors = countOfErrors + this.runScript("BU", "AR(" + referTableList.get(i).getTableAlias() + ")");
-				}
-			}
-			countOfErrors = countOfErrors + this.runScript("BU", "AR()");
-			//
-			if (countOfErrors > 0) {
-				hasError = true;
-				setRecordInformationInSessionLog();
-			}
-		}
-		return hasError;
-	}
-	
-	public boolean hasErrorToUpdate() throws ScriptException, Exception {
-		boolean isFound, hasError = false;
-		XFTableOperator operatorSubjectTable, operatorReferTable;
-		int countOfErrors;
-		String sql;
-		//
-		if (hasReferFieldWhichValuesAreAltered()) {
-			operatorSubjectTable = this.getReferChecker().createTableOperator(this.getSelectSQL(), true);
+		String sql = this.getSelectSQL();
+		if (!sql.equals("")) {
+			operatorSubjectTable = this.getReferChecker().createTableOperator(sql, true);
 			while (operatorSubjectTable.next()) {
 				//
 				countOfErrors = 0;
@@ -555,7 +484,7 @@ class ReferChecker_SubjectTable extends Object {
 						operatorReferTable = this.getReferChecker().createTableOperator(sql, true);
 						while (operatorReferTable.next()) {
 							if (referTableList.get(i).getTableAlias().equals(targetTableChecker_.getTargetTableID())) {
-								if (referTableList.get(i).isRecordToBeSelected(operatorReferTable, true)) {
+								if (referTableList.get(i).newRecordIsToBeSelectedHere(operatorReferTable)) {
 									for (int j = 0; j < fieldList.size(); j++) {
 										if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
 											fieldList.get(j).setValueOfColumnValueMap();
@@ -564,16 +493,15 @@ class ReferChecker_SubjectTable extends Object {
 									isFound = true;
 									break;
 								}
-							} else {
-								if (referTableList.get(i).isRecordToBeSelected(operatorReferTable, false)) {
-									for (int j = 0; j < fieldList.size(); j++) {
-										if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
-											fieldList.get(j).setValueOfResultSet(operatorReferTable);
-										}
+							}
+							if (referTableList.get(i).isRecordToBeSelected(operatorReferTable, false)) {
+								for (int j = 0; j < fieldList.size(); j++) {
+									if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
+										fieldList.get(j).setValueOfResultSet(operatorReferTable);
 									}
-									isFound = true;
-									break;
 								}
+								isFound = true;
+								break;
 							}
 						}
 						if (!isFound) {
@@ -591,6 +519,84 @@ class ReferChecker_SubjectTable extends Object {
 				}
 			}
 		}
+		return hasError;
+	}
+	
+	public boolean hasErrorToUpdate() throws ScriptException, Exception {
+		boolean isFound, hasError = false;
+		XFTableOperator operatorSubjectTable, operatorReferTable;
+		int countOfErrors;
+		//
+		if (hasReferFieldWhichValuesAreAltered()) {
+			String sql = this.getSelectSQL();
+			if (!sql.equals("")) {
+				operatorSubjectTable = this.getReferChecker().createTableOperator(sql, true);
+				while (operatorSubjectTable.next()) {
+					//
+					countOfErrors = 0;
+					for (int i = 0; i < fieldList.size(); i++) {
+						fieldList.get(i).initialize();
+					}
+					//
+					countOfErrors = countOfErrors + this.runScript("BR", "");
+					//
+					for (int i = 0; i < fieldList.size(); i++) {
+						if (fieldList.get(i).getTableID().equals(subjectTableID)) {
+							if (operatorSubjectTable.hasValueOf(fieldList.get(i).getTableID(), fieldList.get(i).getFieldID())) {
+								fieldList.get(i).setValueOfResultSet(operatorSubjectTable);
+							}
+						}
+					}
+					//
+					countOfErrors = countOfErrors + this.runScript("BU", "BR()");
+					//
+					for (int i = 0; i < referTableList.size(); i++) {
+						if (referTableList.get(i).isToBeChecked()) {
+							//
+							countOfErrors = countOfErrors + this.runScript("BU", "BR(" + referTableList.get(i).getTableAlias() + ")");
+							//
+							isFound = false;
+							sql = referTableList.get(i).getSelectSQL();
+							operatorReferTable = this.getReferChecker().createTableOperator(sql, true);
+							while (operatorReferTable.next()) {
+								if (referTableList.get(i).getTableAlias().equals(targetTableChecker_.getTargetTableID())) {
+									if (referTableList.get(i).isRecordToBeSelected(operatorReferTable, true)) {
+										for (int j = 0; j < fieldList.size(); j++) {
+											if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
+												fieldList.get(j).setValueOfColumnValueMap();
+											}
+										}
+										isFound = true;
+										break;
+									}
+								} else {
+									if (referTableList.get(i).isRecordToBeSelected(operatorReferTable, false)) {
+										for (int j = 0; j < fieldList.size(); j++) {
+											if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
+												fieldList.get(j).setValueOfResultSet(operatorReferTable);
+											}
+										}
+										isFound = true;
+										break;
+									}
+								}
+							}
+							if (!isFound) {
+								countOfErrors++;
+								break;
+							}
+							countOfErrors = countOfErrors + this.runScript("BU", "AR(" + referTableList.get(i).getTableAlias() + ")");
+						}
+					}
+					countOfErrors = countOfErrors + this.runScript("BU", "AR()");
+					//
+					if (countOfErrors > 0) {
+						hasError = true;
+						setRecordInformationInSessionLog();
+					}
+				}
+			}
+		}
 		//
 		return hasError;
 	}
@@ -599,61 +605,63 @@ class ReferChecker_SubjectTable extends Object {
 		boolean isFound, hasError = false;
 		XFTableOperator operatorSubjectTable, operatorReferTable;
 		int countOfErrors;
-		String sql;
 		//
-		operatorSubjectTable = this.getReferChecker().createTableOperator(this.getSelectSQL(), true);
-		while (operatorSubjectTable.next()) {
-			//
-			countOfErrors = 0;
-			for (int i = 0; i < fieldList.size(); i++) {
-				fieldList.get(i).initialize();
-			}
-			//
-			countOfErrors = countOfErrors + this.runScript("BR", "");
-			//
-			for (int i = 0; i < fieldList.size(); i++) {
-				if (fieldList.get(i).getTableID().equals(subjectTableID)) {
-					if (operatorSubjectTable.hasValueOf(fieldList.get(i).getTableID(), fieldList.get(i).getFieldID())) {
-						fieldList.get(i).setValueOfResultSet(operatorSubjectTable);
-					}
+		String sql = this.getSelectSQL();
+		if (!sql.equals("")) {
+			operatorSubjectTable = this.getReferChecker().createTableOperator(sql, true);
+			while (operatorSubjectTable.next()) {
+				//
+				countOfErrors = 0;
+				for (int i = 0; i < fieldList.size(); i++) {
+					fieldList.get(i).initialize();
 				}
-			}
-			//
-			countOfErrors = countOfErrors + this.runScript("BU", "BR()");
-			//
-			for (int i = 0; i < referTableList.size(); i++) {
-				if (referTableList.get(i).isToBeChecked()) {
-					//
-					countOfErrors = countOfErrors + this.runScript("BU", "BR(" + referTableList.get(i).getTableAlias() + ")");
-					//
-					isFound = false;
-					sql = referTableList.get(i).getSelectSQL();
-					//operatorReferTable = new XFTableOperator(targetTableChecker_.getSession(), targetTableChecker_.getFunction().getProcessLog(), sql, false);
-					operatorReferTable = this.getReferChecker().createTableOperator(sql, true);
-					while (operatorReferTable.next()) {
-						if (referTableList.get(i).isRecordToBeSelected(operatorReferTable, false)) {
-							for (int j = 0; j < fieldList.size(); j++) {
-								if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
-									fieldList.get(j).setValueOfResultSet(operatorReferTable);
-								}
-							}
-							isFound = true;
-							break;
+				//
+				countOfErrors = countOfErrors + this.runScript("BR", "");
+				//
+				for (int i = 0; i < fieldList.size(); i++) {
+					if (fieldList.get(i).getTableID().equals(subjectTableID)) {
+						if (operatorSubjectTable.hasValueOf(fieldList.get(i).getTableID(), fieldList.get(i).getFieldID())) {
+							fieldList.get(i).setValueOfResultSet(operatorSubjectTable);
 						}
 					}
-					if (referTableList.get(i).getTableID().equals(targetTableChecker_.getTargetTableID())
-							&& isFound && isRecordReferringToTargetRecord()) {
-						countOfErrors++;
-						break;
-					}
-					countOfErrors = countOfErrors + this.runScript("BU", "AR(" + referTableList.get(i).getTableAlias() + ")");
 				}
-			}
-			countOfErrors = countOfErrors + this.runScript("BU", "AR()"); /* Script to be run AFTER READ subject record AR() */
-			//
-			if (countOfErrors > 0) {
-				hasError = true;
-				setRecordInformationInSessionLog();
+				//
+				countOfErrors = countOfErrors + this.runScript("BU", "BR()");
+				//
+				for (int i = 0; i < referTableList.size(); i++) {
+					if (referTableList.get(i).isToBeChecked()) {
+						//
+						countOfErrors = countOfErrors + this.runScript("BU", "BR(" + referTableList.get(i).getTableAlias() + ")");
+						//
+						isFound = false;
+						sql = referTableList.get(i).getSelectSQL();
+						//operatorReferTable = new XFTableOperator(targetTableChecker_.getSession(), targetTableChecker_.getFunction().getProcessLog(), sql, false);
+						operatorReferTable = this.getReferChecker().createTableOperator(sql, true);
+						while (operatorReferTable.next()) {
+							if (referTableList.get(i).isRecordToBeSelected(operatorReferTable, false)) {
+								for (int j = 0; j < fieldList.size(); j++) {
+									if (fieldList.get(j).getTableID().equals(referTableList.get(i).getTableID())) {
+										fieldList.get(j).setValueOfResultSet(operatorReferTable);
+									}
+								}
+								isFound = true;
+								break;
+							}
+						}
+						if (referTableList.get(i).getTableID().equals(targetTableChecker_.getTargetTableID())
+								&& isFound && isRecordReferringToTargetRecord()) {
+							countOfErrors++;
+							break;
+						}
+						countOfErrors = countOfErrors + this.runScript("BU", "AR(" + referTableList.get(i).getTableAlias() + ")");
+					}
+				}
+				countOfErrors = countOfErrors + this.runScript("BU", "AR()"); /* Script to be run AFTER READ subject record AR() */
+				//
+				if (countOfErrors > 0) {
+					hasError = true;
+					setRecordInformationInSessionLog();
+				}
 			}
 		}
 		//
@@ -776,7 +784,11 @@ class ReferChecker_SubjectTable extends Object {
 			buf.append(subjectTableActiveWhere);
 		}
 		//
-		return buf.toString();
+		if (count == -1) {
+			return "";
+		} else {
+			return buf.toString();
+		}
 	}
 	
 	public Object getValueWithDataSourceName(String dataSourceName) {
@@ -791,13 +803,19 @@ class ReferChecker_SubjectTable extends Object {
 
 	public boolean isRecordReferringToTargetRecord() {
 		boolean result = true;
+		int comp1,comp2;
 		Object subjectValueKey, targetValueKey, targetValueKeyFrom, targetValueKeyThru;
 		//
 		if (targetTableChecker_.getRangeKeyType() == 0) {
 			for (int i = 0; i < toKeyFieldIDList.size(); i++) {
 				subjectValueKey = getValueWithDataSourceName(withKeyFieldTableAliasList.get(i) + "." + withKeyFieldIDList.get(i));
 				targetValueKey = targetTableChecker_.getColumnValueMap().get(toKeyFieldIDList.get(i));
-				if (!subjectValueKey.equals(targetValueKey)) {
+//				if (!subjectValueKey.equals(targetValueKey)) {
+//					result = false;
+//					break;
+//				}
+				comp1 = subjectValueKey.toString().compareTo(targetValueKey.toString());
+				if (comp1 != 0) {
 					result = false;
 					break;
 				}
@@ -809,14 +827,19 @@ class ReferChecker_SubjectTable extends Object {
 				subjectValueKey = getValueWithDataSourceName(withKeyFieldTableAliasList.get(i) + "." + withKeyFieldIDList.get(i));
 				if (toKeyFieldIDList.get(i).equals(targetTableChecker_.getRangeKeyFieldValid())) {
 					targetValueKeyFrom = targetTableChecker_.getColumnValueMap().get(targetTableChecker_.getRangeKeyFieldValid());
-					int comp1 = subjectValueKey.toString().compareTo(targetValueKeyFrom.toString());
+					comp1 = subjectValueKey.toString().compareTo(targetValueKeyFrom.toString());
 					if (comp1 < 0) {
 						result = false;
 						break;
 					}
 				} else {
 					targetValueKey = targetTableChecker_.getColumnValueMap().get(toKeyFieldIDList.get(i));
-					if (!subjectValueKey.equals(targetValueKey)) {
+//					if (!subjectValueKey.equals(targetValueKey)) {
+//						result = false;
+//						break;
+//					}
+					comp1 = subjectValueKey.toString().compareTo(targetValueKey.toString());
+					if (comp1 != 0) {
 						result = false;
 						break;
 					}
@@ -831,14 +854,14 @@ class ReferChecker_SubjectTable extends Object {
 					targetValueKeyFrom = targetTableChecker_.getColumnValueMap().get(targetTableChecker_.getRangeKeyFieldValid());
 					targetValueKeyThru = targetTableChecker_.getColumnValueMap().get(targetTableChecker_.getRangeKeyFieldExpire());
 					if (targetValueKeyThru == null) {
-						int comp1 = subjectValueKey.toString().compareTo(targetValueKeyFrom.toString());
+						comp1 = subjectValueKey.toString().compareTo(targetValueKeyFrom.toString());
 						if (comp1 < 0) {
 							result = false;
 							break;
 						}
 					} else {
-						int comp1 = subjectValueKey.toString().compareTo(targetValueKeyFrom.toString());
-						int comp2 = subjectValueKey.toString().compareTo(targetValueKeyThru.toString());
+						comp1 = subjectValueKey.toString().compareTo(targetValueKeyFrom.toString());
+						comp2 = subjectValueKey.toString().compareTo(targetValueKeyThru.toString());
 						if (comp1 < 0 || comp2 >= 0) {
 							result = false;
 							break;
@@ -846,7 +869,12 @@ class ReferChecker_SubjectTable extends Object {
 					}
 				} else {
 					targetValueKey = targetTableChecker_.getColumnValueMap().get(toKeyFieldIDList.get(i));
-					if (!subjectValueKey.equals(targetValueKey)) {
+//					if (!subjectValueKey.equals(targetValueKey)) {
+//						result = false;
+//						break;
+//					}
+					comp1 = subjectValueKey.toString().compareTo(targetValueKey.toString());
+					if (comp1 != 0) {
 						result = false;
 						break;
 					}

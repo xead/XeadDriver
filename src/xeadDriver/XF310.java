@@ -1432,19 +1432,21 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						for (int i = 0; i < deleteRowNumberList.size(); i++) {
 							tableRowNumber = (XF310_DetailRowNumber)deleteRowNumberList.get(i);
 							tableRowNumber.setValuesToDetailColumns();
-							ArrayList<String> errorMsgList = detailReferChecker.getOperationErrors("DELETE", tableRowNumber.getColumnValueMapWithFieldID(), null);
-							if (errorMsgList.size() > 0) {
-								StringBuffer buf = new StringBuffer();
-								for (int j = 0; j < errorMsgList.size(); j++) {
-									if (j > 0) {
-										buf.append("\n");
+							if (detailReferChecker != null) {
+								ArrayList<String> errorMsgList = detailReferChecker.getOperationErrors("DELETE", tableRowNumber.getColumnValueMapWithFieldID(), null);
+								if (errorMsgList.size() > 0) {
+									StringBuffer buf = new StringBuffer();
+									for (int j = 0; j < errorMsgList.size(); j++) {
+										if (j > 0) {
+											buf.append("\n");
+										}
+										buf.append(errorMsgList.get(j));
 									}
-									buf.append(errorMsgList.get(j));
+									JOptionPane.showMessageDialog(jPanelMain, buf.toString());
+									exceptionHeader = buf.toString();
+									this.rollback();
+									setErrorAndCloseFunction();
 								}
-								JOptionPane.showMessageDialog(jPanelMain, buf.toString());
-								exceptionHeader = buf.toString();
-								this.rollback();
-								setErrorAndCloseFunction();
 							}
 
 							operator = createTableOperator(detailTable.getSQLToDelete(deleteRowNumberList.get(i).getKeyValueMap(), (Long)deleteRowNumberList.get(i).getColumnValueMap().get(detailTable.getUpdateCounterID())));
@@ -1579,10 +1581,12 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 			if (hasNoError && !isCheckOnly) {
 				threadToSetupReferChecker.join();
-				errorMsgList = headerReferChecker.getOperationErrors("UPDATE", headerFieldValueMap, headerFieldOldValueMap, detailTable.getTableID());
-				for (int i = 0; i < errorMsgList.size(); i++) {
-					hasNoError = false;
-					messageList.add(errorMsgList.get(i));
+				if (headerReferChecker != null) {
+					errorMsgList = headerReferChecker.getOperationErrors("UPDATE", headerFieldValueMap, headerFieldOldValueMap, detailTable.getTableID());
+					for (int i = 0; i < errorMsgList.size(); i++) {
+						hasNoError = false;
+						messageList.add(errorMsgList.get(i));
+					}
 				}
 			}
 
@@ -1630,7 +1634,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 
 				if (hasNoError) {
-					if (!isCheckOnly) {
+					if (!isCheckOnly && detailReferChecker != null) {
 						if (tableRowNumber.getRecordType().equals("CURRENT")) {
 							errorMsgList = detailReferChecker.getOperationErrors("UPDATE", tableRowNumber.getColumnValueMapWithFieldID(), tableRowNumber.getColumnOldValueMapWithFieldID(), rowNumber);
 						} else {
@@ -1922,7 +1926,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 								}
 							}
 						} else {
-							if (rowNumber.getRecordType().equals("CURRENT")) {
+							if (rowNumber.getRecordType().equals("CURRENT") && detailReferChecker != null) {
 								ArrayList<String> errorMsgList = detailReferChecker.getOperationErrors("DELETE", rowNumber.getColumnValueMapWithFieldID(), null);
 								for (int i = 0; i < errorMsgList.size(); i++) {
 									messageList.add(errorMsgList.get(i));
@@ -4204,7 +4208,7 @@ class XF310_CellEditorWithImageField extends JPanel implements XFTableColumnEdit
 	public void setValue(Object obj) {
 		imageFileName_ = obj.toString();
 		String fileName = dialog_.getSession().getImageFileFolder() + imageFileName_;
-		jLabel.setIcon(XFUtility.createSmallIcon(fileName, this.getHeight()));
+		jLabel.setIcon(XFUtility.createSmallIcon(fileName, this.getWidth(), this.getHeight()));
 		jButton.setToolTipText(imageFileName_);
 		jLabel.setToolTipText(imageFileName_);
 	}
@@ -6127,7 +6131,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 							if (valueType.equals("IMAGE")) {
 								String fileName = dialog_.getSession().getImageFileFolder() + value_.toString().trim();
 								int iconHeight = fieldRows * XFUtility.ROW_UNIT_HEIGHT;
-								value = XFUtility.createSmallIcon(fileName, iconHeight);
+								value = XFUtility.createSmallIcon(fileName, fieldWidth, iconHeight);
 							}
 							if (valueType.equals("FLAG")) {
 								if (value_.toString().trim().equals(flagTrue)) {

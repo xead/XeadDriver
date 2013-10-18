@@ -43,7 +43,17 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M25";
+	public static final String FULL_VERSION  = "V1.R1.M26";
+	//26
+	//・InputDialogにダイアログの幅を指定するためのメソッドsetWidth(...)を組み込んだ
+	//・InputDialogのフィールドにsetValue(...)された場合に、値をフィールドサイズに合わせるようにした
+	//・画像をフィールドの指定サイズに合わせて縮小／拡大するようにするとともに、画像をクリックすればオリジナルサイズで表示されるようにした
+	//・XF390の明細項目が数値の場合に異常終了することがある問題を修正した
+	//・クロスチェックの対象テーブルを静的結合されたものに限るようにした
+	//・クロスチェックの除外指定に対応した
+	//・結合キーが数字フィールドの場合にクロスチェックが正常に作動しない問題を修正
+	//・XF110の全選択用チェックボックスをチェックすると右隣の項目での並び替えが起こっていたバグを修正
+	//
 	//25
 	//・日付フィールドが利用するカレンダーコンポーネントをセッション共有オブジェクトにした
 	//・カレンダーコンポーネントの表示位置の制御ロジックを改善した

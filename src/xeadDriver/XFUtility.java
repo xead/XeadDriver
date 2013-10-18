@@ -317,6 +317,22 @@ public class XFUtility {
 		return isNull;
 	}
 
+	static boolean isStaticRefer(String tableID, org.w3c.dom.Element referElement) {
+		boolean reply = true;
+		String wrkStr;
+		StringTokenizer workTokenizer1, workTokenizer2;
+		workTokenizer1 = new StringTokenizer(referElement.getAttribute("WithKeyFields"), ";" );
+		while (workTokenizer1.hasMoreTokens()) {
+			wrkStr = workTokenizer1.nextToken();
+			workTokenizer2 = new StringTokenizer(wrkStr, "." );
+			if (!workTokenizer2.nextToken().equals(tableID)) {
+				reply = false;
+				break;
+			}
+		}
+		return reply;
+	}
+
 	static ArrayList<String> getDSNameListInScriptText(String scriptText, NodeList tableList) {
 		ArrayList<String> fieldList = new ArrayList<String>();
 		int pos, posWrk, wrkInt, posWrk2;
@@ -417,7 +433,7 @@ public class XFUtility {
 		return count;
 	}
 
-	static ImageIcon createSmallIcon(String fileName, int iconHeight) {
+	static ImageIcon createSmallIcon(String fileName, int iconWidth, int iconHeight) {
 		ImageIcon icon = new ImageIcon();
 		BufferedImage image = null;
 		try{
@@ -438,7 +454,14 @@ public class XFUtility {
 			// Setup small icon image with buffered image data //
 			/////////////////////////////////////////////////////
 			if (image != null) {
-				float rate = (float)iconHeight / image.getHeight();
+				float rate = 0;
+				float rateWidth = (float)iconWidth / image.getWidth();
+				float rateHeight = (float)iconHeight / image.getHeight();
+				if (rateWidth > rateHeight) {
+					rate = rateHeight;
+				} else {
+					rate = rateWidth;
+				}
 				int width = Math.round(image.getWidth()*rate);
 				int height = Math.round(image.getHeight()*rate);
 				BufferedImage shrinkImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -2674,7 +2697,10 @@ class XFImageField extends JPanel implements XFEditableField {
     private static int DEFAULT_ROWS = 11;
     private static int DEFAULT_WIDTH = 400;
 	private final int FIELD_VERTICAL_MARGIN = 5;
+	private int fieldHeight = 0;
+	private int fieldWidth = 0;
 	private String oldValue = "";
+	private Desktop desktop = Desktop.getDesktop();
 
 	public XFImageField(String fieldOptions, int size, String imageFileFolder){
 		//
@@ -2716,9 +2742,9 @@ class XFImageField extends JPanel implements XFEditableField {
 		if (!wrkStr.equals("")) {
 			rows_ = Integer.parseInt(wrkStr);
 		}
-		int fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT - FIELD_VERTICAL_MARGIN - 3;
+		fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT - FIELD_VERTICAL_MARGIN - 3;
 		//
-		int fieldWidth = DEFAULT_WIDTH;
+		fieldWidth = DEFAULT_WIDTH;
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
 		if (!wrkStr.equals("")) {
 			fieldWidth = Integer.parseInt(wrkStr);
@@ -2759,7 +2785,6 @@ class XFImageField extends JPanel implements XFEditableField {
 	}
 	
 	public Object getExternalValue() {
-		//return imageFileFolder_ + "\\" + jTextField.getText();
 		return imageFileFolder_ + jTextField.getText();
 	}
 	
@@ -2780,16 +2805,18 @@ class XFImageField extends JPanel implements XFEditableField {
 		} else {
 			if (fullName.startsWith("http://")) {
 				try{
-					fullName = fullName.replace("\\", "/");
-					URL url = new URL(fullName);
-					imageIcon = new ImageIcon(url);
+					//fullName = fullName.replace("\\", "/");
+					//URL url = new URL(fullName);
+					//imageIcon = new ImageIcon(url);
+					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
 				}catch(Exception e){
 					jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
 				}
 			} else {
 				File imageFile = new File(fullName);
 				if (imageFile.exists()) {
-					imageIcon = new ImageIcon(fullName);
+					//imageIcon = new ImageIcon(fullName);
+					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
 				} else {
 					jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
 				}
@@ -2798,9 +2825,11 @@ class XFImageField extends JPanel implements XFEditableField {
 		}
         jLabelImage.setOpaque(true);
 		jLabelImage.setText("");
-		jLabelImage.setToolTipText(imageFileName);
         if (!jTextField.getText().equals("") && imageIcon == null) {
 			jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
+        } else {
+    		jLabelImage.setToolTipText("<html>"+imageFileName + "<br>" + XFUtility.RESOURCE.getString("ImageFileShown"));
+        	jLabelImage.addMouseListener(new jLabel_mouseAdapter(this));
         }
         //
 		int wrkWidth = this.getWidth() - 50;
@@ -2873,6 +2902,41 @@ class XFImageField extends JPanel implements XFEditableField {
 			return false;
 		}
 		return true;
+	}
+
+	class jLabel_mouseAdapter extends java.awt.event.MouseAdapter {
+		XFImageField adaptee;
+		jLabel_mouseAdapter(XFImageField adaptee) {
+			this.adaptee = adaptee;
+		}
+		public void mouseClicked(MouseEvent e) {
+			try {
+				setCursor(new Cursor(Cursor.WAIT_CURSOR));
+				String fullName = imageFileFolder_ + jTextField.getText();
+				if (fullName.startsWith("http://")) {
+					desktop.browse(new URI(fullName));
+				} else {
+					if (!fullName.equals("")) {
+						File file = new File(fullName);
+						desktop.browse(file.toURI());
+					}
+				}
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(null, "Failed to browse the file.\n" + ex.getMessage());
+			} finally {
+				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+			}
+		}
+		public void mousePressed(MouseEvent e) {
+		}
+		public void mouseReleased(MouseEvent e) {
+		}
+		public void mouseEntered(MouseEvent e) {
+			setCursor(new Cursor(Cursor.HAND_CURSOR));
+		}
+		public void mouseExited(MouseEvent e) {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		}
 	}
 }
 

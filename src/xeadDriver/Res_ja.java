@@ -169,6 +169,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "Iconify", "最小化" },
 		{ "ImageFileNotFound1", "<html>指定された画像ファイル<br>" },
 		{ "ImageFileNotFound2", "<br>が見つかりません" },
+		{ "ImageFileShown", "クリックすれば別画面で全体表示されます。" },
 		{ "Implosion", "逆展開" },
 		{ "ImplosionAsRoot", "ルートとして逆展開" },
 		{ "InputImageFileName", "画像ファイル名を入力してください" },

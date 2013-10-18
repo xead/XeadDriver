@@ -1145,15 +1145,17 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			ArrayList<String> errorMsgList = referChecker.getOperationErrors("DELETE", columnValueMap, columnOldValueMap);
-			for (int i = 0; i < errorMsgList.size(); i++) {
-				messageList.add(errorMsgList.get(i));
+			if (referChecker != null) {
+				ArrayList<String> errorMsgList = referChecker.getOperationErrors("DELETE", columnValueMap, columnOldValueMap);
+				for (int i = 0; i < errorMsgList.size(); i++) {
+					messageList.add(errorMsgList.get(i));
+				}
+				countOfErrors = errorMsgList.size();
 			}
-			countOfErrors = errorMsgList.size();
 		}
 		return countOfErrors;
 	}
-
+	
 	protected int fetchReferTableRecords(String event, boolean toBeChecked, String specificReferTable) {
 		int countOfErrors = 0;
 		boolean recordNotFound;
@@ -1292,10 +1294,12 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			//
 			if (hasNoError && !this.isCheckOnly) {
 				threadToSetupReferChecker.join();
-				ArrayList<String> errorMsgList = referChecker.getOperationErrors(operation, columnValueMap, columnOldValueMap);
-				for (int i = 0; i < errorMsgList.size(); i++) {
-					hasNoError = false;
-					messageList.add(errorMsgList.get(i));
+				if (referChecker != null) {
+					ArrayList<String> errorMsgList = referChecker.getOperationErrors(operation, columnValueMap, columnOldValueMap);
+					for (int i = 0; i < errorMsgList.size(); i++) {
+						hasNoError = false;
+						messageList.add(errorMsgList.get(i));
+					}
 				}
 			}
 		} catch(Exception e) {

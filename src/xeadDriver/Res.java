@@ -169,6 +169,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "Iconify", "Iconify" },
 		{ "ImageFileNotFound1", "<html>The image file specified<br>" },
 		{ "ImageFileNotFound2", "<br>is not found in folders." },
+		{ "ImageFileShown", "Click to browse in original size." },
 		{ "Implosion", "Implosion" },
 		{ "ImplosionAsRoot", "Implosion as root" },
 		{ "InputImageFileName", "Input Image File Name" },

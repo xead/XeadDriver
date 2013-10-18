@@ -70,6 +70,7 @@ public class XFInputDialog extends JDialog {
 	private int nextLocationTopY = 6;
 	private int nextLocationCenterY = 6;
 	private int messageHeight = 100;
+	private int dialogWidth = 230;
 	private Session session_;
 
     public XFInputDialog(Session session) {
@@ -123,6 +124,10 @@ public class XFInputDialog extends JDialog {
 
     public void setMessageHeight(int height) {
     	messageHeight = height;
+    }
+
+    public void setWidth(int width) {
+    	dialogWidth = width;
     }
 
     public XFInputDialogField addField(String caption, String inputType) {
@@ -179,6 +184,9 @@ public class XFInputDialog extends JDialog {
 	    		width = wrkInt;
 	    	}
 	    }
+	    if (dialogWidth > width) {
+	    	width = dialogWidth;
+	    }
 	    //
 	    if (firstEditableFieldOnTopPanel != null) {
 	    	firstEditableFieldOnTopPanel.requestFocus();
@@ -221,7 +229,7 @@ public class XFInputDialog extends JDialog {
     	//
 		JLabel jLabel = new JLabel();
 		FontMetrics metricsTitle = jLabel.getFontMetrics(this.getFont());
-		int titleWidth = metricsTitle.stringWidth(title) + 20;
+		int titleWidth = metricsTitle.stringWidth(title) + 50;
 		if (titleWidth > width) {
 			width = titleWidth;
 	    	dlgSize = new Dimension(width, dlgSize.height);

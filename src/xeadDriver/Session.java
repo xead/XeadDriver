@@ -127,6 +127,7 @@ public class Session extends JFrame {
 	private MenuOption[][] menuOptionArray = new MenuOption[20][20];
 	private JButton[] jButtonMenuOptionArray = new JButton[20];
 	private ArrayList<String> loadingChekerIDList = new ArrayList<String>();
+	private ArrayList<String> loadingFunctionIDList = new ArrayList<String>();
 	private XFCalendar xfCalendar = null;
 
 	private JLabel jLabelUser = new JLabel();
@@ -165,11 +166,12 @@ public class Session extends JFrame {
 	private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 	private Bindings globalScriptBindings = null;
 	private ScriptEngine scriptEngine = null;
-    private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
+	private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
 	private DOMParser responseDocParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
 	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
+	private ArrayList<XFExecutable> preloadedFunctionList = new ArrayList<XFExecutable>();
 	private Application application;
 	private XFOptionDialog optionDialog = new XFOptionDialog(this);
 	private XFInputDialog inputDialog = new XFInputDialog(this);
@@ -241,7 +243,7 @@ public class Session extends JFrame {
 			System.exit(0);
 		}
 	}
-	
+
 	private DialogLogin setupVariantsToGetLoginDialog(String fileName, String user, String password) throws Exception {
 		////////////////////////////////////////////////////////////////
 		// Parse XML formatted data into DOM with file name requested //
@@ -250,33 +252,33 @@ public class Session extends JFrame {
 		if (fileName.startsWith("http:")
 				|| fileName.startsWith("https:")
 				|| fileName.startsWith("file:")) {
-        	try {
-        		URL url = new URL(fileName);
-        		URLConnection connection = url.openConnection();
-        		InputStream inputStream = connection.getInputStream();
-        		DOMParser parser = new DOMParser();
-        		parser.parse(new InputSource(inputStream));
-        		domDocument = parser.getDocument();
-        	} catch (Exception e) {
-        		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError2") + fileName + XFUtility.RESOURCE.getString("SessionError3") + "\n" + e.getMessage());
-        		return null;
-        	}
+			try {
+				URL url = new URL(fileName);
+				URLConnection connection = url.openConnection();
+				InputStream inputStream = connection.getInputStream();
+				DOMParser parser = new DOMParser();
+				parser.parse(new InputSource(inputStream));
+				domDocument = parser.getDocument();
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError2") + fileName + XFUtility.RESOURCE.getString("SessionError3") + "\n" + e.getMessage());
+				return null;
+			}
 		} else {
 			File xeafFile = new File(fileName);
-	        if (xeafFile.exists()) {
-	        	currentFolder = xeafFile.getParent();
-	        	try {
+			if (xeafFile.exists()) {
+				currentFolder = xeafFile.getParent();
+				try {
 					DOMParser parser = new DOMParser();
 					parser.parse(new InputSource(new FileInputStream(fileName)));
 					domDocument = parser.getDocument();
-	        	} catch (Exception e) {
-	        		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError2") + fileName + XFUtility.RESOURCE.getString("SessionError3") + "\n" + e.getMessage());
-	        		return null;
-	        	}
-	        } else {
-	    		JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError21") + fileName + XFUtility.RESOURCE.getString("SessionError22"));
-	    		return null;
-	        }
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError2") + fileName + XFUtility.RESOURCE.getString("SessionError3") + "\n" + e.getMessage());
+					return null;
+				}
+			} else {
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError21") + fileName + XFUtility.RESOURCE.getString("SessionError22"));
+				return null;
+			}
 		}
 
 		////////////////////////////////////////////////////////////
@@ -315,7 +317,7 @@ public class Session extends JFrame {
 				outputFolder = null;
 			}
 		}
-		
+
 		///////////////////////////
 		// System control tables //
 		///////////////////////////
@@ -365,7 +367,7 @@ public class Session extends JFrame {
 			}
 			subDBNameList.add(wrkStr);
 		}
-		
+
 		///////////////////
 		// DB-Method URL //
 		///////////////////
@@ -501,47 +503,46 @@ public class Session extends JFrame {
 		jPanelMenuCenter.add(jButtonMenuOptionArray[0]);
 		jPanelMenuCenter.add(jButtonMenuOptionArray[10]);
 		jPanelMenuCenter.add(jButtonMenuOptionArray[1]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[11]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[2]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[12]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[3]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[13]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[4]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[14]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[5]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[15]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[6]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[16]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[7]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[17]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[8]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[18]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[9]);
-	    jPanelMenuCenter.add(jButtonMenuOptionArray[19]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[11]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[2]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[12]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[3]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[13]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[4]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[14]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[5]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[15]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[6]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[16]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[7]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[17]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[8]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[18]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[9]);
+		jPanelMenuCenter.add(jButtonMenuOptionArray[19]);
 
 		jPanelTop.setPreferredSize(new Dimension(10, 30));
 		jPanelTop.setBorder(BorderFactory.createLoweredBevelBorder());
-	    jPanelTop.setLayout(new BorderLayout());
-	    jPanelTop.add(jLabelUser, BorderLayout.WEST);
-	    jPanelTop.add(jLabelSession, BorderLayout.EAST);
-	    jScrollPaneMessages.setPreferredSize(new Dimension(10, 40));
-	    jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
+		jPanelTop.setLayout(new BorderLayout());
+		jPanelTop.add(jLabelUser, BorderLayout.WEST);
+		jPanelTop.add(jLabelSession, BorderLayout.EAST);
+		jScrollPaneMessages.setPreferredSize(new Dimension(10, 40));
+		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
-	    jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, 14));
-		//jTextAreaMessages.setText(XFUtility.RESOURCE.getString("SessionMessage"));
+		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, 14));
 		jTextAreaMessages.setFocusable(false);
-	    jTextAreaMessages.setLineWrap(true);
-	    jSplitPane2.setOrientation(JSplitPane.VERTICAL_SPLIT);
-	    jSplitPane2.add(jScrollPaneNews, JSplitPane.TOP);
-	    jSplitPane2.add(jTabbedPaneMenu, JSplitPane.BOTTOM);
-	    jSplitPane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
-	    jSplitPane1.add(jSplitPane2, JSplitPane.TOP);
-	    jSplitPane1.add(jScrollPaneMessages, JSplitPane.BOTTOM);
+		jTextAreaMessages.setLineWrap(true);
+		jSplitPane2.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		jSplitPane2.add(jScrollPaneNews, JSplitPane.TOP);
+		jSplitPane2.add(jTabbedPaneMenu, JSplitPane.BOTTOM);
+		jSplitPane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		jSplitPane1.add(jSplitPane2, JSplitPane.TOP);
+		jSplitPane1.add(jScrollPaneMessages, JSplitPane.BOTTOM);
 
 		this.enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		this.setTitle(systemName + " " + version);
-	 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
+		imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
 		this.setIconImage(imageTitle);
 		screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		int shorterWidth1 = Math.round(screenSize.width * (float)0.9);
@@ -560,8 +561,8 @@ public class Session extends JFrame {
 				jSplitPane2.setDividerLocation(getHeight() / 4);
 				jSplitPane1.setDividerLocation(getHeight() - (getHeight() / 7));
 			}
-        });
-	    this.getContentPane().setFocusable(false);
+		});
+		this.getContentPane().setFocusable(false);
 		this.getContentPane().add(jPanelTop, BorderLayout.NORTH);
 		this.getContentPane().add(jSplitPane1, BorderLayout.CENTER);
 		this.pack();
@@ -570,22 +571,24 @@ public class Session extends JFrame {
 			this.setExtendedState(JFrame.MAXIMIZED_BOTH);
 		}
 
-	    for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 20; j++) {
-		    	menuOptionArray[i][j] = null;
+				menuOptionArray[i][j] = null;
 			}
-	    }
+		}
 
-        digestAdapter = new DigestAdapter("MD5");
-	    modifyPasswordDialog = new DialogModifyPassword(this);
+		digestAdapter = new DigestAdapter("MD5");
+		modifyPasswordDialog = new DialogModifyPassword(this);
 
-	    /////////////////////////
-	    // Return Login Dialog //
-	    /////////////////////////
+		/////////////////////////
+		// Return Login Dialog //
+		/////////////////////////
 		return new DialogLogin(this, user, password);
 	}
-	
+
 	private void setupSessionAndMenus() throws ScriptException, Exception {
+		application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2"));
+
 		/////////////////////////////////
 		// Setup session no and status //
 		/////////////////////////////////
@@ -636,22 +639,72 @@ public class Session extends JFrame {
 		if (!loginScript.equals("")) {
 			scriptEngine.eval(loginScript);
 		}
-		
+
 		xfCalendar = new XFCalendar(this);
-		
+
 		/////////////////////////////////////////////////////////
 		// Construct Cross-Checkers to be loaded at logging-in //
 		/////////////////////////////////////////////////////////
 		org.w3c.dom.Element element;
-		for (int i = 0; i < tableList.getLength(); i++) {
-			element = (org.w3c.dom.Element)tableList.item(i);
-			if (loadingChekerIDList.contains(element.getAttribute("ID")) && !element.getAttribute("SkipReferCheck").equals("T")) {
-				ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
-				referCheckerList.add(checker);
+		int wrkCount = 0;
+		if (loadingChekerIDList.size() > 0) {
+			for (int i = 0; i < tableList.getLength(); i++) {
+				element = (org.w3c.dom.Element)tableList.item(i);
+				if (loadingChekerIDList.contains(element.getAttribute("ID")) && !element.getAttribute("SkipReferCheck").equals("T")) {
+					wrkCount++;
+					application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3") + element.getAttribute("ID") + "("+ wrkCount + "/" + loadingChekerIDList.size() + ")");
+
+					ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
+					referCheckerList.add(checker);
+				}
+			}
+		}
+
+		////////////////////////////////////////////////////
+		// Construct Functions to be loaded at logging-in //
+		////////////////////////////////////////////////////
+		XFExecutable module = null;
+		String functionType;
+		if (loadingFunctionIDList.size() > 0) {
+			wrkCount = 0;
+			for (int i = 0; i < functionList.getLength(); i++) {
+				element = (org.w3c.dom.Element)functionList.item(i);
+				if (loadingFunctionIDList.contains(element.getAttribute("ID"))) {
+					wrkCount++;
+					application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage4") + element.getAttribute("ID") + "("+ wrkCount + "/" + loadingFunctionIDList.size() + ")");
+
+					functionType = element.getAttribute("Type");
+					if (functionType.equals("XF000")) {
+						module = new XF000(this, -1);
+					}
+					if (functionType.equals("XF100")) {
+						module = new XF100(this, -1);
+					}
+					if (functionType.equals("XF110")) {
+						module = new XF110(this, -1);
+					}
+					if (functionType.equals("XF200")) {
+						module = new XF200(this, -1);
+					}
+					if (functionType.equals("XF290")) {
+						module = new XF290(this, -1);
+					}
+					if (functionType.equals("XF300")) {
+						module = new XF300(this, -1);
+					}
+					if (functionType.equals("XF310")) {
+						module = new XF310(this, -1);
+					}
+					if (functionType.equals("XF390")) {
+						module = new XF390(this, -1);
+					}
+					module.setFunctionSpecifications(element);
+					preloadedFunctionList.add(module);
+				}
 			}
 		}
 	}
-	
+
 	private String getIpAddress() {
 		String value = "N/A";
 		HttpPost httpPost = null;
@@ -694,15 +747,25 @@ public class Session extends JFrame {
 	public ScriptEngineManager getScriptEngineManager() {
 		return scriptEngineManager;
 	}
-	
+
 	public BaseFont getBaseFontWithID(String id) {
 		return baseFontMap.get(id);
+	}
+
+	public XFExecutable getPreloadedFunction(String id) {
+		XFExecutable preloadedFunction = null;
+		for (int i = 0; i < preloadedFunctionList.size(); i++) {
+			if (preloadedFunctionList.get(i).getFunctionID().equals(id)) {
+				preloadedFunction = preloadedFunctionList.get(i);
+			}
+		}
+		return preloadedFunction;
 	}
 
 	public java.util.Date getDateOnCalendar(java.util.Date date, String kbCalendar, Point position) {
 		return xfCalendar.getDateOnCalendar(date, kbCalendar, position);
 	}
-	
+
 	private void buildMenuWithID(String id) {
 		int optionNo = 0;
 		NodeList optionList = null;
@@ -732,6 +795,13 @@ public class Session extends JFrame {
 						loadingChekerIDList.add(wrkStr);
 					}
 				}
+				tokenizer = new StringTokenizer(menuElement.getAttribute("FunctionsToBeLoaded"), ";" );
+				while (tokenizer.hasMoreTokens()) {
+					wrkStr = tokenizer.nextToken();
+					if (!loadingFunctionIDList.contains(wrkStr)) {
+						loadingFunctionIDList.add(wrkStr);
+					}
+				}
 				//
 				optionList = menuElement.getElementsByTagName("Option");
 				for (int j = 0; j < optionList.getLength(); j++) {
@@ -754,17 +824,17 @@ public class Session extends JFrame {
 				}
 			}
 		}
-		
+
 	}
-	
+
 	public Application getApplication() {
 		return application;
 	}
-	
+
 	public XFOptionDialog getOptionDialog() {
 		return optionDialog;
 	}
-	
+
 	public XFInputDialog getInputDialog() {
 		if (inputDialog.isVisible()) {
 			return new XFInputDialog(this);
@@ -773,15 +843,15 @@ public class Session extends JFrame {
 			return inputDialog;
 		}
 	}
-	
+
 	public XFCheckListDialog getCheckListDialog() {
 		return checkListDialog;
 	}
-	
+
 	public XFLongTextEditor getLongTextEditor() {
 		return xfLongTextEditor;
 	}
-	
+
 	public String getCurrentMenuID() {
 		return menuIDArray[jTabbedPaneMenu.getSelectedIndex()];
 	}
@@ -807,7 +877,7 @@ public class Session extends JFrame {
 			}
 		}
 	}
-	
+
 	void setupOptionsOfMenuWithTabNo(int tabNumber) {
 		if (tabNumber > -1) {
 			menuIDUsing = menuIDArray[tabNumber];
@@ -851,7 +921,7 @@ public class Session extends JFrame {
 		Calendar cal = Calendar.getInstance();
 		return dfm.format(cal.getTime());
 	}
-	
+
 	public String getErrorOfAccountDate(String dateValue) {
 		String message = "";
 		try {
@@ -873,57 +943,57 @@ public class Session extends JFrame {
 		} 
 		return message;
 	}
-	
-	private String getOffsetTime(String hhmmFrom, int minutes) {
-        double days = 0;
-        double hh = Double.parseDouble(hhmmFrom.substring(0,2));
-        double mm = Double.parseDouble(hhmmFrom.substring(3,5)) + minutes;
 
-        if (mm >= 60) {
-        	hh = hh + Math.ceil(mm / 60);
-        	mm = mm % 60;
-        }
-        if (mm <= -60) {
-        	hh = hh + Math.ceil(mm / 60);
-        	mm = (mm % 60) * -1;
-        } else {
-        	if (mm < 0) {
-        		hh = hh + - 1;
-        		mm = mm + 60;
-        	}
-        }
-        
-        if (hh >= 24) {
-        	days = Math.ceil(hh / 24);
-        	hh = hh % 24;
-        }
-        if (hh <= -24) {
-        	days = Math.ceil(hh / 24);
-        	hh = (hh % 24) * -1;
-        } else {
-        	if (hh < 0) {
-        		days = days - 1;
-        		hh = hh + 24;
-        	}
-        }
-        
-        String strDays = Double.toString(days).replace(".0", "");
-        String strHH = Double.toString(hh).replace(".0", "");
-        if (hh < 10) {
-        	strHH = "0" + strHH;
-        }
-        String strMM = Double.toString(mm).replace(".0", "");
-        if (mm < 10) {
-        	strMM = "0" + strMM;
-        }
-        return strDays + ":" + strHH + ":" + strMM;//-days:hh:mm//
+	private String getOffsetTime(String hhmmFrom, int minutes) {
+		double days = 0;
+		double hh = Double.parseDouble(hhmmFrom.substring(0,2));
+		double mm = Double.parseDouble(hhmmFrom.substring(3,5)) + minutes;
+
+		if (mm >= 60) {
+			hh = hh + Math.ceil(mm / 60);
+			mm = mm % 60;
+		}
+		if (mm <= -60) {
+			hh = hh + Math.ceil(mm / 60);
+			mm = (mm % 60) * -1;
+		} else {
+			if (mm < 0) {
+				hh = hh + - 1;
+				mm = mm + 60;
+			}
+		}
+
+		if (hh >= 24) {
+			days = Math.ceil(hh / 24);
+			hh = hh % 24;
+		}
+		if (hh <= -24) {
+			days = Math.ceil(hh / 24);
+			hh = (hh % 24) * -1;
+		} else {
+			if (hh < 0) {
+				days = days - 1;
+				hh = hh + 24;
+			}
+		}
+
+		String strDays = Double.toString(days).replace(".0", "");
+		String strHH = Double.toString(hh).replace(".0", "");
+		if (hh < 10) {
+			strHH = "0" + strHH;
+		}
+		String strMM = Double.toString(mm).replace(".0", "");
+		if (mm < 10) {
+			strMM = "0" + strMM;
+		}
+		return strDays + ":" + strHH + ":" + strMM;//-days:hh:mm//
 	}
 
 	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes, int countType) {
 		String dateTime = "";
 		String daysHhMm = getOffsetTime(timeFrom, minutes); //timeFrom format is hh:mm//
 		StringTokenizer workTokenizer = new StringTokenizer(daysHhMm, ":" );//-days:hh:mm//
-        String date;
+		String date;
 		String hh;
 		String mm;
 		try {
@@ -946,11 +1016,11 @@ public class Session extends JFrame {
 		Date workDate;
 		SimpleDateFormat dfm = new SimpleDateFormat("yyyy-MM-dd");
 		//
-		dateFrom = dateFrom.replaceAll("-", "").trim();
+		dateFrom = dateFrom.replaceAll("-", "").replaceAll("/", "").trim();
 		//
-        int y = Integer.parseInt(dateFrom.substring(0,4));
-        int m = Integer.parseInt(dateFrom.substring(4,6));
-        int d = Integer.parseInt(dateFrom.substring(6,8));
+		int y = Integer.parseInt(dateFrom.substring(0,4));
+		int m = Integer.parseInt(dateFrom.substring(4,6));
+		int d = Integer.parseInt(dateFrom.substring(6,8));
 		Calendar cal = Calendar.getInstance();
 		cal.set(y, m-1, d);
 		//
@@ -976,7 +1046,7 @@ public class Session extends JFrame {
 
 	public String getOffsetYearMonth(String yearMonthFrom, int months) {
 		String offsetYearMonth = "";
-        try {
+		try {
 			int year = Integer.parseInt(yearMonthFrom.substring(0,4));
 			int month = Integer.parseInt(yearMonthFrom.substring(4,6));
 			if (months > 0) {
@@ -1017,17 +1087,17 @@ public class Session extends JFrame {
 		SimpleDateFormat dfm = new SimpleDateFormat("yyyy-MM-dd");
 		Calendar cal = Calendar.getInstance();
 		//
-		strDateFrom = strDateFrom.replaceAll("-", "").trim();
-        y = Integer.parseInt(strDateFrom.substring(0,4));
-        m = Integer.parseInt(strDateFrom.substring(4,6));
-        d = Integer.parseInt(strDateFrom.substring(6,8));
+		strDateFrom = strDateFrom.replaceAll("-", "").replaceAll("/", "").trim();
+		y = Integer.parseInt(strDateFrom.substring(0,4));
+		m = Integer.parseInt(strDateFrom.substring(4,6));
+		d = Integer.parseInt(strDateFrom.substring(6,8));
 		cal.set(y, m-1, d, 0, 0, 0);
 		dateFrom = cal.getTime();
 		//
-		strDateThru = strDateThru.replaceAll("-", "").trim();
-        y = Integer.parseInt(strDateThru.substring(0,4));
-        m = Integer.parseInt(strDateThru.substring(4,6));
-        d = Integer.parseInt(strDateThru.substring(6,8));
+		strDateThru = strDateThru.replaceAll("-", "").replaceAll("/", "").trim();
+		y = Integer.parseInt(strDateThru.substring(0,4));
+		m = Integer.parseInt(strDateThru.substring(4,6));
+		d = Integer.parseInt(strDateThru.substring(6,8));
 		cal.set(y, m-1, d, 0, 0, 0);
 		dateThru = cal.getTime();
 		//
@@ -1043,9 +1113,9 @@ public class Session extends JFrame {
 			}
 			//
 			if (dateThru.getTime() > dateFrom.getTime()) {
-		        y = Integer.parseInt(strDateFrom.substring(0,4));
-		        m = Integer.parseInt(strDateFrom.substring(4,6));
-		        d = Integer.parseInt(strDateFrom.substring(6,8));
+				y = Integer.parseInt(strDateFrom.substring(0,4));
+				m = Integer.parseInt(strDateFrom.substring(4,6));
+				d = Integer.parseInt(strDateFrom.substring(6,8));
 				cal.set(y, m-1, d, 0, 0, 0);
 				long timeThru = dateThru.getTime();
 				long timeWork = dateFrom.getTime();
@@ -1059,9 +1129,9 @@ public class Session extends JFrame {
 			}
 			//
 			if (dateThru.getTime() < dateFrom.getTime()) {
-		        y = Integer.parseInt(strDateThru.substring(0,4));
-		        m = Integer.parseInt(strDateThru.substring(4,6));
-		        d = Integer.parseInt(strDateThru.substring(6,8));
+				y = Integer.parseInt(strDateThru.substring(0,4));
+				m = Integer.parseInt(strDateThru.substring(4,6));
+				d = Integer.parseInt(strDateThru.substring(6,8));
 				cal.set(y, m-1, d, 0, 0, 0);
 				long timeWork = dateThru.getTime();
 				long timeFrom = dateFrom.getTime();
@@ -1083,9 +1153,9 @@ public class Session extends JFrame {
 		boolean result = true;
 		String argDate = date.replaceAll("[^0-9]","").trim();
 		try {
-	        int y = Integer.parseInt(argDate.substring(0,4));
-	        int m = Integer.parseInt(argDate.substring(4,6));
-	        int d = Integer.parseInt(argDate.substring(6,8));
+			int y = Integer.parseInt(argDate.substring(0,4));
+			int m = Integer.parseInt(argDate.substring(4,6));
+			int d = Integer.parseInt(argDate.substring(6,8));
 			calendar.set(y, m-1, d);
 			calendar.getTime();
 		} catch (Exception e) {
@@ -1220,7 +1290,7 @@ public class Session extends JFrame {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private String getFormattedNextNumber(int number, int digit, String prefix, String withCD) {
 		String wrkStr;
 		String nextNumber = "";
@@ -1253,7 +1323,7 @@ public class Session extends JFrame {
 		//
 		return nextNumber;
 	}
-		
+
 	private int countUpNumber(int number, int digit) {
 		number++;
 		if (digit == 1 && number == 10) {
@@ -1285,7 +1355,7 @@ public class Session extends JFrame {
 		}
 		return number;
 	}
-	
+
 	public String getSystemVariantString(String itemID) {
 		String strValue = "";
 		String sql = "";
@@ -1303,7 +1373,7 @@ public class Session extends JFrame {
 		}
 		return strValue;
 	}
-	
+
 	public int getSystemVariantInteger(String itemID) {
 		String strValue = "";
 		int intValue = 0;
@@ -1323,7 +1393,7 @@ public class Session extends JFrame {
 		}
 		return intValue;
 	}
-	
+
 	public float getSystemVariantFloat(String itemID) {
 		String strValue = "";
 		float floatValue = (float)0.0;
@@ -1376,8 +1446,8 @@ public class Session extends JFrame {
 		} else {
 			try {
 				String sql = "select * from " + exchangeRateAnnualTable
-					+ " where KBCURRENCY = '" + currencyCode
-					+ "' and DTNEND = " + fYear;
+				+ " where KBCURRENCY = '" + currencyCode
+				+ "' and DTNEND = " + fYear;
 				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 				if (operator.next()) {
 					rateReturn = Float.parseFloat(operator.getValueOf("VLRATEM").toString());
@@ -1397,7 +1467,7 @@ public class Session extends JFrame {
 		//
 		return rateReturn;
 	}
-	
+
 	public float getMonthlyExchangeRate(String currencyCode, int fYear, int mSeq, String type) {
 		float rateReturn = 0;
 		//
@@ -1406,9 +1476,9 @@ public class Session extends JFrame {
 		} else {
 			try {
 				String sql = "select * from " + exchangeRateMonthlyTable
-					+ " where KBCURRENCY = '" + currencyCode
-					+ "' and DTNEND = " + fYear
-					+ " and DTMSEQ = " + mSeq;
+				+ " where KBCURRENCY = '" + currencyCode
+				+ "' and DTNEND = " + fYear
+				+ " and DTMSEQ = " + mSeq;
 				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 				if (operator.next()) {
 					rateReturn = Float.parseFloat(operator.getValueOf("VLRATEM").toString());
@@ -1458,10 +1528,10 @@ public class Session extends JFrame {
 		int mSeq = 0;
 		if (!parmDate.equals("")) {
 			int month, date;
-			parmDate = parmDate.replaceAll("-", "").trim();
+			parmDate = parmDate.replaceAll("-", "").replaceAll("/", "").trim();
 			parmDate = parmDate.replaceAll("/", "");
-	        month = Integer.parseInt(parmDate.substring(4,6));
-	        date = Integer.parseInt(parmDate.substring(6,8));
+			month = Integer.parseInt(parmDate.substring(4,6));
+			date = Integer.parseInt(parmDate.substring(6,8));
 			//
 			boolean isWithinMonth = false;
 			int startMonth = 1;
@@ -1503,7 +1573,7 @@ public class Session extends JFrame {
 				}
 			}
 			if (lastDay <= 29 && date <= lastDay) {
-					isWithinMonth = true;
+				isWithinMonth = true;
 			}
 			//
 			if (isWithinMonth) {
@@ -1523,11 +1593,10 @@ public class Session extends JFrame {
 		int mSeq = 0;
 		if (!parmDate.equals("") && parmDate != null) {
 			int month, date;
-			parmDate = parmDate.replaceAll("-", "").trim();
-			parmDate = parmDate.replaceAll("/", "");
-	        fYear = Integer.parseInt(parmDate.substring(0,4));
-	        month = Integer.parseInt(parmDate.substring(4,6));
-	        date = Integer.parseInt(parmDate.substring(6,8));
+			parmDate = parmDate.replaceAll("-", "").replaceAll("/", "").trim();
+			fYear = Integer.parseInt(parmDate.substring(0,4));
+			month = Integer.parseInt(parmDate.substring(4,6));
+			date = Integer.parseInt(parmDate.substring(6,8));
 			//
 			boolean isWithinMonth = false;
 			int startMonth = 1;
@@ -1569,7 +1638,7 @@ public class Session extends JFrame {
 				}
 			}
 			if (lastDay <= 29 && date <= lastDay) {
-					isWithinMonth = true;
+				isWithinMonth = true;
 			}
 			//
 			if (isWithinMonth) {
@@ -1583,7 +1652,7 @@ public class Session extends JFrame {
 		}
 		return fYear;
 	}
-	
+
 	public String getYearMonthOfFYearMSeq(String fYearMSeq) {
 		String resultYear = "";
 		String resultMonth = "";
@@ -1732,52 +1801,26 @@ public class Session extends JFrame {
 
 	int writeLogOfFunctionStarted(String functionID, String functionName) {
 		sqProgram++;
-		//
 		try {
 			String sql = "insert into " + sessionDetailTable
-				+ " (NRSESSION, SQPROGRAM, IDMENU, IDPROGRAM, TXPROGRAM, DTSTART, KBPROGRAMSTATUS) values ("
-				+ "'" + this.getSessionID() + "'," + sqProgram + "," + "'" + this.getMenuID() + "'," + "'" + functionID + "'," + "'" + functionName + "'," + "CURRENT_TIMESTAMP,'')";
+			+ " (NRSESSION, SQPROGRAM, IDMENU, IDPROGRAM, TXPROGRAM, DTSTART, KBPROGRAMSTATUS) values ("
+			+ "'" + this.getSessionID() + "'," + sqProgram + "," + "'" + this.getMenuID() + "'," + "'" + functionID + "'," + "'" + functionName + "'," + "CURRENT_TIMESTAMP,'')";
 			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 			operator.execute();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		//
 		return sqProgram;
 	}
 
 	void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String tableOperationLog, String errorLog) {
 		String logString = "";
 		StringBuffer bf = new StringBuffer();
+
 		if (errorLog.equals("")) {
 			bf.append(tableOperationLog.replace("'", "\""));
 			logString = bf.toString();
 		} else {
-//			int totalLength = tableOperationLog.length() + errorLog.length();
-//			if (totalLength > 20000) {
-//				String errorLogFileName = "";
-//				try {
-//					File logFile = createTempFile(sessionID, ".log");
-//					errorLogFileName = logFile.getPath();
-//					FileWriter fileWriter = new FileWriter(errorLogFileName);
-//					BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-//					bufferedWriter.write(errorLog);
-//					bufferedWriter.flush();
-//					bufferedWriter.close();
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//				bf.append(tableOperationLog.replace("'", "\""));
-//				bf.append("\n...Error log follows in the file ");
-//				bf.append(errorLogFileName);
-//				bf.append(".");
-//				logString = bf.toString();
-//			} else {
-//				bf.append(tableOperationLog.replace("'", "\""));
-//				bf.append("\n");
-//				bf.append(errorLog.replace("'", "\""));
-//				logString = bf.toString();
-//			}
 			int totalLength = tableOperationLog.length() + errorLog.length();
 			if (totalLength > 20000) {
 				StringBuffer bf2 = new StringBuffer();
@@ -1788,7 +1831,8 @@ public class Session extends JFrame {
 					errorLog = bf2.toString();
 				} else {
 					bf2.append(tableOperationLog.substring(0, 20000));
-					bf2.append(" ... Error log was disposed as it is too long.");
+					bf2.append("\n");
+					bf2.append(" ... Some of error log was discarded as it is too long.");
 					tableOperationLog = bf2.toString();
 				}
 			}
@@ -1797,18 +1841,18 @@ public class Session extends JFrame {
 			bf.append(errorLog.replace("'", "\""));
 			logString = bf.toString();
 		}
-		//
+
 		if (programStatus.equals("99")) {
 			noErrorsOccured = false;
 		}
-		//
+
 		try {
 			String sql = "update " + sessionDetailTable
-				+ " set DTEND=CURRENT_TIMESTAMP, KBPROGRAMSTATUS='"
-				+ programStatus + "', TXERRORLOG='"
-				+ logString + "' where " + "NRSESSION='"
-				+ this.getSessionID() + "' and "
-				+ "SQPROGRAM=" + sqProgramOfFunction;
+			+ " set DTEND=CURRENT_TIMESTAMP, KBPROGRAMSTATUS='"
+			+ programStatus + "', TXERRORLOG='"
+			+ logString + "' where " + "NRSESSION='"
+			+ this.getSessionID() + "' and "
+			+ "SQPROGRAM=" + sqProgramOfFunction;
 			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 			operator.execute();
 		} catch (Exception e) {
@@ -1821,7 +1865,7 @@ public class Session extends JFrame {
 			browseHelp();
 		}
 		if (((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
-		  && e.getKeyCode() == KeyEvent.VK_T) {
+				&& e.getKeyCode() == KeyEvent.VK_T) {
 			jTabbedPaneMenu.requestFocus();
 		}
 		if (e.getKeyCode() == KeyEvent.VK_F12) {
@@ -1830,7 +1874,7 @@ public class Session extends JFrame {
 				jTextAreaMessages.setText(XFUtility.RESOURCE.getString("PasswordModified"));
 			}
 		}
-		//
+
 		if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 			Component com = getFocusOwner();
 			for (int i = 0; i < 20; i++) {
@@ -1881,7 +1925,7 @@ public class Session extends JFrame {
 			}
 		}
 	}
-	
+
 	void setFocusOnNextVisibleButton(int index, String direction) {
 		int i= index;
 		boolean anyFound = false;
@@ -1991,7 +2035,8 @@ public class Session extends JFrame {
 		private XF310[] xF310 = new XF310[10];
 		private XF390[] xF390 = new XF390[10];
 		private Session session_ = null;
-		//
+		private XFExecutable lastPanelFunction = null;
+
 		public FunctionLauncher(Session session) {
 			xF000[0] = new XF000(session, 0);
 			xF100[0] = new XF100(session, 0);
@@ -2003,11 +2048,36 @@ public class Session extends JFrame {
 			xF390[0] = new XF390(session, 0);
 			session_ = session;
 		}
-		//
+
+		public HashMap<String, Object> execute(String functionID, HashMap<String, Object> parmMap) {
+			HashMap<String, Object> returnMap = new HashMap<String, Object>();
+
+			XFExecutable workFunction = lastPanelFunction;
+
+			XFExecutable preloadedFunction = session_.getPreloadedFunction(functionID); 
+			if (preloadedFunction == null) {
+				org.w3c.dom.Element functionElement = null;
+				for (int i = 0; i < functionList.getLength(); i++) {
+					functionElement = (org.w3c.dom.Element)functionList.item(i);
+					if (functionElement.getAttribute("ID").equals(functionID)) {
+						returnMap = this.execute(functionElement, parmMap);
+						break;
+					}
+				}
+			} else {
+				lastPanelFunction = preloadedFunction;
+				returnMap = preloadedFunction.execute(parmMap);
+			}
+
+			lastPanelFunction = workFunction;
+
+			return returnMap;
+		}
+
 		public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
 			HashMap<String, Object> returnMap = new HashMap<String, Object>();
 			int countOfRuccursiveCalls = 0;
-			//
+
 			if (functionElement == null) {
 				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError15"));
 			} else {
@@ -2016,10 +2086,16 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF000")) {
 						if (xF000[i] == null) {
 							xF000[i] = new XF000(session_, i);
+							if (!functionElement.getAttribute("TimerOption").equals("")) {
+								lastPanelFunction = xF000[i];
+							}
 							returnMap = xF000[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF000[i].isAvailable()) {
+								if (!functionElement.getAttribute("TimerOption").equals("")) {
+									lastPanelFunction = xF000[i];
+								}
 								returnMap = xF000[i].execute(functionElement, parmMap);
 								break;
 							} else {
@@ -2038,10 +2114,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF100")) {
 						if (xF100[i] == null) {
 							xF100[i] = new XF100(session_, i);
+							lastPanelFunction = xF100[i];
 							returnMap = xF100[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF100[i].isAvailable()) {
+								lastPanelFunction = xF100[i];
 								returnMap = xF100[i].execute(functionElement, parmMap);
 								break;
 							} else {
@@ -2060,10 +2138,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF110")) {
 						if (xF110[i] == null) {
 							xF110[i] = new XF110(session_, i);
+							lastPanelFunction = xF110[i];
 							returnMap = xF110[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF110[i].isAvailable()) {
+								lastPanelFunction = xF110[i];
 								returnMap = xF110[i].execute(functionElement, parmMap);
 								break;
 							} else {
@@ -2082,10 +2162,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF200")) {
 						if (xF200[i] == null) {
 							xF200[i] = new XF200(session_, i);
+							lastPanelFunction = xF200[i];
 							returnMap = xF200[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF200[i].isAvailable()) {
+								lastPanelFunction = xF200[i];
 								returnMap = xF200[i].execute(functionElement, parmMap);
 								break;
 							} else {
@@ -2126,10 +2208,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF300")) {
 						if (xF300[i] == null) {
 							xF300[i] = new XF300(session_, i);
+							lastPanelFunction = xF300[i];
 							returnMap = xF300[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF300[i].isAvailable()) {
+								lastPanelFunction = xF300[i];
 								returnMap = xF300[i].execute(functionElement, parmMap);
 								break;
 							} else {
@@ -2148,10 +2232,12 @@ public class Session extends JFrame {
 					if (functionElement.getAttribute("Type").equals("XF310")) {
 						if (xF310[i] == null) {
 							xF310[i] = new XF310(session_, i);
+							lastPanelFunction = xF310[i];
 							returnMap = xF310[i].execute(functionElement, parmMap);
 							break;
 						} else {
 							if (xF310[i].isAvailable()) {
+								lastPanelFunction = xF310[i];
 								returnMap = xF310[i].execute(functionElement, parmMap);
 								break;
 							} else {
@@ -2191,9 +2277,34 @@ public class Session extends JFrame {
 					}
 				}
 			}
-			//
 			return returnMap;
 		}
+
+		public void startProgress(String text, int max) {
+			if (lastPanelFunction != null) {
+				lastPanelFunction.startProgress(text, max);
+			}
+		}
+		public void incrementProgress() {
+			if (lastPanelFunction != null) {
+				lastPanelFunction.incrementProgress();
+			}
+		}
+		public void endProgress() {
+			if (lastPanelFunction != null) {
+				lastPanelFunction.endProgress();
+			}
+		}
+	}
+
+	public void startProgress(String text, int max) {
+		functionLauncher.startProgress(text, max);
+	}
+	public void incrementProgress() {
+		functionLauncher.incrementProgress();
+	}
+	public void endProgress() {
+		functionLauncher.endProgress();
 	}
 
 	class MenuOption extends Object {
@@ -2231,23 +2342,23 @@ public class Session extends JFrame {
 			if (isLogoutOption) {
 				return null;
 			} else {
-				return functionLauncher.execute(functionElement_, new HashMap<String, Object>());
+				return functionLauncher.execute(functionElement_.getAttribute("ID"), new HashMap<String, Object>());
 			}
 		}
 	}
-	
+
 	public String getAppServerName() {
 		return appServerName;
 	}
-	
+
 	public String getSubDBName(String id) {
 		return subDBNameList.get(subDBIDList.indexOf(id));
 	}
-	
+
 	public Connection getConnectionManualCommit() {
 		return connectionManualCommit;
 	}
-	
+
 	public Connection getConnectionAutoCommit() {
 		return connectionAutoCommit;
 	}
@@ -2255,11 +2366,11 @@ public class Session extends JFrame {
 	public Connection getConnectionReadOnly(String id) {
 		return subDBConnectionList.get(subDBIDList.indexOf(id));
 	}
-	
+
 	public void commit() {
 		this.commit(true, null);
 	}
-	
+
 	public void commit(boolean isCommit, StringBuffer logBuf) {
 		if (appServerName.equals("")) {
 			try {
@@ -2282,7 +2393,7 @@ public class Session extends JFrame {
 			}
 		} else {
 			HttpClient httpClient = new DefaultHttpClient();
-	        HttpPost httpPost = null;
+			HttpPost httpPost = null;
 			try {
 				httpPost = new HttpPost(appServerName);
 				List<NameValuePair> objValuePairs = new ArrayList<NameValuePair>(2);
@@ -2322,11 +2433,11 @@ public class Session extends JFrame {
 			}
 		}
 	}
-	
+
 	//public HttpClient getHttpClient() {
 	//	return httpClient;
 	//}
-	
+
 	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
 		ReferChecker checker = null;
 		org.w3c.dom.Element element = getTableElement(tableID);
@@ -2347,30 +2458,30 @@ public class Session extends JFrame {
 		}
 		return checker;
 	}
-	
+
 	public String getAddressFromZipNo(String zipNo) {
 		String value = "";
-        HttpResponse response = null;
-    	InputStream inputStream = null;
+		HttpResponse response = null;
+		InputStream inputStream = null;
 		HttpClient httpClient = new DefaultHttpClient();
 		try {
 			httpGet.setURI(new URI(ZIP_URL + "zipcode=" + zipNo + "&format=xml"));
-	        response = httpClient.execute(httpGet);  
-	        if (response.getStatusLine().getStatusCode() < 400){
-	        	inputStream = response.getEntity().getContent();
-	        	responseDocParser.parse(new InputSource(inputStream));
-    			responseDoc = responseDocParser.getDocument();
-    			org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("groovewebservice").item(0);
-    			if (rootNode.getElementsByTagName("address").getLength() == 0) {
-    				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage54") + "\n" + zipNo);
-    			} else {
-    				org.w3c.dom.Element addressNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("address").item(0);
-    				org.w3c.dom.Element prefectureNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("prefecture").item(0);
-    				org.w3c.dom.Element cityNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("city").item(0);
-    				org.w3c.dom.Element townNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("town").item(0);
-    				value = prefectureNode.getTextContent() + cityNode.getTextContent() + townNode.getTextContent();
-    			}
-	        }  
+			response = httpClient.execute(httpGet);  
+			if (response.getStatusLine().getStatusCode() < 400){
+				inputStream = response.getEntity().getContent();
+				responseDocParser.parse(new InputSource(inputStream));
+				responseDoc = responseDocParser.getDocument();
+				org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("groovewebservice").item(0);
+				if (rootNode.getElementsByTagName("address").getLength() == 0) {
+					JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage54") + "\n" + zipNo);
+				} else {
+					org.w3c.dom.Element addressNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("address").item(0);
+					org.w3c.dom.Element prefectureNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("prefecture").item(0);
+					org.w3c.dom.Element cityNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("city").item(0);
+					org.w3c.dom.Element townNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("town").item(0);
+					value = prefectureNode.getTextContent() + cityNode.getTextContent() + townNode.getTextContent();
+				}
+			}  
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
 		} finally {
@@ -2379,15 +2490,15 @@ public class Session extends JFrame {
 				if (inputStream != null) {
 					inputStream.close();
 				}
-            } catch(IOException e) {}
+			} catch(IOException e) {}
 		}
 		return value;
 	}
-	
+
 	public String getDateFormat() {
 		return dateFormat;
 	}
-	
+
 	public void executeProgram(String pgmName) {
 		try {
 			Runtime rt = Runtime.getRuntime();
@@ -2411,12 +2522,12 @@ public class Session extends JFrame {
 			JOptionPane.showMessageDialog(null, ex.getMessage());
 		}	
 	}
-	
+
 	public void browseFile(String fileName) {
 		File file = new File(fileName);
 		browseFile(file.toURI());
 	}
-	
+
 	public void browseFile(URI uri) {
 		try {
 			desktop.browse(uri);
@@ -2425,7 +2536,7 @@ public class Session extends JFrame {
 			JOptionPane.showMessageDialog(null, ex.getMessage());
 		}	
 	}
-	
+
 	public void editFile(String fileName) {
 		try {
 			File file = new File(fileName);
@@ -2435,11 +2546,11 @@ public class Session extends JFrame {
 			JOptionPane.showMessageDialog(null, ex.getMessage());
 		}	
 	}
-	
+
 	public String getImageFileFolder() {
 		return imageFileFolder;
 	}
-	
+
 	public File createTempFile(String functionID, String extension) throws IOException {
 		String header = "XeadDriver_";
 		//
@@ -2555,30 +2666,13 @@ public class Session extends JFrame {
 				tp.connect(smtpHost, smtpUser, smtpPassword);
 				tp.sendMessage(mailObj, toList);
 			}
-        }catch(Exception e){
+		}catch(Exception e){
 			JOptionPane.showMessageDialog(null, "Sending mail with subject '" + subject + "' failed.\n\n" + e.getMessage());
 		}
 	}
-	
+
 	public HashMap<String, Object> executeFunction(String functionID, HashMap<String, Object> parmMap) throws Exception {
-		HashMap<String, Object> returnMap = null;
-		org.w3c.dom.Element element, elementOfFunction = null;
-		//
-		for (int k = 0; k < functionList.getLength(); k++) {
-			element = (org.w3c.dom.Element)functionList.item(k);
-			if (element.getAttribute("ID").equals(functionID)) {
-				elementOfFunction = element;
-				break;
-			}
-		}
-		//
-		if (elementOfFunction == null) {
-			throw new Exception(XFUtility.RESOURCE.getString("FunctionError9") + functionID + XFUtility.RESOURCE.getString("FunctionError10"));
-		} else {
-			returnMap = functionLauncher.execute(elementOfFunction, parmMap);
-		}
-		//
-		return returnMap;
+		return functionLauncher.execute(functionID, parmMap);
 	}
 
 	Desktop getDesktop() {
@@ -2588,11 +2682,11 @@ public class Session extends JFrame {
 	DigestAdapter getDigestAdapter() {
 		return digestAdapter;
 	}
-	
+
 	String getSystemName() {
 		return systemName;
 	}
-	
+
 	String getVersion() {
 		return version;
 	}
@@ -2622,7 +2716,23 @@ public class Session extends JFrame {
 	}
 
 	Rectangle getMenuRectangle() {
-		return new Rectangle(this.getLocation().x, this.getLocation().y, this.getWidth(), this.getHeight());
+		int x = this.getX();
+		if (x < 0) {
+			x = 0;
+		}
+		int y = this.getY();
+		if (y < 0) {
+			y = 0;
+		}
+		int w = this.getWidth();
+		if (w > screenSize.width) {
+			w = screenSize.width;
+		}
+		int h = this.getHeight();
+		if (h > screenSize.height) {
+			h = screenSize.height;
+		}
+		return new Rectangle(x, y, w, h);
 	}
 
 	int getNextSQPROGRAM() {
@@ -2637,7 +2747,7 @@ public class Session extends JFrame {
 	public String getDatabaseUser() {
 		return databaseUser;
 	}
-	
+
 	public void compressTable(String tableID) throws Exception {
 		StringBuffer statementBuf;
 		org.w3c.dom.Element element;
@@ -2734,11 +2844,11 @@ public class Session extends JFrame {
 	public String getUserEmailAddress() {
 		return userEmailAddress;
 	}
-	
+
 	public String getAttribute(String id) {
 		return attributeMap.get(id);
 	}
-	
+
 	public void setAttribute(String id, String value) {
 		attributeMap.put(id.trim(), value.trim());
 	}
@@ -2765,7 +2875,7 @@ public class Session extends JFrame {
 		//
 		return functionName;
 	}
-	
+
 	org.w3c.dom.Element getTablePKElement(String tableID) {
 		org.w3c.dom.Element element1, element2;
 		org.w3c.dom.Element element3 = null;
@@ -2786,7 +2896,7 @@ public class Session extends JFrame {
 		}
 		return element3;
 	}
-	
+
 	org.w3c.dom.Element getTableElement(String tableID) {
 		org.w3c.dom.Element element1;
 		org.w3c.dom.Element element2 = null;
@@ -2799,7 +2909,7 @@ public class Session extends JFrame {
 		}
 		return element2;
 	}
-	
+
 	public String getTableName(String tableID) {
 		String tableName = "";
 		org.w3c.dom.Element element1;
@@ -2814,11 +2924,11 @@ public class Session extends JFrame {
 		}
 		return tableName;
 	}
-	
+
 	public NodeList getTableNodeList() {
 		return tableList;
 	}
-	
+
 	public org.w3c.dom.Element getFieldElement(String tableID, String fieldID) {
 		org.w3c.dom.Element element1, element2;
 		org.w3c.dom.Element element3 = null;
@@ -2842,63 +2952,63 @@ public class Session extends JFrame {
 }
 
 class DigestAdapter {
-    private MessageDigest digest_;
+	private MessageDigest digest_;
 
-    public DigestAdapter(String algorithm) throws NoSuchAlgorithmException {
-        digest_ = MessageDigest.getInstance(algorithm);
-    }
+	public DigestAdapter(String algorithm) throws NoSuchAlgorithmException {
+		digest_ = MessageDigest.getInstance(algorithm);
+	}
 
-    public synchronized String digest(String str) {
-        return toHexString(digestArray(str));
-    }
+	public synchronized String digest(String str) {
+		return toHexString(digestArray(str));
+	}
 
-    public synchronized byte[] digestArray(String str) {
-        byte[] hash = digest_.digest(str.getBytes());
-        digest_.reset();
-        return hash;
-    }
+	public synchronized byte[] digestArray(String str) {
+		byte[] hash = digest_.digest(str.getBytes());
+		digest_.reset();
+		return hash;
+	}
 
-    private String toHexString(byte[] arr) {
-        StringBuffer buff = new StringBuffer(arr.length * 2);
-        for (int i = 0; i < arr.length; i++) {
-            String b = Integer.toHexString(arr[i] & 0xff);
-            if (b.length() == 1) {
-                buff.append("0");
-            }
-            buff.append(b);
-        }
-        return buff.toString();
-    }
+	private String toHexString(byte[] arr) {
+		StringBuffer buff = new StringBuffer(arr.length * 2);
+		for (int i = 0; i < arr.length; i++) {
+			String b = Integer.toHexString(arr[i] & 0xff);
+			if (b.length() == 1) {
+				buff.append("0");
+			}
+			buff.append(b);
+		}
+		return buff.toString();
+	}
 }
 
 class Session_jButton_actionAdapter implements java.awt.event.ActionListener {
-	  Session adaptee;
-	  Session_jButton_actionAdapter(Session adaptee) {
-	    this.adaptee = adaptee;
-	  }
-	  public void actionPerformed(ActionEvent e) {
-	    adaptee.jButtonMenu_actionPerformed(e);
-	  }
+	Session adaptee;
+	Session_jButton_actionAdapter(Session adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void actionPerformed(ActionEvent e) {
+		adaptee.jButtonMenu_actionPerformed(e);
+	}
 }
 
 class Session_jEditorPane_actionAdapter implements javax.swing.event.HyperlinkListener {
-	  Session adaptee;
-	  Session_jEditorPane_actionAdapter(Session adaptee) {
-	    this.adaptee = adaptee;
-	  }
-	  public void hyperlinkUpdate(HyperlinkEvent e) {
-	    adaptee.jEditorPane_hyperlinkUpdate(e);
-	  }
+	Session adaptee;
+	Session_jEditorPane_actionAdapter(Session adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void hyperlinkUpdate(HyperlinkEvent e) {
+		adaptee.jEditorPane_hyperlinkUpdate(e);
+	}
 }
 
 class Session_keyAdapter extends java.awt.event.KeyAdapter {
-	  Session adaptee;
-	  Session_keyAdapter(Session adaptee) {
-	    this.adaptee = adaptee;
-	  }
-	  public void keyPressed(KeyEvent e) {
-	    adaptee.menu_keyPressed(e);
-	  }
+	Session adaptee;
+	Session_keyAdapter(Session adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void keyPressed(KeyEvent e) {
+		adaptee.menu_keyPressed(e);
+	}
 }
 
 class Session_jTabbedPaneMenu_changeAdapter  implements ChangeListener {

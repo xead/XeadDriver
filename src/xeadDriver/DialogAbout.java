@@ -43,7 +43,19 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M26";
+	public static final String FULL_VERSION  = "V1.R1.M27";
+	//27
+	//・スクリプトで進捗バーを制御するための関数session.startProgress(...)を追加した
+	//・メニュー属性「プリロード指定機能」に対応した
+	//・XF310のキー入力ダイアログのクローズ操作のバグを修正
+	//・テーブルスクリプトの「一時保留」に対応した
+	//・画像ファイルフィールドについてファイルが存在しない場合の表現を改善した
+	//･画像ファイルフィールドを更新対象の明細フィールドとして置いた場合の表現を改善した
+	//・各種追加処理において、自動採番フィールドが結合フィールドとして含まれていると採番レコードが無意味にカウントアップされるバグを修正
+	//･機能内で同一のselect文が実行された場合にはテーブル操作ログに記録しないようにした（ログのサイズを減らすため）
+	//･XF110,310の明細行上にカーソルがあるときに更新ボタンが無効化されるようにした（そのまま更新すると最下行の値がメモリー上に残っていることがあるため）
+	//･VARCHAR向けのテキストド入力域にフォーカスがある場合、EnterキーをTabキーにあてがっていたが、エラーチェックのキーに変更した
+	//
 	//26
 	//・InputDialogにダイアログの幅を指定するためのメソッドsetWidth(...)を組み込んだ
 	//・InputDialogのフィールドにsetValue(...)された場合に、値をフィールドサイズに合わせるようにした

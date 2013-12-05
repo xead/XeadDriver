@@ -112,7 +112,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	private String addSelectedActionName = "";
 	private XF310 dialog_;
 	private ScriptEngine scriptEngine;
-	private Bindings engineScriptBindings;
+	private Bindings scriptBindings;
 	private int result;
 	private final int FONT_SIZE = 14;
 	private boolean isInvalid = false;
@@ -127,7 +127,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		}
 	};
 	
-	//public XF310_AddRowList(XF310 dialog) throws Exception {
 	public XF310_AddRowList(XF310 dialog) {
 		super(dialog, "", true);
 		dialog_ = dialog;
@@ -286,10 +285,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
 		setupFunctionKeysAndButtons();
 
-		scriptEngine = dialog_.getScriptEngine();
-		engineScriptBindings = scriptEngine.createBindings();
-		engineScriptBindings.put("instance", (XFScriptable)this);
-
 		StringTokenizer workTokenizer;
 		int posX = 0;
 		int posY = 0;
@@ -331,7 +326,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			isInvalid = true;
 			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError52"));
 			return;
-			//throw new Exception();
 		}
 		headersRenderer = new TableHeadersRenderer(this); 
 		cellsRenderer = new TableCellsRenderer(headersRenderer); 
@@ -449,6 +443,16 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		// Add common used field (except for keys) to return field list //
 		//////////////////////////////////////////////////////////////////
 		addRowListTable.addCommonUsedColumnToReturnList();
+
+		//////////////////////////////////////
+		// Setup script engine and bindings //
+		//////////////////////////////////////
+		scriptEngine = dialog_.getScriptEngine();
+		scriptBindings = scriptEngine.createBindings();
+		scriptBindings.put("instance", (XFScriptable)this);
+		for (int i = 0; i < addRowListColumnList.size(); i++) {
+			scriptBindings.put(addRowListColumnList.get(i).getFieldIDInScript(), addRowListColumnList.get(i));
+		}
 
         Rectangle screenRect = dialog_.getSession().getMenuRectangle();
 		width = width + 50;
@@ -715,10 +719,13 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		}
 	}
 	
-	public void startProgress(int maxValue) {
+	public void startProgress(String text, int maxValue) {
 	}
 	
 	public void incrementProgress() {
+	}
+	
+	public void endProgress() {
 	}
 	
 	public void commit() {
@@ -883,14 +890,14 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		return dialog_.getFunctionID();
 	}
 
-	public Bindings getEngineScriptBindings() {
-		return engineScriptBindings;
+	public Bindings getScriptBindings() {
+		return scriptBindings;
 	}
 	
 	public Object getFieldObjectByID(String tableID, String fieldID) {
 		String id = tableID + "_" + fieldID;
-		if (engineScriptBindings.containsKey(id)) {
-			return engineScriptBindings.get(id);
+		if (scriptBindings.containsKey(id)) {
+			return scriptBindings.get(id);
 		} else {
 			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
 			return null;
@@ -898,7 +905,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	}
 	
 	public void evalScript(String name, String text) throws ScriptException {
-		dialog_.evalScript(name, text, engineScriptBindings);
+		dialog_.evalScript(name, text, scriptBindings);
 	}
 	
 	public String getTableIDOfTableAlias(String tableAlias) {
@@ -2136,8 +2143,6 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 		if (!wrkStr.equals("")) {
 			fieldRows = Integer.parseInt(wrkStr);
 		}
-
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF310_AddRowListColumn(String tableID, String tableAlias, String fieldID, XF310_AddRowList dialog){
@@ -2183,8 +2188,6 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
 		}
-
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public boolean isVisibleOnPanel(){

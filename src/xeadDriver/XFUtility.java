@@ -128,6 +128,7 @@ public class XFUtility {
 	public static final ImageIcon ICON_CHECK_1D = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1D.PNG")));
 	public static final ImageIcon ICON_CHECK_0R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0R.PNG")));
 	public static final ImageIcon ICON_CHECK_1R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1R.PNG")));
+	public static final ImageIcon ICON_NOT_AVAILABLE = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iNotAvailable.PNG")));
 	public static final DecimalFormat INTEGER_FORMAT = new DecimalFormat("#,##0");
 	public static final DecimalFormat FLOAT_FORMAT0 = new DecimalFormat("#,##0");
 	public static final DecimalFormat FLOAT_FORMAT1 = new DecimalFormat("#,##0.0");
@@ -445,15 +446,23 @@ public class XFUtility {
 				URL url = new URL(fileName);
 				image = ImageIO.read(url);
 			} else {
-				File imageFile = new File(fileName);
-				if (imageFile.exists()) {
-					image = ImageIO.read(imageFile);
+				if (fileName.toUpperCase().contains(".GIF")
+						|| fileName.toUpperCase().contains(".JPEG")
+						|| fileName.toUpperCase().contains(".JPG")
+						|| fileName.toUpperCase().contains(".JPE")
+						|| fileName.toUpperCase().contains(".PNG")) {
+					File imageFile = new File(fileName);
+					if (imageFile.exists()) {
+						image = ImageIO.read(imageFile);
+					}
 				}
 			}
 			/////////////////////////////////////////////////////
 			// Setup small icon image with buffered image data //
 			/////////////////////////////////////////////////////
-			if (image != null) {
+			if (image == null) {
+				icon = XFUtility.ICON_NOT_AVAILABLE;
+			} else {
 				float rate = 0;
 				float rateWidth = (float)iconWidth / image.getWidth();
 				float rateHeight = (float)iconHeight / image.getHeight();
@@ -889,7 +898,7 @@ public class XFUtility {
 	static Object getValueAccordingToBasicType(String basicType, Object value){
 		String wrkStr;
 		Object valueReturn = null;
-		//
+
 		if (isLiteralRequiredBasicType(basicType)) {
 			if (value == null) {
 				if (basicType.equals("DATE")) {
@@ -906,10 +915,6 @@ public class XFUtility {
 					valueReturn = "";
 				} else {
 					wrkStr = value.toString();
-//					int pos = wrkStr.indexOf(".");
-//					if (pos >= 0) {
-//						wrkStr = wrkStr.substring(0, pos);
-//					}
 					wrkStr = XFUtility.getStringNumber(wrkStr);
 					wrkStr = wrkStr.replace(".0", "");
 					if (wrkStr.equals("")) {
@@ -2316,13 +2321,16 @@ public class XFUtility {
 	
 	static void appendLog(String text, StringBuffer logBuf) {
 		if (logBuf != null) {
-			StringBuffer buf = new StringBuffer();
-			buf.append("> ");
-			buf.append(text);
-			buf.append("  (");
-			buf.append(TIME_FORMATTER.format(Calendar.getInstance().getTime()));
-			buf.append(")\n");
-			logBuf.append(buf.toString());
+			String wrkStr = logBuf.toString();
+			if (!text.startsWith("select") || !wrkStr.contains(text)) {
+				StringBuffer buf = new StringBuffer();
+				buf.append("> ");
+				buf.append(text);
+				buf.append("  (");
+				buf.append(TIME_FORMATTER.format(Calendar.getInstance().getTime()));
+				buf.append(")\n");
+				logBuf.append(buf.toString());
+			}
 		}
 	}
 	
@@ -2602,9 +2610,18 @@ class XFSessionForScript {
 		session_.sendMail(addressFrom, addressTo, addressCc,
 				subject, message, fileName, attachedName, charset);
 	}
+	
+	public void startProgress(String text, int max) {
+		session_.startProgress(text, max);
+	}
+	public void incrementProgress() {
+		session_.incrementProgress();
+	}
+	public void endProgress() {
+		session_.endProgress();
+	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
-		//return new XFTableOperator(session_, null, oparation, tableID);
 		XFTableOperator operator = null;
 		try {
 			operator = new XFTableOperator(session_, null, oparation, tableID);
@@ -2618,8 +2635,14 @@ class XFSessionForScript {
 }
 
 interface XFExecutable {
+	public String getFunctionID();
 	public boolean isAvailable();
+	public HashMap<String, Object> execute(HashMap<String, Object> parameterList);
 	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parameterList);
+	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception;
+	public void startProgress(String text, int maxValue);
+	public void incrementProgress();
+	public void endProgress();
 }
 
 interface XFScriptable {
@@ -2634,8 +2657,6 @@ interface XFScriptable {
 	public HashMap<String, Object> getReturnMap();
 	public void setProcessLog(String value);
 	public StringBuffer getProcessLog();
-	public void startProgress(int maxValue);
-	public void incrementProgress();
 	public XFTableOperator createTableOperator(String oparation, String tableID);
 	public XFTableOperator createTableOperator(String sqlText);
 	public Object getFieldObjectByID(String tableID, String fieldID);
@@ -2799,51 +2820,63 @@ class XFImageField extends JPanel implements XFEditableField {
 	void setupImage(String imageFileName) {
 		jTextField.setText(imageFileName);
 		imageIcon = null;
+		boolean isExistingFile = true;
+
+		////////////////////////////
+		// Setup JLabel with Icon //
+		////////////////////////////
 		String fullName = imageFileFolder_ + imageFileName;
 		if (imageFileName.equals("")) {
 			jLabelImage = new JLabel();
+			isExistingFile = false;
 		} else {
 			if (fullName.startsWith("http://")) {
 				try{
-					//fullName = fullName.replace("\\", "/");
-					//URL url = new URL(fullName);
-					//imageIcon = new ImageIcon(url);
 					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
 				}catch(Exception e){
-					jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
 				}
 			} else {
 				File imageFile = new File(fullName);
 				if (imageFile.exists()) {
-					//imageIcon = new ImageIcon(fullName);
 					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
 				} else {
-					jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
+					isExistingFile = false;
 				}
 			}
 			jLabelImage = new JLabel("", imageIcon, JLabel.CENTER);
 		}
-        jLabelImage.setOpaque(true);
-		jLabelImage.setText("");
-        if (!jTextField.getText().equals("") && imageIcon == null) {
-			jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
-        } else {
-    		jLabelImage.setToolTipText("<html>"+imageFileName + "<br>" + XFUtility.RESOURCE.getString("ImageFileShown"));
+		jLabelImage.setOpaque(true);
+
+		/////////////////////////////////////
+		// Setup text and bounds of JLabel //
+		/////////////////////////////////////
+		//if ((!jTextField.getText().equals("") && imageIcon == null)
+		if (isExistingFile) {
+			if (imageFileName.toUpperCase().contains(".GIF")
+					|| imageFileName.toUpperCase().contains(".JPG")
+					|| imageFileName.toUpperCase().contains(".JPE")
+					|| imageFileName.toUpperCase().contains(".JPEG")
+					|| imageFileName.toUpperCase().contains(".PNG")) {
+				jLabelImage.setText("");
+				int wrkWidth = this.getWidth() - 50;
+				int wrkHeight = this.getHeight() - 50;
+				if (imageIcon.getIconWidth() > wrkWidth) {
+					wrkWidth = imageIcon.getIconWidth() + 10;
+				}
+				if (imageIcon.getIconHeight() > wrkHeight) {
+					wrkHeight = imageIcon.getIconHeight() + 10;
+				}
+	    		jLabelImage.setToolTipText("<html>" + imageFileName + "<br>" + XFUtility.RESOURCE.getString("ImageFileShown"));
+		        jLabelImage.setPreferredSize(new Dimension(wrkWidth, wrkHeight));
+			} else {
+				jLabelImage.setText("<html>" + imageFileName + XFUtility.RESOURCE.getString("Colon") + XFUtility.RESOURCE.getString("ImageFileMessage1"));
+		        jLabelImage.setPreferredSize(new Dimension(this.getWidth() - 50, this.getHeight() - 50));
+			}
         	jLabelImage.addMouseListener(new jLabel_mouseAdapter(this));
+        } else {
+			jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
         }
-        //
-		int wrkWidth = this.getWidth() - 50;
-		int wrkHeight = this.getHeight() - 50;
-		if (imageIcon != null) {
-			if (imageIcon.getIconWidth() > wrkWidth) {
-				wrkWidth = imageIcon.getIconWidth() + 10;
-			}
-			if (imageIcon.getIconHeight() > wrkHeight) {
-				wrkHeight = imageIcon.getIconHeight() + 10;
-			}
-		}
-        jLabelImage.setPreferredSize(new Dimension(wrkWidth, wrkHeight));
-	    jScrollPane.getViewport().add(jLabelImage, null);
+		jScrollPane.getViewport().add(jLabelImage, null);
 	}
 
 	public int getRows() {
@@ -3425,7 +3458,7 @@ class XFTextField extends JTextField implements XFEditableField {
 				}
 			}
 			StringBuffer sb = new StringBuffer();
-			if (stringDigitFrom > -1) {
+			if (stringDigitFrom > -1 && numberDigitFrom > stringDigitFrom) {
 				sb.append(getText().substring(stringDigitFrom, numberDigitFrom));
 			}
 			int zeroLen = digits_ - getText().length();
@@ -3616,15 +3649,13 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	}
 
 	public XFTextArea(int digits, String dataTypeOptions, String fieldOptions){
-		//
 		super();
-		//
+
 		digits_ = digits;
 		String wrkStr;
-		//
+
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		fieldOptions_ = fieldOptions;
-		//
 		InputMap inputMap  = jTextArea.getInputMap(JTextArea.WHEN_FOCUSED);
 		ActionMap actionMap = jTextArea.getActionMap();
 		//
@@ -3634,7 +3665,7 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		KeyStroke altEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_MASK);
 		//
 		inputMap.put(altEnter, inputMap.get(enter));
-		inputMap.put(enter, "Exit");
+		inputMap.put(enter, "none");
 		inputMap.put(tab, "Exit");
 		inputMap.put(shiftTab, "Backward");
 		Action transferFocusAction = new AbstractAction(){
@@ -4940,6 +4971,7 @@ class XFScript extends Object {
 	private String scriptText = "";
 	private String eventP = "";
 	private String eventR = "";
+	private boolean isSuspended = false;
 
 	public XFScript(String tableID, org.w3c.dom.Element scriptElement, NodeList tableNodeList) {
 		super();
@@ -4949,6 +4981,9 @@ class XFScript extends Object {
 		scriptName = scriptElement.getAttribute("Name");
 		scriptText = XFUtility.substringLinesWithTokenOfEOL(scriptElement.getAttribute("Text"), "\n");
 		fieldList = XFUtility.getDSNameListInScriptText(XFUtility.removeCommentsFromScriptText(scriptText), tableNodeList);
+		if (scriptElement.getAttribute("Hold").equals("T")) {
+			isSuspended = true;
+		}
 	}
 	
 	public String getScriptText() {
@@ -4958,21 +4993,23 @@ class XFScript extends Object {
 	public boolean isToBeRunAtEvent(String event1, String event2) {
 		boolean result = false;
 		//
-		ArrayList<String> event1List = new ArrayList<String>();
-		StringTokenizer workTokenizer = new StringTokenizer(event1, ",");
-		while (workTokenizer.hasMoreTokens()) {
-			event1List.add(workTokenizer.nextToken());
-		}
-		//
-		for (int i = 0; i < event1List.size(); i++) {
-			if (eventP.contains(event1List.get(i))) {
-				if (event2.equals("")) {
-					result = true;
-					break;
-				} else {
-					if (event2.equals(eventR)) {
+		if (!isSuspended) {
+			ArrayList<String> event1List = new ArrayList<String>();
+			StringTokenizer workTokenizer = new StringTokenizer(event1, ",");
+			while (workTokenizer.hasMoreTokens()) {
+				event1List.add(workTokenizer.nextToken());
+			}
+			//
+			for (int i = 0; i < event1List.size(); i++) {
+				if (eventP.contains(event1List.get(i))) {
+					if (event2.equals("")) {
 						result = true;
 						break;
+					} else {
+						if (event2.equals(eventR)) {
+							result = true;
+							break;
+						}
 					}
 				}
 			}

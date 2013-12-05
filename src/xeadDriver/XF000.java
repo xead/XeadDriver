@@ -102,6 +102,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	private GridLayout gridLayoutInfo = new GridLayout();
 	private JLabel jLabelFunctionID = new JLabel();
 	private JLabel jLabelSessionID = new JLabel();
+	private JProgressBar jProgressBar = new JProgressBar();
 	private JScrollPane jScrollPaneMessages = new JScrollPane();
 	private JTextArea jTextAreaMessages = new JTextArea();
 	private JButton jButtonExit = new JButton();
@@ -112,13 +113,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	
 	public XF000(Session session, int instanceArrayIndex) {
 		super(session, "", true);
-		try {
-			session_ = session;
-			instanceArrayIndex_ = instanceArrayIndex;
-			initConsole();
-		} catch(Exception ex) {
-			ex.printStackTrace();
-		}
+		session_ = session;
+		instanceArrayIndex_ = instanceArrayIndex;
+		initConsole();
 	}
 
 	void initConsole() {
@@ -192,6 +189,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelInfo.add(jLabelSessionID);
 		jPanelInfo.add(jLabelFunctionID);
 		jPanelInfo.setFocusable(false);
+		jProgressBar.setStringPainted(true);
 		jPanelMain.add(jPanelTop, BorderLayout.CENTER);
 		jPanelMain.add(jPanelBottom, BorderLayout.SOUTH);
 		jPanelTop.add(jPanelTimer, BorderLayout.NORTH);
@@ -242,6 +240,15 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
 	}
 
+	public HashMap<String, Object> execute(HashMap<String, Object> parmMap) {
+		if (functionElement_ == null) {
+			JOptionPane.showMessageDialog(null, "Calling function without specifications.");
+			return parmMap;
+		} else {
+			return this.execute(null, parmMap);
+		}
+	}
+
 	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
 		try {
 
@@ -264,12 +271,23 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionLog = new ByteArrayOutputStream();
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
-			functionElement_ = functionElement;
 			processLog.delete(0, processLog.length());
-			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 			scriptEngine = session_.getScriptEngineManager().getEngineByName("js");
 			engineScriptBindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
 			timer = null;
+			
+			///////////////////////////////////////////
+			// Setup specifications for the function //
+			///////////////////////////////////////////
+			if (functionElement != null
+					&& (functionElement_ == null || !functionElement_.getAttribute("ID").equals(functionElement.getAttribute("ID")))) {
+				setFunctionSpecifications(functionElement);
+			}
+
+			/////////////////////////////////
+			// Write log to start function //
+			/////////////////////////////////
+			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 			
 			////////////////////////////////////
 			// Run Script or Show Timer Panel //
@@ -278,12 +296,15 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				runScript();
 				closeFunction();
 			} else {
-				this.setTitle(functionElement_.getAttribute("Name"));
 				jLabelSessionID.setText(session_.getSessionID());
-				jLabelFunctionID.setText("000" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
+				if (instanceArrayIndex_ >= 0) {
+					jLabelFunctionID.setText("000" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
+				} else {
+					jLabelFunctionID.setText("000" + "-" + functionElement_.getAttribute("ID"));
+				}
 				FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 				jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
-				//
+
 				if (functionElement_.getAttribute("TimerOption").contains(":")) {
 					setupConsoleWithTimer();
 				} else {
@@ -292,14 +313,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 
-				this.setSize(new Dimension(scrSize.width, scrSize.height));
-				int width = 665;
-				int height = 428;
-				this.setPreferredSize(new Dimension(width, height));
-				int posX = (scrSize.width - width) / 2;
-				int posY = (scrSize.height - height) / 2;
-				this.setLocation(posX, posY);
-				this.pack();
 				this.setVisible(true);
 			}
 
@@ -312,6 +325,21 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		}
 
 		return returnMap_;
+	}
+
+	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception {
+		functionElement_ = functionElement;
+		if (!functionElement_.getAttribute("TimerOption").equals("")) {
+			this.setTitle(functionElement_.getAttribute("Name"));
+			this.setSize(new Dimension(scrSize.width, scrSize.height));
+			int width = 665;
+			int height = 428;
+			this.setPreferredSize(new Dimension(width, height));
+			int posX = (scrSize.width - width) / 2;
+			int posY = (scrSize.height - height) / 2;
+			this.setLocation(posX, posY);
+			this.pack();
+		}
 	}
 	
 	void setupConsoleWithTimer() {
@@ -335,6 +363,8 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jButtonStart.setEnabled(true);
 		jButtonStop.setEnabled(false);
 		jButtonIconify.setEnabled(false);
+		jPanelBottom.remove(jProgressBar);
+		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		this.getRootPane().setDefaultButton(jButtonStart);
 	}
 	
@@ -358,6 +388,8 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jButtonStart.setEnabled(false);
 		jButtonStop.setEnabled(false);
 		jButtonIconify.setEnabled(false);
+		jPanelBottom.remove(jProgressBar);
+		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		this.getRootPane().setDefaultButton(jButtonExit);
 	}
 
@@ -416,10 +448,29 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		session_.commit(false, processLog);
 	}
 	
-	public void startProgress(int maxValue) {
+	public void startProgress(String text, int maxValue) {
+		jProgressBar.setMaximum(maxValue);
+		jProgressBar.setValue(0);
+		jPanelBottom.remove(jPanelInfo);
+		jProgressBar.setString(text);
+		jProgressBar.setPreferredSize(jPanelInfo.getPreferredSize());
+		jPanelBottom.add(jProgressBar, BorderLayout.EAST);
+		this.pack();
 	}
 	
 	public void incrementProgress() {
+		jProgressBar.setValue(jProgressBar.getValue() + 1);
+		jProgressBar.paintImmediately(0,0,jProgressBar.getWidth(), jProgressBar.getHeight());
+		if (jProgressBar.getValue() >= jProgressBar.getMaximum()) {
+			endProgress();
+		}
+	}
+	
+	public void endProgress() {
+		jPanelBottom.remove(jProgressBar);
+		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
+		this.pack();
+		jPanelBottom.repaint();
 	}
 	
 	public void cancelWithMessage(String message) {

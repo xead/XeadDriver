@@ -32,11 +32,9 @@ package xeadDriver;
  */
 
 import javax.script.Bindings;
-import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
-
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -68,7 +66,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	private ArrayList<XF290_ReferTable> referTableList = new ArrayList<XF290_ReferTable>();
 	private ArrayList<XF290_Field> fieldList = new ArrayList<XF290_Field>();
 	private ScriptEngine scriptEngine;
-	private Bindings engineScriptBindings;
+	private Bindings scriptBindings;
 	private String scriptNameRunning = "";
 	private ByteArrayOutputStream exceptionLog;
 	private PrintStream exceptionStream;
@@ -76,29 +74,23 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 
 	public XF290(Session session, int instanceArrayIndex) {
 		super();
-		try {
-			session_ = session;
-			//
-			initComponentsAndVariants();
-			//
-		} catch(Exception e) {
-			e.printStackTrace(exceptionStream);
-		}
-	}
-
-	void initComponentsAndVariants() throws Exception {
+		session_ = session;
 	}
 
 	public boolean isAvailable() {
 		return instanceIsAvailable_;
 	}
 
-	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
-		SortableDomElementListModel sortedList;
-		String workAlias, workTableID, workFieldID;
-		StringTokenizer workTokenizer;
-		org.w3c.dom.Element workElement;
+	public HashMap<String, Object> execute(HashMap<String, Object> parmMap) {
+		if (functionElement_ == null) {
+			JOptionPane.showMessageDialog(null, "Calling function without specifications.");
+			return parmMap;
+		} else {
+			return this.execute(null, parmMap);
+		}
+	}
 
+	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
@@ -121,126 +113,30 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			exceptionLog = new ByteArrayOutputStream();
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
-			functionElement_ = functionElement;
 			processLog.delete(0, processLog.length());
+			
+			///////////////////////////////////////////
+			// Setup specifications for the function //
+			///////////////////////////////////////////
+			if (functionElement != null
+					&& (functionElement_ == null || !functionElement_.getAttribute("ID").equals(functionElement.getAttribute("ID")))) {
+				setFunctionSpecifications(functionElement);
+			}
+
+			/////////////////////////////////
+			// Write log to start function //
+			/////////////////////////////////
 			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
-			//////////////////////////////////////
-			// Setup Script Engine and Bindings //
-			//////////////////////////////////////
-			scriptEngine = session_.getScriptEngineManager().getEngineByName("js");
-			engineScriptBindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
-			engineScriptBindings.clear();
-			engineScriptBindings.put("instance", (XFScriptable)this);
-			
-			//////////////////////////////////////////////
-			// Setup the primary table and refer tables //
-			//////////////////////////////////////////////
-			primaryTable_ = new XF290_PrimaryTable(functionElement_, this);
-			referTableList.clear();
-			NodeList referNodeList = primaryTable_.getTableElement().getElementsByTagName("Refer");
-			sortedList = XFUtility.getSortedListModel(referNodeList, "Order");
-			for (int i = 0; i < sortedList.getSize(); i++) {
-				org.w3c.dom.Element element = (org.w3c.dom.Element)sortedList.getElementAt(i);
-				referTableList.add(new XF290_ReferTable(element, this));
-			}
-
-			/////////////////////////////////
-			// Setup phrase and field List //
-			/////////////////////////////////
-			XF290_Phrase phrase;
-			headerPhraseList.clear();
-			fieldList.clear();
-			paragraphList.clear();
-			NodeList nodeList = functionElement_.getElementsByTagName("Phrase");
-			SortableDomElementListModel sortableList = XFUtility.getSortedListModel(nodeList, "Order");
-			for (int i = 0; i < sortableList.getSize(); i++) {
-				phrase = new XF290_Phrase((org.w3c.dom.Element)sortableList.getElementAt(i));
-				if (phrase.getBlock().equals("HEADER")) {
-					headerPhraseList.add(phrase);
-				}
-				if (phrase.getBlock().equals("PARAGRAPH")) {
-					paragraphList.add(phrase);
-				}
-			}
-			//
-			// Add fields on phrases if they are not on the column list //
-			for (int i = 0; i < headerPhraseList.size(); i++) {
-				for (int j = 0; j < headerPhraseList.get(i).getDataSourceNameList().size(); j++) {
-					if (!existsInFieldList(headerPhraseList.get(i).getDataSourceNameList().get(j))) {
-						fieldList.add(new XF290_Field(headerPhraseList.get(i).getDataSourceNameList().get(j), this));
-					}
-				}
-			}
-			for (int i = 0; i < paragraphList.size(); i++) {
-				for (int j = 0; j < paragraphList.get(i).getDataSourceNameList().size(); j++) {
-					if (!existsInFieldList(paragraphList.get(i).getDataSourceNameList().get(j))) {
-						fieldList.add(new XF290_Field(paragraphList.get(i).getDataSourceNameList().get(j), this));
-					}
-				}
-			}
-			//
-			// Add primary table key fields if they are not on the column list //
-			for (int i = 0; i < primaryTable_.getKeyFieldList().size(); i++) {
-				if (!existsInFieldList(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i))) {
-					fieldList.add(new XF290_Field(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i), this));
-				}
-			}
-			//
-			// Analyze fields in script and add them if necessary //
-			for (int i = 0; i < primaryTable_.getScriptList().size(); i++) {
-				if	(primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BR", "")
-						|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AR", "")) {
-					for (int j = 0; j < primaryTable_.getScriptList().get(i).getFieldList().size(); j++) {
-						workTokenizer = new StringTokenizer(primaryTable_.getScriptList().get(i).getFieldList().get(j), "." );
-						workAlias = workTokenizer.nextToken();
-						workTableID = getTableIDOfTableAlias(workAlias);
-						workFieldID = workTokenizer.nextToken();
-						if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
-							workElement = session_.getFieldElement(workTableID, workFieldID);
-							if (workElement == null) {
-								String msg = XFUtility.RESOURCE.getString("FunctionError1") + primaryTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
-								JOptionPane.showMessageDialog(null, msg);
-								throw new Exception(msg);
-							} else {
-								if (primaryTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
-									fieldList.add(new XF290_Field(workTableID, workAlias, workFieldID, this));
-								}
-							}
-						}
-					}
-				}
-			}
-			//
-			// Analyze refer tables and add their fields if necessary //
-			for (int i = referTableList.size()-1; i > -1; i--) {
-				for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
-					if (existsInFieldList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
-						referTableList.get(i).setToBeExecuted(true);
-						break;
-					}
-				}
-				if (referTableList.get(i).isToBeExecuted()) {
-					for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
-						if (!existsInFieldList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
-							fieldList.add(new XF290_Field(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j), this));
-						}
-					}
-					for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
-						workTokenizer = new StringTokenizer(referTableList.get(i).getWithKeyFieldIDList().get(j), "." );
-						workAlias = workTokenizer.nextToken();
-						workTableID = getTableIDOfTableAlias(workAlias);
-						workFieldID = workTokenizer.nextToken();
-						if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
-							fieldList.add(new XF290_Field(workTableID, workAlias, workFieldID, this));
-						}
-					}
-				}
-			}
-
+			///////////////////////////////////////
+			// Fetch record of the primary table //
+			///////////////////////////////////////
 			fetchTableRecord();
-
 			if (!this.isToBeCanceled) {
+
+				///////////////////////////////////
+				// Create PDF file and browse it //
+				///////////////////////////////////
 				session_.browseFile(createPDFFileAndGetURI());
 			}
 
@@ -256,7 +152,143 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		// CloseFunction //
 		///////////////////
 		closeFunction();
+
 		return returnMap_;
+	}
+
+	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception {
+		SortableDomElementListModel sortedList;
+		String workAlias, workTableID, workFieldID;
+		StringTokenizer workTokenizer;
+		org.w3c.dom.Element workElement;
+
+		/////////////////////////////////////////////
+		// Set specifications to the inner variant //
+		/////////////////////////////////////////////
+		functionElement_ = functionElement;
+
+		//////////////////////////////////////////////
+		// Setup the primary table and refer tables //
+		//////////////////////////////////////////////
+		primaryTable_ = new XF290_PrimaryTable(functionElement_, this);
+		referTableList.clear();
+		NodeList referNodeList = primaryTable_.getTableElement().getElementsByTagName("Refer");
+		sortedList = XFUtility.getSortedListModel(referNodeList, "Order");
+		for (int i = 0; i < sortedList.getSize(); i++) {
+			org.w3c.dom.Element element = (org.w3c.dom.Element)sortedList.getElementAt(i);
+			referTableList.add(new XF290_ReferTable(element, this));
+		}
+
+		/////////////////////////////////
+		// Setup phrase and field List //
+		/////////////////////////////////
+		XF290_Phrase phrase;
+		headerPhraseList.clear();
+		fieldList.clear();
+		paragraphList.clear();
+		NodeList nodeList = functionElement_.getElementsByTagName("Phrase");
+		SortableDomElementListModel sortableList = XFUtility.getSortedListModel(nodeList, "Order");
+		for (int i = 0; i < sortableList.getSize(); i++) {
+			phrase = new XF290_Phrase((org.w3c.dom.Element)sortableList.getElementAt(i));
+			if (phrase.getBlock().equals("HEADER")) {
+				headerPhraseList.add(phrase);
+			}
+			if (phrase.getBlock().equals("PARAGRAPH")) {
+				paragraphList.add(phrase);
+			}
+		}
+
+		//////////////////////////////////////////////////////////////
+		// Add fields on phrases if they are not on the column list //
+		//////////////////////////////////////////////////////////////
+		for (int i = 0; i < headerPhraseList.size(); i++) {
+			for (int j = 0; j < headerPhraseList.get(i).getDataSourceNameList().size(); j++) {
+				if (!existsInFieldList(headerPhraseList.get(i).getDataSourceNameList().get(j))) {
+					fieldList.add(new XF290_Field(headerPhraseList.get(i).getDataSourceNameList().get(j), this));
+				}
+			}
+		}
+		for (int i = 0; i < paragraphList.size(); i++) {
+			for (int j = 0; j < paragraphList.get(i).getDataSourceNameList().size(); j++) {
+				if (!existsInFieldList(paragraphList.get(i).getDataSourceNameList().get(j))) {
+					fieldList.add(new XF290_Field(paragraphList.get(i).getDataSourceNameList().get(j), this));
+				}
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////
+		// Add primary table key fields if they are not on the column list //
+		/////////////////////////////////////////////////////////////////////
+		for (int i = 0; i < primaryTable_.getKeyFieldList().size(); i++) {
+			if (!existsInFieldList(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i))) {
+				fieldList.add(new XF290_Field(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i), this));
+			}
+		}
+
+		////////////////////////////////////////////////////////
+		// Analyze fields in script and add them if necessary //
+		////////////////////////////////////////////////////////
+		for (int i = 0; i < primaryTable_.getScriptList().size(); i++) {
+			if	(primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BR", "")
+					|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AR", "")) {
+				for (int j = 0; j < primaryTable_.getScriptList().get(i).getFieldList().size(); j++) {
+					workTokenizer = new StringTokenizer(primaryTable_.getScriptList().get(i).getFieldList().get(j), "." );
+					workAlias = workTokenizer.nextToken();
+					workTableID = getTableIDOfTableAlias(workAlias);
+					workFieldID = workTokenizer.nextToken();
+					if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
+						workElement = session_.getFieldElement(workTableID, workFieldID);
+						if (workElement == null) {
+							String msg = XFUtility.RESOURCE.getString("FunctionError1") + primaryTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
+							JOptionPane.showMessageDialog(null, msg);
+							throw new Exception(msg);
+						} else {
+							if (primaryTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
+								fieldList.add(new XF290_Field(workTableID, workAlias, workFieldID, this));
+							}
+						}
+					}
+				}
+			}
+		}
+
+		////////////////////////////////////////////////////////////
+		// Analyze refer tables and add their fields if necessary //
+		////////////////////////////////////////////////////////////
+		for (int i = referTableList.size()-1; i > -1; i--) {
+			for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
+				if (existsInFieldList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
+					referTableList.get(i).setToBeExecuted(true);
+					break;
+				}
+			}
+			if (referTableList.get(i).isToBeExecuted()) {
+				for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
+					if (!existsInFieldList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
+						fieldList.add(new XF290_Field(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j), this));
+					}
+				}
+				for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
+					workTokenizer = new StringTokenizer(referTableList.get(i).getWithKeyFieldIDList().get(j), "." );
+					workAlias = workTokenizer.nextToken();
+					workTableID = getTableIDOfTableAlias(workAlias);
+					workFieldID = workTokenizer.nextToken();
+					if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
+						fieldList.add(new XF290_Field(workTableID, workAlias, workFieldID, this));
+					}
+				}
+			}
+		}
+
+		//////////////////////////////////////
+		// Setup Script Engine and Bindings //
+		//////////////////////////////////////
+		scriptEngine = session_.getScriptEngineManager().getEngineByName("js");
+		scriptBindings = scriptEngine.createBindings();
+		scriptBindings.put("instance", (XFScriptable)this);
+		for (int i = 0; i < fieldList.size(); i++) {
+			scriptBindings.put(fieldList.get(i).getFieldIDInScript(), fieldList.get(i));
+		}
 	}
 
 	void setErrorAndCloseFunction() {
@@ -313,10 +345,13 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		}
 	}
 	
-	public void startProgress(int maxValue) {
+	public void startProgress(String text, int maxValue) {
 	}
 	
 	public void incrementProgress() {
+	}
+	
+	public void endProgress() {
 	}
 	
 	public void commit() {
@@ -334,8 +369,10 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		com.lowagie.text.Font font, chunkFont;
 		Chunk chunk;
 		Phrase phrase;
-		//
-		//Setup margins//
+
+		///////////////////
+		// Setup margins //
+		///////////////////
 		float leftMargin = 50;
 		float rightMargin = 50;
 		float topMargin = 50;
@@ -348,53 +385,60 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			bottomMargin = Float.parseFloat(workTokenizer.nextToken());
 		} catch (Exception e) {
 		}
-		//
-		//Generate PDF file and PDF writer//
+
+		//////////////////////////////////////
+		// Generate PDF file and PDF writer //
+		//////////////////////////////////////
 		com.lowagie.text.Rectangle pageSize = XFUtility.getPageSize(functionElement_.getAttribute("PageSize"), functionElement_.getAttribute("Direction"));
 		com.lowagie.text.Document pdfDoc = new com.lowagie.text.Document(pageSize, leftMargin, rightMargin, topMargin, bottomMargin); 
-		//
 		try {
 			pdfFile = session_.createTempFile(functionElement_.getAttribute("ID"), ".pdf");
 			pdfFileName = pdfFile.getPath();
 			returnMap_.put("FILE_NAME", pdfFileName);
 			fileOutputStream = new FileOutputStream(pdfFileName);
 			PdfWriter writer = PdfWriter.getInstance(pdfDoc, fileOutputStream);
-			//
-			//Set document attributes//
+
+			/////////////////////////////
+			// Set document attributes //
+			/////////////////////////////
 			pdfDoc.addTitle(functionElement_.getAttribute("Name"));
 			pdfDoc.addAuthor(session_.getUserName()); 
 			pdfDoc.addCreator("XEAD Driver");
-			//
-			//Add header to the document//
+
+			////////////////////////////////
+			// Add header to the document //
+			////////////////////////////////
 			addHeaderToDocument(pdfDoc);
-			//
-			//Add page-number-footer to the document//
+
+			////////////////////////////////////////////
+			// Add page-number-footer to the document //
+			////////////////////////////////////////////
 			if (functionElement_.getAttribute("WithPageNumber").equals("T")) {
 				HeaderFooter footer = new HeaderFooter(new Phrase("--"), new Phrase("--"));
 				footer.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
 				footer.setBorder(com.lowagie.text.Rectangle.NO_BORDER);
 				pdfDoc.setFooter(footer);
 			}
-			//
-			//Add phrases to the document//
+
+			/////////////////////////////////
+			// Add phrases to the document //
+			/////////////////////////////////
 			pdfDoc.open();
 			PdfContentByte cb = writer.getDirectContent();
 			Paragraph paragraph = null;
 			String keyword = "";
 			for (int i = 0; i < paragraphList.size(); i++) {
-				//
 				if (paragraphList.get(i).getBlock().equals("PARAGRAPH")) {
 					paragraph = new Paragraph(new Phrase(""));
 					paragraph.setAlignment(paragraphList.get(i).getAlignment());
 					paragraph.setIndentationRight(paragraphList.get(i).getMarginRight());
 					paragraph.setIndentationLeft(paragraphList.get(i).getMarginLeft());
 					paragraph.setSpacingAfter(paragraphList.get(i).getSpacingAfter());
-					//
+
 					font = new com.lowagie.text.Font(session_.getBaseFontWithID(paragraphList.get(i).getFontID()), paragraphList.get(i).getFontSize(), paragraphList.get(i).getFontStyle());
 					phrase = new Phrase("", font);
 					for (int j = 0; j < paragraphList.get(i).getValueKeywordList().size(); j++) {
 						keyword = paragraphList.get(i).getValueKeywordList().get(j);
-						//
 						if ((keyword.contains("&Line(") || keyword.contains("&Rect(")) && cb != null) {
 							XFUtility.drawLineOrRect(keyword, cb);
 						} else {
@@ -406,10 +450,10 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 						}
 					}
 					paragraph.add(phrase);
-					//
 					pdfDoc.add(paragraph);
 				}
 			}
+
 		} catch (DocumentException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -687,15 +731,11 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	public PrintStream getExceptionStream() {
 		return exceptionStream;
 	}
-
-	public Bindings getEngineScriptBindings() {
-		return 	engineScriptBindings;
-	}
 	
 	public Object getFieldObjectByID(String tableID, String fieldID) {
 		String id = tableID + "_" + fieldID;
-		if (engineScriptBindings.containsKey(id)) {
-			return engineScriptBindings.get(id);
+		if (scriptBindings.containsKey(id)) {
+			return scriptBindings.get(id);
 		} else {
 			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
 			return null;
@@ -708,7 +748,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			StringBuffer bf = new StringBuffer();
 			bf.append(scriptText);
 			bf.append(session_.getScriptFunctions());
-			scriptEngine.eval(bf.toString());
+			scriptEngine.eval(bf.toString(), scriptBindings);
 		}
 	}
 
@@ -901,8 +941,6 @@ class XF290_Field extends XFColumnScriptable {
 		fieldID_ =workTokenizer.nextToken();
 		//
 		setupVariants();
-		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF290_Field(String tableID, String tableAlias, String fieldID, XF290 dialog){
@@ -920,8 +958,6 @@ class XF290_Field extends XFColumnScriptable {
 		dataSourceName_ = tableAlias_ + "." + fieldID_;
 		//
 		setupVariants();
-		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public void setupVariants(){

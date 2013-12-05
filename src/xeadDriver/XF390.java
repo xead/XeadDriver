@@ -87,29 +87,23 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 
 	public XF390(Session session, int instanceArrayIndex) {
 		super();
-		try {
-			session_ = session;
-			//
-			initComponentsAndVariants();
-			//
-		} catch(Exception e) {
-			e.printStackTrace(exceptionStream);
-		}
-	}
-
-	void initComponentsAndVariants() throws Exception {
+		session_ = session;
 	}
 
 	public boolean isAvailable() {
 		return instanceIsAvailable_;
 	}
 
-	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
-		SortableDomElementListModel sortedList;
-		String workAlias, workTableID, workFieldID, workStr;
-		StringTokenizer workTokenizer;
-		org.w3c.dom.Element workElement;
+	public HashMap<String, Object> execute(HashMap<String, Object> parmMap) {
+		if (functionElement_ == null) {
+			JOptionPane.showMessageDialog(null, "Calling function without specifications.");
+			return parmMap;
+		} else {
+			return this.execute(null, parmMap);
+		}
+	}
 
+	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
@@ -132,8 +126,19 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			exceptionLog = new ByteArrayOutputStream();
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
-			functionElement_ = functionElement;
 			processLog.delete(0, processLog.length());
+			
+			///////////////////////////////////////////
+			// Setup specifications for the function //
+			///////////////////////////////////////////
+			if (functionElement != null
+					&& (functionElement_ == null || !functionElement_.getAttribute("ID").equals(functionElement.getAttribute("ID")))) {
+				setFunctionSpecifications(functionElement);
+			}
+
+			/////////////////////////////////
+			// Write log to start function //
+			/////////////////////////////////
 			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 			//////////////////////////////////////
@@ -143,215 +148,22 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			engineScriptBindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
 			engineScriptBindings.clear();
 			engineScriptBindings.put("instance", (XFScriptable)this);
-			
-			//////////////////////////////////////////////
-			// Setup the primary table and refer tables //
-			//////////////////////////////////////////////
-			headerTable_ = new XF390_HeaderTable(functionElement_, this);
-			headerReferTableList.clear();
-			NodeList referNodeList = headerTable_.getTableElement().getElementsByTagName("Refer");
-			sortedList = XFUtility.getSortedListModel(referNodeList, "Order");
-			for (int i = 0; i < sortedList.getSize(); i++) {
-				org.w3c.dom.Element element = (org.w3c.dom.Element)sortedList.getElementAt(i);
-				headerReferTableList.add(new XF390_HeaderReferTable(element, this));
+			for (int i = 0; i < headerFieldList.size(); i++) {
+				engineScriptBindings.put(headerFieldList.get(i).getFieldIDInScript(), headerFieldList.get(i));
+			}
+			for (int i = 0; i < detailColumnList.size(); i++) {
+				engineScriptBindings.put(detailColumnList.get(i).getFieldIDInScript(), detailColumnList.get(i));
 			}
 
-			/////////////////////////////////
-			// Setup phrase and field List //
-			/////////////////////////////////
-			XF390_Phrase phrase;
-			headerPhraseList.clear();
-			headerFieldList.clear();
-			paragraphList.clear();
-			NodeList nodeList = functionElement_.getElementsByTagName("HeaderPhrase");
-			SortableDomElementListModel sortableList = XFUtility.getSortedListModel(nodeList, "Order");
-			for (int i = 0; i < sortableList.getSize(); i++) {
-				phrase = new XF390_Phrase((org.w3c.dom.Element)sortableList.getElementAt(i));
-				if (phrase.getBlock().equals("HEADER")) {
-					headerPhraseList.add(phrase);
-				} else {
-					paragraphList.add(phrase);
-				}
-			}
-			//
-			// Add fields on phrases if they are not on the column list //
-			for (int i = 0; i < headerPhraseList.size(); i++) {
-				for (int j = 0; j < headerPhraseList.get(i).getDataSourceNameList().size(); j++) {
-					if (!existsInFieldList(headerPhraseList.get(i).getDataSourceNameList().get(j))) {
-						headerFieldList.add(new XF390_HeaderField(headerPhraseList.get(i).getDataSourceNameList().get(j), this));
-					}
-				}
-			}
-			for (int i = 0; i < paragraphList.size(); i++) {
-				for (int j = 0; j < paragraphList.get(i).getDataSourceNameList().size(); j++) {
-					if (!existsInFieldList(paragraphList.get(i).getDataSourceNameList().get(j))) {
-						headerFieldList.add(new XF390_HeaderField(paragraphList.get(i).getDataSourceNameList().get(j), this));
-					}
-				}
-			}
-			//
-			// Add primary table key fields if they are not on the column list //
-			for (int i = 0; i < headerTable_.getKeyFieldList().size(); i++) {
-				if (!existsInFieldList(headerTable_.getTableID(), "", headerTable_.getKeyFieldList().get(i))) {
-					headerFieldList.add(new XF390_HeaderField(headerTable_.getTableID(), "", headerTable_.getKeyFieldList().get(i), this));
-				}
-			}
-			//
-			// Analyze fields in script and add them if necessary //
-			for (int i = 0; i < headerTable_.getScriptList().size(); i++) {
-				if	(headerTable_.getScriptList().get(i).isToBeRunAtEvent("BR", "")
-						|| headerTable_.getScriptList().get(i).isToBeRunAtEvent("AR", "")) {
-					for (int j = 0; j < headerTable_.getScriptList().get(i).getFieldList().size(); j++) {
-						workTokenizer = new StringTokenizer(headerTable_.getScriptList().get(i).getFieldList().get(j), "." );
-						workAlias = workTokenizer.nextToken();
-						workTableID = getTableIDOfTableAlias(workAlias);
-						workFieldID = workTokenizer.nextToken();
-						if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
-							workElement = session_.getFieldElement(workTableID, workFieldID);
-							if (workElement == null) {
-								String msg = XFUtility.RESOURCE.getString("FunctionError1") + headerTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + headerTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
-								JOptionPane.showMessageDialog(null, msg);
-								throw new Exception(msg);
-							} else {
-								if (headerTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
-									headerFieldList.add(new XF390_HeaderField(workTableID, workAlias, workFieldID, this));
-								}
-							}
-						}
-					}
-				}
-			}
-			//
-			// Analyze refer tables and add their fields if necessary //
-			for (int i = headerReferTableList.size()-1; i > -1; i--) {
-				for (int j = 0; j < headerReferTableList.get(i).getFieldIDList().size(); j++) {
-					if (existsInFieldList(headerReferTableList.get(i).getTableID(), headerReferTableList.get(i).getTableAlias(), headerReferTableList.get(i).getFieldIDList().get(j))) {
-						headerReferTableList.get(i).setToBeExecuted(true);
-						break;
-					}
-				}
-				if (headerReferTableList.get(i).isToBeExecuted()) {
-					for (int j = 0; j < headerReferTableList.get(i).getFieldIDList().size(); j++) {
-						if (!existsInFieldList(headerReferTableList.get(i).getTableID(), headerReferTableList.get(i).getTableAlias(), headerReferTableList.get(i).getFieldIDList().get(j))) {
-							headerFieldList.add(new XF390_HeaderField(headerReferTableList.get(i).getTableID(), headerReferTableList.get(i).getTableAlias(), headerReferTableList.get(i).getFieldIDList().get(j), this));
-						}
-					}
-					for (int j = 0; j < headerReferTableList.get(i).getWithKeyFieldIDList().size(); j++) {
-						workTokenizer = new StringTokenizer(headerReferTableList.get(i).getWithKeyFieldIDList().get(j), "." );
-						workAlias = workTokenizer.nextToken();
-						workTableID = getTableIDOfTableAlias(workAlias);
-						workFieldID = workTokenizer.nextToken();
-						if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
-							headerFieldList.add(new XF390_HeaderField(workTableID, workAlias, workFieldID, this));
-						}
-					}
-				}
-			}
-
+			///////////////////////////////
+			// Fetch header table record //
+			///////////////////////////////
 			fetchHeaderTableRecord();
-
 			if (!this.isToBeCanceled) {
 
-				///////////////////////////////////////
-				// Setup information of detail table //
-				///////////////////////////////////////
-				tableFontID = functionElement_.getAttribute("TableFontID");
-				tableFontSize = Integer.parseInt(functionElement_.getAttribute("TableFontSize"));
-				try {
-					tableRowNoWidth = Integer.parseInt(functionElement_.getAttribute("TableRowNoWidth"));
-				} catch (Exception e) {
-					tableRowNoWidth = 0;
-				}
-				detailTable_ = new XF390_DetailTable(functionElement_, this);
-				detailReferTableList.clear();
-				detailReferElementList = detailTable_.getTableElement().getElementsByTagName("Refer");
-				sortingList2 = XFUtility.getSortedListModel(detailReferElementList, "Order");
-				for (int j = 0; j < sortingList2.getSize(); j++) {
-					detailReferTableList.add(new XF390_DetailReferTable((org.w3c.dom.Element)sortingList2.getElementAt(j), this));
-				}
-				//
-				// Add detail column on list //
-				detailColumnList.clear();
-				NodeList columnFieldList = functionElement_.getElementsByTagName("Column");
-				sortingList1 = XFUtility.getSortedListModel(columnFieldList, "Order");
-				for (int j = 0; j < sortingList1.getSize(); j++) {
-					detailColumnList.add(new XF390_DetailColumn((org.w3c.dom.Element)sortingList1.getElementAt(j), this));
-				}
-				//
-				// Add detail table key fields as HIDDEN column if they are not on column list //
-				for (int j = 0; j < detailTable_.getKeyFieldIDList().size(); j++) {
-					if (!containsDetailField(detailTable_.getTableID(), "", detailTable_.getKeyFieldIDList().get(j))) {
-						detailColumnList.add(new XF390_DetailColumn(detailTable_.getTableID(), "", detailTable_.getKeyFieldIDList().get(j), this));
-					}
-				}
-				//
-				// Add order-By fields as HIDDEN column if they are not on the column list //
-				for (int j = 0; j < detailTable_.getOrderByFieldIDList().size(); j++) {
-					workStr = detailTable_.getOrderByFieldIDList().get(j).replace("(D)", "");
-					workStr = workStr.replace("(A)", "");
-					workTokenizer = new StringTokenizer(workStr, "." );
-					workAlias = workTokenizer.nextToken();
-					workTableID = getTableIDOfTableAlias(workAlias);
-					workFieldID = workTokenizer.nextToken();
-					if (!containsDetailField(workTableID, workAlias, workFieldID)) {
-						detailColumnList.add(new XF390_DetailColumn(workTableID, workAlias, workFieldID, this));
-					}
-				}
-				//
-				// Analyze fields in script and add them as HIDDEN columns if necessary //
-				for (int j = 0; j < detailTable_.getScriptList().size(); j++) {
-					if	(detailTable_.getScriptList().get(j).isToBeRunAtEvent("BR", "")
-							|| detailTable_.getScriptList().get(j).isToBeRunAtEvent("AR", "")) {
-						for (int k = 0; k < detailTable_.getScriptList().get(j).getFieldList().size(); k++) {
-							workTokenizer = new StringTokenizer(detailTable_.getScriptList().get(j).getFieldList().get(k), "." );
-							workAlias = workTokenizer.nextToken();
-							workTableID = getTableIDOfTableAlias(workAlias);
-							workFieldID = workTokenizer.nextToken();
-							if (!containsDetailField(workTableID, workAlias, workFieldID)) {
-								workElement = session_.getFieldElement(workTableID, workFieldID);
-								if (workElement == null) {
-									String msg = XFUtility.RESOURCE.getString("FunctionError1") + detailTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + detailTable_.getScriptList().get(j).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
-									JOptionPane.showMessageDialog(null, msg);
-									throw new Exception(msg);
-								} else {
-									if (detailTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
-										detailColumnList.add(new XF390_DetailColumn(workTableID, workAlias, workFieldID, this));
-									}
-								}
-							}
-						}
-					}
-				}
-				//
-				// Analyze detail refer tables and add their fields as HIDDEN columns if necessary //
-				for (int j = detailReferTableList.size()-1; j > -1; j--) {
-					for (int k = 0; k < detailReferTableList.get(j).getFieldIDList().size(); k++) {
-						if (containsDetailField(detailReferTableList.get(j).getTableID(), detailReferTableList.get(j).getTableAlias(), detailReferTableList.get(j).getFieldIDList().get(k))) {
-							detailReferTableList.get(j).setToBeExecuted(true);
-							break;
-						}
-					}
-					if (detailReferTableList.get(j).isToBeExecuted()) {
-						for (int k = 0; k < detailReferTableList.get(j).getFieldIDList().size(); k++) {
-							if (!containsDetailField(detailReferTableList.get(j).getTableID(), detailReferTableList.get(j).getTableAlias(), detailReferTableList.get(j).getFieldIDList().get(k))) {
-								detailColumnList.add(new XF390_DetailColumn(detailReferTableList.get(j).getTableID(), detailReferTableList.get(j).getTableAlias(), detailReferTableList.get(j).getFieldIDList().get(k), this));
-							}
-						}
-						for (int k = 0; k < detailReferTableList.get(j).getWithKeyFieldIDList().size(); k++) {
-							workTokenizer = new StringTokenizer(detailReferTableList.get(j).getWithKeyFieldIDList().get(k), "." );
-							workAlias = workTokenizer.nextToken();
-							workTableID = getTableIDOfTableAlias(workAlias);
-							workFieldID = workTokenizer.nextToken();
-							if (!containsDetailField(workTableID, workAlias, workFieldID)) {
-								detailColumnList.add(new XF390_DetailColumn(workTableID, workAlias, workFieldID, this));
-							}
-						}
-					}
-				}
-
-				/////////////////////
-				// Create PDF file //
-				/////////////////////
+				/////////////////////////////////////////////////////
+				// Select detail table records and create PDF file //
+				/////////////////////////////////////////////////////
 				session_.browseFile(createPDFFileAndGetURI());
 			}
 
@@ -367,7 +179,239 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		// CloseFunction //
 		///////////////////
 		closeFunction();
+
 		return returnMap_;
+	}
+
+	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception {
+		SortableDomElementListModel sortedList;
+		String workAlias, workTableID, workFieldID, workStr;
+		StringTokenizer workTokenizer;
+		org.w3c.dom.Element workElement;
+
+		/////////////////////////////////////////////
+		// Set specifications to the inner variant //
+		/////////////////////////////////////////////
+		functionElement_ = functionElement;
+
+		//////////////////////////////////////////////
+		// Setup the primary table and refer tables //
+		//////////////////////////////////////////////
+		headerTable_ = new XF390_HeaderTable(functionElement_, this);
+		headerReferTableList.clear();
+		NodeList referNodeList = headerTable_.getTableElement().getElementsByTagName("Refer");
+		sortedList = XFUtility.getSortedListModel(referNodeList, "Order");
+		for (int i = 0; i < sortedList.getSize(); i++) {
+			org.w3c.dom.Element element = (org.w3c.dom.Element)sortedList.getElementAt(i);
+			headerReferTableList.add(new XF390_HeaderReferTable(element, this));
+		}
+
+		/////////////////////////////////
+		// Setup phrase and field List //
+		/////////////////////////////////
+		XF390_Phrase phrase;
+		headerPhraseList.clear();
+		headerFieldList.clear();
+		paragraphList.clear();
+		NodeList nodeList = functionElement_.getElementsByTagName("HeaderPhrase");
+		SortableDomElementListModel sortableList = XFUtility.getSortedListModel(nodeList, "Order");
+		for (int i = 0; i < sortableList.getSize(); i++) {
+			phrase = new XF390_Phrase((org.w3c.dom.Element)sortableList.getElementAt(i));
+			if (phrase.getBlock().equals("HEADER")) {
+				headerPhraseList.add(phrase);
+			} else {
+				paragraphList.add(phrase);
+			}
+		}
+
+		//////////////////////////////////////////////////////////////
+		// Add fields on phrases if they are not on the column list //
+		//////////////////////////////////////////////////////////////
+		for (int i = 0; i < headerPhraseList.size(); i++) {
+			for (int j = 0; j < headerPhraseList.get(i).getDataSourceNameList().size(); j++) {
+				if (!existsInFieldList(headerPhraseList.get(i).getDataSourceNameList().get(j))) {
+					headerFieldList.add(new XF390_HeaderField(headerPhraseList.get(i).getDataSourceNameList().get(j), this));
+				}
+			}
+		}
+		for (int i = 0; i < paragraphList.size(); i++) {
+			for (int j = 0; j < paragraphList.get(i).getDataSourceNameList().size(); j++) {
+				if (!existsInFieldList(paragraphList.get(i).getDataSourceNameList().get(j))) {
+					headerFieldList.add(new XF390_HeaderField(paragraphList.get(i).getDataSourceNameList().get(j), this));
+				}
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////
+		// Add primary table key fields if they are not on the column list //
+		/////////////////////////////////////////////////////////////////////
+		for (int i = 0; i < headerTable_.getKeyFieldList().size(); i++) {
+			if (!existsInFieldList(headerTable_.getTableID(), "", headerTable_.getKeyFieldList().get(i))) {
+				headerFieldList.add(new XF390_HeaderField(headerTable_.getTableID(), "", headerTable_.getKeyFieldList().get(i), this));
+			}
+		}
+
+		////////////////////////////////////////////////////////
+		// Analyze fields in script and add them if necessary //
+		////////////////////////////////////////////////////////
+		for (int i = 0; i < headerTable_.getScriptList().size(); i++) {
+			if	(headerTable_.getScriptList().get(i).isToBeRunAtEvent("BR", "")
+					|| headerTable_.getScriptList().get(i).isToBeRunAtEvent("AR", "")) {
+				for (int j = 0; j < headerTable_.getScriptList().get(i).getFieldList().size(); j++) {
+					workTokenizer = new StringTokenizer(headerTable_.getScriptList().get(i).getFieldList().get(j), "." );
+					workAlias = workTokenizer.nextToken();
+					workTableID = getTableIDOfTableAlias(workAlias);
+					workFieldID = workTokenizer.nextToken();
+					if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
+						workElement = session_.getFieldElement(workTableID, workFieldID);
+						if (workElement == null) {
+							String msg = XFUtility.RESOURCE.getString("FunctionError1") + headerTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + headerTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
+							JOptionPane.showMessageDialog(null, msg);
+							throw new Exception(msg);
+						} else {
+							if (headerTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
+								headerFieldList.add(new XF390_HeaderField(workTableID, workAlias, workFieldID, this));
+							}
+						}
+					}
+				}
+			}
+		}
+
+		////////////////////////////////////////////////////////////
+		// Analyze refer tables and add their fields if necessary //
+		////////////////////////////////////////////////////////////
+		for (int i = headerReferTableList.size()-1; i > -1; i--) {
+			for (int j = 0; j < headerReferTableList.get(i).getFieldIDList().size(); j++) {
+				if (existsInFieldList(headerReferTableList.get(i).getTableID(), headerReferTableList.get(i).getTableAlias(), headerReferTableList.get(i).getFieldIDList().get(j))) {
+					headerReferTableList.get(i).setToBeExecuted(true);
+					break;
+				}
+			}
+			if (headerReferTableList.get(i).isToBeExecuted()) {
+				for (int j = 0; j < headerReferTableList.get(i).getFieldIDList().size(); j++) {
+					if (!existsInFieldList(headerReferTableList.get(i).getTableID(), headerReferTableList.get(i).getTableAlias(), headerReferTableList.get(i).getFieldIDList().get(j))) {
+						headerFieldList.add(new XF390_HeaderField(headerReferTableList.get(i).getTableID(), headerReferTableList.get(i).getTableAlias(), headerReferTableList.get(i).getFieldIDList().get(j), this));
+					}
+				}
+				for (int j = 0; j < headerReferTableList.get(i).getWithKeyFieldIDList().size(); j++) {
+					workTokenizer = new StringTokenizer(headerReferTableList.get(i).getWithKeyFieldIDList().get(j), "." );
+					workAlias = workTokenizer.nextToken();
+					workTableID = getTableIDOfTableAlias(workAlias);
+					workFieldID = workTokenizer.nextToken();
+					if (!existsInFieldList(workTableID, workAlias, workFieldID)) {
+						headerFieldList.add(new XF390_HeaderField(workTableID, workAlias, workFieldID, this));
+					}
+				}
+			}
+		}
+
+		///////////////////////////////////////
+		// Setup information of detail table //
+		///////////////////////////////////////
+		tableFontID = functionElement_.getAttribute("TableFontID");
+		tableFontSize = Integer.parseInt(functionElement_.getAttribute("TableFontSize"));
+		try {
+			tableRowNoWidth = Integer.parseInt(functionElement_.getAttribute("TableRowNoWidth"));
+		} catch (Exception e) {
+			tableRowNoWidth = 0;
+		}
+		detailTable_ = new XF390_DetailTable(functionElement_, this);
+		detailReferTableList.clear();
+		detailReferElementList = detailTable_.getTableElement().getElementsByTagName("Refer");
+		sortingList2 = XFUtility.getSortedListModel(detailReferElementList, "Order");
+		for (int j = 0; j < sortingList2.getSize(); j++) {
+			detailReferTableList.add(new XF390_DetailReferTable((org.w3c.dom.Element)sortingList2.getElementAt(j), this));
+		}
+
+		///////////////////////////////
+		// Add detail column on list //
+		///////////////////////////////
+		detailColumnList.clear();
+		NodeList columnFieldList = functionElement_.getElementsByTagName("Column");
+		sortingList1 = XFUtility.getSortedListModel(columnFieldList, "Order");
+		for (int j = 0; j < sortingList1.getSize(); j++) {
+			detailColumnList.add(new XF390_DetailColumn((org.w3c.dom.Element)sortingList1.getElementAt(j), this));
+		}
+
+		/////////////////////////////////////////////////////////////////////////////////
+		// Add detail table key fields as HIDDEN column if they are not on column list //
+		/////////////////////////////////////////////////////////////////////////////////
+		for (int j = 0; j < detailTable_.getKeyFieldIDList().size(); j++) {
+			if (!containsDetailField(detailTable_.getTableID(), "", detailTable_.getKeyFieldIDList().get(j))) {
+				detailColumnList.add(new XF390_DetailColumn(detailTable_.getTableID(), "", detailTable_.getKeyFieldIDList().get(j), this));
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		// Add order-By fields as HIDDEN column if they are not on the column list //
+		/////////////////////////////////////////////////////////////////////////////
+		for (int j = 0; j < detailTable_.getOrderByFieldIDList().size(); j++) {
+			workStr = detailTable_.getOrderByFieldIDList().get(j).replace("(D)", "");
+			workStr = workStr.replace("(A)", "");
+			workTokenizer = new StringTokenizer(workStr, "." );
+			workAlias = workTokenizer.nextToken();
+			workTableID = getTableIDOfTableAlias(workAlias);
+			workFieldID = workTokenizer.nextToken();
+			if (!containsDetailField(workTableID, workAlias, workFieldID)) {
+				detailColumnList.add(new XF390_DetailColumn(workTableID, workAlias, workFieldID, this));
+			}
+		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// Analyze fields in script and add them as HIDDEN columns if necessary //
+		//////////////////////////////////////////////////////////////////////////
+		for (int j = 0; j < detailTable_.getScriptList().size(); j++) {
+			if	(detailTable_.getScriptList().get(j).isToBeRunAtEvent("BR", "")
+					|| detailTable_.getScriptList().get(j).isToBeRunAtEvent("AR", "")) {
+				for (int k = 0; k < detailTable_.getScriptList().get(j).getFieldList().size(); k++) {
+					workTokenizer = new StringTokenizer(detailTable_.getScriptList().get(j).getFieldList().get(k), "." );
+					workAlias = workTokenizer.nextToken();
+					workTableID = getTableIDOfTableAlias(workAlias);
+					workFieldID = workTokenizer.nextToken();
+					if (!containsDetailField(workTableID, workAlias, workFieldID)) {
+						workElement = session_.getFieldElement(workTableID, workFieldID);
+						if (workElement == null) {
+							String msg = XFUtility.RESOURCE.getString("FunctionError1") + detailTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + detailTable_.getScriptList().get(j).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
+							JOptionPane.showMessageDialog(null, msg);
+							throw new Exception(msg);
+						} else {
+							if (detailTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
+								detailColumnList.add(new XF390_DetailColumn(workTableID, workAlias, workFieldID, this));
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		/////////////////////////////////////////////////////////////////////////////////////
+		// Analyze detail refer tables and add their fields as HIDDEN columns if necessary //
+		/////////////////////////////////////////////////////////////////////////////////////
+		for (int j = detailReferTableList.size()-1; j > -1; j--) {
+			for (int k = 0; k < detailReferTableList.get(j).getFieldIDList().size(); k++) {
+				if (containsDetailField(detailReferTableList.get(j).getTableID(), detailReferTableList.get(j).getTableAlias(), detailReferTableList.get(j).getFieldIDList().get(k))) {
+					detailReferTableList.get(j).setToBeExecuted(true);
+					break;
+				}
+			}
+			if (detailReferTableList.get(j).isToBeExecuted()) {
+				for (int k = 0; k < detailReferTableList.get(j).getFieldIDList().size(); k++) {
+					if (!containsDetailField(detailReferTableList.get(j).getTableID(), detailReferTableList.get(j).getTableAlias(), detailReferTableList.get(j).getFieldIDList().get(k))) {
+						detailColumnList.add(new XF390_DetailColumn(detailReferTableList.get(j).getTableID(), detailReferTableList.get(j).getTableAlias(), detailReferTableList.get(j).getFieldIDList().get(k), this));
+					}
+				}
+				for (int k = 0; k < detailReferTableList.get(j).getWithKeyFieldIDList().size(); k++) {
+					workTokenizer = new StringTokenizer(detailReferTableList.get(j).getWithKeyFieldIDList().get(k), "." );
+					workAlias = workTokenizer.nextToken();
+					workTableID = getTableIDOfTableAlias(workAlias);
+					workFieldID = workTokenizer.nextToken();
+					if (!containsDetailField(workTableID, workAlias, workFieldID)) {
+						detailColumnList.add(new XF390_DetailColumn(workTableID, workAlias, workFieldID, this));
+					}
+				}
+			}
+		}
 	}
 
 	void setErrorAndCloseFunction() {
@@ -421,10 +465,13 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		}
 	}
 	
-	public void startProgress(int maxValue) {
+	public void startProgress(String text, int maxValue) {
 	}
 	
 	public void incrementProgress() {
+	}
+	
+	public void endProgress() {
 	}
 	
 	public void commit() {
@@ -435,12 +482,14 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		session_.commit(false, processLog);
 	}
 
-	URI createPDFFileAndGetURI() {
+	private URI createPDFFileAndGetURI() {
 		File pdfFile = null;
 		String pdfFileName = "";
 		FileOutputStream fileOutputStream = null;
-		//
-		//Setup margins//
+
+		///////////////////
+		// Setup margins //
+		///////////////////
 		float leftMargin = 50;
 		float rightMargin = 50;
 		float topMargin = 50;
@@ -453,11 +502,12 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			bottomMargin = Float.parseFloat(workTokenizer.nextToken());
 		} catch (Exception e) {
 		}
-		//
-		//Generate PDF file and PDF writer//
+
+		//////////////////////////////////////
+		// Generate PDF file and PDF writer //
+		//////////////////////////////////////
 		com.lowagie.text.Rectangle pageSize = XFUtility.getPageSize(functionElement_.getAttribute("PageSize"), functionElement_.getAttribute("Direction"));
 		com.lowagie.text.Document pdfDoc = new com.lowagie.text.Document(pageSize, leftMargin, rightMargin, topMargin, bottomMargin); 
-		//
 		try {
 			pdfFile = session_.createTempFile(functionElement_.getAttribute("ID"), ".pdf");
 			pdfFileName = pdfFile.getPath();
@@ -465,16 +515,22 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			fileOutputStream = new FileOutputStream(pdfFileName);
 			PdfWriter writer = PdfWriter.getInstance(pdfDoc, fileOutputStream);
 			writer.setStrictImageSequence(true);
-			//
-			//Set document attributes//
+
+			/////////////////////////////
+			// Set document attributes //
+			/////////////////////////////
 			pdfDoc.addTitle(functionElement_.getAttribute("Name"));
 			pdfDoc.addAuthor(session_.getUserName()); 
 			pdfDoc.addCreator("XEAD Driver");
-			//
-			//Add header to the document//
+			
+			////////////////////////////////
+			// Add header to the document //
+			////////////////////////////////
 			addHeaderToDocument(pdfDoc);
-			//
-			//Add page-number-footer to the document//
+
+			////////////////////////////////////////////
+			// Add page-number-footer to the document //
+			////////////////////////////////////////////
 			if (functionElement_.getAttribute("WithPageNumber").equals("T")) {
 				HeaderFooter footer = new HeaderFooter(
 						new Phrase("--"), new Phrase("--"));
@@ -482,20 +538,28 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				footer.setBorder(com.lowagie.text.Rectangle.NO_BORDER);
 				pdfDoc.setFooter(footer);
 			}
-			//
-			//Prepare document//
+
+			//////////////////////
+			// Prepare document //
+			//////////////////////
 			pdfDoc.open();
 			PdfContentByte cb = writer.getDirectContent();
-			//
-			//Add Paragraph block//
+
+			/////////////////////////
+			// Add Paragraph block //
+			/////////////////////////
 			addParagraphToDocument(pdfDoc, "PARAGRAPH", cb);
-			//
-			//Add Table block//
+
+			///////////////////////////////////////////////
+			// Add Table block and select detail records //
+			///////////////////////////////////////////////
 			addTableToDocument(pdfDoc, cb);
-			//
-			//Add Footer block//
+
+			//////////////////////
+			// Add Footer block //
+			//////////////////////
 			addParagraphToDocument(pdfDoc, "FOOTER", cb);
-			//
+
 		} catch (DocumentException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -505,7 +569,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		} finally {
 			pdfDoc.close();
 		}
-		//
+
 		return pdfFile.toURI();
 	}
 	
@@ -566,17 +630,16 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		Phrase phrase;
 		Paragraph paragraph = null;
 		String keyword = "";
-		//
+
 		for (int i = 0; i < paragraphList.size(); i++) {
-			//
+
 			if (paragraphList.get(i).getBlock().equals(blockType)) {
-				//
 				paragraph = new Paragraph(new Phrase(""));
 				paragraph.setAlignment(paragraphList.get(i).getAlignment());
 				paragraph.setIndentationRight(paragraphList.get(i).getMarginRight());
 				paragraph.setIndentationLeft(paragraphList.get(i).getMarginLeft());
 				paragraph.setSpacingAfter(paragraphList.get(i).getSpacingAfter());
-				//
+
 				font = new com.lowagie.text.Font(session_.getBaseFontWithID(paragraphList.get(i).getFontID()), paragraphList.get(i).getFontSize(), paragraphList.get(i).getFontStyle());
 				phrase = new Phrase("", font);
 				for (int j = 0; j < paragraphList.get(i).getValueKeywordList().size(); j++) {
@@ -1364,7 +1427,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		return color;
 	}
 	
-	 class WorkingRow extends Object {
+	class WorkingRow extends Object {
 		private ArrayList<String> columnValueList_ = new ArrayList<String>();
 		private ArrayList<String> orderByValueList_ = new ArrayList<String>();
 		private HashMap<String, Object> keyMap_ = new HashMap<String, Object>();
@@ -1385,7 +1448,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		}
 	}
 		
-	 class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
+	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
 		 public int compare(WorkingRow row1, WorkingRow row2){
 			 int compareResult = 0;
 			 for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
@@ -1431,39 +1494,29 @@ class XF390_HeaderField extends XFColumnScriptable {
 
 	public XF390_HeaderField(String dataSourceName, XF390 dialog){
 		super();
-		//
 		dataSourceName_ = dataSourceName;
 		dialog_ = dialog;
-		//
 		StringTokenizer workTokenizer = new StringTokenizer(dataSourceName_, ";" );
 		dataSourceName_ = workTokenizer.nextToken().trim();
 		workTokenizer = new StringTokenizer(dataSourceName_, "." );
 		tableAlias_ = workTokenizer.nextToken();
 		tableID_ = dialog_.getTableIDOfTableAlias(tableAlias_);
 		fieldID_ =workTokenizer.nextToken();
-		//
 		setupVariants();
-		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF390_HeaderField(String tableID, String tableAlias, String fieldID, XF390 dialog){
 		super();
-		//
 		tableID_ = tableID;
 		fieldID_ = fieldID;
 		dialog_ = dialog;
-		//
 		if (tableAlias.equals("")) {
 			tableAlias_ = tableID;
 		} else {
 			tableAlias_ = tableAlias;
 		}
 		dataSourceName_ = tableAlias_ + "." + fieldID_;
-		//
 		setupVariants();
-		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public void setupVariants(){
@@ -2861,8 +2914,6 @@ class XF390_DetailColumn extends XFColumnScriptable {
 		} catch (NumberFormatException e) {
 			fieldWidth = 20;
 		}
-		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF390_DetailColumn(String tableID, String tableAlias, String fieldID, XF390 dialog){
@@ -2920,8 +2971,6 @@ class XF390_DetailColumn extends XFColumnScriptable {
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
 		}
-		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 	
 	public boolean isImage() {

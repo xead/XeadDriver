@@ -61,11 +61,11 @@ public class XFInputDialogField extends JPanel {
 		jLabelField.setVerticalAlignment(SwingConstants.TOP);
 		jLabelField.setFont(new java.awt.Font("Dialog", 0, 14));
 		metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		jLabelField.setPreferredSize(new Dimension(120, XFUtility.FIELD_UNIT_HEIGHT));
-		if (metrics.stringWidth(fieldCaption) > 120) {
+		jLabelField.setPreferredSize(new Dimension(130, XFUtility.FIELD_UNIT_HEIGHT));
+		if (metrics.stringWidth(fieldCaption) > 125) {
 			jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
 			metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-			if (metrics.stringWidth(fieldCaption) > 120) {
+			if (metrics.stringWidth(fieldCaption) > 125) {
 				jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
 			}
 		}
@@ -74,9 +74,9 @@ public class XFInputDialogField extends JPanel {
 				|| inputType_.equals("NUMERIC")) {
 			JTextField field = new JTextField();
 			field.addFocusListener(new ComponentFocusListener());
+			field.setDocument(new LimitedDocument(this));
 			if (inputType_.equals("NUMERIC")) {
 				field.setHorizontalAlignment(SwingConstants.RIGHT);
-				field.setDocument(new LimitedDocument(this));
 			}
 			component = field;
 		}
@@ -97,9 +97,9 @@ public class XFInputDialogField extends JPanel {
 		this.setOpaque(false);
 		if (inputType_.equals("DATE")) {
 			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), 14);
-			this.setBounds(this.getBounds().x, this.getBounds().y, 150 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
+			this.setBounds(this.getBounds().x, this.getBounds().y, 200 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
 		} else {
-			this.setBounds(this.getBounds().x, this.getBounds().y, 150, XFUtility.FIELD_UNIT_HEIGHT);
+			this.setBounds(this.getBounds().x, this.getBounds().y, 200, XFUtility.FIELD_UNIT_HEIGHT);
 		}
 		this.setLayout(new BorderLayout());
 		this.add(jLabelField, BorderLayout.WEST);
@@ -172,9 +172,9 @@ public class XFInputDialogField extends JPanel {
 		   width = 50;
 	   }
 	   if (jButton == null) {
-		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 125, this.getBounds().height);
+		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 135, this.getBounds().height);
 	   } else {
-		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 125 + 26, this.getBounds().height);
+		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 135 + 26, this.getBounds().height);
 	   }
 	   isAutoSizing = false;
    }

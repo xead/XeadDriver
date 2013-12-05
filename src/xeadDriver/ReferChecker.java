@@ -195,7 +195,8 @@ public class ReferChecker extends Object {
 		String msgHeader;
 		operatorList.clear();
 		//
-		function_.startProgress(subjectTableList_.size());
+		//function_.startProgress(XFUtility.RESOURCE.getString("ChrossCheck"), subjectTableList_.size());
+		session_.startProgress(XFUtility.RESOURCE.getString("ChrossCheck"), subjectTableList_.size());
 		//
 		if (rowNumber > 0) {
 			bf.append(XFUtility.RESOURCE.getString("ReferCheckerMessage0"));
@@ -228,7 +229,8 @@ public class ReferChecker extends Object {
 						}
 					}
 				}
-				function_.incrementProgress();
+				//function_.incrementProgress();
+				session_.incrementProgress();
 			}
 		} catch(ScriptException e) {
 			function_.cancelWithScriptException(e, scriptNameRunning_);

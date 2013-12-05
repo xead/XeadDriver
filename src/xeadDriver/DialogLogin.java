@@ -32,6 +32,7 @@ package xeadDriver;
  */
 
 import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.PlainDocument;
@@ -109,8 +110,7 @@ public class DialogLogin extends JDialog {
 			pack();
 
 			aboutDialog = new DialogAbout(this);
-		}
-		catch(Exception ex) {
+		} catch(Exception ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -124,11 +124,6 @@ public class DialogLogin extends JDialog {
 
 		String password = new String(jPasswordField.getPassword());
 		if (jTextFieldUserID.getText().equals("") || password.equals("")) {
-//			EventQueue.invokeLater(new Runnable() {
-//				@Override public void run() {
-//					session.getApplication().hideSplash();
-//				}
-//			});
 			super.setVisible(true);
 		} else {
 			jButtonOK_actionPerformed(null);

@@ -32,7 +32,6 @@ package xeadDriver;
  */
 
 import javax.script.Bindings;
-import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
@@ -137,7 +136,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private JButton buttonToDelete = null;
 	private String[] actionDefinitionArray = new String[7];
 	private ScriptEngine scriptEngine;
-	private Bindings engineScriptBindings;
+	private Bindings scriptBindings;
 	private String scriptNameRunning = "";
 	private final int FIELD_HORIZONTAL_MARGIN = 1;
 	private final int FIELD_VERTICAL_MARGIN = 5;
@@ -147,29 +146,25 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private String exceptionHeader = "";
 	private String functionAfterInsert = "";
 	private int firstErrorTabIndex = -1;
+	private int biggestWidth = 0;
+	private int biggestHeight = 0;
+	private int biggestHeightOfMainPanel = 0;
+	private int biggestHeightOfTabbedPane = 0;
 	private HashMap<String, Object> columnValueMap = new HashMap<String, Object>();
 	private HashMap<String, Object> columnOldValueMap = new HashMap<String, Object>();
 	
 	public XF200(Session session, int instanceArrayIndex) {
 		super(session, "", true);
-		try {
-			session_ = session;
-			instanceArrayIndex_ = instanceArrayIndex;
-			//
-			initComponentsAndVariants();
-			//
-		} catch(Exception e) {
-			e.printStackTrace(exceptionStream);
-		}
+		session_ = session;
+		instanceArrayIndex_ = instanceArrayIndex;
+		initComponentsAndVariants();
 	}
 
-	void initComponentsAndVariants() throws Exception {
-		//
+	void initComponentsAndVariants() {
 		jPanelMain.setLayout(new BorderLayout());
-		//
 		jPanelFields.setLayout(null);
 		jScrollPaneFields.getViewport().add(jPanelFields, null);
-		//
+
 		jTabbedPaneFields.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
 		jTabbedPaneFields.setBorder(null);
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
@@ -195,7 +190,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		gridLayoutButtons.setColumns(7);
 		gridLayoutButtons.setRows(1);
 		gridLayoutButtons.setHgap(2);
-		//
+
 		for (int i = 0; i < 7; i++) {
 			jButtonArray[i] = new JButton();
 			jButtonArray[i].setBounds(new Rectangle(0, 0, 90, 30));
@@ -217,7 +212,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			actionButtonArray[i] = new ButtonAction(jButtonArray[i]);
 			jPanelButtons.add(jPanelButtonArray[i]);
 		}
-		//
+
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
 		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
@@ -225,11 +220,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		jTextAreaMessages.setLineWrap(true);
 		jTextAreaMessages.setWrapStyleWord(true);
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
-		//
+
 		jSplitPaneMain.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		jSplitPaneMain.addKeyListener(new XF200_Component_keyAdapter(this));
 		jSplitPaneMain.add(jScrollPaneMessages, JSplitPane.BOTTOM);
-		//
+
 		jPanelMain.add(jSplitPaneMain, BorderLayout.CENTER);
 		jPanelMain.add(jPanelBottom, BorderLayout.SOUTH);
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
@@ -241,12 +236,16 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		return instanceIsAvailable_;
 	}
 
-	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
-		SortableDomElementListModel sortedList;
-		String workAlias, workTableID, workFieldID;
-		StringTokenizer workTokenizer;
-		org.w3c.dom.Element workElement;
+	public HashMap<String, Object> execute(HashMap<String, Object> parmMap) {
+		if (functionElement_ == null) {
+			JOptionPane.showMessageDialog(null, "Calling function without specifications.");
+			return parmMap;
+		} else {
+			return this.execute(null, parmMap);
+		}
+	}
 
+	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parmMap) {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
@@ -269,38 +268,64 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionLog = new ByteArrayOutputStream();
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
-			functionElement_ = functionElement;
 			processLog.delete(0, processLog.length());
 			messageList.clear();
-			functionAfterInsert = functionElement_.getAttribute("FunctionAfterInsert");
-			initialMsg = functionElement_.getAttribute("InitialMsg");
-			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 			operatorList.clear();
 			threadToSetupReferChecker = null;
+			
+			///////////////////////////////////////////
+			// Setup specifications for the function //
+			///////////////////////////////////////////
+			if (functionElement != null
+					&& (functionElement_ == null || !functionElement_.getAttribute("ID").equals(functionElement.getAttribute("ID")))) {
+				setFunctionSpecifications(functionElement);
+			}
 
-			//////////////////////////////////////
-			// Setup Script Engine and Bindings //
-			//////////////////////////////////////
-			scriptEngine = session_.getScriptEngineManager().getEngineByName("js");
-			engineScriptBindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
-			engineScriptBindings.clear();
-			engineScriptBindings.put("instance", (XFScriptable)this);
+			/////////////////////////////////
+			// Write log to start function //
+			/////////////////////////////////
+			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 			
 			//////////////////////////////
 			// Set panel configurations //
 			//////////////////////////////
-			jLabelSessionID.setText(session_.getSessionID());
-			jLabelFunctionID.setText("200" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
-			FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
-			jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 	        Rectangle screenRect = session_.getMenuRectangle();
 			if (functionElement_.getAttribute("Size").equals("")) {
 				this.setPreferredSize(new Dimension(screenRect.width, screenRect.height));
 				this.setLocation(screenRect.x, screenRect.y);
 				this.pack();
 			} else {
-				if (!functionElement_.getAttribute("Size").equals("AUTO")) {
-					workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
+				if (functionElement_.getAttribute("Size").equals("AUTO")) {
+					int posX = 0;
+					int posY = 0;
+
+					int workWidth = biggestWidth + 50;
+					if (workWidth < 800) {
+						workWidth = 800;
+					}
+					if (workWidth > screenRect.width) {
+						workWidth = screenRect.width;
+						posX = screenRect.x;
+					} else {
+						posX = ((screenRect.width - workWidth) / 2) + screenRect.x;
+						if ((posX + workWidth + 10) < screenRect.width) {
+							posX = posX + 10;
+						}
+					}
+
+					int workHeight = biggestHeight + 150;
+					if (workHeight > screenRect.height) {
+						workHeight = screenRect.height;
+						posY = screenRect.y;
+					} else {
+						posY = ((screenRect.height - workHeight) / 2) + screenRect.y;
+					}
+
+					this.setPreferredSize(new Dimension(workWidth, workHeight));
+					this.setLocation(posX, posY);
+					this.pack();
+				} else {
+					StringTokenizer workTokenizer = new StringTokenizer(functionElement_.getAttribute("Size"), ";" );
 					int width = Integer.parseInt(workTokenizer.nextToken());
 					int height = Integer.parseInt(workTokenizer.nextToken());
 					this.setPreferredSize(new Dimension(width, height));
@@ -310,25 +335,17 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					this.pack();
 				}
 			}
+			if (jSplitPaneWithTabbedFields != null) {
+				int height1 = this.getHeight() - 225;
+				int height2 = biggestHeightOfMainPanel + 20;
+				if  (height1 <= height2) {
+					jSplitPaneWithTabbedFields.setDividerLocation(height1);
+				} else {
+					jSplitPaneWithTabbedFields.setDividerLocation(height2);
+				}
+			}
 			jPanelBottom.remove(jProgressBar);
 			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
-
-			//////////////////////////////////////////////
-			// Setup the primary table and refer tables //
-			//////////////////////////////////////////////
-			primaryTable_ = new XF200_PrimaryTable(functionElement_, this);
-			referTableList.clear();
-			NodeList referNodeList = primaryTable_.getTableElement().getElementsByTagName("Refer");
-			sortedList = XFUtility.getSortedListModel(referNodeList, "Order");
-			for (int i = 0; i < sortedList.getSize(); i++) {
-				org.w3c.dom.Element element = (org.w3c.dom.Element)sortedList.getElementAt(i);
-				referTableList.add(new XF200_ReferTable(element, this));
-			}
-			if (functionElement_.getAttribute("DataName").equals("")) {
-				dataName = primaryTable_.getName();
-			} else {
-				dataName = functionElement_.getAttribute("DataName");
-			}
 	        
 			/////////////////////////////
 			// Initializing panel mode //
@@ -366,345 +383,19 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 
-			/////////////////////////
-			// Setup column fields //
-			/////////////////////////
-			jPanelFields.removeAll();
-			fieldList.clear();
-			Dimension dimOfPriviousField = new Dimension(0,0);
-			Dimension dim = new Dimension(0,0);
-			int posX = 0;
-			int posY = 0;
-			int biggestWidth = 300;
-			int biggestHeight = 50;
-			boolean firstVisibleField = true;
-			XF200_Field field;
-			XF200_Field preField = null;
-			SortableDomElementListModel sortableList;
-			SortableDomElementListModel sortableList2;
-			NodeList functionFieldList = functionElement_.getElementsByTagName("Field");
-			sortableList = XFUtility.getSortedListModel(functionFieldList, "Order");
-			for (int i = 0; i < sortableList.getSize(); i++) {
-
-				field = new XF200_Field((org.w3c.dom.Element)sortableList.getElementAt(i), this, -1);
-				fieldList.add(field);
-
-				if (field.isVisibleOnPanel()) {
-					if (field.getTypeOptionList().contains("ZIPADRS") && preField != null) {
-						field.setRefferComponent(preField.getComponent());
-					}
-					if (firstVisibleField) {
-						posX = 0;
-						posY = this.FIELD_VERTICAL_MARGIN + 3;
-						firstVisibleField = false;
-					} else {
-						if (field.isHorizontal()) {
-							posX = posX + dimOfPriviousField.width + field.getPositionMargin() + this.FIELD_HORIZONTAL_MARGIN;
-						} else {
-							posX = 0;
-							posY = posY + dimOfPriviousField.height + field.getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
-						}
-					}
-					preField = field;
-
-					dim = field.getPreferredSize();
-					field.setBounds(posX, posY, dim.width, dim.height);
-					if (posX + dim.width > biggestWidth) {
-						biggestWidth = posX + dim.width;
-					}
-					if (posY + dim.height > biggestHeight) {
-						biggestHeight = posY + dim.height;
-					}
-
-					if (field.isHorizontal()) {
-						dimOfPriviousField = new Dimension(dim.width, XFUtility.FIELD_UNIT_HEIGHT);
-					} else {
-						dimOfPriviousField = new Dimension(dim.width, dim.height);
-					}
-					jPanelFields.add(field);
-				}
-			}
-			int biggestHeightOfMainPanel = biggestHeight;
-
-			biggestHeight = 60;
-			int biggestHeightOfTabbedPane = 60;
-			jTabbedPaneFields.removeAll();
-			NodeList tabList = functionElement_.getElementsByTagName("Tab");
-			sortableList = XFUtility.getSortedListModel(tabList, "Order");
-			for (int i = 0; i < sortableList.getSize(); i++) {
-				JPanel jPanel = new JPanel();
-				jPanel.setLayout(null);
-				jPanel.setBorder(null);
-				JScrollPane jScrollPane = new JScrollPane();
-				jScrollPane.setBorder(null);
-				jScrollPane.getViewport().add(jPanel, null);
-				jTabbedPaneFields.add(((org.w3c.dom.Element)sortableList.getElementAt(i)).getAttribute("Caption"), jScrollPane);
-				firstVisibleField = true;
-
-				dimOfPriviousField = new Dimension(0,0);
-				functionFieldList = ((org.w3c.dom.Element)sortableList.getElementAt(i)).getElementsByTagName("TabField");
-				sortableList2 = XFUtility.getSortedListModel(functionFieldList, "Order");
-				for (int j = 0; j < sortableList2.getSize(); j++) {
-
-					field = new XF200_Field((org.w3c.dom.Element)sortableList2.getElementAt(j), this, i);
-					fieldList.add(field);
-
-					if (field.getTypeOptionList().contains("ZIPADRS") && preField != null) {
-						field.setRefferComponent(preField.getComponent());
-					}
-					if (firstVisibleField) {
-						posX = 0;
-						posY = this.FIELD_VERTICAL_MARGIN + 3;
-						firstVisibleField = false;
-					} else {
-						if (field.isHorizontal()) {
-							posX = posX + dimOfPriviousField.width + field.getPositionMargin() + this.FIELD_HORIZONTAL_MARGIN;
-						} else {
-							posX = 0;
-							posY = posY + dimOfPriviousField.height + field.getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
-						}
-					}
-					preField = field;
-
-					dim = field.getPreferredSize();
-					field.setBounds(posX, posY, dim.width, dim.height);
-					if (posX + dim.width > biggestWidth) {
-						biggestWidth = posX + dim.width;
-					}
-					if (posY + dim.height > biggestHeight) {
-						biggestHeight = posY + dim.height;
-					}
-
-					if (field.isHorizontal()) {
-						dimOfPriviousField = new Dimension(dim.width, XFUtility.FIELD_UNIT_HEIGHT);
-					} else {
-						dimOfPriviousField = new Dimension(dim.width, dim.height);
-					}
-					jPanel.add(field);
-				}
-				jPanel.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeight + 10));
-				if (biggestHeight > biggestHeightOfTabbedPane) {
-					biggestHeightOfTabbedPane = biggestHeight;
-				}
-			}
-			if (sortableList.getSize() > 0) {
-				jTabbedPaneFields.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeightOfTabbedPane + 50));
-				jSplitPaneWithTabbedFields = new JSplitPane();
-				jSplitPaneWithTabbedFields.setOrientation(JSplitPane.VERTICAL_SPLIT);
-				jSplitPaneWithTabbedFields.setBorder(null);
-				jSplitPaneWithTabbedFields.addKeyListener(new XF200_Component_keyAdapter(this));
-				jSplitPaneWithTabbedFields.add(jScrollPaneFields, JSplitPane.TOP);
-				jSplitPaneWithTabbedFields.add(jTabbedPaneFields, JSplitPane.BOTTOM);
-				jSplitPaneMain.add(jSplitPaneWithTabbedFields, JSplitPane.TOP);
-				biggestHeight = biggestHeightOfMainPanel + biggestHeightOfTabbedPane + 50;
-			} else {
-				jSplitPaneMain.add(jScrollPaneFields, JSplitPane.TOP);
-				biggestHeight = biggestHeightOfMainPanel;
-			}
-			jPanelFields.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeightOfMainPanel + 10));
-
-			////////////////////////////////////////////
-			// Setup panel sizes if AUTO is specified //
-			////////////////////////////////////////////
-			if (functionElement_.getAttribute("Size").equals("AUTO")) {
-				int workWidth = biggestWidth + 50;
-				if (workWidth < 800) {
-					workWidth = 800;
-				}
-				if (workWidth > screenRect.width) {
-					workWidth = screenRect.width;
-					posX = screenRect.x;
-				} else {
-					posX = ((screenRect.width - workWidth) / 2) + screenRect.x;
-					if ((posX + workWidth + 10) < screenRect.width) {
-						posX = posX + 10;
-					}
-				}
-
-				int workHeight = biggestHeight + 150;
-				if (workHeight > screenRect.height) {
-					workHeight = screenRect.height;
-					posY = screenRect.y;
-				} else {
-					posY = ((screenRect.height - workHeight) / 2) + screenRect.y;
-				}
-
-				this.setPreferredSize(new Dimension(workWidth, workHeight));
-				this.setLocation(posX, posY);
-				this.pack();
-			}
-
-			if (jSplitPaneWithTabbedFields != null) {
-				int height1 = this.getHeight() - 225;
-				int height2 = biggestHeightOfMainPanel + 20;
-				if  (height1 <= height2) {
-					jSplitPaneWithTabbedFields.setDividerLocation(height1);
-				} else {
-					jSplitPaneWithTabbedFields.setDividerLocation(height2);
-				}
-			}
-
-			////////////////////////////////////////////////
-			// Add prompt-field-to-get-to as HIDDEN field //
-			////////////////////////////////////////////////
-			for (int i = 0; i < fieldList.size(); i++) {
-				for (int j = 0; j < fieldList.get(i).getAdditionalHiddenFieldList().size(); j++) {
-					workTokenizer = new StringTokenizer(fieldList.get(i).getAdditionalHiddenFieldList().get(j), "." );
-					workAlias = workTokenizer.nextToken();
-					workTableID = getTableIDOfTableAlias(workAlias);
-					workFieldID = workTokenizer.nextToken();
-					if (!existsInColumnList(workTableID, workAlias, workFieldID)) {
-						workElement = session_.getFieldElement(workTableID, workFieldID);
-						if (workElement == null) {
-							String msg = XFUtility.RESOURCE.getString("FunctionError1") + primaryTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
-							JOptionPane.showMessageDialog(this, msg);
-							throw new Exception(msg);
-						} else {
-							if (primaryTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
-								XF200_Field columnField = new XF200_Field(workTableID, workAlias, workFieldID, this);
-								fieldList.add(columnField);
-							}
-						}
-					}
-				}
-			}
-
-			////////////////////////////////////////////////////////////////
-			// Add primary table key fields as HIDDEN fields if necessary //
-			////////////////////////////////////////////////////////////////
-			for (int i = 0; i < primaryTable_.getKeyFieldList().size(); i++) {
-				if (!existsInColumnList(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i))) {
-					XF200_Field columnField = new XF200_Field(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i), this);
-					fieldList.add(columnField);
-				}
-			}
-
-			//////////////////////////////////////////////////////////////////////////
-			// Add unique key fields of primary table as HIDDEN fields if necessary //
-			//////////////////////////////////////////////////////////////////////////
-			for (int i = 0; i < primaryTable_.getUniqueKeyList().size(); i++) {
-				workTokenizer = new StringTokenizer(primaryTable_.getUniqueKeyList().get(i), ";" );
-				while (workTokenizer.hasMoreTokens()) {
-					workFieldID = workTokenizer.nextToken();
-					if (!existsInColumnList(primaryTable_.getTableID(), "", workFieldID)) {
-						XF200_Field columnField = new XF200_Field(primaryTable_.getTableID(), "", workFieldID, this);
-						fieldList.add(columnField);
-					}
-				}
-			}
-
-			/////////////////////////////////////////////////////////////////////////
-			// Analyze fields in script and add them as HIDDEN fields if necessary //
-			/////////////////////////////////////////////////////////////////////////
-			for (int i = 0; i < primaryTable_.getScriptList().size(); i++) {
-				if	(primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BC", "")
-					|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AC", "")
-					|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BR", "")
-					|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AR", "")
-					|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BU", "")
-					|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AU", "")
-					|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BD", "")
-					|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AD", "")) {
-					for (int j = 0; j < primaryTable_.getScriptList().get(i).getFieldList().size(); j++) {
-						workTokenizer = new StringTokenizer(primaryTable_.getScriptList().get(i).getFieldList().get(j), "." );
-						workAlias = workTokenizer.nextToken();
-						workTableID = getTableIDOfTableAlias(workAlias);
-						workFieldID = workTokenizer.nextToken();
-						if (!existsInColumnList(workTableID, workAlias, workFieldID)) {
-							workElement = session_.getFieldElement(workTableID, workFieldID);
-							if (workElement == null) {
-								String msg = XFUtility.RESOURCE.getString("FunctionError1") + primaryTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
-								JOptionPane.showMessageDialog(this, msg);
-								throw new Exception(msg);
-							} else {
-								if (primaryTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
-									XF200_Field columnField = new XF200_Field(workTableID, workAlias, workFieldID, this);
-									fieldList.add(columnField);
-								}
-							}
-						}
-					}
-				}
-			}
-
-			/////////////////////////////////////////////////////////////////////////////
-			// Analyze refer tables and add their fields as HIDDEN fields if necessary //
-			/////////////////////////////////////////////////////////////////////////////
-			for (int i = referTableList.size()-1; i > -1; i--) {
-				for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
-					if (existsInColumnList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
-						referTableList.get(i).setToBeExecuted(true);
-						break;
-					}
-				}
-				if (!referTableList.get(i).isToBeExecuted()) {
-					for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
-						workTokenizer = new StringTokenizer(referTableList.get(i).getWithKeyFieldIDList().get(j), "." );
-						workAlias = workTokenizer.nextToken();
-						workFieldID = workTokenizer.nextToken();
-						if (workAlias.equals(primaryTable_.getTableID()) && existsInColumnList(primaryTable_.getTableID(), "", workFieldID)) {
-							referTableList.get(i).setToBeExecuted(true);
-							break;
-						}
-					}
-				}
-				if (referTableList.get(i).isToBeExecuted()) {
-					for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
-						if (!existsInColumnList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
-							XF200_Field columnField = new XF200_Field(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j), this);
-							fieldList.add(columnField);
-						}
-					}
-					for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
-						workTokenizer = new StringTokenizer(referTableList.get(i).getWithKeyFieldIDList().get(j), "." );
-						workAlias = workTokenizer.nextToken();
-						workTableID = getTableIDOfTableAlias(workAlias);
-						workFieldID = workTokenizer.nextToken();
-						if (!existsInColumnList(workTableID, workAlias, workFieldID)) {
-							XF200_Field columnField = new XF200_Field(workTableID, workAlias, workFieldID, this);
-							fieldList.add(columnField);
-						}
-					}
-				}
-			}
-
-			////////////////////////////////////////////////////////////////////////
-			// Analyze refer tables and set their fields as Key-Dependent         //
-			// if their With-Key contains primary key field. Key-Dependent fields //
-			// are not to be edited by prompting features in Edit mode            //
-			////////////////////////////////////////////////////////////////////////
-			boolean containsPrimaryKeyWithinWithKey;
-			for (int i = 0; i < referTableList.size(); i++) {
-				containsPrimaryKeyWithinWithKey = false;
-				for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
-					for (int k = 0; k < primaryTable_.getKeyFieldList().size(); k++) {
-						if (referTableList.get(i).getWithKeyFieldIDList().get(j).equals(primaryTable_.getTableID() + "." + primaryTable_.getKeyFieldList().get(k))) {
-							containsPrimaryKeyWithinWithKey = true;
-							break;
-						}
-					}
-					if (containsPrimaryKeyWithinWithKey) {
-						break;
-					}
-				}
-				if (containsPrimaryKeyWithinWithKey) {
-					workAlias = referTableList.get(i).getTableAlias();
-					for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
-						for (int k = 0; k < fieldList.size(); k++) {
-							workFieldID = referTableList.get(i).getFieldIDList().get(j);
-							if (fieldList.get(k).getTableAlias().equals(workAlias) && fieldList.get(k).getFieldID().equals(workFieldID)) {
-								if (fieldList.get(k).isVisibleOnPanel()) {
-									fieldList.get(k).setKeyDependent(true);
-								}
-							}
-						}
-					}
-				}
-			}
-
 			//////////////////////////////////////////////////
 			// Fetch the record and set values on the panel //
 			//////////////////////////////////////////////////
+			Object value;
+			for (int i = 0; i < fieldList.size(); i++) {
+				fieldList.get(i).initEditable();
+				if (fieldList.get(i).isFieldOnPrimaryTable()) {
+					value = parmMap_.get(fieldList.get(i).getFieldID());
+					if (value != null) {
+						fieldList.get(i).setValue(value);
+					}
+				}
+			}
 			if (panelMode_.equals("DISPLAY")) {
 				initializeFieldValues();
 				fetchTableRecord();
@@ -765,7 +456,356 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		// Release instance and exit //
 		///////////////////////////////
 		instanceIsAvailable_ = true;
+
 		return returnMap_;
+	}
+
+	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception {
+		SortableDomElementListModel sortedList;
+		String workAlias, workTableID, workFieldID;
+		StringTokenizer workTokenizer;
+		org.w3c.dom.Element workElement;
+
+		/////////////////////////////////////////////
+		// Set specifications to the inner variant //
+		/////////////////////////////////////////////
+		functionElement_ = functionElement;
+
+		////////////////////////////////
+		// Setup Panel Configurations //
+		////////////////////////////////
+		functionAfterInsert = functionElement_.getAttribute("FunctionAfterInsert");
+		initialMsg = functionElement_.getAttribute("InitialMsg");
+		jLabelSessionID.setText(session_.getSessionID());
+		if (instanceArrayIndex_ >= 0) {
+			jLabelFunctionID.setText("200" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
+		} else {
+			jLabelFunctionID.setText("200"+ "-" + functionElement_.getAttribute("ID"));
+		}
+		FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
+
+		//////////////////////////////////////////////
+		// Setup the primary table and refer tables //
+		//////////////////////////////////////////////
+		primaryTable_ = new XF200_PrimaryTable(functionElement_, this);
+		referTableList.clear();
+		NodeList referNodeList = primaryTable_.getTableElement().getElementsByTagName("Refer");
+		sortedList = XFUtility.getSortedListModel(referNodeList, "Order");
+		for (int i = 0; i < sortedList.getSize(); i++) {
+			org.w3c.dom.Element element = (org.w3c.dom.Element)sortedList.getElementAt(i);
+			referTableList.add(new XF200_ReferTable(element, this));
+		}
+		if (functionElement_.getAttribute("DataName").equals("")) {
+			dataName = primaryTable_.getName();
+		} else {
+			dataName = functionElement_.getAttribute("DataName");
+		}
+
+		/////////////////////////
+		// Setup column fields //
+		/////////////////////////
+		jPanelFields.removeAll();
+		fieldList.clear();
+		Dimension dimOfPriviousField = new Dimension(0,0);
+		Dimension dim = new Dimension(0,0);
+		int posX = 0;
+		int posY = 0;
+		biggestWidth = 300;
+		biggestHeight = 50;
+		boolean firstVisibleField = true;
+		XF200_Field field;
+		XF200_Field preField = null;
+		SortableDomElementListModel sortableList;
+		SortableDomElementListModel sortableList2;
+		NodeList functionFieldList = functionElement_.getElementsByTagName("Field");
+		sortableList = XFUtility.getSortedListModel(functionFieldList, "Order");
+		for (int i = 0; i < sortableList.getSize(); i++) {
+
+			field = new XF200_Field((org.w3c.dom.Element)sortableList.getElementAt(i), this, -1);
+			fieldList.add(field);
+
+			if (field.isVisibleOnPanel()) {
+				if (field.getTypeOptionList().contains("ZIPADRS") && preField != null) {
+					field.setRefferComponent(preField.getComponent());
+				}
+				if (firstVisibleField) {
+					posX = 0;
+					posY = this.FIELD_VERTICAL_MARGIN + 3;
+					firstVisibleField = false;
+				} else {
+					if (field.isHorizontal()) {
+						posX = posX + dimOfPriviousField.width + field.getPositionMargin() + this.FIELD_HORIZONTAL_MARGIN;
+					} else {
+						posX = 0;
+						posY = posY + dimOfPriviousField.height + field.getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
+					}
+				}
+				preField = field;
+
+				dim = field.getPreferredSize();
+				field.setBounds(posX, posY, dim.width, dim.height);
+				if (posX + dim.width > biggestWidth) {
+					biggestWidth = posX + dim.width;
+				}
+				if (posY + dim.height > biggestHeight) {
+					biggestHeight = posY + dim.height;
+				}
+
+				if (field.isHorizontal()) {
+					dimOfPriviousField = new Dimension(dim.width, XFUtility.FIELD_UNIT_HEIGHT);
+				} else {
+					dimOfPriviousField = new Dimension(dim.width, dim.height);
+				}
+				jPanelFields.add(field);
+			}
+		}
+		int biggestHeightOfMainPanel = biggestHeight;
+
+		biggestHeight = 60;
+		biggestHeightOfTabbedPane = 60;
+		jTabbedPaneFields.removeAll();
+		NodeList tabList = functionElement_.getElementsByTagName("Tab");
+		sortableList = XFUtility.getSortedListModel(tabList, "Order");
+		for (int i = 0; i < sortableList.getSize(); i++) {
+			JPanel jPanel = new JPanel();
+			jPanel.setLayout(null);
+			jPanel.setBorder(null);
+			JScrollPane jScrollPane = new JScrollPane();
+			jScrollPane.setBorder(null);
+			jScrollPane.getViewport().add(jPanel, null);
+			jTabbedPaneFields.add(((org.w3c.dom.Element)sortableList.getElementAt(i)).getAttribute("Caption"), jScrollPane);
+			firstVisibleField = true;
+
+			dimOfPriviousField = new Dimension(0,0);
+			functionFieldList = ((org.w3c.dom.Element)sortableList.getElementAt(i)).getElementsByTagName("TabField");
+			sortableList2 = XFUtility.getSortedListModel(functionFieldList, "Order");
+			for (int j = 0; j < sortableList2.getSize(); j++) {
+
+				field = new XF200_Field((org.w3c.dom.Element)sortableList2.getElementAt(j), this, i);
+				fieldList.add(field);
+
+				if (field.getTypeOptionList().contains("ZIPADRS") && preField != null) {
+					field.setRefferComponent(preField.getComponent());
+				}
+				if (firstVisibleField) {
+					posX = 0;
+					posY = this.FIELD_VERTICAL_MARGIN + 3;
+					firstVisibleField = false;
+				} else {
+					if (field.isHorizontal()) {
+						posX = posX + dimOfPriviousField.width + field.getPositionMargin() + this.FIELD_HORIZONTAL_MARGIN;
+					} else {
+						posX = 0;
+						posY = posY + dimOfPriviousField.height + field.getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
+					}
+				}
+				preField = field;
+
+				dim = field.getPreferredSize();
+				field.setBounds(posX, posY, dim.width, dim.height);
+				if (posX + dim.width > biggestWidth) {
+					biggestWidth = posX + dim.width;
+				}
+				if (posY + dim.height > biggestHeight) {
+					biggestHeight = posY + dim.height;
+				}
+
+				if (field.isHorizontal()) {
+					dimOfPriviousField = new Dimension(dim.width, XFUtility.FIELD_UNIT_HEIGHT);
+				} else {
+					dimOfPriviousField = new Dimension(dim.width, dim.height);
+				}
+				jPanel.add(field);
+			}
+			jPanel.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeight + 10));
+			if (biggestHeight > biggestHeightOfTabbedPane) {
+				biggestHeightOfTabbedPane = biggestHeight;
+			}
+		}
+		if (sortableList.getSize() > 0) {
+			jTabbedPaneFields.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeightOfTabbedPane + 50));
+			jSplitPaneWithTabbedFields = new JSplitPane();
+			jSplitPaneWithTabbedFields.setOrientation(JSplitPane.VERTICAL_SPLIT);
+			jSplitPaneWithTabbedFields.setBorder(null);
+			jSplitPaneWithTabbedFields.addKeyListener(new XF200_Component_keyAdapter(this));
+			jSplitPaneWithTabbedFields.add(jScrollPaneFields, JSplitPane.TOP);
+			jSplitPaneWithTabbedFields.add(jTabbedPaneFields, JSplitPane.BOTTOM);
+			jSplitPaneMain.add(jSplitPaneWithTabbedFields, JSplitPane.TOP);
+			biggestHeight = biggestHeightOfMainPanel + biggestHeightOfTabbedPane + 50;
+		} else {
+			jSplitPaneMain.add(jScrollPaneFields, JSplitPane.TOP);
+			biggestHeight = biggestHeightOfMainPanel;
+		}
+		jPanelFields.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeightOfMainPanel + 10));
+
+		////////////////////////////////////////////////
+		// Add prompt-field-to-get-to as HIDDEN field //
+		////////////////////////////////////////////////
+		for (int i = 0; i < fieldList.size(); i++) {
+			for (int j = 0; j < fieldList.get(i).getAdditionalHiddenFieldList().size(); j++) {
+				workTokenizer = new StringTokenizer(fieldList.get(i).getAdditionalHiddenFieldList().get(j), "." );
+				workAlias = workTokenizer.nextToken();
+				workTableID = getTableIDOfTableAlias(workAlias);
+				workFieldID = workTokenizer.nextToken();
+				if (!existsInColumnList(workTableID, workAlias, workFieldID)) {
+					workElement = session_.getFieldElement(workTableID, workFieldID);
+					if (workElement == null) {
+						String msg = XFUtility.RESOURCE.getString("FunctionError1") + primaryTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
+						JOptionPane.showMessageDialog(this, msg);
+						throw new Exception(msg);
+					} else {
+						if (primaryTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
+							XF200_Field columnField = new XF200_Field(workTableID, workAlias, workFieldID, this);
+							fieldList.add(columnField);
+						}
+					}
+				}
+			}
+		}
+
+		////////////////////////////////////////////////////////////////
+		// Add primary table key fields as HIDDEN fields if necessary //
+		////////////////////////////////////////////////////////////////
+		for (int i = 0; i < primaryTable_.getKeyFieldList().size(); i++) {
+			if (!existsInColumnList(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i))) {
+				XF200_Field columnField = new XF200_Field(primaryTable_.getTableID(), "", primaryTable_.getKeyFieldList().get(i), this);
+				fieldList.add(columnField);
+			}
+		}
+
+		//////////////////////////////////////////////////////////////////////////
+		// Add unique key fields of primary table as HIDDEN fields if necessary //
+		//////////////////////////////////////////////////////////////////////////
+		for (int i = 0; i < primaryTable_.getUniqueKeyList().size(); i++) {
+			workTokenizer = new StringTokenizer(primaryTable_.getUniqueKeyList().get(i), ";" );
+			while (workTokenizer.hasMoreTokens()) {
+				workFieldID = workTokenizer.nextToken();
+				if (!existsInColumnList(primaryTable_.getTableID(), "", workFieldID)) {
+					XF200_Field columnField = new XF200_Field(primaryTable_.getTableID(), "", workFieldID, this);
+					fieldList.add(columnField);
+				}
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////////
+		// Analyze fields in script and add them as HIDDEN fields if necessary //
+		/////////////////////////////////////////////////////////////////////////
+		for (int i = 0; i < primaryTable_.getScriptList().size(); i++) {
+			if	(primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BC", "")
+				|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AC", "")
+				|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BR", "")
+				|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AR", "")
+				|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BU", "")
+				|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AU", "")
+				|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("BD", "")
+				|| primaryTable_.getScriptList().get(i).isToBeRunAtEvent("AD", "")) {
+				for (int j = 0; j < primaryTable_.getScriptList().get(i).getFieldList().size(); j++) {
+					workTokenizer = new StringTokenizer(primaryTable_.getScriptList().get(i).getFieldList().get(j), "." );
+					workAlias = workTokenizer.nextToken();
+					workTableID = getTableIDOfTableAlias(workAlias);
+					workFieldID = workTokenizer.nextToken();
+					if (!existsInColumnList(workTableID, workAlias, workFieldID)) {
+						workElement = session_.getFieldElement(workTableID, workFieldID);
+						if (workElement == null) {
+							String msg = XFUtility.RESOURCE.getString("FunctionError1") + primaryTable_.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + primaryTable_.getScriptList().get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
+							JOptionPane.showMessageDialog(this, msg);
+							throw new Exception(msg);
+						} else {
+							if (primaryTable_.isValidDataSource(workTableID, workAlias, workFieldID)) {
+								XF200_Field columnField = new XF200_Field(workTableID, workAlias, workFieldID, this);
+								fieldList.add(columnField);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		// Analyze refer tables and add their fields as HIDDEN fields if necessary //
+		/////////////////////////////////////////////////////////////////////////////
+		for (int i = referTableList.size()-1; i > -1; i--) {
+			for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
+				if (existsInColumnList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
+					referTableList.get(i).setToBeExecuted(true);
+					break;
+				}
+			}
+			if (!referTableList.get(i).isToBeExecuted()) {
+				for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
+					workTokenizer = new StringTokenizer(referTableList.get(i).getWithKeyFieldIDList().get(j), "." );
+					workAlias = workTokenizer.nextToken();
+					workFieldID = workTokenizer.nextToken();
+					if (workAlias.equals(primaryTable_.getTableID()) && existsInColumnList(primaryTable_.getTableID(), "", workFieldID)) {
+						referTableList.get(i).setToBeExecuted(true);
+						break;
+					}
+				}
+			}
+			if (referTableList.get(i).isToBeExecuted()) {
+				for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
+					if (!existsInColumnList(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j))) {
+						XF200_Field columnField = new XF200_Field(referTableList.get(i).getTableID(), referTableList.get(i).getTableAlias(), referTableList.get(i).getFieldIDList().get(j), this);
+						fieldList.add(columnField);
+					}
+				}
+				for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
+					workTokenizer = new StringTokenizer(referTableList.get(i).getWithKeyFieldIDList().get(j), "." );
+					workAlias = workTokenizer.nextToken();
+					workTableID = getTableIDOfTableAlias(workAlias);
+					workFieldID = workTokenizer.nextToken();
+					if (!existsInColumnList(workTableID, workAlias, workFieldID)) {
+						XF200_Field columnField = new XF200_Field(workTableID, workAlias, workFieldID, this);
+						fieldList.add(columnField);
+					}
+				}
+			}
+		}
+
+		////////////////////////////////////////////////////////////////////////
+		// Analyze refer tables and set their fields as Key-Dependent         //
+		// if their With-Key contains primary key field. Key-Dependent fields //
+		// are not to be edited by prompting features in Edit mode            //
+		////////////////////////////////////////////////////////////////////////
+		boolean containsPrimaryKeyWithinWithKey;
+		for (int i = 0; i < referTableList.size(); i++) {
+			containsPrimaryKeyWithinWithKey = false;
+			for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
+				for (int k = 0; k < primaryTable_.getKeyFieldList().size(); k++) {
+					if (referTableList.get(i).getWithKeyFieldIDList().get(j).equals(primaryTable_.getTableID() + "." + primaryTable_.getKeyFieldList().get(k))) {
+						containsPrimaryKeyWithinWithKey = true;
+						break;
+					}
+				}
+				if (containsPrimaryKeyWithinWithKey) {
+					break;
+				}
+			}
+			if (containsPrimaryKeyWithinWithKey) {
+				workAlias = referTableList.get(i).getTableAlias();
+				for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
+					for (int k = 0; k < fieldList.size(); k++) {
+						workFieldID = referTableList.get(i).getFieldIDList().get(j);
+						if (fieldList.get(k).getTableAlias().equals(workAlias) && fieldList.get(k).getFieldID().equals(workFieldID)) {
+							if (fieldList.get(k).isVisibleOnPanel()) {
+								fieldList.get(k).setKeyDependent(true);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		//////////////////////////////////////
+		// Setup Script Engine and Bindings //
+		//////////////////////////////////////
+		scriptEngine = session_.getScriptEngineManager().getEngineByName("js");
+		scriptBindings = scriptEngine.createBindings();
+		scriptBindings.put("instance", (XFScriptable)this);
+		for (int i = 0; i < fieldList.size(); i++) {
+			scriptBindings.put(fieldList.get(i).getFieldIDInScript(), fieldList.get(i));
+		}
 	}
 
 	protected void processWindowEvent(WindowEvent e) {
@@ -784,13 +824,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	void closeFunction() {
 		instanceIsAvailable_ = true;
 		messageList.clear();
-//		try {
-//			if (threadToSetupReferChecker != null) {
-//				threadToSetupReferChecker.join();
-//			}
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		}
 		if (returnMap_.get("RETURN_CODE").equals("00")) {
 			if (panelMode_.equals("EDIT")) {
 				returnMap_.put("RETURN_CODE", "21");
@@ -868,10 +901,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		XFUtility.appendLog(text, processLog);
 	}
 	
-	public void startProgress(int maxValue) {
+	public void startProgress(String text, int maxValue) {
 		jProgressBar.setMaximum(maxValue);
 		jProgressBar.setValue(0);
 		jPanelBottom.remove(jPanelInfo);
+		jProgressBar.setString(text);
 		jProgressBar.setPreferredSize(jPanelInfo.getPreferredSize());
 		jPanelBottom.add(jProgressBar, BorderLayout.EAST);
 		this.pack();
@@ -881,11 +915,16 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		jProgressBar.setValue(jProgressBar.getValue() + 1);
 		jProgressBar.paintImmediately(0,0,jProgressBar.getWidth(), jProgressBar.getHeight());
 		if (jProgressBar.getValue() >= jProgressBar.getMaximum()) {
-			jPanelBottom.remove(jProgressBar);
-			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
-			this.pack();
-			jPanelBottom.repaint();
+			endProgress();
 		}
+	}
+	
+	public void endProgress() {
+		jPanelBottom.remove(jProgressBar);
+		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
+		this.pack();
+		jPanelBottom.repaint();
+		//setCursor(new Cursor(Cursor.WAIT_CURSOR));
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
@@ -1019,6 +1058,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 		if (panelMode_.equals("EDIT")) {
+			buttonToEdit.setText(functionKeyToEdit + " " + XFUtility.RESOURCE.getString("Update"));
 			if (buttonToCopy != null) {
 				buttonToCopy.setVisible(false);
 			}
@@ -1102,8 +1142,14 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getFieldID()));
 					fieldList.get(i).setComponentEditable(false);
 				} else {
-					fieldList.get(i).setValue(fieldList.get(i).getInternalValue());
+					//fieldList.get(i).setValue(fieldList.get(i).getInternalValue());
+					fieldList.get(i).setValue(fieldList.get(i).getNullValue());
 				}
+			}
+		}
+		for (int i = 0; i < fieldList.size(); i++) {
+			if (fieldList.get(i).isPromptListField()) {
+				fieldList.get(i).setValue(fieldList.get(i).getInternalValue());
 			}
 		}
 	}
@@ -1320,7 +1366,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					fieldList.get(i).requestFocus();
 					isFirstErrorField = false;
 				}
-				messageList.add(fieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + fieldList.get(i).getError());
+				if (fieldList.get(i).isVisibleOnPanel()) {
+					messageList.add(fieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + fieldList.get(i).getError());
+				} else {
+					messageList.add(fieldList.get(i).getError());
+				}
 			}
 			/////////////////////////////////////////////////////////
 			// required step to set focus on the first error field //
@@ -1610,24 +1660,31 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		this.setTitle(XFUtility.RESOURCE.getString("FunctionMessage25") + dataName + XFUtility.RESOURCE.getString("FunctionMessage26"));
 		panelMode_ = "COPY";
 		returnMap_.put("RETURN_CODE", "11");
-		//
+
+		for (int i = 0; i < fieldList.size(); i++) {
+			fieldList.get(i).initEditable();
+		}
+		fetchReferTableRecords("BC", false, "");
+		resetFieldError();
+
 		this.hasAutoNumberField = false;
 		for (int i = 0; i < fieldList.size(); i++) {
-			fieldList.get(i).setEditMode(panelMode_);
 			if (fieldList.get(i).isAutoNumberField() || fieldList.get(i).isAutoDetailRowNumber()) {
 				fieldList.get(i).setValue("*AUTO");
+				fieldList.get(i).setEditable(false);
 				this.hasAutoNumberField = true;
 			}
+			fieldList.get(i).setEditMode(panelMode_);
 		}
-		//
+
 		setFocusOnComponent();
-		//
+
 		buttonToEdit.setText(functionKeyToEdit + " " + XFUtility.RESOURCE.getString("Add"));
 		buttonToCopy.setVisible(false);
 		if (buttonToDelete != null) {
 			buttonToDelete.setVisible(false);
 		}
-		//
+
 		messageList.clear();
 		messageList.add(XFUtility.RESOURCE.getString("FunctionMessage15"));
 	}
@@ -2015,14 +2072,14 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		return exceptionStream;
 	}
 
-	public Bindings getEngineScriptBindings() {
-		return 	engineScriptBindings;
-	}
+	//public Bindings getEngineScriptBindings() {
+	//	return 	engineScriptBindings;
+	//}
 	
 	public Object getFieldObjectByID(String tableID, String fieldID) {
 		String id = tableID + "_" + fieldID;
-		if (engineScriptBindings.containsKey(id)) {
-			return engineScriptBindings.get(id);
+		if (scriptBindings.containsKey(id)) {
+			return scriptBindings.get(id);
 		} else {
 			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
 			return null;
@@ -2035,7 +2092,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			StringBuffer bf = new StringBuffer();
 			bf.append(scriptText);
 			bf.append(session_.getScriptFunctions());
-			scriptEngine.eval(bf.toString());
+			scriptEngine.eval(bf.toString(), scriptBindings);
 		}
 	}
 
@@ -2152,6 +2209,7 @@ class XF200_Field extends XFFieldScriptable {
 	private boolean isHorizontal = false;
 	private boolean isImage = false;
 	private boolean isEditable = true;
+	private boolean isEditableInitial = true;
 	private boolean isAutoDetailRowNumber = false;
 	private int positionMargin = 0;
 	private ArrayList<String> additionalHiddenFieldList = new ArrayList<String>();
@@ -2444,13 +2502,7 @@ class XF200_Field extends XFFieldScriptable {
 			isEditable = false;
 			this.setEnabled(false);
 		}
-		//
-		if (this.isFieldOnPrimaryTable) {
-			Object value = dialog_.getParmMap().get(fieldID_);
-			if (value != null) {
-				this.setValue(value);
-			}
-		}
+		isEditableInitial = isEditable;
 		//
 		if (decimalSize > 0) {
 			wrkStr = "<html>" + fieldName + " " + dataSourceName + " (" + dataSize + "," + decimalSize + ")<br>" + fieldRemarks;
@@ -2459,8 +2511,6 @@ class XF200_Field extends XFFieldScriptable {
 		}
 		this.setToolTipText(wrkStr);
 		component.setToolTipText(wrkStr);
-		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF200_Field(String tableID, String tableAlias, String fieldID, XF200 dialog){
@@ -2553,8 +2603,7 @@ class XF200_Field extends XFFieldScriptable {
 			isEditable = false;
 			this.setEnabled(false);
 		}
-		//
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
+		isEditableInitial = isEditable;
 	}
 	
 	public ArrayList<String> getAdditionalHiddenFieldList() {
@@ -2568,19 +2617,6 @@ class XF200_Field extends XFFieldScriptable {
 	public void setRefferComponent(XFEditableField compo) {
 		refferComponent = compo;
 	}
-
-//	public void checkPromptKeyEdit(){
-//		if (!XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL").equals("")) {
-//			if (((XF200_PromptCallField)component).hasEditControlledKey()) {
-//				this.setEditable(false);
-//			}
-//		}
-//		if (fieldOptionList.contains("PROMPT_LIST")) {
-//			if (((XF200_ComboBox)component).hasEditControlledKey()) {
-//				this.setEditable(false);
-//			}
-//		}
-//	}
 	
 	public boolean isPromptListField(){
 		return fieldOptionList.contains("PROMPT_LIST");
@@ -2706,6 +2742,10 @@ class XF200_Field extends XFFieldScriptable {
 
 	public void setEditable(boolean editable){
 		this.isEditable = editable;
+	}
+	
+	public void initEditable() {
+		isEditable = isEditableInitial;
 	}
 
 	public boolean isComponentFocusable() {
@@ -2903,14 +2943,14 @@ class XF200_Field extends XFFieldScriptable {
 
 	public String getAutoNumber() {
 		String value = "";
-		if (!autoNumberKey.equals("")) {
+		if (!autoNumberKey.equals("") && isFieldOnPrimaryTable) {
 			value = dialog_.getSession().getNextNumber(autoNumberKey);
 		}
 		return value;
 	}
 
 	public boolean isAutoNumberField() {
-		return !autoNumberKey.equals("");
+		return !autoNumberKey.equals("") && isFieldOnPrimaryTable;
 	}
 
 	public boolean isError() {
@@ -3178,27 +3218,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
 			//
-//			boolean blankItemRequired = true;
-//			XFHashMap keyValues = new XFHashMap();
-//			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
-//				for (int j = 0; j < dialog_.getFieldList().size(); j++) {
-//					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
-//						if (dialog_.getFieldList().get(j).isNullable()) {
-//							if (dialog_.getFieldList().get(j).isVisibleOnPanel()) {
-//								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
-//							} else {
-//								keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
-//							}
-//						} else {
-//							blankItemRequired = false;
-//							break;
-//						}
-//					}
-//				}
-//				if (!blankItemRequired) {
-//					break;
-//				}
-//			}
 			boolean blankItemRequired = false;
 			XFHashMap blankKeyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
@@ -3244,23 +3263,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			jComboBox.setSelectedItem(selectedItemValue);
 		}
 	}
-	
-//	public boolean hasEditControlledKey() {
-//		boolean anyOfKeysAreEditControlled = false;
-//		//
-//		for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
-//			for (int j = 0; j < dialog_.getFieldList().size(); j++) {
-//				if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
-//					if (!dialog_.getFieldList().get(j).isEditable() && dialog_.getPrimaryTable().getTableID().equals(dialog_.getFieldList().get(j).getTableAlias())) {
-//						anyOfKeysAreEditControlled = true;
-//						break;
-//					}
-//				}
-//			}
-//		}
-//		//
-//		return anyOfKeysAreEditControlled;
-//	}
 	
 	public void setFollowingField(XFEditableField field) {
 	}
@@ -3525,29 +3527,16 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		this.setLayout(new BorderLayout());
 		this.add(xFTextField, BorderLayout.CENTER);
 	}
-	
-//	public boolean hasEditControlledKey() {
-//		boolean anyOfKeysAreEditControlled = false;
-//		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
-//			for (int j = 0; j < dialog_.getFieldList().size(); j++) {
-//				if (fieldsToGetToList_.get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
-//					if (!dialog_.getFieldList().get(j).isEditable() && dialog_.getPrimaryTable().getTableID().equals(dialog_.getFieldList().get(j).getTableAlias())) {
-//						anyOfKeysAreEditControlled = true;
-//						break;
-//					}
-//				}
-//			}
-//		}
-//		return anyOfKeysAreEditControlled;
-//	}
 
 	public void setEditable(boolean editable) {
 		if (editable) {
 			this.add(jButton, BorderLayout.EAST);
+			xFTextField.setBackground(XFUtility.ACTIVE_COLOR);
 			xFTextField.setEditable(isEditableInEditMode_);
 			xFTextField.setFocusable(isEditableInEditMode_);
 		} else {
 			this.remove(jButton);
+			xFTextField.setBackground(XFUtility.INACTIVE_COLOR);
 			xFTextField.setEditable(false);
 			xFTextField.setFocusable(false);
 		}

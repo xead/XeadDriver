@@ -82,7 +82,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private XF110_SubListDetailTable detailTable;
 	private ArrayList<XF110_SubListDetailColumn> detailColumnList = new ArrayList<XF110_SubListDetailColumn>();
 	private ArrayList<XF110_SubListDetailReferTable> detailReferTableList = new ArrayList<XF110_SubListDetailReferTable>();
-	private ArrayList<WorkingRow> tableRowList = new ArrayList<WorkingRow>();
 	private ArrayList<String> batchWithKeyList = new ArrayList<String>();
 	private ArrayList<String> batchKeyList = new ArrayList<String>();
 	private TableModelEditableList tableModelMain = null;
@@ -154,7 +153,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private Action[] actionButtonArray = new Action[7];
 	private String[] actionDefinitionArray = new String[7];
 	private ScriptEngine scriptEngine;
-	private Bindings engineScriptBindings;
+	private Bindings scriptBindings;
 	private String scriptNameRunning = "";
 	private final int FIELD_HORIZONTAL_MARGIN = 1;
 	private final int FIELD_VERTICAL_MARGIN = 5;
@@ -328,9 +327,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		///////////////////////////
 		functionElement_ = dialog_.getFunctionElement();
 		session_ = dialog_.getSession();
-		scriptEngine = dialog_.getScriptEngine();
-		engineScriptBindings = scriptEngine.createBindings();
-		engineScriptBindings.put("instance", (XFScriptable)this);
 
 		//////////////////////////////
 		// Set panel configurations //
@@ -340,8 +336,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 		jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 		this.setTitle(functionElement_.getAttribute("Name"));
-		this.setPreferredSize(new Dimension(dialog_.getPreferredSize().width, dialog_.getPreferredSize().height));
-		this.setLocation(dialog_.getLocation().x, dialog_.getLocation().y);
 		initialMsg = functionElement_.getAttribute("InitialMsg");
 
 		//////////////////////////////////////
@@ -352,7 +346,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		} else {
 			setupBatchTableAndFieldsConfiguration();
 		}
-
 		this.pack();
 
 		///////////////////////////////////////
@@ -366,11 +359,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			detailReferTableList.add(new XF110_SubListDetailReferTable((org.w3c.dom.Element)sortingList2.getElementAt(j), this));
 		}
 
-		//////////////////////////////////////////
-		// Add and setup columns on table model //
-		//////////////////////////////////////////
-		tableModelMain = new TableModelEditableList();
-		jTableMain.setModel(tableModelMain);
+		///////////////////////
+		// Setup column list //
+		///////////////////////
 		detailColumnList.clear();
 		int columnIndex = 0;
 		NodeList columnFieldList = functionElement_.getElementsByTagName("Column");
@@ -382,10 +373,16 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				detailColumnList.get(j).setColumnIndex(columnIndex);
 			}
 		}
+
+		///////////////////////////////////////////////
+		// Setup table-model and renderer and editor //
+		///////////////////////////////////////////////
 		headersRenderer = new TableHeadersRenderer(); 
 		cellsRenderer = new TableCellsRenderer(headersRenderer); 
 		cellsEditor = new TableCellsEditor(headersRenderer); 
 		jTableMain.setRowHeight(headersRenderer.getHeight());
+		tableModelMain = new TableModelEditableList();
+		jTableMain.setModel(tableModelMain);
 		tableModelMain.addColumn(""); //column index:0 //
 		TableColumn column = jTableMain.getColumnModel().getColumn(0);
 		column.setHeaderRenderer(headersRenderer);
@@ -501,6 +498,21 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			}
 		}
 
+		/////////////////////////////////////////////
+		// Initializing script engine and bindings //
+		/////////////////////////////////////////////
+		scriptEngine = dialog_.getScriptEngine();
+		scriptBindings = scriptEngine.createBindings();
+		scriptBindings.put("instance", (XFScriptable)this);
+		for (int i = 0; i < batchFieldList.size(); i++) {
+			scriptBindings.put(batchFieldList.get(i).getFieldIDInScript(), batchFieldList.get(i));
+		}
+		for (int i = 0; i < detailColumnList.size(); i++) {
+			if (!scriptBindings.containsKey(detailColumnList.get(i).getFieldIDInScript())) {
+				scriptBindings.put(detailColumnList.get(i).getFieldIDInScript(), detailColumnList.get(i));
+			}
+		}
+
 		setupFunctionKeysAndButtons();
 	}
 	
@@ -510,6 +522,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		org.w3c.dom.Element workElement;
 		XF110_SubListBatchField batchField;
 
+		///////////////////////
+		// Setup Batch Table //
+		///////////////////////
 		batchTable = new XF110_SubListBatchTable(functionElement_, this);
 		batchReferTableList.clear();
 		batchReferElementList = batchTable.getTableElement().getElementsByTagName("Refer");
@@ -518,6 +533,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			batchReferTableList.add(new XF110_SubListBatchReferTable((org.w3c.dom.Element)sortingList1.getElementAt(i), this));
 		}
 
+		//////////////////////////////////////////
+		// Initialize variants for Batch Fields //
+		//////////////////////////////////////////
 		batchFieldList.clear();
 		firstEditableBatchField = null;
 		Dimension dimOfPriviousField = new Dimension(0,0);
@@ -530,6 +548,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		boolean hasAnyBatchFields = false;
 		XFEditableField zipField = null;
 
+		////////////////////////
+		// Setup Batch Fields //
+		////////////////////////
 		NodeList batchFieldElementList = functionElement_.getElementsByTagName("BatchField");
 		sortingList1 = XFUtility.getSortedListModel(batchFieldElementList, "Order");
 		for (int i = 0; i < sortingList1.getSize(); i++) {
@@ -571,6 +592,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			}
 		}
 
+		///////////////////////////////////////////////
+		// Setup panel components for Batch Function //
+		///////////////////////////////////////////////
 		batchFunctionID = "";
 		jCheckBoxToExecuteBatchFunction.setSelected(false);
 		if (!functionElement_.getAttribute("BatchRecordFunction").equals("")) {
@@ -696,6 +720,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			}
 		}
 
+		///////////////////////////////////
+		// Setup panels for Batch fields //
+		///////////////////////////////////
 		if (hasAnyBatchFields) {
 			jPanelBatchFields.setPreferredSize(new Dimension(biggestWidth, biggestHeight + 5));
 			jPanelCenter.add(jPanelBatchFields, BorderLayout.NORTH);
@@ -706,12 +733,21 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
+			/////////////////////////////////
+			// Initializing basic variants //
+			/////////////////////////////////
 			reply_ = "";
 			readyToShowDialog = true;
 	        threadToSetupReferChecker = null;
 
+			///////////////////////////////////////////////////
+			// Select detail record and setup rows of JTable //
+			///////////////////////////////////////////////////
 			selectDetailRecordsAndSetupTableRows();
 
+			//////////////////////////////////////
+			// Setup field value of Batch Table //
+			//////////////////////////////////////
 			if (batchFieldList.size() > 0) {
 				setBatchFieldValues();
 			}
@@ -723,18 +759,21 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	        threadToSetupReferChecker = new Thread(constructor);
 	        threadToSetupReferChecker.start();
 
-			////////////////////////////////////
-			// Setup main components on panel //
-			////////////////////////////////////
+			////////////////////////////////
+			// Setup panel configurations //
+			////////////////////////////////
+	        this.setPreferredSize(new Dimension(dialog_.getPreferredSize().width, dialog_.getPreferredSize().height));
+			this.setLocation(dialog_.getLocation().x, dialog_.getLocation().y);
 			messageList.clear();
 			if (initialMsg.equals("")) {
 				jTextAreaMessages.setText(XFUtility.RESOURCE.getString("FunctionMessage7") + buttonUpdateCaption + XFUtility.RESOURCE.getString("FunctionMessage8"));
 			} else {
 				jTextAreaMessages.setText(initialMsg);
 			}
-			jSplitPaneMain.setDividerLocation(this.getHeight() - 125);
+			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 125);
 			jPanelBottom.remove(jProgressBar);
 			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
+			this.pack();
 
 			//////////////////////////////////////////
 			// Set focus on top focusable component //
@@ -764,9 +803,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			this.setVisible(true);
 		}
 
-		///////////////////////////////
-		// Release instance and exit //
-		///////////////////////////////
 		return reply_;
 	}
 
@@ -912,24 +948,29 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		referChecker = checker;
 	}
 	
-	public void startProgress(int maxValue) {
+	public void startProgress(String text, int maxValue) {
 		jProgressBar.setMaximum(maxValue);
 		jProgressBar.setValue(0);
 		jPanelBottom.remove(jPanelInfo);
+		jProgressBar.setString(text);
 		jProgressBar.setPreferredSize(jPanelInfo.getPreferredSize());
 		jPanelBottom.add(jProgressBar, BorderLayout.EAST);
-		this.pack();
+		//this.pack();
 	}
 	
 	public void incrementProgress() {
 		jProgressBar.setValue(jProgressBar.getValue() + 1);
 		jProgressBar.paintImmediately(0,0,jProgressBar.getWidth(), jProgressBar.getHeight());
 		if (jProgressBar.getValue() >= jProgressBar.getMaximum()) {
-			jPanelBottom.remove(jProgressBar);
-			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
-			this.pack();
-			jPanelBottom.repaint();
+			endProgress();
 		}
+	}
+	
+	public void endProgress() {
+		jPanelBottom.remove(jProgressBar);
+		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
+		//this.pack();
+		jPanelBottom.repaint();
 	}
 
 	public void commit() {
@@ -988,13 +1029,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			// Run Script for BeforeCreate and AfterRead-all-refer-tables //
 			////////////////////////////////////////////////////////////////
 			countOfErrors = countOfErrors + batchTable.runScript("BC", "AR()");
-
-//			//////////////////////////////////////////////////
-//			// check if prompt-key is EditControlled or not //
-//			//////////////////////////////////////////////////
-//			for (int i = 0; i < batchFieldList.size(); i++) {
-//				batchFieldList.get(i).checkPromptKeyEdit();
-//			}
 
 		} catch(ScriptException e) {
 			this.cancelWithScriptException(e, this.getScriptNameRunning());
@@ -1059,13 +1093,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			// Run Script for AfterRead-all-refer-tables //
 			///////////////////////////////////////////////
 			countOfErrors = countOfErrors + detailTable.runScript(event, "AR()", columnValueMap, columnOldValueMap); /* Script to be run AFTER READ */
-
-//			//////////////////////////////////////////////////
-//			// Check if prompt-key is EditControlled or not //
-//			//////////////////////////////////////////////////
-//			for (int i = 0; i < detailColumnList.size(); i++) {
-//				detailColumnList.get(i).checkPromptKeyEdit();
-//			}
 
 		} catch(ScriptException e) {
 			this.cancelWithScriptException(e, this.getScriptNameRunning());
@@ -1140,6 +1167,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	void selectDetailRecordsAndSetupTableRows() {
 		HashMap<String, Object> keyValueMap;
 		HashMap<String, Object> columnValueMap;
+		HashMap<String, Object> columnOldValueMap;
 		HashMap<String, Boolean> columnEditableMap;
 		XFTableOperator operator;
 
@@ -1148,7 +1176,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			for (int i = 0; i < rowCount; i++) {
 				tableModelMain.removeRow(0);
 			}
-			tableRowList.clear();
+			//tableRowList.clear();
 			cellsEditor.init();
 
 			int countOfRows = 0;
@@ -1170,9 +1198,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 
 						columnValueMap = new HashMap<String, Object>();
+						columnOldValueMap = new HashMap<String, Object>();
 						keyValueMap = new HashMap<String, Object>();
 						for (int i = 0; i < detailColumnList.size(); i++) {
 							columnValueMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getInternalValue());
+							columnOldValueMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getOldValue());
 							if (detailColumnList.get(i).isKey()) {
 								keyValueMap.put(detailColumnList.get(i).getFieldID(), detailColumnList.get(i).getInternalValue());
 							}
@@ -1191,7 +1221,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 						
 						Object[] cell = new Object[1];
-						cell[0] = new XF110_SubListDetailRowNumber(countOfRows + 1, keyValueMap, columnValueMap, columnEditableMap, this);
+						cell[0] = new XF110_SubListDetailRowNumber(countOfRows + 1, keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, this);
 						tableModelMain.addRow(cell);
 
 						countOfRows++;
@@ -1216,12 +1246,19 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		XF110_SubListDetailRowNumber tableRowNumber, previousRowNumber = null;
 		XFTableOperator operator;
 		int recordCount;
+		HashMap<String, Object> keyMap;
 
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 			
+			/////////////////////////////////////
+			// Complete editing cell component //
+			/////////////////////////////////////
 			cellsEditor.stopCellEditing();
 
+			///////////////////////////////////////////
+			// Validate values of the detail records //
+			///////////////////////////////////////////
 			int countOfErrors = 0;
 			for (int i = 0; i < jTableMain.getRowCount(); i++) {
 				tableRowNumber = (XF110_SubListDetailRowNumber)tableModelMain.getValueAt(i, 0);
@@ -1229,6 +1266,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				countOfErrors = countOfErrors + tableRowNumber.countErrors(messageList);
 			}
 
+			/////////////////////////////////////////
+			// Validate values for the batch table //
+			/////////////////////////////////////////
 			if (batchTable != null) {
 				for (int i = 0; i < batchFieldList.size(); i++) {
 					batchFieldList.get(i).setError(false);
@@ -1246,6 +1286,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					if (checkOnly) {
 						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage9"));
 					} else {
+
+						//////////////////////////////////////////////
+						// Resort order of detail records to update //
+						//////////////////////////////////////////////
 						ArrayList<XF110_SubListDetailRowNumber> rowNumberList = new ArrayList<XF110_SubListDetailRowNumber>();
 						for (int i = 0; i < jTableMain.getRowCount(); i++) {
 							rowNumberList.add((XF110_SubListDetailRowNumber)tableModelMain.getValueAt(i,0));
@@ -1259,11 +1303,14 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 							tableRowNumber = rowNumberArray[i];
 							tableRowNumber.setValuesToDetailColumns();
 
+							///////////////////////////////////////////////////
+							// Insert record of the batch table at key-break //
+							///////////////////////////////////////////////////
 							if (batchTable != null && isBatchKeyBreak(previousRowNumber, tableRowNumber)) {
 								operator = createTableOperator(batchTable.getSQLToInsert(tableRowNumber));
 								recordCount = operator.execute();
 								if (recordCount == 1) {
-									batchTable.runScript("AC", "");
+									//batchTable.runScript("AC", "");
 								} else {
 									String errorMessage = XFUtility.RESOURCE.getString("FunctionError20");
 									JOptionPane.showMessageDialog(jPanelMain, errorMessage);
@@ -1271,10 +1318,12 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 									this.rollback();
 									setErrorAndCloseFunction();
 								}
-
 							}
 							previousRowNumber = tableRowNumber;
 
+							///////////////////////////////////////
+							// Update record of the detail table //
+							///////////////////////////////////////
 							operator = createTableOperator(detailTable.getSQLToUpdate(tableRowNumber));
 							recordCount = operator.execute();
 							if (recordCount == 1) {
@@ -1287,7 +1336,25 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 								setErrorAndCloseFunction();
 							}
 						}
+						
+						/////////////////////////////////////////////////
+						// Execute batch-table script for AFTER-CREATE //
+						/////////////////////////////////////////////////
+						if (batchTable != null) {
+							for (int i = 0; i < batchTable.getKeyMapList().size(); i++) {
+								keyMap = batchTable.getKeyMapList().get(i).getHashMap();
+								for (int j = 0; j < batchFieldList.size(); j++) {
+									if (keyMap.containsKey(batchFieldList.get(j).getFieldID())) {
+										batchFieldList.get(j).setValue(keyMap.get(batchFieldList.get(j).getFieldID()));
+									}
+								}
+								batchTable.runScript("AC", "");
+							}
+						}
 
+						///////////////////////////////////////////////////////////
+						// Execute the function for batch-table records inserted //
+						///////////////////////////////////////////////////////////
 						try {
 							if (batchTable != null && !batchFunctionID.equals("") && jCheckBoxToExecuteBatchFunction.isSelected()) {
 								for (int i = 0; i < batchTable.getKeyMapList().size(); i++) {
@@ -1906,60 +1973,74 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
 			}
 
-			if (isForward) {
-				if (column >= cellList.size()) {
-					column = 0;
-					row++;
-				}
-				for (int i = row; i < jTableMain.getRowCount(); i++) {
-					for (int j = column; j < cellList.size(); j++) {
-						if (cellList.get(j).isEditable()) {
-							jTableMain.editCellAt(i, 0);
-							cellList.get(j).requestFocus();
-							currentActiveRowIndex = i;
-							currentActiveCellIndex = j;
-							cellSelected = true;
-							break;
-						}
-					}
-					if (cellSelected) {
-						break;
-					} else {
+			for (;;) {
+				if (isForward) {
+					if (column >= cellList.size()) {
 						column = 0;
+						row++;
 					}
-				}
-				if (!cellSelected) {
-					if (firstEditableBatchField != null) {
-						stopCellEditing();
-						jScrollPaneTable.transferFocus();
-					}
-				}
-			} else {
-				if (column < 0) {
-					column = cellList.size() - 1;
-					row--;
-				}
-				for (int i = row; i >= 0; i--) {
-					for (int j = column; j >= 0; j--) {
-						if (cellList.get(j).isEditable()) {
-							jTableMain.editCellAt(i, 0);
-							cellList.get(j).requestFocus();
-							currentActiveRowIndex = i;
-							currentActiveCellIndex = j;
-							cellSelected = true;
+					for (int i = row; i < jTableMain.getRowCount(); i++) {
+						for (int j = column; j < cellList.size(); j++) {
+							if (cellList.get(j).isEditable()) {
+								jTableMain.editCellAt(i, 0);
+								cellList.get(j).requestFocus();
+								currentActiveRowIndex = i;
+								currentActiveCellIndex = j;
+								cellSelected = true;
+								break;
+							}
+						}
+						if (cellSelected) {
 							break;
+						} else {
+							column = 0;
 						}
 					}
 					if (cellSelected) {
 						break;
 					} else {
-						column = cellList.size() - 1;
+						if (firstEditableBatchField == null) {
+							column = 0;
+							row = 0;
+						} else {
+							stopCellEditing();
+							jScrollPaneTable.transferFocus();
+							break;
+						}
 					}
-				}
-				if (!cellSelected) {
-					if (firstEditableBatchField != null) {
-						stopCellEditing();
-						jScrollPaneTable.transferFocusBackward();
+				} else {
+					if (column < 0) {
+						column = cellList.size() - 1;
+						row--;
+					}
+					for (int i = row; i >= 0; i--) {
+						for (int j = column; j >= 0; j--) {
+							if (cellList.get(j).isEditable()) {
+								jTableMain.editCellAt(i, 0);
+								cellList.get(j).requestFocus();
+								currentActiveRowIndex = i;
+								currentActiveCellIndex = j;
+								cellSelected = true;
+								break;
+							}
+						}
+						if (cellSelected) {
+							break;
+						} else {
+							column = cellList.size() - 1;
+						}
+					}
+					if (cellSelected) {
+						break;
+					} else {
+						if (firstEditableBatchField == null) {
+							column = cellList.size() - 1;
+							row = jTableMain.getRowCount() - 1;
+						} else {
+							stopCellEditing();
+							jScrollPaneTable.transferFocusBackward();
+							break;
+						}
 					}
 				}
 			}
@@ -2038,41 +2119,46 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	    }
 	}
 
-	class WorkingRow extends Object {
-		private HashMap<String, Object> keyMap_ = new HashMap<String, Object>();
-		private HashMap<String, Object> columnMap_ = new HashMap<String, Object>();
-		private ArrayList<Object> orderByValueList_ = new ArrayList<Object>();
-		public WorkingRow(HashMap<String, Object> keyMap, HashMap<String, Object> columnMap, ArrayList<Object> orderByValueList) {
-			columnMap_ = columnMap;
-			keyMap_ = keyMap;
-			orderByValueList_ = orderByValueList;
-		}
-		public HashMap<String, Object> getKeyMap() {
-			return keyMap_;
-		}
-		public HashMap<String, Object> getColumnMap() {
-			return columnMap_;
-		}
-		public ArrayList<Object> getOrderByValueList() {
-			return orderByValueList_;
-		}
-	}
-
-	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
-		public int compare(WorkingRow row1, WorkingRow row2){
-			int compareResult = 0;
-			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
-				compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
-				if (detailTable.getOrderByFieldIDList().get(i).contains("(D)")) {
-					compareResult = compareResult * -1;
-				}
-				if (compareResult != 0) {
-					break;
-				}
-			}
-			return compareResult;
-		}
-	}
+//	class WorkingRow extends Object {
+//		private HashMap<String, Object> keyMap_ = new HashMap<String, Object>();
+//		private HashMap<String, Object> columnValueMap_ = new HashMap<String, Object>();
+//		private HashMap<String, Object> columnOldValueMap_ = new HashMap<String, Object>();
+//		private ArrayList<Object> orderByValueList_ = new ArrayList<Object>();
+//		public WorkingRow(HashMap<String, Object> keyMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, ArrayList<Object> orderByValueList) {
+//			columnValueMap_ = columnValueMap;
+//			columnOldValueMap_ = columnOldValueMap;
+//			keyMap_ = keyMap;
+//			orderByValueList_ = orderByValueList;
+//		}
+//		public HashMap<String, Object> getKeyMap() {
+//			return keyMap_;
+//		}
+//		public HashMap<String, Object> getColumnValueMap() {
+//			return columnValueMap_;
+//		}
+//		public HashMap<String, Object> getColumnOldValueMap() {
+//			return columnOldValueMap_;
+//		}
+//		public ArrayList<Object> getOrderByValueList() {
+//			return orderByValueList_;
+//		}
+//	}
+//
+//	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
+//		public int compare(WorkingRow row1, WorkingRow row2){
+//			int compareResult = 0;
+//			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
+//				compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
+//				if (detailTable.getOrderByFieldIDList().get(i).contains("(D)")) {
+//					compareResult = compareResult * -1;
+//				}
+//				if (compareResult != 0) {
+//					break;
+//				}
+//			}
+//			return compareResult;
+//		}
+//	}
 
 	class RowNumberComparator implements java.util.Comparator<XF110_SubListDetailRowNumber>{
 		public int compare(XF110_SubListDetailRowNumber rowNumber1, XF110_SubListDetailRowNumber rowNumber2){
@@ -2590,7 +2676,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					batchFieldList.get(i).requestFocus();
 					topErrorFieldNotFound = false;
 				}
-				messageList.add(workRow, batchFieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + batchFieldList.get(i).getError());
+				if (batchFieldList.get(i).isVisibleOnPanel()) {
+					messageList.add(workRow, batchFieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + batchFieldList.get(i).getError());
+				} else {
+					messageList.add(workRow, batchFieldList.get(i).getError());
+				}
 				workRow++;
 			}
 		}
@@ -2672,15 +2762,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	public PrintStream getExceptionStream() {
 		return dialog_.getExceptionStream();
 	}
-
-	public Bindings getEngineScriptBindings() {
-		return 	engineScriptBindings;
-	}
 	
 	public Object getFieldObjectByID(String tableID, String fieldID) {
 		String id = tableID + "_" + fieldID;
-		if (engineScriptBindings.containsKey(id)) {
-			return engineScriptBindings.get(id);
+		if (scriptBindings.containsKey(id)) {
+			return scriptBindings.get(id);
 		} else {
 			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
 			return null;
@@ -2693,7 +2779,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			StringBuffer bf = new StringBuffer();
 			bf.append(scriptText);
 			bf.append(session_.getScriptFunctions());
-			scriptEngine.eval(bf.toString(), engineScriptBindings);
+			scriptEngine.eval(bf.toString(), scriptBindings);
 		}
 	}
 	
@@ -3218,7 +3304,7 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 		this.setToolTipText(wrkStr);
 		component.setToolTipText(wrkStr);
 
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
+		//dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF110_SubListBatchField(String tableID, String tableAlias, String fieldID, XF110_SubList dialog){
@@ -3302,7 +3388,7 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 			isVirtualField = true;
 		}
 
-		dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
+		//dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XFEditableField getComponent() {
@@ -3331,7 +3417,7 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 	}
 
 	public boolean isAutoNumberField() {
-		return !autoNumberKey.equals("");
+		return !autoNumberKey.equals("") && isFieldOnBatchTable;
 	}
 
 	public boolean isNull(){
@@ -3556,7 +3642,7 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 
 	public String getAutoNumber() {
 		String value = "";
-		if (!autoNumberKey.equals("")) {
+		if (!autoNumberKey.equals("") && isFieldOnBatchTable) {
 			value = dialog_.getSession().getNextNumber(autoNumberKey);
 		}
 		return value;
@@ -3578,18 +3664,6 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 	}
 
 	public Object getNullValue(){
-//		Object value = null;
-//		String basicType = this.getBasicType();
-//		if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-//			value = 0;
-//		}
-//		if (basicType.equals("STRING") || basicType.equals("DATETIME") || basicType.equals("TIME")) {
-//			value = "";
-//		}
-//		if (basicType.equals("DATE")) {
-//			value = null;
-//		}
-//		return value;
 		return XFUtility.getNullValueOfBasicType(this.getBasicType());
 	}
 
@@ -4064,7 +4138,8 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 class XF110_SubListCellEditorWithImageField extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
 	private JLabel jLabel = new JLabel();
-	private JButton jButton = new JButton(XFUtility.RESOURCE.getString("Edit"));
+	//private JButton jButton = new JButton(XFUtility.RESOURCE.getString("Edit"));
+	private JButton jButton = new JButton();
 	private XF110_SubList dialog_ = null;
 	private String imageFileName_ = "";
 	private boolean isEditable_ = false;
@@ -4073,6 +4148,7 @@ class XF110_SubListCellEditorWithImageField extends JPanel implements XFTableCol
 		super();
 		dialog_ = dialog;
 		jLabel.setOpaque(true);
+		jLabel.setFocusable(false);
 		jLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -4089,6 +4165,7 @@ class XF110_SubListCellEditorWithImageField extends JPanel implements XFTableCol
 		this.addFocusListener(new java.awt.event.FocusAdapter() {
 			public void focusGained(FocusEvent e) {
 				dialog_.getCellsEditor().updateActiveColumnIndex();
+				jButton.requestFocus();
 			}
 		});
 	}
@@ -4108,8 +4185,9 @@ class XF110_SubListCellEditorWithImageField extends JPanel implements XFTableCol
 		imageFileName_ = obj.toString();
 		String fileName = dialog_.getSession().getImageFileFolder() + imageFileName_;
 		jLabel.setIcon(XFUtility.createSmallIcon(fileName, this.getWidth(), this.getHeight()));
-		jButton.setToolTipText(imageFileName_);
 		jLabel.setToolTipText(imageFileName_);
+		jButton.setIcon(XFUtility.createSmallIcon(fileName, (int)Math.round(this.getWidth()* 0.8), (int)Math.round(this.getHeight()* 0.8)));
+		jButton.setToolTipText(imageFileName_);
 	}
 	
 	public void setEditable(boolean isEditable) {
@@ -4461,6 +4539,7 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 			}
 		}
 
+		jComboBox.setFocusable(false);
 		jComboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
@@ -4477,7 +4556,7 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 		this.addFocusListener(new java.awt.event.FocusAdapter() {
 			public void focusGained(FocusEvent e) {
 				dialog_.getCellsEditor().updateActiveColumnIndex();
-				jComboBox.requestFocus();
+				//jComboBox.requestFocus();
 			}
 		});
 		this.setLayout(new BorderLayout());
@@ -4501,21 +4580,6 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 	public void setHorizontalAlignment(int alignment) {
 		jLabel.setHorizontalAlignment(alignment);
 	}
-	
-//	public boolean hasEditControlledKey() {
-//		boolean anyOfKeysAreEditControlled = false;
-//		for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
-//			for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
-//				if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
-//					if (!dialog_.getDetailColumnList().get(j).isEditable() && dialog_.getDetailTable().getTableID().equals(dialog_.getDetailColumnList().get(j).getTableAlias())) {
-//						anyOfKeysAreEditControlled = true;
-//						break;
-//					}
-//				}
-//			}
-//		}
-//		return anyOfKeysAreEditControlled;
-//	}
 
 	public void setupRecordList() {
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
@@ -4875,7 +4939,6 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 	}
 }
 	
-@SuppressWarnings("unchecked")
 class XF110_SubListDetailRowNumber extends Object {
 	private static final long serialVersionUID = 1L;
 	private int number_;
@@ -4886,11 +4949,12 @@ class XF110_SubListDetailRowNumber extends Object {
 	private ArrayList<Integer> errorCellIndexList = new ArrayList<Integer>();
 	private XF110_SubList dialog_ = null;
 
-	public XF110_SubListDetailRowNumber(int num, HashMap<String, Object> keyMap, HashMap<String, Object> columnMap, HashMap<String, Boolean> columnEditableMap, XF110_SubList dialog) {
+	public XF110_SubListDetailRowNumber(int num, HashMap<String, Object> keyMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, HashMap<String, Boolean> columnEditableMap, XF110_SubList dialog) {
 		number_ = num;
 		keyValueMap_ = keyMap;
-		columnValueMapWithDSName_ = columnMap;
-		columnOldValueMapWithDSName_ = (HashMap<String, Object>)columnMap.clone();
+		columnValueMapWithDSName_ = columnValueMap;
+		//columnOldValueMapWithDSName_ = (HashMap<String, Object>)columnMap.clone();
+		columnOldValueMapWithDSName_ = columnOldValueMap;
 		columnEditableMapWithDSName_ = columnEditableMap;
 		dialog_ = dialog;
 	}
@@ -5296,9 +5360,9 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		// No need to put this to script bindings     //
 		// if the field is already put as Batch field //
 		////////////////////////////////////////////////
-		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
-		}
+		//if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
+		//	dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
+		//}
 	}
 
 	public XF110_SubListDetailColumn(String tableID, String tableAlias, String fieldID, XF110_SubList dialog){
@@ -5369,9 +5433,9 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		// No need to put this to script bindings     //
 		// if the field is already put as Batch field //
 		////////////////////////////////////////////////
-		if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
-			dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
-		}
+		//if (!dialog_.getEngineScriptBindings().containsKey(this.getFieldIDInScript())) {
+		//	dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
+		//}
 	}
 
 //	public void checkPromptKeyEdit(){

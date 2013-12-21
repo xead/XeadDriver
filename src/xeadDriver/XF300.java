@@ -41,6 +41,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -5615,6 +5616,8 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
+	private ArrayList<String> kubunValueList = null;
+	private ArrayList<String> kubunTextList = null;
     private int index_;
 
 	public XF300_PromptCallField(org.w3c.dom.Element fieldElement, String functionID, XF300 dialog, int index){
@@ -5652,12 +5655,39 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
-
 		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions);
 		xFTextField.setLocation(5, 0);
 		xFTextField.addKeyListener(new XF300_keyAdapter(dialog));
 
-		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");
+		String wrkStr = XFUtility.getOptionValueWithKeyword(workElement.getAttribute("TypeOptions"), "KUBUN");
+		if (!wrkStr.equals("")) {
+			JLabel jLabel = new JLabel();
+			FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("SansSerif", 0, 14));
+			String wrk = "";
+			int fieldWidth = 50;
+			try {
+
+				kubunValueList = new ArrayList<String>();
+				kubunTextList = new ArrayList<String>();
+				String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+				String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+				XFTableOperator operator = dialog_.createTableOperator(sql);
+				while (operator.next()) {
+					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+					if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
+						fieldWidth = metrics.stringWidth(wrk) + 10;
+					}
+					kubunTextList.add(wrk);
+				}
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+			xFTextField.setWidth(fieldWidth);
+			xFTextField.setEditable(false);
+		}
+
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");
 		if (!wrkStr.equals("")) {
 			workTokenizer = new StringTokenizer(wrkStr, ";" );
 			while (workTokenizer.hasMoreTokens()) {
@@ -5695,10 +5725,6 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
 				XF300_Filter filter;
 				HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
 				for (int i = 0; i < fieldsToPutList_.size(); i++) {
-//					value = dialog_.getFilterObjectByName(index_, fieldsToPutList_.get(i));
-//					if (value != null) {
-//						fieldValuesMap.put(fieldsToPutToList_.get(i), value);
-//					}
 					filter = dialog_.getFilterObjectByName(index_, fieldsToPutList_.get(i));
 					if (filter != null) {
 						fieldValuesMap.put(fieldsToPutToList_.get(i), filter.getValue());
@@ -5726,7 +5752,13 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
 								listValue = xFTextField.getText();
 								xFTextField.setText("*LIST");
 							} else {
-								listValue = "";
+								//listValue = "";
+								if (kubunValueList == null) {
+									listValue = "";
+								} else {
+									listValue = xFTextField.getText();
+									xFTextField.setText(kubunTextList.get(kubunValueList.indexOf(listValue)));
+								}
 							}						}
 					}
 				} catch (Exception ex) {
@@ -5761,9 +5793,9 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
 	}
 
 	public Object getInternalValue() {
-		//return xFTextField.getText();
 		String text = "";
-		if (xFTextField.getText().equals("*LIST")) {
+		//if (xFTextField.getText().equals("*LIST")) {
+		if (xFTextField.getText().equals("*LIST") || kubunValueList != null) {
 			text = listValue;
 		} else {
 			String basicType = XFUtility.getBasicTypeOf(dataType);
@@ -5853,7 +5885,7 @@ class XF300_HeaderTable extends Object {
 		tableID = functionElement_.getAttribute("HeaderTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
 		activeWhere = tableElement.getAttribute("ActiveWhere");
-		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
+		//fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
 
 		String workString;
 		org.w3c.dom.Element workElement;
@@ -5911,6 +5943,7 @@ class XF300_HeaderTable extends Object {
 		////////////////////////////
 		buf.append(" from ");
 		buf.append(tableID);
+		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
 		buf.append(" where ") ;
 		count = -1;
 		for (int i = 0; i < dialog_.getHeaderFieldList().size(); i++) {
@@ -6619,7 +6652,7 @@ class XF300_DetailTable extends Object {
 		tableID = detailTableElement.getAttribute("Table");
 		tableElement = dialog_.getSession().getTableElement(tableID);
 		activeWhere = tableElement.getAttribute("ActiveWhere");
-		fixedWhere = XFUtility.getFixedWhereValue(detailTableElement_.getAttribute("FixedWhere"), dialog_.getSession());
+		//fixedWhere = XFUtility.getFixedWhereValue(detailTableElement_.getAttribute("FixedWhere"), dialog_.getSession());
 
 		int pos1;
 		String wrkStr1, wrkStr2;
@@ -6720,6 +6753,7 @@ class XF300_DetailTable extends Object {
 		///////////////////
 		// Where section //
 		///////////////////
+		fixedWhere = XFUtility.getFixedWhereValue(detailTableElement_.getAttribute("FixedWhere"), dialog_.getSession());
 		buf.append(" where ") ;
 		count = -1;
 		for (int i = 0; i < headerKeyFieldIDList.size(); i++) {

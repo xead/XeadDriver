@@ -1590,7 +1590,7 @@ class XF310_AddRowListTable extends Object {
 			returnToDetailDataSourceList.add(workTokenizer.nextToken());
 		}
 
-		additionalWhere = functionElement_.getAttribute("AddRowListWhere");
+		//additionalWhere = functionElement_.getAttribute("AddRowListWhere");
 
 		workTokenizer = new StringTokenizer(functionElement_.getAttribute("AddRowListOrderBy"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
@@ -1668,6 +1668,7 @@ class XF310_AddRowListTable extends Object {
 		///////////////////
 		// Where section //
 		///////////////////
+		additionalWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("AddRowListWhere"), dialog_.getSession());
 		if (withFieldIDList.size() > 0) {
 		buf.append(" where ") ;
 		count = -1;

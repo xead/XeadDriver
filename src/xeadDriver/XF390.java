@@ -2510,7 +2510,7 @@ class XF390_DetailTable extends Object {
 		tableID_ = functionElement_.getAttribute("DetailTable");
 		tableElement = dialog_.getSession().getTableElement(tableID_);
 		activeWhere = tableElement.getAttribute("ActiveWhere");
-		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("DetailFixedWhere"), dialog_.getSession());
+		//fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("DetailFixedWhere"), dialog_.getSession());
 		updateCounterID = tableElement.getAttribute("UpdateCounter");
 		if (updateCounterID.equals("")) {
 			updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
@@ -2596,6 +2596,7 @@ class XF390_DetailTable extends Object {
 		buf.append(" from ");
 		buf.append(tableID_);
 		//
+		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("DetailFixedWhere"), dialog_.getSession());
 		buf.append(" where ") ;
 		count = -1;
 		for (int i = 0; i < dialog_.getHeaderTable().getKeyFieldList().size(); i++) {

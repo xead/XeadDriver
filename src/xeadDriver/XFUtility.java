@@ -660,42 +660,6 @@ public class XFUtility {
 		return captionValue;
 	}
 	
-//	static String getFixedWhereValue(String keywordValue, Session session){
-//		int pos1, pos2;
-//		String wrkStr, id, value;
-//		StringTokenizer workTokenizer;
-//		String fixedWhereValue = keywordValue.replace("\"", "'");;
-//		if (keywordValue.contains("SESSION_ATTRIBUTE:")) {
-//			for (int i = 0; i < keywordValue.length(); i++) {
-//				pos1 = keywordValue.indexOf("SESSION_ATTRIBUTE:", i);
-//				if (pos1 == -1) {
-//					i = keywordValue.length();
-//				} else {
-//					pos2 = keywordValue.indexOf(" ", pos1);
-//					if (pos2 == -1) {
-//						pos2 = keywordValue.length();
-//						i = keywordValue.length();
-//					}
-//					wrkStr = keywordValue.substring(pos1, pos2);
-//					wrkStr = wrkStr.replace("'", "");
-//					wrkStr = wrkStr.replace("\"", "");
-//					workTokenizer = new StringTokenizer(wrkStr, ":" );
-//					if (workTokenizer.countTokens() == 2) {
-//						workTokenizer.nextToken();
-//						id = workTokenizer.nextToken().trim();
-//						value = session.getAttribute(id);
-//						if (value == null) {
-//							JOptionPane.showMessageDialog(null, "Session attribute not found with id of '" + id + "'.");
-//						} else {
-//							fixedWhereValue = fixedWhereValue.replace(wrkStr, value);
-//						}
-//					}
-//					i = pos1 + 1;
-//				}
-//			}
-//		}
-//		return fixedWhereValue;
-//	}
 	static String getFixedWhereValue(String keywordValue, Session session){
 		int pos1, pos2;
 		String wrkStr, id, value;

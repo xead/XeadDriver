@@ -740,7 +740,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			readyToShowDialog = true;
 	        threadToSetupReferChecker = null;
 
-			///////////////////////////////////////////////////
+	        ///////////////////////////////////////////////////
 			// Select detail record and setup rows of JTable //
 			///////////////////////////////////////////////////
 			selectDetailRecordsAndSetupTableRows();
@@ -2002,6 +2002,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						if (firstEditableBatchField == null) {
 							column = 0;
 							row = 0;
+							if (row == fromRowIndex && column == fromColumnIndex) {
+								break;
+							}
 						} else {
 							stopCellEditing();
 							jScrollPaneTable.transferFocus();
@@ -2036,6 +2039,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						if (firstEditableBatchField == null) {
 							column = cellList.size() - 1;
 							row = jTableMain.getRowCount() - 1;
+							if (row == fromRowIndex && column == fromColumnIndex) {
+								break;
+							}
 						} else {
 							stopCellEditing();
 							jScrollPaneTable.transferFocusBackward();
@@ -5013,6 +5019,9 @@ class XF110_SubListDetailRowNumber extends Object {
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			dialog_.getDetailColumnList().get(i).setEditable(true);
 			dialog_.getDetailColumnList().get(i).setError(false);
+			if (!dialog_.getDetailColumnList().get(i).isFieldOnDetailTable()) {
+				dialog_.getDetailColumnList().get(i).setValue(dialog_.getDetailColumnList().get(i).getNullValue());
+			}
 		}
 
 		countOfErrors = dialog_.fetchDetailReferRecords("BU", true, "", columnValueMapWithDSName_, columnOldValueMapWithDSName_);
@@ -5035,13 +5044,22 @@ class XF110_SubListDetailRowNumber extends Object {
 		// Set Errors on Cells //
 		/////////////////////////
 		int rowNumber;
+		String message = "";
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			if (dialog_.getDetailColumnList().get(i).isError()) {
 				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel() && dialog_.getDetailColumnList().get(i).isEditable()) {
 					setErrorOnCellAt(i);
 				}
 				rowNumber = this.getRowIndex() + 1;
-				messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
+				//messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
+				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()) {
+					messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
+				} else {
+					message = XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError();
+					if (!messageList.contains(message)) {
+						messageList.add(message);
+					}
+				}
 			}
 		}
 

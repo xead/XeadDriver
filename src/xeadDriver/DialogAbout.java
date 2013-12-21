@@ -43,7 +43,18 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M27";
+	public static final String FULL_VERSION  = "V1.R1.M28";
+	//28
+	//・XF100,XF110,XF310で同一機能向けに２回目を起動した場合の不具合を修正した
+	//・パネル系機能タイプで、２回目を起動した場合の固定Whereの取り込みの不具合を修正した
+	//・XF100,XF110,XF300の区分系絞込み条件の表示設定まわりを改善した
+	//・session.executeProgram(...)の終了メッセージをダイアログ表示させるのをやめて、戻り値にした
+	//・Menu上でのEscapeキーをログアウト要求にあてがった
+	//・XF110,XF310での明細行のエラーメッセージのハンドリングを改善した
+	//・XF110,XF310で結合フィールドを検索する前にそれらを初期化するようにした
+	//・XF310でブランク行を追加して値を入力した後のチェックでブランクチェックがスキップされる問題を修正
+	//・XF110でバッチフィールドを伴わない場合、「次へ」を押すと固まってしまうバグを修正した
+	//
 	//27
 	//・スクリプトで進捗バーを制御するための関数session.startProgress(...)を追加した
 	//・メニュー属性「プリロード指定機能」に対応した

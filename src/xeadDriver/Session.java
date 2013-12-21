@@ -1736,17 +1736,32 @@ public class Session extends JFrame {
 
 	protected void processWindowEvent(WindowEvent e) {
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-			Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
-			int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
-					systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
-			if (rtn == 0) {
-				super.processWindowEvent(e);
-				this.closeSession(true);
-				this.setVisible(false);
-				System.exit(0);
-			}
+			logout(e);
+//			Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
+//			int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
+//					systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+//			if (rtn == 0) {
+//				super.processWindowEvent(e);
+//				this.closeSession(true);
+//				this.setVisible(false);
+//				System.exit(0);
+//			}
 		} else {
 			super.processWindowEvent(e);
+		}
+	}
+	
+	void logout(WindowEvent e) {
+		Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
+		int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
+				systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+		if (rtn == 0) {
+			if (e != null) {
+				super.processWindowEvent(e);
+			}
+			this.closeSession(true);
+			this.setVisible(false);
+			System.exit(0);
 		}
 	}
 
@@ -1773,14 +1788,15 @@ public class Session extends JFrame {
 			for (int i = 0; i < 20; i++) {
 				if (com.equals(jButtonMenuOptionArray[i])) {
 					if (menuOptionArray[jTabbedPaneMenu.getSelectedIndex()][i].isLogoutOption) {
-						Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
-						int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
-								systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
-						if (rtn == 0) {
-							this.closeSession(true);
-							this.setVisible(false);
-							System.exit(0);
-						}
+						logout(null);
+//						Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
+//						int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
+//								systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+//						if (rtn == 0) {
+//							this.closeSession(true);
+//							this.setVisible(false);
+//							System.exit(0);
+//						}
 					} else {
 						HashMap<String, Object> returnMap = menuOptionArray[jTabbedPaneMenu.getSelectedIndex()][i].call();
 						if (returnMap != null && returnMap.get("RETURN_CODE") != null) {
@@ -1863,6 +1879,9 @@ public class Session extends JFrame {
 	void menu_keyPressed(KeyEvent e) {
 		if (e.getKeyCode() == KeyEvent.VK_F1) {
 			browseHelp();
+		}
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+			logout(null);
 		}
 		if (((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
 				&& e.getKeyCode() == KeyEvent.VK_T) {
@@ -2499,28 +2518,34 @@ public class Session extends JFrame {
 		return dateFormat;
 	}
 
-	public void executeProgram(String pgmName) {
+	public String executeProgram(String pgmName) {
+		String message = "";
 		try {
 			Runtime rt = Runtime.getRuntime();
 			Process p = rt.exec(pgmName);
 			if (p != null) {
+				int count = 0;
 				String result = "";
 				StringBuffer buf = new StringBuffer();
-				buf.append(pgmName);
-				buf.append(" was executed.\n");
+				//buf.append(pgmName);
+				//buf.append(" was executed.\n");
 				InputStream is = p.getInputStream();
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
 				while ((result = br.readLine()) != null) {
+					if (count > 0) {
+						buf.append("\n");
+					}
 					buf.append(result);
-					buf.append("\n");
+					count++;
 				}
-				JOptionPane.showMessageDialog(null, buf.toString());
+				message = buf.toString();
 			}
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(null, ex.getMessage());
-		}	
+		}
+		return message;
 	}
 
 	public void browseFile(String fileName) {

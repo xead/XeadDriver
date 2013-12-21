@@ -33,6 +33,7 @@ package xeadDriver;
 
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -349,10 +350,11 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 			
-			//////////////////////////////
-			// Reset checkBox on header //
-			//////////////////////////////
+			////////////////////////////////////
+			// Reset checkBox and Next-button //
+			////////////////////////////////////
 			headersRenderer.setSelected(false);
+			buttonNext.setEnabled(false);
 
 			////////////////////////
 			// Setup panel bounds //
@@ -3650,6 +3652,8 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 	private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
 	private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
 	private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
+	private ArrayList<String> kubunValueList = null;
+	private ArrayList<String> kubunTextList = null;
 
 	public XF110_PromptCallField(org.w3c.dom.Element fieldElement, String functionID, XF110 dialog){
 		super();
@@ -3685,11 +3689,38 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
-
 		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions);
 		xFTextField.setLocation(5, 0);
 
-		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");
+		String wrkStr = XFUtility.getOptionValueWithKeyword(workElement.getAttribute("TypeOptions"), "KUBUN");
+		if (!wrkStr.equals("")) {
+			JLabel jLabel = new JLabel();
+			FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("SansSerif", 0, 14));
+			String wrk = "";
+			int fieldWidth = 50;
+			try {
+
+				kubunValueList = new ArrayList<String>();
+				kubunTextList = new ArrayList<String>();
+				String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+				String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+				XFTableOperator operator = dialog_.getReferOperator(sql);
+				while (operator.next()) {
+					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+					if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
+						fieldWidth = metrics.stringWidth(wrk) + 10;
+					}
+					kubunTextList.add(wrk);
+				}
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+			xFTextField.setWidth(fieldWidth);
+			xFTextField.setEditable(false);
+		}
+
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");
 		if (!wrkStr.equals("")) {
 			workTokenizer = new StringTokenizer(wrkStr, ";" );
 			while (workTokenizer.hasMoreTokens()) {
@@ -3754,7 +3785,13 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 								listValue = xFTextField.getText();
 								xFTextField.setText("*LIST");
 							} else {
-								listValue = "";
+								//listValue = "";
+								if (kubunValueList == null) {
+									listValue = "";
+								} else {
+									listValue = xFTextField.getText();
+									xFTextField.setText(kubunTextList.get(kubunValueList.indexOf(listValue)));
+								}
 							}
 						}
 					}
@@ -3796,7 +3833,8 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 
 	public Object getInternalValue() {
 		String text = "";
-		if (xFTextField.getText().equals("*LIST")) {
+		//if (xFTextField.getText().equals("*LIST")) {
+		if (xFTextField.getText().equals("*LIST") || kubunValueList != null) {
 			text = listValue;
 		} else {
 			String basicType = XFUtility.getBasicTypeOf(dataType);
@@ -4513,7 +4551,7 @@ class XF110_PrimaryTable extends Object {
 			}
 		}
 
-		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
+		//fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
 
 		workTokenizer = new StringTokenizer(functionElement_.getAttribute("OrderBy"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
@@ -4584,6 +4622,7 @@ class XF110_PrimaryTable extends Object {
 		////////////////////////////
 		// Fixed where conditions //
 		////////////////////////////
+		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
 		boolean hasWhere = false;
 		if (activeWhere.equals("")) {
 			if (!fixedWhere.equals("")) {

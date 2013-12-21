@@ -3662,7 +3662,7 @@ class XF200_PrimaryTable extends Object {
 				updateCounterID = "";
 			}
 		}
-		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
+		//fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
 		//
 		String wrkStr1;
 		org.w3c.dom.Element workElement, fieldElement;
@@ -3744,9 +3744,8 @@ class XF200_PrimaryTable extends Object {
 	
 	public String getSQLToSelect(){
 		StringBuffer buf = new StringBuffer();
-		//
+
 		buf.append("select ");
-		//
 		boolean firstField = true;
 		for (int i = 0; i < dialog_.getFieldList().size(); i++) {
 			if (dialog_.getFieldList().get(i).isFieldOnPrimaryTable()
@@ -3762,10 +3761,9 @@ class XF200_PrimaryTable extends Object {
 			buf.append(",");
 			buf.append(updateCounterID);
 		}
-		//
 		buf.append(" from ");
 		buf.append(tableID);
-		//
+
 		if (orderByFieldList.size() > 0) {
 			buf.append(" order by ");
 			for (int i = 0; i < orderByFieldList.size(); i++) {
@@ -3775,9 +3773,9 @@ class XF200_PrimaryTable extends Object {
 				buf.append(orderByFieldList.get(i));
 			}
 		}
-		//
+
+		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
 		buf.append(" where ") ;
-		//
 		int orderOfFieldInKey = 0;
 		for (int i = 0; i < dialog_.getFieldList().size(); i++) {
 			if (dialog_.getFieldList().get(i).isKey()) {
@@ -3796,19 +3794,17 @@ class XF200_PrimaryTable extends Object {
 				orderOfFieldInKey++;
 			}
 		}
-		//
 		if (!activeWhere.equals("")) {
 			buf.append(" and (");
 			buf.append(activeWhere);
 			buf.append(") ");
 		}
-		//
 		if (!fixedWhere.equals("")) {
 			buf.append(" and (");
 			buf.append(fixedWhere);
 			buf.append(") ");
 		}
-		//
+
 		return buf.toString();
 	}
 	

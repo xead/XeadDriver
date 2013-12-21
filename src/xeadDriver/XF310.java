@@ -1314,6 +1314,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				tableModelMain.removeRow(0);
 			}
 			tableRowList.clear();
+			jScrollPaneTable.updateUI();
 			int countOfRows = 0;
 
 			/////////////////////////////////
@@ -1450,116 +1451,134 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				countOfErrors = countOfErrors + tableRowNumber.countErrors(messageList);
 			}
 
-			//////////////////////////////////////////////////////////////
-			// Execute table scripts of BEFORE-UPDATE and AFTER-SUMMARY //
-			//////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////////
+			// Execute header-table scripts of BEFORE-UPDATE and AFTER-SUMMARY //
+			/////////////////////////////////////////////////////////////////////
 			countOfErrors = countOfErrors + headerTable.runScript("BU", "AS()");
-
 			if (countOfErrors == 0) {
-				if (hasNoErrorWithKey(isCheckOnly)) {
-					if (isCheckOnly) {
-						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage9"));
-					} else {
 
-						//////////////////////////////
-						// Update the header record //
-						//////////////////////////////
-						operator = createTableOperator(headerTable.getSQLToUpdate());
-						recordCount = operator.execute();
-						if (recordCount == 1) {
+				////////////////////////////////////////////////////////////////
+				// Execute detail-table scripts of AFTER-SUMMARY for each row //
+				////////////////////////////////////////////////////////////////
+				for (int i = 0; i < jTableMain.getRowCount(); i++) {
+					tableRowNumber = (XF310_DetailRowNumber)tableModelMain.getValueAt(i, 0);
+					tableRowNumber.setValuesToDetailColumns();
+					countOfErrors = countOfErrors + tableRowNumber.countErrorsAfterSummary(messageList);
+				}
+				if (countOfErrors == 0) {
 
-							///////////////////////////////////////////
-							// Delete detail records of removed rows //
-							///////////////////////////////////////////
-							for (int i = 0; i < deleteRowNumberList.size(); i++) {
-								tableRowNumber = (XF310_DetailRowNumber)deleteRowNumberList.get(i);
-								tableRowNumber.setValuesToDetailColumns();
-								if (detailReferChecker != null) {
-									ArrayList<String> errorMsgList = detailReferChecker.getOperationErrors("DELETE", tableRowNumber.getColumnValueMapWithFieldID(), null);
-									if (errorMsgList.size() > 0) {
-										StringBuffer buf = new StringBuffer();
-										for (int j = 0; j < errorMsgList.size(); j++) {
-											if (j > 0) {
-												buf.append("\n");
+					/////////////////////////
+					// Validate key values //
+					/////////////////////////
+					if (hasNoErrorWithKey(isCheckOnly)) {
+
+						////////////////////////////////////////////////////////////////////////////
+						// Show confirming message if it's Check-Only; Commit update if it's not. //
+						////////////////////////////////////////////////////////////////////////////
+						if (isCheckOnly) {
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage9"));
+						} else {
+
+							//////////////////////////////
+							// Update the header record //
+							//////////////////////////////
+							operator = createTableOperator(headerTable.getSQLToUpdate());
+							recordCount = operator.execute();
+							if (recordCount == 1) {
+
+								///////////////////////////////////////////
+								// Delete detail records of removed rows //
+								///////////////////////////////////////////
+								for (int i = 0; i < deleteRowNumberList.size(); i++) {
+									tableRowNumber = (XF310_DetailRowNumber)deleteRowNumberList.get(i);
+									tableRowNumber.setValuesToDetailColumns();
+									if (detailReferChecker != null) {
+										ArrayList<String> errorMsgList = detailReferChecker.getOperationErrors("DELETE", tableRowNumber.getColumnValueMapWithFieldID(), null);
+										if (errorMsgList.size() > 0) {
+											StringBuffer buf = new StringBuffer();
+											for (int j = 0; j < errorMsgList.size(); j++) {
+												if (j > 0) {
+													buf.append("\n");
+												}
+												buf.append(errorMsgList.get(j));
 											}
-											buf.append(errorMsgList.get(j));
+											JOptionPane.showMessageDialog(jPanelMain, buf.toString());
+											exceptionHeader = buf.toString();
+											this.rollback();
+											setErrorAndCloseFunction();
 										}
-										JOptionPane.showMessageDialog(jPanelMain, buf.toString());
-										exceptionHeader = buf.toString();
+									}
+
+									operator = createTableOperator(detailTable.getSQLToDelete(deleteRowNumberList.get(i).getKeyValueMap(), (Long)deleteRowNumberList.get(i).getColumnValueMap().get(detailTable.getUpdateCounterID())));
+									recordCount = operator.execute();
+									if (recordCount == 1) {
+										detailTable.runScript("AD", "", deleteRowNumberList.get(i).getColumnValueMap(), deleteRowNumberList.get(i).getColumnOldValueMap());
+										anyRecordsDeleted = true;
+									} else {
+										String errorMessage = XFUtility.RESOURCE.getString("FunctionError33");
+										JOptionPane.showMessageDialog(jPanelMain, errorMessage);
+										exceptionHeader = errorMessage.replace("\n", " ");
 										this.rollback();
 										setErrorAndCloseFunction();
 									}
 								}
 
-								operator = createTableOperator(detailTable.getSQLToDelete(deleteRowNumberList.get(i).getKeyValueMap(), (Long)deleteRowNumberList.get(i).getColumnValueMap().get(detailTable.getUpdateCounterID())));
-								recordCount = operator.execute();
-								if (recordCount == 1) {
-									detailTable.runScript("AD", "", deleteRowNumberList.get(i).getColumnValueMap(), deleteRowNumberList.get(i).getColumnOldValueMap());
-									anyRecordsDeleted = true;
-								} else {
-									String errorMessage = XFUtility.RESOURCE.getString("FunctionError33");
-									JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-									exceptionHeader = errorMessage.replace("\n", " ");
-									this.rollback();
-									setErrorAndCloseFunction();
-								}
-							}
-							
-							//////////////////////////////////////
-							// Update/Insert the detail records //
-							//////////////////////////////////////
-							for (int i = 0; i < jTableMain.getRowCount(); i++) {
-								int rowNumber = jTableMain.convertRowIndexToModel(i);
-								if (rowNumber > -1) {
-									tableRowNumber = (XF310_DetailRowNumber)tableModelMain.getValueAt(rowNumber,0);
-									tableRowNumber.setValuesToDetailColumns();
-									if (tableRowNumber.getRecordType().equals("CURRENT")) {
-										operator = createTableOperator(detailTable.getSQLToUpdate(tableRowNumber));
-										recordCount = operator.execute();
-										if (recordCount == 1) {
-											detailTable.runScript("AU", "", tableRowNumber.getColumnValueMap(), tableRowNumber.getColumnOldValueMap());
-										} else {
-											String errorMessage = XFUtility.RESOURCE.getString("FunctionError19");
-											JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-											exceptionHeader = errorMessage.replace("\n", " ");
-											this.rollback();
-											setErrorAndCloseFunction();
+								//////////////////////////////////////
+								// Update/Insert the detail records //
+								//////////////////////////////////////
+								for (int i = 0; i < jTableMain.getRowCount(); i++) {
+									int rowNumber = jTableMain.convertRowIndexToModel(i);
+									if (rowNumber > -1) {
+										tableRowNumber = (XF310_DetailRowNumber)tableModelMain.getValueAt(rowNumber,0);
+										tableRowNumber.setValuesToDetailColumns();
+										if (tableRowNumber.getRecordType().equals("CURRENT")) {
+											operator = createTableOperator(detailTable.getSQLToUpdate(tableRowNumber));
+											recordCount = operator.execute();
+											if (recordCount == 1) {
+												detailTable.runScript("AU", "", tableRowNumber.getColumnValueMap(), tableRowNumber.getColumnOldValueMap());
+											} else {
+												String errorMessage = XFUtility.RESOURCE.getString("FunctionError19");
+												JOptionPane.showMessageDialog(jPanelMain, errorMessage);
+												exceptionHeader = errorMessage.replace("\n", " ");
+												this.rollback();
+												setErrorAndCloseFunction();
+											}
 										}
-									}
-									if (tableRowNumber.getRecordType().equals("NEW")) {
-										operator = createTableOperator(detailTable.getSQLToInsert(tableRowNumber));
-										recordCount = operator.execute();
-										if (recordCount == 1) {
-											detailTable.runScript("AC", "", tableRowNumber.getColumnValueMap(), tableRowNumber.getColumnOldValueMap());
-										} else {
-											String errorMessage = XFUtility.RESOURCE.getString("FunctionError50");
-											JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-											exceptionHeader = errorMessage;
-											this.rollback();
-											setErrorAndCloseFunction();
+										if (tableRowNumber.getRecordType().equals("NEW")) {
+											operator = createTableOperator(detailTable.getSQLToInsert(tableRowNumber));
+											recordCount = operator.execute();
+											if (recordCount == 1) {
+												detailTable.runScript("AC", "", tableRowNumber.getColumnValueMap(), tableRowNumber.getColumnOldValueMap());
+											} else {
+												String errorMessage = XFUtility.RESOURCE.getString("FunctionError50");
+												JOptionPane.showMessageDialog(jPanelMain, errorMessage);
+												exceptionHeader = errorMessage;
+												this.rollback();
+												setErrorAndCloseFunction();
+											}
 										}
 									}
 								}
+
+								///////////////////////////////////////////
+								// Execute table scripts of AFTER-UPDATE //
+								///////////////////////////////////////////
+								headerTable.runScript("AU", "");
+
+								/////////////////////////////////////////
+								// Set return code as NORMALLY UPDATED //
+								/////////////////////////////////////////
+								returnMap_.put("RETURN_CODE", "20");
+
+							} else {
+								String errorMessage = XFUtility.RESOURCE.getString("FunctionError19");
+								JOptionPane.showMessageDialog(jPanelMain, errorMessage);
+								exceptionHeader = errorMessage.replace("\n", " ");
+								this.rollback();
+								setErrorAndCloseFunction();
 							}
-
-							///////////////////////////////////////////
-							// Execute table scripts of AFTER-UPDATE //
-							///////////////////////////////////////////
-							headerTable.runScript("AU", "");
-
-							/////////////////////////////////////////
-							// Set return code as NORMALLY UPDATED //
-							/////////////////////////////////////////
-							returnMap_.put("RETURN_CODE", "20");
-
-						} else {
-							String errorMessage = XFUtility.RESOURCE.getString("FunctionError19");
-							JOptionPane.showMessageDialog(jPanelMain, errorMessage);
-							exceptionHeader = errorMessage.replace("\n", " ");
-							this.rollback();
-							setErrorAndCloseFunction();
+							closeFunction();
 						}
-						closeFunction();
 					}
 				}
 			}
@@ -1781,7 +1800,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					}
 					checkErrorsToUpdate(true, false);
 					messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
-					messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+					if (countOfAdded > 0) {
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+					}
 				}
 			}
 
@@ -1918,7 +1939,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		} else {
 			countOfAdded = 1;
 			Object[] cell = new Object[1];
-			cell[0] = new XF310_DetailRowNumber(tableModelMain.getRowCount() + 1, "NEW", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, this);
+			//cell[0] = new XF310_DetailRowNumber(tableModelMain.getRowCount() + 1, "NEW", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, this);
+			XF310_DetailRowNumber blankRow = new XF310_DetailRowNumber(tableModelMain.getRowCount() + 1, "NEW", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, this);
+			blankRow.setJustAdded(false);
+			cell[0] = blankRow;
 			tableModelMain.addRow(cell);
 		}
 
@@ -1959,6 +1983,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 								if (detailColumnList.get(i).isVisibleOnPanel() && detailColumnList.get(i).isEditable()) {
 									if (detailColumnList.get(i).isError()) {
 										rowNumber.setErrorOnCellAt(i);
+									}
+								} else {
+									if (detailColumnList.get(i).isError()) {
+										messageList.add(detailColumnList.get(i).getError());
 									}
 								}
 							}
@@ -5434,6 +5462,9 @@ class XF310_DetailRowNumber extends Object {
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			dialog_.getDetailColumnList().get(i).setEditable(true);
 			dialog_.getDetailColumnList().get(i).setError(false);
+			if (!dialog_.getDetailColumnList().get(i).isFieldOnDetailTable()) {
+				dialog_.getDetailColumnList().get(i).setValue(dialog_.getDetailColumnList().get(i).getNullValue());
+			}
 		}
 
 		if (this.isJustAdded) {
@@ -5460,6 +5491,7 @@ class XF310_DetailRowNumber extends Object {
 		// Set Error on Cells //
 		////////////////////////
 		int rowNumber;
+		String message = "";
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			if (!this.isJustAdded && dialog_.getDetailColumnList().get(i).isError()) {
 				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()
@@ -5467,12 +5499,52 @@ class XF310_DetailRowNumber extends Object {
 					setErrorOnCellAt(i);
 				}
 				rowNumber = this.getRowIndex() + 1;
-				messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
+				//messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
+				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()) {
+					messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
+				} else {
+					message = XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError();
+					if (!messageList.contains(message)) {
+						messageList.add(message);
+					}
+				}
 			}
 		}
 		
 		isJustAdded = false;
 
+		return countOfErrors;
+	}
+	
+	public int countErrorsAfterSummary(ArrayList<String> messageList) throws Exception {
+		int countOfErrors = 0;
+		if (recordType_.equals("NEW")) {
+			dialog_.getDetailTable().runScript("BC", "AS()", columnValueMapWithDSName_, columnOldValueMapWithDSName_);
+		}
+		if (recordType_.equals("CURRENT")) {
+			dialog_.getDetailTable().runScript("BU", "AS()", columnValueMapWithDSName_, columnOldValueMapWithDSName_);
+		}
+		int rowNumber;
+		String message = "";
+		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+			if (dialog_.getDetailColumnList().get(i).isError()) {
+				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()
+						&& dialog_.getDetailColumnList().get(i).isEditable()) {
+					setErrorOnCellAt(i);
+				}
+				rowNumber = this.getRowIndex() + 1;
+				//messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
+				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()) {
+					messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
+				} else {
+					message = XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError();
+					if (!messageList.contains(message)) {
+						messageList.add(message);
+					}
+				}
+				countOfErrors++;
+			}
+		}
 		return countOfErrors;
 	}
 
@@ -5506,6 +5578,10 @@ class XF310_DetailRowNumber extends Object {
 	
 	public void setNumber(int num) {
 		number_ = num;
+	}
+	
+	public void setJustAdded(boolean justAdded) {
+		isJustAdded = justAdded;
 	}
 	
 	public ArrayList<Integer> getErrorCellIndexList() {
@@ -6338,7 +6414,7 @@ class XF310_HeaderTable extends Object {
 				updateCounterID = "";
 			}
 		}
-		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("HeaderFixedWhere"), dialog_.getSession());
+		//fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("HeaderFixedWhere"), dialog_.getSession());
 
 		String workString;
 		org.w3c.dom.Element workElement;
@@ -6414,6 +6490,7 @@ class XF310_HeaderTable extends Object {
 		///////////////////
 		// Where section //
 		///////////////////
+		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("HeaderFixedWhere"), dialog_.getSession());
 		buf.append(" where ") ;
 		count = -1;
 		for (int i = 0; i < dialog_.getHeaderFieldList().size(); i++) {
@@ -7113,7 +7190,7 @@ class XF310_DetailTable extends Object {
 				updateCounterID = "";
 			}
 		}
-		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("DetailFixedWhere"), dialog_.getSession());
+		//fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("DetailFixedWhere"), dialog_.getSession());
 
 		int pos1;
 		String wrkStr1, wrkStr2;
@@ -7225,6 +7302,7 @@ class XF310_DetailTable extends Object {
 		///////////////////
 		// Where section //
 		///////////////////
+		fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("DetailFixedWhere"), dialog_.getSession());
 		buf.append(" where ") ;
 		count = -1;
 		for (int i = 0; i < dialog_.getHeaderTable().getKeyFieldIDList().size(); i++) {

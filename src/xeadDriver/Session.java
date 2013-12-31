@@ -1468,6 +1468,10 @@ public class Session extends JFrame {
 		return rateReturn;
 	}
 
+	public float getMonthlyExchangeRate(String currencyCode, String date, String type) {
+		return getMonthlyExchangeRate(currencyCode, getFYearOfDate(date), getMSeqOfDate(date), type);
+	}
+
 	public float getMonthlyExchangeRate(String currencyCode, int fYear, int mSeq, String type) {
 		float rateReturn = 0;
 		//

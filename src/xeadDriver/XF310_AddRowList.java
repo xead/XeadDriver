@@ -1637,29 +1637,35 @@ class XF310_AddRowListTable extends Object {
 			buf.append(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < withFieldIDList.size(); i++) {
-			count++;
-			if (count > 0) {
-				buf.append(",");
-			}
-			buf.append(withFieldIDList.get(i));
-		}
-		for (int i = 0; i < dialog_.getAddRowListColumnList().size(); i++) {
-			if (dialog_.getAddRowListColumnList().get(i).getTableID().equals(tableID_) && !dialog_.getAddRowListColumnList().get(i).isVirtualField()) {
+			if (buf.indexOf(withFieldIDList.get(i)) == -1) {
 				count++;
 				if (count > 0) {
 					buf.append(",");
 				}
-				buf.append(dialog_.getAddRowListColumnList().get(i).getFieldID());
+				buf.append(withFieldIDList.get(i));
+			}
+		}
+		for (int i = 0; i < dialog_.getAddRowListColumnList().size(); i++) {
+			if (dialog_.getAddRowListColumnList().get(i).getTableID().equals(tableID_) && !dialog_.getAddRowListColumnList().get(i).isVirtualField()) {
+				if (buf.indexOf(dialog_.getAddRowListColumnList().get(i).getFieldID()) == -1) {
+					count++;
+					if (count > 0) {
+						buf.append(",");
+					}
+					buf.append(dialog_.getAddRowListColumnList().get(i).getFieldID());
+				}
 			}
 		}
 		if (rangeKeyType != 0) {
 			workElement = dialog_.getSession().getFieldElement(tableID_, rangeKeyFieldExpire);
 			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-				count++;
-				if (count > 0) {
-					buf.append(",");
+				if (buf.indexOf(rangeKeyFieldExpire) == -1) {
+					count++;
+					if (count > 0) {
+						buf.append(",");
+					}
+					buf.append(rangeKeyFieldExpire);
 				}
-				buf.append(rangeKeyFieldExpire);
 			}
 		}
 		buf.append(" from ");

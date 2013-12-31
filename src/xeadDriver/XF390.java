@@ -2581,11 +2581,13 @@ class XF390_DetailTable extends Object {
 		}
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			if (dialog_.getDetailColumnList().get(i).getTableID().equals(tableID_) && !dialog_.getDetailColumnList().get(i).isVirtualField()) {
-				count++;
-				if (count > 0) {
-					buf.append(",");
+				if (buf.indexOf(dialog_.getDetailColumnList().get(i).getFieldID()) == -1) {
+					count++;
+					if (count > 0) {
+						buf.append(",");
+					}
+					buf.append(dialog_.getDetailColumnList().get(i).getFieldID());
 				}
-				buf.append(dialog_.getDetailColumnList().get(i).getFieldID());
 			}
 		}
 		if (count > 0) {

@@ -284,9 +284,9 @@ public class XFInputDialogField extends JPanel {
    public void addItem(String text, Object value) {
 		if (inputType_.equals("LISTBOX")) {
 			((JComboBox)component).addItem(text);
-			int width = this.getBounds().width - 150;
+			int width = this.getBounds().width - 160;
 			if (metrics.stringWidth(text) > width) {
-				this.setBounds(this.getBounds().x, this.getBounds().y, metrics.stringWidth(text) + 150, this.getBounds().height);
+				this.setBounds(this.getBounds().x, this.getBounds().y, metrics.stringWidth(text) + 160, this.getBounds().height);
 			}
 			valueList.add(value);
 		}

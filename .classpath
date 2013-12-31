@@ -21,6 +21,6 @@
 	<classpathentry kind="lib" path="D:/XeadFramework/lib/mysql-connector-java-5.1.18-bin.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="D:/Java/rhino1_6R2/js.jar"/>
-	<classpathentry kind="lib" path="D:/Java/oracle-driver/ojdbc5.jar"/>
+	<classpathentry kind="lib" path="D:/Java/oracle-driver/ojdbc6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

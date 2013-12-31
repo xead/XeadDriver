@@ -235,7 +235,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "SessionError12", " を開けません。" },
 		{ "SessionError13", "指定されている採番キーの値 " },
 		{ "SessionError14", " が採番テーブル上に見つかりません。" },
-		{ "SessionError15", "指定された機能の仕様が見つかりません" },
+		{ "SessionError15", "指定された機能の仕様が見つかりません。" },
 		{ "SessionError16", "" },
 		{ "SessionError17", "用のヘルプページが指定されていません。" },
 		{ "SessionError18", "" },

@@ -1720,9 +1720,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 								messageList.add(returnMap.get("RETURN_MESSAGE").toString());
 							}
 						} catch (Exception e) {
-							JOptionPane.showMessageDialog(null, e.getMessage());
-							exceptionHeader = e.getMessage();
-							setErrorAndCloseFunction();
+							messageList.add(XFUtility.RESOURCE.getString("FunctionError15") + " " + detailFunctionID);
 						}
 					}
 				} finally {

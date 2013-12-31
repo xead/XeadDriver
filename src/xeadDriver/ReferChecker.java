@@ -129,7 +129,7 @@ public class ReferChecker extends Object {
 					subjectTableList_.add(new ReferChecker_SubjectTable(tableElement, referElement, this));
 					countWork++;
 					progressRate = Math.round(countWork * 100 / countOfSubjectTables);
-					session.getApplication().setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2") + " " + targetTableID_ + " (" + progressRate + "%)");
+					session.getApplication().setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3") + " " + targetTableID_ + " (" + progressRate + "%)");
 				}
 			}
 		}

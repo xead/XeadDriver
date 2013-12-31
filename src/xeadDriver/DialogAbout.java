@@ -43,7 +43,14 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M28";
+	public static final String FULL_VERSION  = "V1.R1.M29";
+	//29
+	//・session関数としてgetMonthlyExchangeRate(currency, date, type)を追加した
+	//・スプラッシュ上のメッセージのミスを修正した
+	//・XF100の明細行から機能の起動に失敗した場合のメッセージ表示方式を改善した
+	//・XF300のタブ別の初期表示メッセージを改善した
+	//・oracleへの対応のために、明細テーブル向けに生成されるSelect文を調整した
+	//
 	//28
 	//・XF100,XF110,XF310で同一機能向けに２回目を起動した場合の不具合を修正した
 	//・パネル系機能タイプで、２回目を起動した場合の固定Whereの取り込みの不具合を修正した

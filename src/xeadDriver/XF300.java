@@ -108,6 +108,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private TableModelReadOnly[] tableModelMainArray = new TableModelReadOnly[10];
 	private JTable[] jTableMainArray = new JTable[10];
 	private String[] initialMsgArray = new String[10];
+	private String[] listingResultMsgArray = new String[10];
 	private NodeList[] detailReferElementList = new NodeList[10];
 	private Bindings[] detailScriptBindingsArray = new Bindings[10];
 	private TableHeadersRenderer[] headersRenderer = new TableHeadersRenderer[10];
@@ -492,6 +493,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				// Select Detail records and setup JTables //
 				/////////////////////////////////////////////
 				for (int i = 0; i < detailTabSortingList.getSize(); i++) {
+					listingResultMsgArray[i] = "";
 					if (filterListArray[i].size() == 0
 							|| firstEditableFilter[i] == null
 							|| detailInitialListingArray[i].equals("T")) {
@@ -1206,7 +1208,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	void setupHeaderDetailsForTreeNodeSelected() {
-		int rowCount;
+		//int rowCount;
 		XF300_TreeNode node;
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
@@ -1215,17 +1217,35 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			if (node != currentTreeNode) {
 				currentTreeNode = node;
 				parmMap_ = currentTreeNode.getKeyMap();
+
+				/////////////////////////
+				// Fetch Header Record //
+				/////////////////////////
 				fetchHeaderRecord(true);
-				for (int i = 0; i < jTabbedPane.getTabCount(); i++) {
-					if (filterListArray[i].size() == 0 || firstEditableFilter[i] == null) {
+
+				/////////////////////////////////////////////
+				// Select Detail records and setup JTables //
+				/////////////////////////////////////////////
+				for (int i = 0; i < detailTabSortingList.getSize(); i++) {
+					listingResultMsgArray[i] = "";
+					if (filterListArray[i].size() == 0
+							|| firstEditableFilter[i] == null
+							|| detailInitialListingArray[i].equals("T")) {
 						selectDetailRecordsAndSetupTableRows(i, false);
 					} else {
-						rowCount = tableModelMainArray[i].getRowCount();
-						for (int j = 0; j < rowCount; j++) {
-							tableModelMainArray[i].removeRow(0);
-						}
+						clearTableRows(i);
 					}
 				}
+//				for (int i = 0; i < jTabbedPane.getTabCount(); i++) {
+//					if (filterListArray[i].size() == 0 || firstEditableFilter[i] == null) {
+//						selectDetailRecordsAndSetupTableRows(i, false);
+//					} else {
+//						rowCount = tableModelMainArray[i].getRowCount();
+//						for (int j = 0; j < rowCount; j++) {
+//							tableModelMainArray[i].removeRow(0);
+//						}
+//					}
+//				}
 			}
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -1445,8 +1465,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						}
 					}
 				} else {
-					messageList.add(XFUtility.RESOURCE.getString("FunctionMessage4"));
+					if (filterListArray[index].size() > 0 && firstEditableFilter[index] != null) {
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage4"));
+					} else {
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage31"));
+					}
 				}
+				listingResultMsgArray[index] = messageList.get(0);
 				setMessagesOnPanel();
 			}
 
@@ -2626,14 +2651,18 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			} else {
 				if (initialMsgArray[index].equals("")) {
-					if (filterListArray[index].size() > 0 && firstEditableFilter[index] != null) {
-						StringBuffer buf = new StringBuffer();
-						buf.append(XFUtility.RESOURCE.getString("FunctionMessage1"));
-						buf.append(detailTableArray[index].getOrderByDescription());
-						buf.append(XFUtility.RESOURCE.getString("FunctionMessage56"));
-						messageList.add(buf.toString());
+					if (listingResultMsgArray[index].equals("")) {
+						if (filterListArray[index].size() > 0 && firstEditableFilter[index] != null) {
+							StringBuffer buf = new StringBuffer();
+							buf.append(XFUtility.RESOURCE.getString("FunctionMessage1"));
+							buf.append(detailTableArray[index].getOrderByDescription());
+							buf.append(XFUtility.RESOURCE.getString("FunctionMessage56"));
+							messageList.add(buf.toString());
+						} else {
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage31"));
+						}
 					} else {
-						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage31"));
+						messageList.add(listingResultMsgArray[index]);
 					}
 				} else {
 					messageList.add(initialMsgArray[index]);
@@ -2747,8 +2776,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 								messageList.add(returnMap.get("RETURN_MESSAGE").toString());
 							}
 						} catch (Exception e) {
-							JOptionPane.showMessageDialog(null, e.getMessage());
-							messageList.add(XFUtility.RESOURCE.getString("FunctionError15"));
+							messageList.add(XFUtility.RESOURCE.getString("FunctionError15") + " " + detailFunctionIDArray[jTabbedPane.getSelectedIndex()]);
 						}
 					}
 				}
@@ -6732,19 +6760,21 @@ class XF300_DetailTable extends Object {
 		buf.append("select ");
 		count = -1;
 		for (int i = 0; i < keyFieldIDList.size(); i++) {
-			count++;
-			if (count > 0) {
-				buf.append(",");
-			}
-			buf.append(keyFieldIDList.get(i));
-		}
-		for (int i = 0; i < dialog_.getDetailColumnList(tabIndex_).size(); i++) {
-			if (dialog_.getDetailColumnList(tabIndex_).get(i).getTableID().equals(tableID) && !dialog_.getDetailColumnList(tabIndex_).get(i).isVirtualField()) {
 				count++;
 				if (count > 0) {
 					buf.append(",");
 				}
-				buf.append(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID());
+				buf.append(keyFieldIDList.get(i));
+		}
+		for (int i = 0; i < dialog_.getDetailColumnList(tabIndex_).size(); i++) {
+			if (dialog_.getDetailColumnList(tabIndex_).get(i).getTableID().equals(tableID) && !dialog_.getDetailColumnList(tabIndex_).get(i).isVirtualField()) {
+				if (buf.indexOf(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID()) == -1) {
+					count++;
+					if (count > 0) {
+						buf.append(",");
+					}
+					buf.append(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID());
+				}
 			}
 		}
 		buf.append(" from ");

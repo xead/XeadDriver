@@ -2478,6 +2478,9 @@ class XFSessionForScript {
 	public float getMonthlyExchangeRate(String currency, int fYear, int mSeq, String type) {
 		return session_.getMonthlyExchangeRate(currency, fYear, mSeq, type);
 	}
+	public float getMonthlyExchangeRate(String currency, String date, String type) {
+		return session_.getMonthlyExchangeRate(currency, date, type);
+	}
 
 	public String getNextNumber(String id) {
 		return session_.getNextNumber(id);

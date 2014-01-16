@@ -3152,9 +3152,9 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 				isEditable = true;
 				component = new XF110_SubListBatchPromptCall(functionFieldElement_, wrkStr, dialog_);
 				component.setLocation(5, 0);
-				if (this.isFieldOnBatchTable) {
-					component.setEditable(true);
-				}
+				//if (this.isFieldOnBatchTable) {
+				//	component.setEditable(true);
+				//}
 			} else {
 				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("") || !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
 					component = new XF110_SubListBatchComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
@@ -4673,6 +4673,9 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
+		if (jComboBox.getItemCount() > 0) {
+			jComboBox.setSelectedIndex(0);
+		}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -7653,6 +7656,9 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
+		if (jComboBox.getItemCount() > 0) {
+			jComboBox.setSelectedIndex(0);
+		}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -7763,8 +7769,10 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
 		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions);
-		xFTextField.setEditable(false);
-		xFTextField.setFocusable(false);
+		//xFTextField.setEditable(false);
+		//xFTextField.setFocusable(false);
+		xFTextField.setEditable(tableID.equals(dialog_.getBatchTable().getTableID()));
+		xFTextField.setFocusable(tableID.equals(dialog_.getBatchTable().getTableID()));
 		xFTextField.setLocation(5, 0);
 
 		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");

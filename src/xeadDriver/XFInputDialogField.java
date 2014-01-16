@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -37,6 +38,8 @@ public class XFInputDialogField extends JPanel {
 	private boolean isAutoSizing = true;
 	private XFInputDialog dialog_ = null;
 	private String functionID_ = "";
+	private JFileChooser jFileChooser = null;
+	private String jFileChooserTitle = "";
     private ArrayList<String> fieldsToPutList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
@@ -300,6 +303,14 @@ public class XFInputDialogField extends JPanel {
 		}
    }
    
+   public int getItemCount() {
+		if (inputType_.equals("LISTBOX")) {
+			return ((JComboBox)component).getItemCount();
+		} else {
+			return 0;
+		}
+   }
+   
    public void setPrompter(String functionID, String sendFrom, String sendTo, String receiveFrom, String receiveTo) {
 		if (inputType_.equals("ALPHA") || inputType_.equals("NUMERIC")) {
 			//
@@ -376,6 +387,38 @@ public class XFInputDialogField extends JPanel {
 			});
 		}
    }
+   
+   public void setFileChooser(String title, String extentions) {
+		if (inputType_.equals("ALPHA")) {
+			jFileChooserTitle = title;
+			jFileChooser = new JFileChooser();
+			if (!extentions.equals("")) {
+				StringTokenizer workTokenizer = new StringTokenizer(extentions, ";" );
+				while (workTokenizer.hasMoreTokens()) {
+					String extention = workTokenizer.nextToken();
+					jFileChooser.setFileFilter(new FileNameExtensionFilter(extention, extention));
+				}
+			}
+			jButton = new JButton();
+			ImageIcon imageIcon = new ImageIcon(xeadDriver.XFInputDialogField.class.getResource("prompt.png"));
+		 	jButton.setIcon(imageIcon);
+			jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
+			this.add(jButton, BorderLayout.EAST);
+			this.setBounds(this.getBounds().x, this.getBounds().y, this.getBounds().width + 26, this.getBounds().height);
+			jButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					jFileChooser_actionPerformed(e);
+				}
+			});
+		}
+   }
+
+   public void jFileChooser_actionPerformed(ActionEvent e) {
+	   int reply = jFileChooser.showDialog(dialog_, jFileChooserTitle);
+	   if (reply == JFileChooser.APPROVE_OPTION) {
+		   this.setValue(jFileChooser.getSelectedFile().getPath());
+	   }
+   }
 
    public String getParmID() {
 	   return parmID_;
@@ -442,7 +485,7 @@ public class XFInputDialogField extends JPanel {
 					   }
 				   }
 			   } else {
-				   if (str.contains(".")) {
+				   if (str.contains(".") && inputType_.equals("NUMERIC")) {
 					   JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("NumberFormatError"));
 				   } else {
 					   String wrkStr0 = super.getText(0, super.getLength());

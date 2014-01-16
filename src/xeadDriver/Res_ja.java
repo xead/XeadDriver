@@ -166,7 +166,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "FunctionMessage58", "明細キーである「" },
 		{ "FunctionMessage59", "」の値を指定してください。" },
 		{ "FunctionMessage60", "＊明細行は追加されませんでした。" },
-		//{ "FunctionMessage61", "＊必要に応じて各項目の値を編集したうえでEnterキーを押してください。" },
+		{ "FunctionMessage61", "入出力ファイルの指定 " },
 		{ "Iconify", "最小化" },
 		{ "ImageFileMessage1", "規定外のファイル形式です。<br>クリックすれば画像表示されます" },
 		{ "ImageFileNotFound1", "<html>指定された画像ファイル<br>" },

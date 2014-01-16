@@ -139,10 +139,10 @@ public class XFInputDialog extends JDialog {
     }
 
     public XFInputDialogField addField(String caption, String inputType, int areaIndex, String parmID) {
-    	///////////////////////////////////////////////////////////////
-    	// inputType: ALPHA, KANJI, NUMERIC, DATE, LISTBOX, CHECKBOX //
-    	// areaIndex: 0=top, 1=center, -1=hidden                     //
-    	///////////////////////////////////////////////////////////////
+    	/////////////////////////////////////////////////////////////////////////////
+    	// inputType: ALPHA, KANJI, NUMERIC, DATE, LISTBOX, CHECKBOX, FILE_CHOOSER //
+    	// areaIndex: 0=top, 1=center, -1=hidden                                   //
+    	/////////////////////////////////////////////////////////////////////////////
     	if (areaIndex != 0 && areaIndex != 1 && areaIndex != -1) {
     		areaIndex = 0;
     	}
@@ -179,7 +179,8 @@ public class XFInputDialog extends JDialog {
 	    			&& firstEditableFieldOnCenterPanel == null) {
 	    		firstEditableFieldOnCenterPanel = fieldList.get(i);
 	    	}
-	    	wrkInt = fieldList.get(i).getBounds().width + 50;
+	    	//wrkInt = fieldList.get(i).getBounds().width + 50;
+	    	wrkInt = fieldList.get(i).getBounds().width + 30;
 	    	if (wrkInt > width) {
 	    		width = wrkInt;
 	    	}

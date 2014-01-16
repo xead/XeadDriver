@@ -715,6 +715,9 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					cell.setHorizontalAlignment(detailColumnList.get(i).getAlignment());
 					table.addCell(cell);
 				}
+				if (detailColumnList.get(i).isWithTotal()) {
+					detailColumnList.get(i).clearSummary();
+				}
 			}
 			table.setWidths(width);
 			table.setWidth(totalWidth);
@@ -861,16 +864,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 							detailColumnList.get(j).setValue(workingRowArray[i].getColumnValueList().get(j));
 							fontTableCellData = new com.lowagie.text.Font(session_.getBaseFontWithID(tableFontID), tableFontSize, com.lowagie.text.Font.NORMAL);
 							if (detailColumnList.get(j).getBarcodeType().equals("")) {
-//								if (detailColumnList.get(j).isImage()) {
-//									imageFileName = session_.getImageFileFolder() + detailColumnList.get(j).getExternalValue().toString();
-//									if (imageFileName.startsWith("http://")) {
-//										imageFileName = imageFileName.replace("\\", "/");
-//									}
-//									cell = new Cell(com.lowagie.text.Image.getInstance(imageFileName));
-//								} else {
-//									fontTableCellData.setColor(detailColumnList.get(j).getForeground());
-//									cell = new Cell(new Phrase(workingRowArray[i].getColumnValueList().get(j), fontTableCellData));
-//								}
 								if (detailColumnList.get(j).isImage()) {
 									imageFileName = session_.getImageFileFolder() + detailColumnList.get(j).getExternalValue().toString();
 									if (imageFileName.startsWith("http://")) {
@@ -2575,23 +2568,23 @@ class XF390_DetailTable extends Object {
 		for (int i = 0; i < keyFieldIDList.size(); i++) {
 			count++;
 			if (count > 0) {
-				buf.append(",");
+				buf.append(", ");
 			}
 			buf.append(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			if (dialog_.getDetailColumnList().get(i).getTableID().equals(tableID_) && !dialog_.getDetailColumnList().get(i).isVirtualField()) {
-				if (buf.indexOf(dialog_.getDetailColumnList().get(i).getFieldID()) == -1) {
+				if (buf.indexOf(" " + dialog_.getDetailColumnList().get(i).getFieldID()) == -1) {
 					count++;
 					if (count > 0) {
-						buf.append(",");
+						buf.append(", ");
 					}
 					buf.append(dialog_.getDetailColumnList().get(i).getFieldID());
 				}
 			}
 		}
 		if (count > 0) {
-			buf.append(",");
+			buf.append(", ");
 		}
 		buf.append(updateCounterID);
 		//
@@ -2988,6 +2981,10 @@ class XF390_DetailColumn extends XFColumnScriptable {
 		if (basicType.equals("FLOAT")) {
 			summaryDouble = summaryDouble + (Double)value_;
 		}
+	}
+
+	public void clearSummary() {
+		summaryLong = 0;
 	}
 
 	public Object getSummary() {

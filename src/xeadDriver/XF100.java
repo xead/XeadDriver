@@ -4021,6 +4021,10 @@ class XF100_Column extends XFColumnScriptable {
 		ArrayList<String> fieldOptionList = XFUtility.getOptionList(fieldOptions);
 		if (fieldOptionList.contains("VERTICAL")) {
 			fieldLayout = "VERTICAL";
+		} else {
+			if (fieldOptionList.contains("HIDDEN")) {
+				isVisibleOnPanel = false;
+			}
 		}
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN");

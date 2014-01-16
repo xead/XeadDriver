@@ -599,9 +599,9 @@ public class Session extends JFrame {
 		// insert a new record to session table //
 		//////////////////////////////////////////
 		String sql = "insert into " + sessionTable
-		+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, KBSESSIONSTATUS) values ("
+		+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, VLVERSION, KBSESSIONSTATUS) values ("
 		+ "'" + sessionID + "'," + "'" + userID + "'," + "CURRENT_TIMESTAMP,"
-		+ "'" + getIpAddress() + "','" + sessionStatus + "')";
+		+ "'" + getIpAddress() + "','" + DialogAbout.VERSION + "','" + sessionStatus + "')";
 		XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 		operator.execute();
 
@@ -2531,8 +2531,6 @@ public class Session extends JFrame {
 				int count = 0;
 				String result = "";
 				StringBuffer buf = new StringBuffer();
-				//buf.append(pgmName);
-				//buf.append(" was executed.\n");
 				InputStream is = p.getInputStream();
 				InputStreamReader isr = new InputStreamReader(is);
 				BufferedReader br = new BufferedReader(isr);
@@ -2579,7 +2577,7 @@ public class Session extends JFrame {
 	public String getImageFileFolder() {
 		return imageFileFolder;
 	}
-
+	
 	public File createTempFile(String functionID, String extension) throws IOException {
 		String header = "XeadDriver_";
 		//
@@ -2602,6 +2600,36 @@ public class Session extends JFrame {
 		return tempFile;
 	}
 
+	public boolean existsFile(String fileName) {
+		File file = new File(fileName);
+		return file.exists();
+	}
+
+	public boolean deleteFile(String fileName) {
+			File file = new File(fileName);
+			return file.delete();
+	}
+
+	public boolean renameFile(String currentName, String newName) {
+			File currentFile = new File(currentName);
+			File newFile = new File(newName);
+			return currentFile.renameTo(newFile);
+	}
+
+	public XFTextFileOperator createTextFileOperator(String operation, String fileName, String separator) {
+		return createTextFileOperator(operation, fileName, separator, "");
+	}
+
+	public XFTextFileOperator createTextFileOperator(String operation, String fileName, String separator, String charset) {
+		File file = new File(fileName);
+		if (operation.equals("Read") && !file.exists()) {
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError21") + fileName + XFUtility.RESOURCE.getString("SessionError22"));
+			return null;
+		} else {
+			return new XFTextFileOperator(operation, fileName, separator, charset);
+		}
+	}
+	
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
 		XFTableOperator operator = null;
 		try {
@@ -2614,20 +2642,6 @@ public class Session extends JFrame {
 	public XFTableOperator createTableOperator(String sqlText) {
 		return new XFTableOperator(this, null, sqlText);
 	}
-
-	//DatabaseMetaData getDatabaseMetaData() {
-	//	return databaseMetaData;
-	//}
-
-	//DatabaseMetaData getDatabaseMetaData(String id) {
-	//	DatabaseMetaData metadata;
-	//	if (id.equals("")) {
-	//		metadata = databaseMetaData;
-	//	} else {
-	//		metadata = subDBDatabaseMetaDataList.get(subDBIDList.indexOf(id));
-	//	}
-	//	return metadata;
-	//}
 
 	org.w3c.dom.Document getDomDocument() {
 		return domDocument;

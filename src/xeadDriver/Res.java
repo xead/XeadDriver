@@ -166,7 +166,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "FunctionMessage58", "Specify value of detail key field '" },
 		{ "FunctionMessage59", "'." },
 		{ "FunctionMessage60", "* No item appended." },
-		//{ "FunctionMessage61", "* Edit field values and push Enter to validate." },
+		{ "FunctionMessage61", "Specify file to be processed" },
 		{ "Iconify", "Iconify" },
 		{ "ImageFileMessage1", "Click to browse the image." },
 		{ "ImageFileNotFound1", "<html>The image file specified<br>" },

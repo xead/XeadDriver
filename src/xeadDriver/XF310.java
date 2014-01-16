@@ -364,6 +364,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			threadToSetupReferChecker = null;
 			hasNoErrorInTableRows = true;
 			firstEditableHeaderField = null;
+			deleteRowNumberList.clear();
 			
 			///////////////////////////////////////////
 			// Setup specifications for the function //
@@ -733,7 +734,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			for (int j = 0; j < sortingList2.getSize(); j++) {
 				detailReferTableList.add(new XF310_DetailReferTable((org.w3c.dom.Element)sortingList2.getElementAt(j), this));
 			}
-			deleteRowNumberList.clear();
+			//deleteRowNumberList.clear();
 		}
 
 		////////////////////////////////////
@@ -3581,9 +3582,9 @@ class XF310_HeaderField extends XFFieldScriptable {
 				isEditable = true;
 				component = new XF310_HeaderPromptCall(functionFieldElement_, wrkStr, dialog_);
 				component.setLocation(5, 0);
-				if (this.isFieldOnPrimaryTable) {
-					component.setEditable(true);
-				}
+				//if (this.isFieldOnPrimaryTable) {
+				//	component.setEditable(true);
+				//}
 			} else {
 				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("") || !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
 					component = new XF310_HeaderComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
@@ -3647,9 +3648,6 @@ class XF310_HeaderField extends XFFieldScriptable {
 				|| (!isFieldOnPrimaryTable && fieldOptionList.contains("PROMPT_LIST"))
 				|| (!isFieldOnPrimaryTable && !wrkStr.equals(""))) {
 			component.setEditable(true);
-			//if (dialog_.getFirstEditableHeaderField() == null) {
-			//	dialog_.setFirstEditableHeaderField(this);
-			//}
 		} else {
 			component.setEditable(false);
 		}
@@ -5100,6 +5098,9 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
+		if (jComboBox.getItemCount() > 0) {
+			jComboBox.setSelectedIndex(0);
+		}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -7279,23 +7280,23 @@ class XF310_DetailTable extends Object {
 		for (int i = 0; i < keyFieldIDList.size(); i++) {
 			count++;
 			if (count > 0) {
-				buf.append(",");
+				buf.append(", ");
 			}
 			buf.append(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			if (dialog_.getDetailColumnList().get(i).getTableID().equals(tableID_) && !dialog_.getDetailColumnList().get(i).isVirtualField()) {
-				if (buf.indexOf(dialog_.getDetailColumnList().get(i).getFieldID()) == -1) {
+				if (buf.indexOf(" " + dialog_.getDetailColumnList().get(i).getFieldID()) == -1) {
 					count++;
 					if (count > 0) {
-						buf.append(",");
+						buf.append(", ");
 					}
 					buf.append(dialog_.getDetailColumnList().get(i).getFieldID());
 				}
 			}
 		}
 		if (count > 0) {
-			buf.append(",");
+			buf.append(", ");
 		}
 		buf.append(updateCounterID);
 		buf.append(" from ");
@@ -8398,6 +8399,9 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
+		if (jComboBox.getItemCount() > 0) {
+			jComboBox.setSelectedIndex(0);
+		}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -8539,8 +8543,10 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 		}
 
 		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions);
-		xFTextField.setEditable(false);
-		xFTextField.setFocusable(false);
+		//xFTextField.setEditable(false);
+		//xFTextField.setFocusable(false);
+		xFTextField.setEditable(tableID.equals(dialog_.getHeaderTable().getTableID()));
+		xFTextField.setFocusable(tableID.equals(dialog_.getHeaderTable().getTableID()));
 		xFTextField.setLocation(5, 0);
 
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF310.class.getResource("prompt.png"));

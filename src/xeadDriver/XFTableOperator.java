@@ -177,6 +177,11 @@ public class XFTableOperator {
     	selectFields_ = fields;
     }
 
+    public void setDistinctFields(String fields) {
+		sqlText_ = "";
+    	selectFields_ = "distinct " + fields;
+    }
+
     public void addValue(String fieldID, Object value) {
 		sqlText_ = "";
     	int index = fieldIDList_.indexOf(fieldID);

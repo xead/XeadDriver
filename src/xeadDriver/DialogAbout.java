@@ -43,7 +43,18 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M29";
+	public static final String FULL_VERSION  = "V1.R1.M30";
+	public static final String VERSION  = "1.1.30";
+	//30
+	//・セッション開始時にセッションテーブルの「処理系バージョン」にDriverのバージョンを記録するようにした
+	//・TableOperatorのメソッドとしてsetDistinctFields(...)を追加した
+	//・InputDialogのフィールドのメソッドとしてgetItemCount(),setFileChooser(...)を追加した
+	//・session関数としてcreateTextFileOperator(...),existsFile(...),deleteFile(...),renameFile(...)を追加した
+	//・oracleへの対応にともなうSelect文設定処理に含まれていたバグを修正した
+	//・XF100,XF300の明細フィールドの非表示オプションに対応した
+	//・XF110とXF310の見出し域のプロンプトフィールドの編集可設定をXF200に合わせた
+	//・XF110,XF200,XF310,XF390について同一定義向けに連続実行した際に生じる問題を修正した
+	//
 	//29
 	//・session関数としてgetMonthlyExchangeRate(currency, date, type)を追加した
 	//・スプラッシュ上のメッセージのミスを修正した

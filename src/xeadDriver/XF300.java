@@ -3858,6 +3858,10 @@ class XF300_DetailColumn extends XFColumnScriptable {
 		ArrayList<String> fieldOptionList = XFUtility.getOptionList(fieldOptions);
 		if (fieldOptionList.contains("VERTICAL")) {
 			fieldLayout = "VERTICAL";
+		} else {
+			if (fieldOptionList.contains("HIDDEN")) {
+				isVisibleOnPanel = false;
+			}
 		}
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN");
@@ -6762,16 +6766,16 @@ class XF300_DetailTable extends Object {
 		for (int i = 0; i < keyFieldIDList.size(); i++) {
 				count++;
 				if (count > 0) {
-					buf.append(",");
+					buf.append(", ");
 				}
 				buf.append(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < dialog_.getDetailColumnList(tabIndex_).size(); i++) {
 			if (dialog_.getDetailColumnList(tabIndex_).get(i).getTableID().equals(tableID) && !dialog_.getDetailColumnList(tabIndex_).get(i).isVirtualField()) {
-				if (buf.indexOf(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID()) == -1) {
+				if (buf.indexOf(" " + dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID()) == -1) {
 					count++;
 					if (count > 0) {
-						buf.append(",");
+						buf.append(", ");
 					}
 					buf.append(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID());
 				}

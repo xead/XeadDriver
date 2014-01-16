@@ -2432,174 +2432,192 @@ class XFHashMap extends Object {
 	}
 }
 
-class XFSessionForScript {
-	private Session session_;
-	
-    public XFSessionForScript(Session session) {
-        session_ = session;
-    }
-
-    public String getAttribute(String id) {
-		return session_.getAttribute(id);
-	}
-    public void setAttribute(String id, String value) {
-		session_.setAttribute(id, value);
-	}
-
-    public String getImageFileFolder() {
-		return session_.getImageFileFolder();
-	}
-	public String getDatabaseUser() {
-		return session_.getDatabaseUser();
-	}
-	public String getSessionID() {
-		return session_.getSessionID();
-	}
-	public String getUserEmployeeNo() {
-		return session_.getUserEmployeeNo();
-	}
-	public String getUserEmailAddress() {
-		return session_.getUserEmailAddress();
-	}
-	public String getUserID() {
-		return session_.getUserID();
-	}
-	public String getUserName() {
-		return session_.getUserName();
-	}
-
-	public void compressTable(String tableID) throws Exception {
-		session_.compressTable(tableID);
-	}
-
-	public float getAnnualExchangeRate(String currency, int fYear, String type) {
-		return session_.getAnnualExchangeRate(currency, fYear, type);
-	}
-	public float getMonthlyExchangeRate(String currency, int fYear, int mSeq, String type) {
-		return session_.getMonthlyExchangeRate(currency, fYear, mSeq, type);
-	}
-	public float getMonthlyExchangeRate(String currency, String date, String type) {
-		return session_.getMonthlyExchangeRate(currency, date, type);
-	}
-
-	public String getNextNumber(String id) {
-		return session_.getNextNumber(id);
-	}
-	public void setNextNumber(String id, int nextNumber) {
-		session_.setNextNumber(id, nextNumber);
-	}
-	public float getSystemVariantFloat(String id) {
-		return session_.getSystemVariantFloat(id);
-	}
-	public int getSystemVariantInteger(String id) {
-		return session_.getSystemVariantInteger(id);
-	}
-	public String getSystemVariantString(String id) {
-		return session_.getSystemVariantString(id);
-	}
-	public void setSystemVariant(String id, String value) {
-		session_.setSystemVariant(id, value);
-	}
-	public int getTaxAmount(String date, int amount) {
-		return session_.getTaxAmount(date, amount);
-	}
-
-	public int getDaysBetweenDates(String dateFrom, String dateThru, int countType) {
-		return session_.getDaysBetweenDates(dateFrom, dateThru, countType);
-	}
-	public int getDaysBetweenDates(String dateFrom, String dateThru, int countType, String kbCalendar) {
-		return session_.getDaysBetweenDates(dateFrom, dateThru, countType, kbCalendar);
-	}
-	public Object getMinutesBetweenTimes(String timeFrom, String timeThru) {
-		return session_.getMinutesBetweenTimes(timeFrom, timeThru);
-	}
-	public String getOffsetDate(String date, int days, int countType) {
-		return session_.getOffsetDate(date, days, countType);
-	}
-	public String getOffsetDate(String date, int days, int countType, String kbCalendar) {
-		return session_.getOffsetDate(date, days, countType, kbCalendar);
-	}
-	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes, int countType) {
-		return session_.getOffsetDateTime(dateFrom, timeFrom, minutes, countType);
-	}
-	public String getOffsetYearMonth(String yearMonthFrom, int offsetMonths) {
-		return session_.getOffsetYearMonth(yearMonthFrom, offsetMonths);
-	}
-	public String getTimeStamp() {
-		return session_.getTimeStamp();
-	}
-	public String getThisMonth() {
-		return session_.getThisMonth();
-	}
-	public String getToday() {
-		return session_.getToday();
-	}
-	public boolean isOffDate(String date) {
-		return session_.isOffDate(date);
-	}
-	public boolean isOffDate(String date, String kbCalendar) {
-		return session_.isOffDate(date, kbCalendar);
-	}
-	public boolean isValidDate(String date) {
-		return session_.isValidDate(date);
-	}
-	public boolean isValidDateFormat(String date, String separator) {
-		return session_.isValidDateFormat(date, separator);
-	}
-	public boolean isValidTime(String time, String format) {
-		return session_.isValidTime(time, format);
-	}
-	public int getMSeqOfDate(String date) {
-		return session_.getMSeqOfDate(date);
-	}
-	public int getFYearOfDate(String date) {
-		return session_.getFYearOfDate(date);
-	}
-	public String getYearMonthOfFYearMSeq(String fYearMSeq) {
-		return session_.getYearMonthOfFYearMSeq(fYearMSeq);
-	}
-	public String getErrorOfAccountDate(String date) {
-		return session_.getErrorOfAccountDate(date);
-	}
-
-	public void executeProgram(String programName) {
-		session_.executeProgram(programName);
-	}
-	public void browseFile(String fileName) {
-		session_.browseFile(fileName);
-	}
-	public void editFile(String fileName) {
-		session_.editFile(fileName);
-	}
-	public void sendMail(String addressFrom, String addressTo, String addressCc,
-			String subject, String message,
-			String fileName, String attachedName, String charset) {
-		session_.sendMail(addressFrom, addressTo, addressCc,
-				subject, message, fileName, attachedName, charset);
-	}
-	
-	public void startProgress(String text, int max) {
-		session_.startProgress(text, max);
-	}
-	public void incrementProgress() {
-		session_.incrementProgress();
-	}
-	public void endProgress() {
-		session_.endProgress();
-	}
-
-	public XFTableOperator createTableOperator(String oparation, String tableID) {
-		XFTableOperator operator = null;
-		try {
-			operator = new XFTableOperator(session_, null, oparation, tableID);
-		} catch (Exception e) {
-		}
-		return operator;
-	}
-	public XFTableOperator createTableOperator(String sqlText) {
-		return new XFTableOperator(session_, null, sqlText);
-	}
-}
+//class XFSessionForScript {
+//	private Session session_;
+//	
+//    public XFSessionForScript(Session session) {
+//        session_ = session;
+//    }
+//    
+//    public String getAttribute(String id) {
+//		return session_.getAttribute(id);
+//	}
+//    public void setAttribute(String id, String value) {
+//		session_.setAttribute(id, value);
+//	}
+//
+//    public String getImageFileFolder() {
+//		return session_.getImageFileFolder();
+//	}
+//	public String getDatabaseUser() {
+//		return session_.getDatabaseUser();
+//	}
+//	public String getSessionID() {
+//		return session_.getSessionID();
+//	}
+//	public String getUserEmployeeNo() {
+//		return session_.getUserEmployeeNo();
+//	}
+//	public String getUserEmailAddress() {
+//		return session_.getUserEmailAddress();
+//	}
+//	public String getUserID() {
+//		return session_.getUserID();
+//	}
+//	public String getUserName() {
+//		return session_.getUserName();
+//	}
+//
+//	public float getAnnualExchangeRate(String currency, int fYear, String type) {
+//		return session_.getAnnualExchangeRate(currency, fYear, type);
+//	}
+//	public float getMonthlyExchangeRate(String currency, int fYear, int mSeq, String type) {
+//		return session_.getMonthlyExchangeRate(currency, fYear, mSeq, type);
+//	}
+//	public float getMonthlyExchangeRate(String currency, String date, String type) {
+//		return session_.getMonthlyExchangeRate(currency, date, type);
+//	}
+//
+//	public String getNextNumber(String id) {
+//		return session_.getNextNumber(id);
+//	}
+//	public void setNextNumber(String id, int nextNumber) {
+//		session_.setNextNumber(id, nextNumber);
+//	}
+//	public float getSystemVariantFloat(String id) {
+//		return session_.getSystemVariantFloat(id);
+//	}
+//	public int getSystemVariantInteger(String id) {
+//		return session_.getSystemVariantInteger(id);
+//	}
+//	public String getSystemVariantString(String id) {
+//		return session_.getSystemVariantString(id);
+//	}
+//	public void setSystemVariant(String id, String value) {
+//		session_.setSystemVariant(id, value);
+//	}
+//	public int getTaxAmount(String date, int amount) {
+//		return session_.getTaxAmount(date, amount);
+//	}
+//
+//	public int getDaysBetweenDates(String dateFrom, String dateThru, int countType) {
+//		return session_.getDaysBetweenDates(dateFrom, dateThru, countType);
+//	}
+//	public int getDaysBetweenDates(String dateFrom, String dateThru, int countType, String kbCalendar) {
+//		return session_.getDaysBetweenDates(dateFrom, dateThru, countType, kbCalendar);
+//	}
+//	public Object getMinutesBetweenTimes(String timeFrom, String timeThru) {
+//		return session_.getMinutesBetweenTimes(timeFrom, timeThru);
+//	}
+//	public String getOffsetDate(String date, int days, int countType) {
+//		return session_.getOffsetDate(date, days, countType);
+//	}
+//	public String getOffsetDate(String date, int days, int countType, String kbCalendar) {
+//		return session_.getOffsetDate(date, days, countType, kbCalendar);
+//	}
+//	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes, int countType) {
+//		return session_.getOffsetDateTime(dateFrom, timeFrom, minutes, countType);
+//	}
+//	public String getOffsetYearMonth(String yearMonthFrom, int offsetMonths) {
+//		return session_.getOffsetYearMonth(yearMonthFrom, offsetMonths);
+//	}
+//	public String getTimeStamp() {
+//		return session_.getTimeStamp();
+//	}
+//	public String getThisMonth() {
+//		return session_.getThisMonth();
+//	}
+//	public String getToday() {
+//		return session_.getToday();
+//	}
+//	public boolean isOffDate(String date) {
+//		return session_.isOffDate(date);
+//	}
+//	public boolean isOffDate(String date, String kbCalendar) {
+//		return session_.isOffDate(date, kbCalendar);
+//	}
+//	public boolean isValidDate(String date) {
+//		return session_.isValidDate(date);
+//	}
+//	public boolean isValidDateFormat(String date, String separator) {
+//		return session_.isValidDateFormat(date, separator);
+//	}
+//	public boolean isValidTime(String time, String format) {
+//		return session_.isValidTime(time, format);
+//	}
+//	public int getMSeqOfDate(String date) {
+//		return session_.getMSeqOfDate(date);
+//	}
+//	public int getFYearOfDate(String date) {
+//		return session_.getFYearOfDate(date);
+//	}
+//	public String getYearMonthOfFYearMSeq(String fYearMSeq) {
+//		return session_.getYearMonthOfFYearMSeq(fYearMSeq);
+//	}
+//	public String getErrorOfAccountDate(String date) {
+//		return session_.getErrorOfAccountDate(date);
+//	}
+//	
+//	public boolean existsFile(String fileName) {
+//		return session_.existsFile(fileName);
+//	}
+//	public boolean deleteFile(String fileName) {
+//		return session_.deleteFile(fileName);
+//	}
+//	public boolean renameFile(String currentName, String newName) {
+//		return session_.renameFile(currentName, newName);
+//	}
+//	public XFTextFileOperator createTextFileOperator(String oparation, String fileName, String separator, String charset) {
+//		return session_.createTextFileOperator(oparation, fileName, separator, charset);
+//	}
+//	public XFTextFileOperator createTextFileOperator(String oparation, String fileName, String separator) {
+//		return session_.createTextFileOperator(oparation, fileName, separator, "");
+//	}
+//
+//	public void executeProgram(String programName) {
+//		session_.executeProgram(programName);
+//	}
+//	public void browseFile(String fileName) {
+//		session_.browseFile(fileName);
+//	}
+//	public void editFile(String fileName) {
+//		session_.editFile(fileName);
+//	}
+//	public void sendMail(String addressFrom, String addressTo, String addressCc,
+//			String subject, String message,
+//			String fileName, String attachedName, String charset) {
+//		session_.sendMail(addressFrom, addressTo, addressCc,
+//				subject, message, fileName, attachedName, charset);
+//	}
+//	
+//	public void startProgress(String text, int max) {
+//		session_.startProgress(text, max);
+//	}
+//	public void incrementProgress() {
+//		session_.incrementProgress();
+//	}
+//	public void endProgress() {
+//		session_.endProgress();
+//	}
+//
+//	public XFTableOperator createTableOperator(String oparation, String tableID) {
+//		XFTableOperator operator = null;
+//		try {
+//			operator = new XFTableOperator(session_, null, oparation, tableID);
+//		} catch (Exception e) {
+//		}
+//		return operator;
+//	}
+//	public XFTableOperator createTableOperator(String sqlText) {
+//		return new XFTableOperator(session_, null, sqlText);
+//	}
+//	public void compressTable(String tableID) throws Exception {
+//		session_.compressTable(tableID);
+//	}
+//    public void commit() {
+//    	session_.commit();
+//    }
+//}
 
 interface XFExecutable {
 	public String getFunctionID();

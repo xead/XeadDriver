@@ -3331,7 +3331,9 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
-		//
+		if (jComboBox.getItemCount() > 0) {
+			jComboBox.setSelectedIndex(0);
+		}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -3365,7 +3367,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				}
 			}
 		}
-		//
 		if (jComboBox.getSelectedIndex() >= 0) {
 			jTextField.setText(jComboBox.getItemAt(jComboBox.getSelectedIndex()).toString());
 		}

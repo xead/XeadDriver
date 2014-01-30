@@ -675,9 +675,16 @@ public class XFTableOperator {
     }
     
     public Object getValueOf(String fieldID) throws Exception {
-    	Object value = null;
+    	Object value = "";
     	if (relation_ != null) {
     		value = relation_.getValueOf(fieldID);
+    	}
+    	if (value == null) {
+    		value = "";
+    	} else {
+    		if (value instanceof String) {
+    			value = value.toString().trim();
+    		}
     	}
     	return value;
     }

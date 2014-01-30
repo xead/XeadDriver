@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -43,8 +43,20 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M30";
-	public static final String VERSION  = "1.1.30";
+	public static final String FULL_VERSION  = "V1.R1.M31";
+	public static final String VERSION  = "1.1.31";
+	//31
+	//・XF300,XF310のキー入力ダイアログのキー検索ロジックを改善した
+	//・XF110,XF310のプロンプトが設定されたカラムの編集設定の仕様を改善した
+	//・XF110,XF200,XF310に表示専用の値リストフィールドと区分フィールド用のコンポーネントクラスを導入した
+	//・TableOperatorのgetValueOf(...)で返し値がnullであれば''を、また後ブランクを除去して返すようにした
+	//・XF110での関連機能起動チェックボックスの位置設定ロジックを改善した
+	//・XF200で更新専用とした場合、更新ボタンに指定のキャプション値をセットするようにした（従来は指定にかかわら"更新"をセットしていた）
+	//・XF390のスクリプト変数の設定ロジックに含まれていたバグを修正
+	//・XF110,XF200,XF310でリストボックスの幅制御が出来なかった問題を修正
+	//・SKIP_PRELOADのアプリケーションパラメータに対応した
+	//・ログイン時にLOGIN_PERMITTEDのシステム変数が登録されていない場合の動きを改善した
+	//
 	//30
 	//・セッション開始時にセッションテーブルの「処理系バージョン」にDriverのバージョンを記録するようにした
 	//・TableOperatorのメソッドとしてsetDistinctFields(...)を追加した
@@ -165,7 +177,7 @@ public class DialogAbout extends JDialog implements ActionListener {
 	//・XF110で見出し域のリストボックスについて、選択初期値が関連するバッチフィールドに反映されないバグを修正
 	//・XF100,110で年月型フィールドで検索条件を指定すると異常終了するバグを修正した
 	public static final String FORMAT_VERSION  = "1.1";
-	public static final String COPYRIGHT = "Copyright 2013 DBC,Ltd.";
+	public static final String COPYRIGHT = "Copyright 2014 DBC,Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
 	/**
 	 * Components on dialog

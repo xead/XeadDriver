@@ -611,10 +611,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					hasAnyBatchFields = true;
 				} else {
 					posX = posX + dimOfPriviousField.width + 50;
-					if (posX > dialog_.getPreferredSize().width - 50) {
-						posX = 0;
-						posY = posY + dimOfPriviousField.height+ this.FIELD_VERTICAL_MARGIN;
-					}
+					//if (posX > dialog_.getPreferredSize().width - 50) {
+					//	posX = 0;
+					//	posY = posY + dimOfPriviousField.height+ this.FIELD_VERTICAL_MARGIN;
+					//}
 				}
 				jCheckBoxToExecuteBatchFunction.setBounds(posX, posY + 1, metrics.stringWidth(jCheckBoxToExecuteBatchFunction.getText()) + 35, 20);
 				jPanelBatchFields.add(jCheckBoxToExecuteBatchFunction);
@@ -3157,7 +3157,8 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 				//}
 			} else {
 				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("") || !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
-					component = new XF110_SubListBatchComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
+					//component = new XF110_SubListBatchComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
+					component = new XF110_SubListBatchCodeText(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_);
 					component.setLocation(5, 0);
 				} else {
 					if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN").equals("")) {
@@ -4752,7 +4753,7 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 		jTextField = new JTextField();
 		jTextField.setOpaque(true);
 		jTextField.setBorder(null);
-		jTextField.setEditable(false);
+		//jTextField.setEditable(false);
 		jTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
 
 		StringTokenizer workTokenizer = new StringTokenizer(fieldElement_.getAttribute("DataSource"), "." );
@@ -4765,6 +4766,9 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 				tableID = referTableList_.get(i).getTableID();
 				break;
 			}
+		}
+		if (!tableAlias.equals(dialog_.getDetailTable().getTableID())) {
+			jTextField.setEditable(false);
 		}
 
 		org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, fieldID);
@@ -7419,11 +7423,11 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 		fieldID =workTokenizer.nextToken();
 		dialog_ = dialog;
 
-		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
-		FontMetrics metrics = jTextField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		jComboBox.setFont(new java.awt.Font("Dialog", 0, 14));
+		FontMetrics metrics = jTextField.getFontMetrics(new java.awt.Font("Monospaced", 0, 14));
+		jComboBox.setFont(new java.awt.Font("Monospaced", 0, 14));
 		jComboBox.addKeyListener(new java.awt.event.KeyAdapter() {
 			public void keyPressed(KeyEvent e)  {
 			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
@@ -7580,21 +7584,6 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 		}
 	}
 	
-//	public boolean hasEditControlledKey() {
-//		boolean anyOfKeysAreEditControlled = false;
-//		for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
-//			for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
-//				if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
-//					if (!dialog_.getBatchFieldList().get(j).isEditable() && dialog_.getBatchTable().getTableID().equals(dialog_.getBatchFieldList().get(j).getTableAlias())) {
-//						anyOfKeysAreEditControlled = true;
-//						break;
-//					}
-//				}
-//			}
-//		}
-//		return anyOfKeysAreEditControlled;
-//	}
-	
 	public void setFollowingField(XFEditableField field) {
 	}
 	
@@ -7656,9 +7645,9 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
-		if (jComboBox.getItemCount() > 0) {
-			jComboBox.setSelectedIndex(0);
-		}
+		//if (jComboBox.getItemCount() > 0) {
+		//	jComboBox.setSelectedIndex(0);
+		//}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -7697,8 +7686,9 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 	}
 	
 	public void setWidth(int width) {
-		jComboBox.setSize(width, jComboBox.getHeight());
-		jTextField.setSize(width - 17, jTextField.getHeight());
+		//jComboBox.setSize(width, jComboBox.getHeight());
+		//jTextField.setSize(width - 17, jTextField.getHeight());
+		this.setSize(new Dimension(width, XFUtility.FIELD_UNIT_HEIGHT));
 	}
 
 	public void setBackground(Color color) {
@@ -7709,6 +7699,105 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 
 	public int getRows() {
 		return rows_;
+	}
+}
+
+class XF110_SubListBatchCodeText extends JTextField implements XFEditableField {
+	private static final long serialVersionUID = 1L;
+	private String dataTypeOptions_ = "";
+	private int fieldWidth = 0;
+	private ArrayList<String> codeValueList = new ArrayList<String>();
+	private ArrayList<String> textValueList = new ArrayList<String>();
+	private XF110_SubList dialog_;
+	
+	public XF110_SubListBatchCodeText(String dataSourceName, String dataTypeOptions, XF110_SubList dialog){
+		super();
+		StringTokenizer workTokenizer;
+		String wrk = "";
+		String strWrk;
+		dataTypeOptions_ = dataTypeOptions;
+		dialog_ = dialog;
+		this.setFont(new java.awt.Font("Monospaced", 0, 14));
+		this.setEditable(false);
+		this.setFocusable(false);
+		FontMetrics metrics = this.getFontMetrics(new java.awt.Font("Monospaced", 0, 14));
+		strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "VALUES");
+		if (!strWrk.equals("")) {
+			codeValueList.add("");
+			textValueList.add("");
+			workTokenizer = new StringTokenizer(strWrk, ";" );
+			while (workTokenizer.hasMoreTokens()) {
+				wrk = workTokenizer.nextToken();
+				if (metrics.stringWidth(wrk) > fieldWidth) {
+					fieldWidth = metrics.stringWidth(wrk) + 12;
+				}
+				codeValueList.add(wrk);
+				textValueList.add(wrk);
+			}
+		} else {
+			strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "KUBUN");
+			if (!strWrk.equals("")) {
+				codeValueList.add("");
+				textValueList.add("");
+				try {
+					String sql = "select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST";
+					XFTableOperator operator = dialog_.createTableOperator(sql);
+					while (operator.next()) {
+						codeValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+						wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+						textValueList.add(wrk);
+						if (metrics.stringWidth(wrk) > fieldWidth) {
+							fieldWidth = metrics.stringWidth(wrk) + 12;
+						}
+					}
+					if (codeValueList.size() == 0) {
+						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError24") + dataSourceName + XFUtility.RESOURCE.getString("FunctionError25"));
+					}
+				} catch(Exception e) {
+					e.printStackTrace(dialog_.getExceptionStream());
+					dialog_.setErrorAndCloseFunction();
+				}
+			}
+		}
+		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
+		this.setLayout(new BorderLayout());
+	}
+	
+	public void setFollowingField(XFEditableField field) {
+	}
+	
+	public void setWidth(int width) {
+		fieldWidth = width;
+		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
+	}
+
+	public Object getInternalValue() {
+		return codeValueList.get(textValueList.indexOf(this.getText()));
+	}
+
+	public Object getExternalValue() {
+		return this.getText();
+	}
+	
+	public void setOldValue(Object obj) {
+	}
+
+	public Object getOldValue() {
+		return codeValueList.get(textValueList.indexOf(this.getText()));
+	}
+
+	public boolean isComponentFocusable() {
+		return false;
+	}
+	
+	public void setValue(Object obj) {
+		String value = (String)obj;
+		value = value.trim();
+		this.setText(textValueList.get(codeValueList.indexOf(value)));
+	}
+
+	public int getRows() {
+		return 1;
 	}
 }
 

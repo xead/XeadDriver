@@ -35,6 +35,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -3587,7 +3588,8 @@ class XF310_HeaderField extends XFFieldScriptable {
 				//}
 			} else {
 				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("") || !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
-					component = new XF310_HeaderComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
+					//component = new XF310_HeaderComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
+					component = new XF310_HeaderCodeText(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_);
 					component.setLocation(5, 0);
 				} else {
 					if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN").equals("")) {
@@ -5177,7 +5179,7 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 		jTextField = new JTextField();
 		jTextField.setOpaque(true);
 		jTextField.setBorder(null);
-		jTextField.setEditable(false);
+		//jTextField.setEditable(false);
 		jTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
 
 		StringTokenizer workTokenizer = new StringTokenizer(fieldElement_.getAttribute("DataSource"), "." );
@@ -5190,6 +5192,9 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 				tableID = referTableList_.get(i).getTableID();
 				break;
 			}
+		}
+		if (!tableAlias.equals(dialog_.getDetailTable().getTableID())) {
+			jTextField.setEditable(false);
 		}
 
 		org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, fieldID);
@@ -8178,11 +8183,11 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 		fieldID =workTokenizer.nextToken();
 		dialog_ = dialog;
 
-		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
-		FontMetrics metrics = jTextField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		jComboBox.setFont(new java.awt.Font("Dialog", 0, 14));
+		FontMetrics metrics = jTextField.getFontMetrics(new java.awt.Font("Monospaced", 0, 14));
+		jComboBox.setFont(new java.awt.Font("Monospaced", 0, 14));
 		jComboBox.addKeyListener(new java.awt.event.KeyAdapter() {
 			public void keyPressed(KeyEvent e)  {
 			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
@@ -8286,7 +8291,8 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	public void setupRecordList() {
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
 			String selectedItemValue = "";
-			if (jComboBox.getSelectedIndex() >= 0) {
+			int selectedIndex = jComboBox.getSelectedIndex();
+			if (selectedIndex >= 0) {
 				selectedItemValue = jComboBox.getItemAt(jComboBox.getSelectedIndex()).toString();
 			}
 
@@ -8334,7 +8340,9 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 				dialog_.setErrorAndCloseFunction();
 			}
 
-			jComboBox.setSelectedItem(selectedItemValue);
+			if (selectedIndex >= 0) {
+				jComboBox.setSelectedItem(selectedItemValue);
+			}
 		}
 	}
 	
@@ -8399,9 +8407,9 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
-		if (jComboBox.getItemCount() > 0) {
-			jComboBox.setSelectedIndex(0);
-		}
+		//if (jComboBox.getItemCount() > 0) {
+		//	jComboBox.setSelectedIndex(0);
+		//}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -8440,8 +8448,9 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	}
 	
 	public void setWidth(int width) {
-		jComboBox.setSize(width, jComboBox.getHeight());
-		jTextField.setSize(width - 17, jTextField.getHeight());
+		//jComboBox.setSize(width, jComboBox.getHeight());
+		//jTextField.setSize(width - 17, jTextField.getHeight());
+		this.setSize(new Dimension(width, XFUtility.FIELD_UNIT_HEIGHT));
 	}
 
 	public void setBackground(Color color) {
@@ -8452,6 +8461,105 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 
 	public int getRows() {
 		return rows_;
+	}
+}
+
+class XF310_HeaderCodeText extends JTextField implements XFEditableField {
+	private static final long serialVersionUID = 1L;
+	private String dataTypeOptions_ = "";
+	private int fieldWidth = 0;
+	private ArrayList<String> codeValueList = new ArrayList<String>();
+	private ArrayList<String> textValueList = new ArrayList<String>();
+	private XF310 dialog_;
+	
+	public XF310_HeaderCodeText(String dataSourceName, String dataTypeOptions, XF310 dialog){
+		super();
+		StringTokenizer workTokenizer;
+		String wrk = "";
+		String strWrk;
+		dataTypeOptions_ = dataTypeOptions;
+		dialog_ = dialog;
+		this.setFont(new java.awt.Font("Monospaced", 0, 14));
+		this.setEditable(false);
+		this.setFocusable(false);
+		FontMetrics metrics = this.getFontMetrics(new java.awt.Font("Monospaced", 0, 14));
+		strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "VALUES");
+		if (!strWrk.equals("")) {
+			codeValueList.add("");
+			textValueList.add("");
+			workTokenizer = new StringTokenizer(strWrk, ";" );
+			while (workTokenizer.hasMoreTokens()) {
+				wrk = workTokenizer.nextToken();
+				if (metrics.stringWidth(wrk) > fieldWidth) {
+					fieldWidth = metrics.stringWidth(wrk) + 12;
+				}
+				codeValueList.add(wrk);
+				textValueList.add(wrk);
+			}
+		} else {
+			strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "KUBUN");
+			if (!strWrk.equals("")) {
+				codeValueList.add("");
+				textValueList.add("");
+				try {
+					String sql = "select * from " + dialog_.getSession().getTableNameOfUserVariants() + " where IDUSERKUBUN = '" + strWrk + "' order by SQLIST";
+					XFTableOperator operator = dialog_.createTableOperator(sql);
+					while (operator.next()) {
+						codeValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+						wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+						textValueList.add(wrk);
+						if (metrics.stringWidth(wrk) > fieldWidth) {
+							fieldWidth = metrics.stringWidth(wrk) + 12;
+						}
+					}
+					if (codeValueList.size() == 0) {
+						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError24") + dataSourceName + XFUtility.RESOURCE.getString("FunctionError25"));
+					}
+				} catch(Exception e) {
+					e.printStackTrace(dialog_.getExceptionStream());
+					dialog_.setErrorAndCloseFunction();
+				}
+			}
+		}
+		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
+		this.setLayout(new BorderLayout());
+	}
+	
+	public void setFollowingField(XFEditableField field) {
+	}
+	
+	public void setWidth(int width) {
+		fieldWidth = width;
+		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
+	}
+
+	public Object getInternalValue() {
+		return codeValueList.get(textValueList.indexOf(this.getText()));
+	}
+
+	public Object getExternalValue() {
+		return this.getText();
+	}
+	
+	public void setOldValue(Object obj) {
+	}
+
+	public Object getOldValue() {
+		return codeValueList.get(textValueList.indexOf(this.getText()));
+	}
+
+	public boolean isComponentFocusable() {
+		return false;
+	}
+	
+	public void setValue(Object obj) {
+		String value = (String)obj;
+		value = value.trim();
+		this.setText(textValueList.get(codeValueList.indexOf(value)));
+	}
+
+	public int getRows() {
+		return 1;
 	}
 }
 
@@ -8788,8 +8896,6 @@ class XF310_KeyInputDialog extends JDialog {
 		this.getRootPane().setDefaultButton(jButtonOK);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
 
-		StringTokenizer workTokenizer;
-		String tableAlias, tableID, fieldID;
 		org.w3c.dom.Element element;
 		int posX = 0;
 		int posY = 0;
@@ -8806,45 +8912,33 @@ class XF310_KeyInputDialog extends JDialog {
 		FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 		jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 
-		NodeList headerFieldElementList = dialog_.getFunctionElement().getElementsByTagName("Field");
-		SortableDomElementListModel sortingList1 = XFUtility.getSortedListModel(headerFieldElementList, "Order");
-		for (int i = 0; i < sortingList1.getSize(); i++) {
-			element = (org.w3c.dom.Element)sortingList1.getElementAt(i);
-			workTokenizer = new StringTokenizer(element.getAttribute("DataSource"), "." );
-			tableAlias = workTokenizer.nextToken();
-			tableID = dialog_.getTableIDOfTableAlias(tableAlias);
-			fieldID =workTokenizer.nextToken();
+		ArrayList<String> keyFieldList = dialog_.getHeaderTable().getKeyFieldIDList();
+		for (int i = 0; i < keyFieldList.size(); i++) {
+			element = dialog_.getSession().getDomDocument().createElement("Field");
+			element.setAttribute("DataSource", dialog_.getHeaderTable().getTableID()+"."+keyFieldList.get(i));
+			field = new XF310_HeaderField(element, dialog_);
+			field.setEditable(true);
+			fieldList.add(field);
 
-			if (tableID.equals(dialog_.getHeaderTable().getTableID())) {
-				ArrayList<String> keyFieldList = dialog_.getHeaderTable().getKeyFieldIDList();
-				for (int j = 0; j < keyFieldList.size(); j++) {
-					if (keyFieldList.get(j).equals(fieldID)) {
-						field = new XF310_HeaderField((org.w3c.dom.Element)sortingList1.getElementAt(i), dialog_);
-						field.setEditable(true);
-						fieldList.add(field);
-
-						if (topField) {
-							posX = 0;
-							posY = this.FIELD_VERTICAL_MARGIN + 8;
-							topField = false;
-						} else {
-							posX = 0;
-							posY = posY + dimOfPriviousField.height+ field.getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
-						}
-						dim = field.getPreferredSize();
-						field.setBounds(posX, posY, dim.width, dim.height);
-						jPanelKeyFields.add(field);
-
-						if (posX + dim.width > biggestWidth) {
-							biggestWidth = posX + dim.width;
-						}
-						if (posY + dim.height > biggestHeight) {
-							biggestHeight = posY + dim.height;
-						}
-						dimOfPriviousField = new Dimension(dim.width, dim.height);
-					}
-				}
+			if (topField) {
+				posX = 0;
+				posY = this.FIELD_VERTICAL_MARGIN + 8;
+				topField = false;
+			} else {
+				posX = 0;
+				posY = posY + dimOfPriviousField.height+ field.getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
 			}
+			dim = field.getPreferredSize();
+			field.setBounds(posX, posY, dim.width, dim.height);
+			jPanelKeyFields.add(field);
+
+			if (posX + dim.width > biggestWidth) {
+				biggestWidth = posX + dim.width;
+			}
+			if (posY + dim.height > biggestHeight) {
+				biggestHeight = posY + dim.height;
+			}
+			dimOfPriviousField = new Dimension(dim.width, dim.height);
 		}
 
 		int width = 450;

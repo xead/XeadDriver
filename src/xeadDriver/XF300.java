@@ -479,7 +479,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			jPanelHeaderFields.setPreferredSize(new Dimension(biggestWidth, biggestHeight));
 			jSplitPaneCenter.setDividerLocation(biggestHeight + this.FIELD_VERTICAL_MARGIN + 13);
+			jSplitPaneCenter.updateUI();
 			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 125);
+			jSplitPaneMain.updateUI();
 			jPanelMain.updateUI();
 			this.pack();
 
@@ -7380,8 +7382,6 @@ class XF300_KeyInputDialog extends JDialog {
 		this.getRootPane().setDefaultButton(jButtonOK);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
 
-		StringTokenizer workTokenizer;
-		String tableAlias, tableID, fieldID;
 		org.w3c.dom.Element element;
 		int posX = 0;
 		int posY = 0;
@@ -7398,45 +7398,33 @@ class XF300_KeyInputDialog extends JDialog {
 		FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 		jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 
-		NodeList headerFieldElementList = dialog_.getFunctionElement().getElementsByTagName("Field");
-		SortableDomElementListModel sortingList1 = XFUtility.getSortedListModel(headerFieldElementList, "Order");
-		for (int i = 0; i < sortingList1.getSize(); i++) {
-			element = (org.w3c.dom.Element)sortingList1.getElementAt(i);
-			workTokenizer = new StringTokenizer(element.getAttribute("DataSource"), "." );
-			tableAlias = workTokenizer.nextToken();
-			tableID = dialog_.getTableIDOfTableAlias(tableAlias, -1);
-			fieldID =workTokenizer.nextToken();
-			//
-			if (tableID.equals(dialog_.getHeaderTable().getTableID())) {
-				ArrayList<String> keyFieldList = dialog_.getHeaderTable().getKeyFieldIDList();
-				for (int j = 0; j < keyFieldList.size(); j++) {
-					if (keyFieldList.get(j).equals(fieldID)) {
-						field = new XF300_HeaderField((org.w3c.dom.Element)sortingList1.getElementAt(i), dialog_);
-						field.setEditable(true);
-						fieldList.add(field);
+		ArrayList<String> keyFieldList = dialog_.getHeaderTable().getKeyFieldIDList();
+		for (int i = 0; i < keyFieldList.size(); i++) {
+			element = dialog_.getSession().getDomDocument().createElement("Field");
+			element.setAttribute("DataSource", dialog_.getHeaderTable().getTableID()+"."+keyFieldList.get(i));
+			field = new XF300_HeaderField(element, dialog_);
+			field.setEditable(true);
+			fieldList.add(field);
 
-						if (topField) {
-							posX = 0;
-							posY = this.FIELD_VERTICAL_MARGIN + 8;
-							topField = false;
-						} else {
-							posX = 0;
-							posY = posY + dimOfPriviousField.height+ field.getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
-						}
-						dim = field.getPreferredSize();
-						field.setBounds(posX, posY, dim.width, dim.height);
-						jPanelKeyFields.add(field);
-
-						if (posX + dim.width > biggestWidth) {
-							biggestWidth = posX + dim.width;
-						}
-						if (posY + dim.height > biggestHeight) {
-							biggestHeight = posY + dim.height;
-						}
-						dimOfPriviousField = new Dimension(dim.width, dim.height);
-					}
-				}
+			if (topField) {
+				posX = 0;
+				posY = this.FIELD_VERTICAL_MARGIN + 8;
+				topField = false;
+			} else {
+				posX = 0;
+				posY = posY + dimOfPriviousField.height+ field.getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
 			}
+			dim = field.getPreferredSize();
+			field.setBounds(posX, posY, dim.width, dim.height);
+			jPanelKeyFields.add(field);
+
+			if (posX + dim.width > biggestWidth) {
+				biggestWidth = posX + dim.width;
+			}
+			if (posY + dim.height > biggestHeight) {
+				biggestHeight = posY + dim.height;
+			}
+			dimOfPriviousField = new Dimension(dim.width, dim.height);
 		}
 
 		int width = 450;

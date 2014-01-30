@@ -174,7 +174,7 @@ public class XFUtility {
 	
 	static String getFormattedIntegerValue(String value, ArrayList<String> dataTypeOptionList, int size) {
 		String wrkValue, returnValue = "";
-		//
+
 		int pos = value.indexOf(".");
 		if (pos >= 0) {
 			wrkValue = value.substring(0, pos);
@@ -182,7 +182,7 @@ public class XFUtility {
 			wrkValue = value;
 		}
 		wrkValue = wrkValue.replace("-", "");
-		//
+
 		if (dataTypeOptionList.contains("NO_EDIT")) {
 			StringBuffer bf = new StringBuffer();
 			if (value.startsWith("-")) {
@@ -220,14 +220,14 @@ public class XFUtility {
 				returnValue = bf.toString();
 			}
 		}
-		//
+
 		return returnValue;
 	}
 
 	static String getFormattedFloatValue(String value, int decimalSize) {
 		String returnValue = "";
 		double doubleWrk;
-		//	
+
 		try {
 			String wrkStr = value.toString();
 			wrkStr = wrkStr.replace("-", "");
@@ -235,12 +235,12 @@ public class XFUtility {
 		} catch (NumberFormatException e) {
 			doubleWrk = 0;
 		}
-		//
+
 		StringBuffer bf = new StringBuffer();
 		if (value.startsWith("-")) {
 			bf.append("-");
 		}
-		//
+
 		if (decimalSize == 0) {
 			bf.append(XFUtility.FLOAT_FORMAT0.format(doubleWrk));
 		}
@@ -262,59 +262,51 @@ public class XFUtility {
 		if (decimalSize == 6) {
 			bf.append(XFUtility.FLOAT_FORMAT6.format(doubleWrk));
 		}
-		//
+
 		if (value.endsWith("-")) {
 			bf.append("-");
 		}
-		//
+
 		returnValue = bf.toString();
-		//
+
 		return returnValue;
 	}
 
 	
 	static Object getNullValueOfBasicType(String basicType){
 		Object value = null;
-		//
 		if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
 			value = 0;
 		}
-		//
 		if (basicType.equals("STRING") || basicType.equals("DATETIME") || basicType.equals("TIME") || basicType.equals("DATE")) {
 			value = "";
 		}
-		//
 		if (basicType.equals("DATE")) {
 			value = null;
 		}
-		//
 		return value;
 	}
 	
 	static boolean isNullValue(String basicType, Object value){
 		boolean isNull = false;
-		//
 		if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
 			String strValue = value.toString();
 			if (strValue == null || strValue.equals("") || strValue.equals("0") || strValue.equals("0.0")) {
 				isNull = true;
 			}
 		}
-		//
 		if (basicType.equals("STRING") || basicType.equals("DATETIME") || basicType.equals("TIME")) {
 			String strValue = value.toString();
 			if (strValue == null || strValue.equals("")) {
 				isNull = true;
 			}
 		}
-		//
 		if (basicType.equals("DATE")) {
 			String strValue = value.toString();
 			if (strValue == null || strValue.equals("")) {
 				isNull = true;
 			}
 		}
-		//
 		return isNull;
 	}
 

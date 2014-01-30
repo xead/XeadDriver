@@ -476,7 +476,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	public void cancelWithMessage(String message) {
 		if (!message.equals("")) {
 			JOptionPane.showMessageDialog(null, message);
-			returnMap_.put("RETURN_MESSAGE", message);
+			//returnMap_.put("RETURN_MESSAGE", message);
 		}
 		errorHasOccured = true;
 	}

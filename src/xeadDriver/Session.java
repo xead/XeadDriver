@@ -79,6 +79,7 @@ public class Session extends JFrame {
 	private String sessionID = "";
 	private String sessionStatus = "";
 	private boolean noErrorsOccured = true;
+	private boolean skipPreload = false;
 	private String databaseName = "";
 	private String databaseUser = "";
 	private String databasePassword = "";
@@ -193,6 +194,11 @@ public class Session extends JFrame {
 			}
 			if (args.length >= 3) {
 				loginPassword =  args[2];
+			}
+			if (args.length >= 4) {
+				if (args[3].equals("SKIP_PRELOAD")) {
+					skipPreload = true;
+				}	
 			}
 
 			if (fileName.equals("")) {
@@ -788,18 +794,20 @@ public class Session extends JFrame {
 				menuIDArray[menuIndex] = menuElement.getAttribute("ID");
 				menuCaptionArray[menuIndex] = menuElement.getAttribute("Name");
 				helpURLArray[menuIndex] = menuElement.getAttribute("HelpURL");
-				tokenizer = new StringTokenizer(menuElement.getAttribute("CrossCheckersToBeLoaded"), ";" );
-				while (tokenizer.hasMoreTokens()) {
-					wrkStr = tokenizer.nextToken();
-					if (!loadingChekerIDList.contains(wrkStr)) {
-						loadingChekerIDList.add(wrkStr);
+				if (!skipPreload) {
+					tokenizer = new StringTokenizer(menuElement.getAttribute("CrossCheckersToBeLoaded"), ";" );
+					while (tokenizer.hasMoreTokens()) {
+						wrkStr = tokenizer.nextToken();
+						if (!loadingChekerIDList.contains(wrkStr)) {
+							loadingChekerIDList.add(wrkStr);
+						}
 					}
-				}
-				tokenizer = new StringTokenizer(menuElement.getAttribute("FunctionsToBeLoaded"), ";" );
-				while (tokenizer.hasMoreTokens()) {
-					wrkStr = tokenizer.nextToken();
-					if (!loadingFunctionIDList.contains(wrkStr)) {
-						loadingFunctionIDList.add(wrkStr);
+					tokenizer = new StringTokenizer(menuElement.getAttribute("FunctionsToBeLoaded"), ";" );
+					while (tokenizer.hasMoreTokens()) {
+						wrkStr = tokenizer.nextToken();
+						if (!loadingFunctionIDList.contains(wrkStr)) {
+							loadingFunctionIDList.add(wrkStr);
+						}
 					}
 				}
 				//
@@ -1369,7 +1377,7 @@ public class Session extends JFrame {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Accessing to the system variant table failed.\n" + e.getMessage());
 		}
 		return strValue;
 	}
@@ -1389,7 +1397,7 @@ public class Session extends JFrame {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Accessing to the system variant table failed.\n" + e.getMessage());
 		}
 		return intValue;
 	}
@@ -1409,7 +1417,7 @@ public class Session extends JFrame {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Accessing to the system variant table failed.\n" + e.getMessage());
 		}
 		return floatValue;
 	}
@@ -1434,13 +1442,12 @@ public class Session extends JFrame {
 				operator.execute();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Accessing to the system variant table failed.\n" + e.getMessage());
 		}
 	}
 
 	public float getAnnualExchangeRate(String currencyCode, int fYear, String type) {
 		float rateReturn = 0;
-		//
 		if (currencyCode.equals(getSystemVariantString("SYSTEM_CURRENCY"))) {
 			rateReturn = 1;
 		} else {
@@ -1464,7 +1471,6 @@ public class Session extends JFrame {
 				e.printStackTrace();
 			}
 		}
-		//
 		return rateReturn;
 	}
 
@@ -1474,7 +1480,6 @@ public class Session extends JFrame {
 
 	public float getMonthlyExchangeRate(String currencyCode, int fYear, int mSeq, String type) {
 		float rateReturn = 0;
-		//
 		if (currencyCode.equals(getSystemVariantString("SYSTEM_CURRENCY"))) {
 			rateReturn = 1;
 		} else {
@@ -1500,7 +1505,6 @@ public class Session extends JFrame {
 				e.printStackTrace();
 			}
 		}
-		//
 		return rateReturn;
 	}
 

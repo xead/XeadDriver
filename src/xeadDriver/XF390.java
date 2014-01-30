@@ -32,11 +32,9 @@ package xeadDriver;
  */
 
 import javax.script.Bindings;
-import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
-
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -76,7 +74,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	private ArrayList<XF390_HeaderField> headerFieldList = new ArrayList<XF390_HeaderField>();
 	private ArrayList<XF390_DetailColumn> detailColumnList = new ArrayList<XF390_DetailColumn>();
 	private ScriptEngine scriptEngine;
-	private Bindings engineScriptBindings;
+	private Bindings scriptBindings;
 	private String scriptNameRunning = "";
 	private ByteArrayOutputStream exceptionLog;
 	private PrintStream exceptionStream;
@@ -145,14 +143,15 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			// Setup Script Engine and Bindings //
 			//////////////////////////////////////
 			scriptEngine = session_.getScriptEngineManager().getEngineByName("js");
-			engineScriptBindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
-			engineScriptBindings.clear();
-			engineScriptBindings.put("instance", (XFScriptable)this);
+			scriptBindings = scriptEngine.createBindings();
+			scriptBindings.put("instance", (XFScriptable)this);
 			for (int i = 0; i < headerFieldList.size(); i++) {
-				engineScriptBindings.put(headerFieldList.get(i).getFieldIDInScript(), headerFieldList.get(i));
+				scriptBindings.put(headerFieldList.get(i).getFieldIDInScript(), headerFieldList.get(i));
 			}
 			for (int i = 0; i < detailColumnList.size(); i++) {
-				engineScriptBindings.put(detailColumnList.get(i).getFieldIDInScript(), detailColumnList.get(i));
+				if (!scriptBindings.containsKey(detailColumnList.get(i).getFieldIDInScript())) {
+					scriptBindings.put(detailColumnList.get(i).getFieldIDInScript(), detailColumnList.get(i));
+				}
 			}
 
 			///////////////////////////////
@@ -1115,15 +1114,11 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	public PrintStream getExceptionStream() {
 		return exceptionStream;
 	}
-
-	public Bindings getEngineScriptBindings() {
-		return 	engineScriptBindings;
-	}
 	
 	public Object getFieldObjectByID(String tableID, String fieldID) {
 		String id = tableID + "_" + fieldID;
-		if (engineScriptBindings.containsKey(id)) {
-			return engineScriptBindings.get(id);
+		if (scriptBindings.containsKey(id)) {
+			return scriptBindings.get(id);
 		} else {
 			JOptionPane.showMessageDialog(null, "Field object " + id + " is not found.");
 			return null;
@@ -1136,7 +1131,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			StringBuffer bf = new StringBuffer();
 			bf.append(scriptText);
 			bf.append(session_.getScriptFunctions());
-			scriptEngine.eval(bf.toString());
+			scriptEngine.eval(bf.toString(), scriptBindings);
 		}
 	}
 

@@ -3583,13 +3583,13 @@ class XF310_HeaderField extends XFFieldScriptable {
 				isEditable = true;
 				component = new XF310_HeaderPromptCall(functionFieldElement_, wrkStr, dialog_);
 				component.setLocation(5, 0);
-				//if (this.isFieldOnPrimaryTable) {
-				//	component.setEditable(true);
-				//}
 			} else {
 				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("") || !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
-					//component = new XF310_HeaderComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
-					component = new XF310_HeaderCodeText(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_);
+					if (this.isFieldOnPrimaryTable) {
+						component = new XF310_HeaderComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
+					} else {
+						component = new XF310_HeaderCodeText(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_);
+					}
 					component.setLocation(5, 0);
 				} else {
 					if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN").equals("")) {

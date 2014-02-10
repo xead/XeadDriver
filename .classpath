@@ -22,5 +22,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="D:/Java/rhino1_6R2/js.jar"/>
 	<classpathentry kind="lib" path="D:/Java/oracle-driver/ojdbc6.jar"/>
+	<classpathentry kind="lib" path="D:/JSON/java-json.jar/java-json.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

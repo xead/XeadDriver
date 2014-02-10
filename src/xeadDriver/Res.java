@@ -158,7 +158,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "FunctionMessage50", " to select." },
 		{ "FunctionMessage51", "The process has ended abnormally." },
 		{ "FunctionMessage52", "* Edit row(s) added." },
-		{ "FunctionMessage53", "Serch service is not available.Check internet connection." },
+		{ "FunctionMessage53", "Web service is not available. Check Internet connection." },
 		{ "FunctionMessage54", "Zip-No is invalid." },
 		{ "FunctionMessage55", "Sure to logout?" },
 		{ "FunctionMessage56", ". Use Shift-key to list in reverse order." },

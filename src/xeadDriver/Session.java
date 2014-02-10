@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -55,6 +55,8 @@ import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.xerces.parsers.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
@@ -64,6 +66,7 @@ import org.apache.http.client.*;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -71,6 +74,8 @@ import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
 import javax.mail.*;
 import javax.mail.internet.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class Session extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -1465,7 +1470,7 @@ public class Session extends JFrame {
 						rateReturn = Float.parseFloat(operator.getValueOf("VLRATES").toString());
 					}
 				} else {
-					JOptionPane.showMessageDialog(null, "Annual exchange rate not found for '" + currencyCode + "'," + fYear + ".");
+					JOptionPane.showMessageDialog(null, "Annual exchange rate not found for '" + currencyCode + "'," + fYear + "."+ "\nSQL: " + sql);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -2484,6 +2489,149 @@ public class Session extends JFrame {
 			}
 		}
 		return checker;
+	}
+
+	public Object requestWebService(String uriText) {
+		Object response = null;
+		HttpResponse httpResponse = null;
+		InputStream inputStream = null;
+		HttpClient httpClient = new DefaultHttpClient();
+		try {
+			httpGet.setURI(new URI(uriText));
+			httpResponse = httpClient.execute(httpGet);
+			String contentType = httpResponse.getEntity().getContentType().getValue();
+			if (contentType.contains("text/xml")) {
+				inputStream = httpResponse.getEntity().getContent();
+				responseDocParser.parse(new InputSource(inputStream));
+				response = responseDocParser.getDocument();
+			}
+			if (contentType.contains("application/json")) {
+				String text = EntityUtils.toString(httpResponse.getEntity());
+				if (text.startsWith("[")) {
+					response = new JSONArray(text);
+				} else {
+					response = new JSONObject(text);
+				}
+			}
+			if (contentType.contains("text/plain")) {
+				response = EntityUtils.toString(httpResponse.getEntity());
+			}
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
+		} finally {
+			httpClient.getConnectionManager().shutdown();
+			try {
+				if (inputStream != null) {
+					inputStream.close();
+				}
+			} catch(Exception e) {}
+		}
+		return response;
+	}
+
+	public Object requestWebService(String uriText, Object document, String requestContentType) {
+		Object response = null;
+		HttpResponse httpResponse = null;
+		InputStream inputStream = null;
+		HttpClient httpClient = new DefaultHttpClient();
+		try {
+			HttpPost httpPost = new HttpPost();
+			httpPost.setURI(new URI(uriText));
+			if (requestContentType != null && !requestContentType.equals("")) {
+				httpPost.setHeader("Content-Type", requestContentType);
+			}
+			httpPost.setEntity(new StringEntity(document.toString()));
+			httpResponse = httpClient.execute(httpPost);  
+			String responseContentType = httpResponse.getEntity().getContentType().getValue();
+			if (responseContentType.contains("text/xml")) {
+				inputStream = httpResponse.getEntity().getContent();
+				responseDocParser.parse(new InputSource(inputStream));
+				response = responseDocParser.getDocument();
+			}
+			if (responseContentType.contains("application/json")) {
+				String text = EntityUtils.toString(httpResponse.getEntity());
+				if (text.startsWith("[")) {
+					response = new JSONArray(text);
+				} else {
+					response = new JSONObject(text);
+				}
+			}
+			if (responseContentType.contains("text/plain")) {
+				response = EntityUtils.toString(httpResponse.getEntity());
+			}
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
+		} finally {
+			httpClient.getConnectionManager().shutdown();
+			try {
+				if (inputStream != null) {
+					inputStream.close();
+				}
+			} catch(Exception e) {}
+		}
+		return response;
+	}
+	
+	public Document createXmlDocument() throws Exception {
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+	    DocumentBuilder db = dbf.newDocumentBuilder();
+	    return db.newDocument();
+	}
+	public Document createXmlDocument(String name) throws Exception {
+	    Document document = createXmlDocument();
+	    org.w3c.dom.Element element = document.createElement(name);
+	    document.appendChild(element);
+	    return document;
+	}
+	public org.w3c.dom.Element createXmlNode(Document document, String name) throws Exception {
+		return document.createElement(name);
+	}
+	public org.w3c.dom.Element getXmlNode(Document document, String name) throws Exception {
+		NodeList elementList = document.getElementsByTagName(name);
+		return (org.w3c.dom.Element)elementList.item(0);
+	}
+	public org.w3c.dom.Element getXmlNode(org.w3c.dom.Element element, String name) throws Exception {
+		NodeList elementList = element.getElementsByTagName(name);
+		return (org.w3c.dom.Element)elementList.item(0);
+	}
+	public ArrayList<org.w3c.dom.Element> getXmlNodeList(Document document, String name) throws Exception {
+		ArrayList<org.w3c.dom.Element> elementList = new ArrayList<org.w3c.dom.Element>();
+		NodeList nodeList = document.getElementsByTagName(name);
+		for (int i = 0; i < nodeList.getLength(); i++) {
+			elementList.add((org.w3c.dom.Element)nodeList.item(i));
+		}
+		return elementList;
+	}
+	public ArrayList<org.w3c.dom.Element> getXmlNodeList(org.w3c.dom.Element element, String name) throws Exception {
+		ArrayList<org.w3c.dom.Element> elementList = new ArrayList<org.w3c.dom.Element>();
+		NodeList nodeList = element.getElementsByTagName(name);
+		for (int i = 0; i < nodeList.getLength(); i++) {
+			elementList.add((org.w3c.dom.Element)nodeList.item(i));
+		}
+		return elementList;
+	}
+	public String getXmlNodeContent(org.w3c.dom.Element element, String name) throws Exception {
+		org.w3c.dom.Element workElement = getXmlNode(element, name);
+		return workElement.getTextContent();
+	}
+
+	public JSONObject createJsonObject(String text) throws Exception {
+		return new JSONObject(text);
+	}
+	public JSONObject createJsonObject() throws Exception {
+		return new JSONObject();
+	}
+	public JSONArray createJsonArray(String text) throws Exception {
+		return new JSONArray(text);
+	}
+	public JSONObject getJsonObject(JSONObject object, String name) throws Exception {
+		return object.getJSONObject(name);
+	}
+	public JSONArray getJsonArray(JSONObject object, String name) throws Exception {
+		return object.getJSONArray(name);
+	}
+	public JSONObject getJsonObject(JSONArray array, int index) throws Exception {
+		return array.getJSONObject(index);
 	}
 
 	public String getAddressFromZipNo(String zipNo) {

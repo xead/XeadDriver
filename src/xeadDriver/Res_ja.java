@@ -158,7 +158,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "FunctionMessage50", "が見つかりませんでした。" },
 		{ "FunctionMessage51", "処理が異常終了しました。" },
 		{ "FunctionMessage52", "＊追加された行を編集してください。" },
-		{ "FunctionMessage53", "検索サービスを利用できません。ネット接続を確認してください。" },
+		{ "FunctionMessage53", "WEBサービスを利用できません。ネット接続を確認してください。" },
 		{ "FunctionMessage54", "郵便番号の値が無効です。" },
 		{ "FunctionMessage55", "ログアウトしますか？" },
 		{ "FunctionMessage56", "の並び順で一覧されます。Shiftキーを使えば逆順に一覧されます。" },

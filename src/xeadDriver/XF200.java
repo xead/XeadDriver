@@ -2366,9 +2366,13 @@ class XF200_Field extends XFFieldScriptable {
 					}
 				}
 			} else {
-				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("") || !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
-					//component = new XF200_ComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
-					component = new XF200_CodeText(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_);
+				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("")
+						|| !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
+					if (isFieldOnPrimaryTable) {
+						component = new XF200_ComboBox(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, null, isNullable);
+					} else {
+						component = new XF200_CodeText(functionFieldElement_.getAttribute("DataSource"), dataTypeOptions, dialog_);
+					}
 					component.setLocation(5, 0);
 				} else {
 					if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN").equals("")) {

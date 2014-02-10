@@ -43,8 +43,13 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M31";
-	public static final String VERSION  = "1.1.31";
+	public static final String FULL_VERSION  = "V1.R1.M32";
+	public static final String VERSION  = "1.1.32";
+	//32
+	//・Webサービスを利用するための関数session.requestWebService(...)を追加した
+	//・XMLデータやJSONデータを処理するためのSession関数を追加した
+	//・XF110,XF200,XF310で区分系項目がリスト表示されないケースが生じていた問題を修正した
+	//
 	//31
 	//・XF300,XF310のキー入力ダイアログのキー検索ロジックを改善した
 	//・XF110,XF310のプロンプトが設定されたカラムの編集設定の仕様を改善した

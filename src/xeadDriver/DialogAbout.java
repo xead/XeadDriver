@@ -43,8 +43,14 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M32";
-	public static final String VERSION  = "1.1.32";
+	public static final String FULL_VERSION  = "V1.R1.M33";
+	public static final String VERSION  = "1.1.33";
+	//33
+	//・XF100,XF110で日時型フィールドを検索条件として指定した場合の問題を修正した
+	//・セッションパラメータSKIP_PRELOADの扱いに関する問題を修正した
+	//・KBCALENDARのユーザ定義区分が登録されていなければログインできないようにした
+	//・セッションのＩＰ情報をセットする際に、TXIPADDRESSのフィールド長に合わせて値を短縮するようにした
+	//
 	//32
 	//・Webサービスを利用するための関数session.requestWebService(...)を追加した
 	//・XMLデータやJSONデータを処理するためのSession関数を追加した

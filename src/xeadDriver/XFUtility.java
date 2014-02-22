@@ -56,6 +56,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.*;
@@ -2054,6 +2055,247 @@ public class XFUtility {
 		}
 		//
 		return result;
+	}
+	
+	static String getWhereValueOfDateTimeSegment(String operandType, String originalSegment) {
+		String segment = originalSegment.replace("/", "-");
+		String valueMin = "";
+		String valueMax = "";
+		StringBuffer bf = new StringBuffer();
+
+		//////////////////////////////////////////////////////////////
+		// Compensate value into the format YYYY-MM-DD hh:mm:ss.sss //
+		//////////////////////////////////////////////////////////////
+		if (segment.length() == 0) {
+			valueMin = "0000-01-01 00:00:00.0";
+			valueMax = "9999-12-31 23:59:59.999";
+		}
+		if (segment.length() == 1) {
+			valueMin = segment + "000-01-01 00:00:00.0";
+			valueMax = segment + "999-12-31 23:59:59.999";
+		}
+		if (segment.length() == 2) {
+			valueMin = segment + "00-01-01 00:00:00.0";
+			valueMax = segment + "99-12-31 23:59:59.999";
+		}
+		if (segment.length() == 3) {
+			valueMin = segment + "0-01-01 00:00:00.0";
+			valueMax = segment + "9-12-31 23:59:59.999";
+		}
+		if (segment.length() == 4) {
+			valueMin = segment + "-01-01 00:00:00.0";
+			valueMax = segment + "-12-31 23:59:59.999";
+		}
+		if (segment.length() == 5) {
+			valueMin = segment + "01-01 00:00:00.0";
+			valueMax = segment + "12-31 23:59:59.999";
+		}
+		if (segment.length() == 6) {
+			String lastChar = segment.substring(segment.length()-1, segment.length());
+			if (lastChar.equals("0")) {
+				valueMin = segment + "1-01 00:00:00.0";
+				valueMax = segment + "9-30 23:59:59.999";
+			} else {
+				valueMin = segment + "0-01 00:00:00.0";
+				valueMax = segment + "2-31 23:59:59.999";
+			}
+		}
+		if (segment.length() == 7) {
+			String month = segment.substring(segment.length()-2, segment.length());
+			valueMin = segment + "-01 00:00:00.0";
+			if (month.equals("04")
+					|| month.equals("06")
+					|| month.equals("09")
+					|| month.equals("11")) {
+				valueMax = segment + "-30 23:59:59.999";
+			}
+			if (month.equals("01")
+					|| month.equals("03")
+					|| month.equals("05")
+					|| month.equals("07")
+					|| month.equals("08")
+					|| month.equals("10")
+					|| month.equals("12")) {
+				valueMax = segment + "-31 23:59:59.999";
+			}
+			if (month.equals("02")) {
+				valueMax = segment + "-" + getLastDateOfFebruary(segment.substring(0, 4)) + " 23:59:59.999";
+			}
+		}
+		if (segment.length() == 8) {
+			String month = segment.substring(segment.length()-3, segment.length()-1);
+			valueMin = segment + "01 00:00:00.0";
+			if (month.equals("04")
+					|| month.equals("06")
+					|| month.equals("09")
+					|| month.equals("11")) {
+				valueMax = segment + "30 23:59:59.999";
+			}
+			if (month.equals("01")
+					|| month.equals("03")
+					|| month.equals("05")
+					|| month.equals("07")
+					|| month.equals("08")
+					|| month.equals("10")
+					|| month.equals("12")) {
+				valueMax = segment + "31 23:59:59.999";
+			}
+			if (month.equals("02")) {
+				valueMax = segment + getLastDateOfFebruary(segment.substring(0, 4)) + " 23:59:59.999";
+			}
+		}
+		if (segment.length() == 9) {
+			String month = segment.substring(segment.length()-4, segment.length()-2);
+			String lastChar = segment.substring(segment.length()-1, segment.length());
+			if (lastChar.equals("0")) {
+				valueMin = segment + "1 00:00:00.0";
+				valueMax = segment + "9 23:59:59.999";
+			}
+			if (lastChar.equals("1")) {
+				valueMin = segment + "0 00:00:00.0";
+				valueMax = segment + "9 23:59:59.999";
+			}
+			if (lastChar.equals("2")) {
+				valueMin = segment + "0 00:00:00.0";
+				if (month.equals("02")) {
+					String date = getLastDateOfFebruary(segment.substring(0, 4));
+					valueMax = segment + date.substring(1, 2) + " 23:59:59.999";
+				} else {
+					valueMax = segment + "9 23:59:59.999";
+				}
+			}
+			if (lastChar.equals("3")) {
+				valueMin = segment + "0 00:00:00.0";
+				if (month.equals("04")
+						|| month.equals("06")
+						|| month.equals("09")
+						|| month.equals("11")) {
+					valueMax = segment + "0 23:59:59.999";
+				}
+				if (month.equals("01")
+						|| month.equals("03")
+						|| month.equals("05")
+						|| month.equals("07")
+						|| month.equals("08")
+						|| month.equals("10")
+						|| month.equals("12")) {
+					valueMax = segment + "1 23:59:59.999";
+				}
+			}
+		}
+		if (segment.length() == 10) {
+			valueMin = segment + " 00:00:00.0";
+			valueMax = segment + " 23:59:59.999";
+		}
+		if (segment.length() == 11) {
+			valueMin = segment + "00:00:00.0";
+			valueMax = segment + "23:59:59.999";
+		}
+		if (segment.length() == 12) {
+			String lastChar = segment.substring(segment.length()-1, segment.length());
+			if (lastChar.equals("0") || lastChar.equals("1")) {
+				valueMin = segment + "0:00:00.0";
+				valueMax = segment + "9:59:59.999";
+			}
+			if (lastChar.equals("2")) {
+				valueMin = segment + "0:00:00.0";
+				valueMax = segment + "3:59:59.999";
+			}
+		}
+		if (segment.length() == 13) {
+			valueMin = segment + ":00:00.0";
+			valueMax = segment + ":59:59.999";
+		}
+		if (segment.length() == 14) {
+			valueMin = segment + "00:00.0";
+			valueMax = segment + "59:59.999";
+		}
+		if (segment.length() == 15) {
+			valueMin = segment + "0:00.0";
+			valueMax = segment + "9:59.999";
+		}
+		if (segment.length() == 16) {
+			valueMin = segment + ":00.0";
+			valueMax = segment + ":59.999";
+		}
+		if (segment.length() == 17) {
+			valueMin = segment + "00.0";
+			valueMax = segment + "59.999";
+		}
+		if (segment.length() == 18) {
+			valueMin = segment + "0.0";
+			valueMax = segment + "9.999";
+		}
+		if (segment.length() == 19) {
+			valueMin = segment + ".0";
+			valueMax = segment + ".999";
+		}
+		if (segment.length() == 20) {
+			valueMin = segment + "0";
+			valueMax = segment + "999";
+		}
+		if (segment.length() == 21) {
+			valueMin = segment;
+			valueMax = segment + "99";
+		}
+		if (segment.length() == 22) {
+			valueMin = segment;
+			valueMax = segment + "9";
+		}
+		if (segment.length() == 23) {
+			valueMin = segment;
+			valueMax = segment;
+		}
+
+		/////////////////////////////////////////////////
+		// Setup where value according to operand type //
+		/////////////////////////////////////////////////
+		DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		format.setLenient(false);
+		try {
+			format.parse(valueMin);
+			format.parse(valueMax);
+
+			if (operandType.equals("GENERIC")) {
+				bf.append(" BETWEEN '");
+				bf.append(valueMin);
+				bf.append("' AND '");
+				bf.append(valueMax);
+				bf.append("'");
+			}
+			if (operandType.equals("GE")) {
+				bf.append(" >= '");
+				bf.append(valueMin);
+				bf.append("'");
+			}
+			if (operandType.equals("GT")) {
+				bf.append(" > '");
+				bf.append(valueMax);
+				bf.append("'");
+			}
+			if (operandType.equals("LE")) {
+				bf.append(" <= '");
+				bf.append(valueMax);
+				bf.append("'");
+			}
+			if (operandType.equals("LT")) {
+				bf.append(" < '");
+				bf.append(valueMin);
+				bf.append("'");
+			}
+		} catch (ParseException e) {
+		}
+
+		return bf.toString();
+	}
+	
+	static String getLastDateOfFebruary(String year) {
+		Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.YEAR, Integer.parseInt(year));
+        cal.set(Calendar.MONTH, Calendar.FEBRUARY);
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        int date = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+        return Integer.toString(date);
 	}
 
 	static String getDayOfWeek(Calendar cal, String dateFormat) {

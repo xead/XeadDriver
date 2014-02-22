@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -33,6 +33,7 @@ package xeadDriver;
 
 import javax.swing.table.*;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -3393,15 +3394,28 @@ class XF100_Filter extends JPanel {
 							value = fieldID + operand + wrkStr;
 						}
 					} else {
-						if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME") || this.getBasicType().equals("DATETIME")) {
+						if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME")) {
 							wrkStr = wrkStr.replace("-", "");
 							wrkStr = wrkStr.replace("/", "");
 							value = fieldID + operand + wrkStr;
 						} else {
-							if (operand.equals(" LIKE ")) {
-								value = fieldID + operand + "'%" + wrkStr + "%'";
+							if (this.getBasicType().equals("DATETIME")) {
+								String whereValue = XFUtility.getWhereValueOfDateTimeSegment(operandType, wrkStr);
+								if (whereValue.equals("")) {
+									JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage62") + wrkStr + XFUtility.RESOURCE.getString("FunctionMessage63"));
+								} else {
+									value = fieldID + whereValue;
+								}
 							} else {
-								value = fieldID + operand + "'" + wrkStr + "'";
+								if (operandType.equals("SCAN")) {
+									value = fieldID + " LIKE '%" + wrkStr + "%'";
+								} else {
+									if (operandType.equals("GENERIC")) {
+										value = fieldID + " LIKE '" + wrkStr + "%'";
+									} else {
+										value = fieldID + operand + "'" + wrkStr + "'";
+									}
+								}
 							}
 						}
 					}

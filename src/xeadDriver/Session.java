@@ -195,10 +195,18 @@ public class Session extends JFrame {
 				fileName =  args[0];
 			}
 			if (args.length >= 2) {
-				loginUser =  args[1];
+				if (args[1].equals("SKIP_PRELOAD")) {
+					skipPreload = true;
+				} else {
+					loginUser =  args[1];
+				}
 			}
 			if (args.length >= 3) {
-				loginPassword =  args[2];
+				if (args[2].equals("SKIP_PRELOAD")) {
+					skipPreload = true;
+				} else {
+					loginPassword =  args[2];
+				}
 			}
 			if (args.length >= 4) {
 				if (args[3].equals("SKIP_PRELOAD")) {
@@ -750,6 +758,12 @@ public class Session extends JFrame {
 			if (httpPost != null) {
 				httpPost.abort();
 			}
+		}
+
+		org.w3c.dom.Element ipAddressField = getFieldElement(sessionTable, "TXIPADDRESS");
+		int ipAddressSize = Integer.parseInt(ipAddressField.getAttribute("Size"));
+		if (value.length() > ipAddressSize) {
+			value = value.substring(0, ipAddressSize);
 		}
 
 		return value;

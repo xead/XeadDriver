@@ -71,7 +71,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.awt.*;
 import javax.imageio.ImageIO;
-import javax.script.ScriptException;
+//import javax.script.ScriptException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
@@ -150,7 +150,6 @@ public class XFUtility {
 				/////////////
 				try {
 					double doubleValue = Double.parseDouble(text);
-					//numberString = Double.toString(doubleValue);
 					numberString = new java.text.DecimalFormat("####0.0#############################").format(doubleValue);
 				} catch (NumberFormatException e) {
 					numberString = "0";
@@ -335,27 +334,20 @@ public class XFUtility {
 		boolean isFirstDigitOfField;
 		String variantExpression, wrkStr1, wrkStr2, dataSource;
 		org.w3c.dom.Element element;
-		//
+
 		for (int i = 0; i < fieldProperty.length; i++) {
-			//
 			pos = 0;
-			//
 			while (pos < scriptText.length()) {
-				//
 				posWrk = scriptText.indexOf("." + fieldProperty[i], pos);
 				if (posWrk == -1) {
 					pos = scriptText.length();
 				}
-				//
+
 				if (posWrk != -1) {
-					//
 					wrkInt = posWrk - 1;
-					//
 					while (wrkInt > -1) {
-						//
 						wrkInt--;
 						isFirstDigitOfField = false;
-						//
 						if (wrkInt > -1) {
 							wrkStr1 = scriptText.substring(wrkInt, wrkInt+1);
 							for (int j = 0; j < sectionDigit.length; j++) {
@@ -365,7 +357,6 @@ public class XFUtility {
 								}
 							}
 						}
-						//
 						if (wrkInt == -1 || isFirstDigitOfField) {
 							dataSource = "";
 							variantExpression = scriptText.substring(wrkInt + 1, posWrk);
@@ -403,7 +394,6 @@ public class XFUtility {
 				}
 			}
 		}
-		//
 		return fieldList;
 	}
 	
@@ -488,10 +478,8 @@ public class XFUtility {
 		StringBuffer buf = new StringBuffer();
 		int posCommentStart;
 		int posCommentEnd = 0;
-		//
 		int pos = 0;
 		while (pos < scriptText.length()) {
-			//
 			posCommentStart = scriptText.indexOf("//", pos);
 			if (posCommentStart == -1) {
 				posCommentStart = scriptText.indexOf("/*", pos);
@@ -515,17 +503,14 @@ public class XFUtility {
 				}
 			}
 			buf.append(scriptText.substring(pos, posCommentStart));
-			//
 			pos = posCommentEnd;
 		}
-		//
 		return buf.toString();
 	}
 	
 
 	static Object parseObjectAccordingToType(Object value, String basicType) {
 		Object returnValue = "";
-		//
 		if (basicType.equals("INTEGER")) {
 			if (value != null && !value.toString().equals("")) {
 				if (value.equals("*Auto")) {
@@ -552,7 +537,6 @@ public class XFUtility {
 				}
 			}
 		}
-		//
 		return returnValue;
 	}
 	
@@ -568,7 +552,6 @@ public class XFUtility {
 	static String getOptionValueWithKeyword(String options, String keyword) {
 		String value = "";
 		int pos1, pos2;
-		//
 		if (!keyword.equals("")) {
 			int lengthOfKeyword = keyword.length() + 1;
 			ArrayList<String> typeOptionList = getOptionList(options);
@@ -581,44 +564,24 @@ public class XFUtility {
 				}
 			}
 		}
-	    //
 		return value;
 	}
 	
-//	static String getLongestSegment(String caption) {
-//		String value = "";
-//		ArrayList<String> stringList = new ArrayList<String>();
-//		String wrkStr = caption.toUpperCase();
-//		wrkStr = wrkStr.replace("<HTML>", "");
-//		wrkStr = wrkStr.replace("</HTML>", "");
-//		StringTokenizer workTokenizer = new StringTokenizer(wrkStr, "<BR>");
-//		while (workTokenizer.hasMoreTokens()) {
-//			stringList.add(workTokenizer.nextToken());
-//		}
-//		for (int i = 0; i < stringList.size(); i++) {
-//			if (stringList.get(i).length() > value.length()) {
-//				value = stringList.get(i);
-//			}
-//		}
-//		return value;
-//	}
-	
 	static String getDefaultValueOfFilterField(String keywordValue, Session session){
 		String defaultValue = null;
-		//
+
 		StringTokenizer workTokenizer = new StringTokenizer(keywordValue, ":" );
 		if (workTokenizer.countTokens() == 1) {
 			defaultValue = workTokenizer.nextToken().trim();
 		}
 		if (workTokenizer.countTokens() == 2) {
-			//
+
 			String keyword = workTokenizer.nextToken();
 			String value = workTokenizer.nextToken().trim();
-			//
+
 			if (keyword.equals("VALUE")) {
 				defaultValue = value;
 			}
-			//
 			if (keyword.equals("USER_ATTRIBUTE")) {
 				if (value.equals("ID")) {
 					defaultValue = session.getUserID();
@@ -630,13 +593,13 @@ public class XFUtility {
 					defaultValue = session.getUserEmployeeNo();
 				}
 			}
-			//
+			/////////////////////////////////////////////////////////////
 			// Note that if attribute not found, null will be returned //
+			/////////////////////////////////////////////////////////////
 			if (keyword.equals("SESSION_ATTRIBUTE")) {
 				defaultValue = session.getAttribute(value);
 			}
 		}
-		//
 		return defaultValue;
 	}
 	
@@ -779,7 +742,6 @@ public class XFUtility {
 	
 	static Object getTableOperationValue(String basicType, Object value){
 		Object returnValue = null;
-		//
 		if (basicType.equals("INTEGER")) {
 			if (value == null || value.toString().equals("")) {
 				value = 0;
@@ -821,14 +783,12 @@ public class XFUtility {
 				}
 			}
 		}
-		//
 		return returnValue;
 	}
 
 	static String getTableIDOfTableAlias(String tableAlias, NodeList referList1, NodeList referList2) {
 		String tableID = tableAlias;
 		org.w3c.dom.Element workElement;
-		//
 	    for (int j = 0; j < referList1.getLength(); j++) {
 			workElement = (org.w3c.dom.Element)referList1.item(j);
 			if (workElement.getAttribute("TableAlias").equals(tableAlias) ||
@@ -837,7 +797,6 @@ public class XFUtility {
 				break;
 			}
 	    }
-	    //
 	    if (referList2 != null) {
 	    	for (int j = 0; j < referList2.getLength(); j++) {
 	    		workElement = (org.w3c.dom.Element)referList2.item(j);
@@ -848,14 +807,12 @@ public class XFUtility {
 	    		}
 	    	}
 	    }
-	    //
 		return tableID;
 	}
 
 	static Object getValueAccordingToBasicType(String basicType, Object value){
 		String wrkStr;
 		Object valueReturn = null;
-
 		if (isLiteralRequiredBasicType(basicType)) {
 			if (value == null) {
 				if (basicType.equals("DATE")) {
@@ -902,7 +859,6 @@ public class XFUtility {
 	
 	static void setValueToEditableField(String basicType, Object valueObject, XFEditableField editableField){
 		String wrkStr;
-		//
 		if (basicType.equals("INTEGER")) {
 			if (valueObject == null || valueObject.equals("")) {
 				editableField.setValue("");
@@ -963,16 +919,11 @@ public class XFUtility {
 
 	static void setOldValueToEditableField(String basicType, Object valueObject, XFEditableField editableField){
 		String wrkStr;
-		//
 		if (basicType.equals("INTEGER")) {
 			if (valueObject == null || valueObject.equals("")) {
 				editableField.setOldValue("");
 			} else {
 				wrkStr = valueObject.toString();
-//				int pos = wrkStr.indexOf(".");
-//				if (pos >= 0) {
-//					wrkStr = wrkStr.substring(0, pos);
-//				}
 				wrkStr = XFUtility.getStringNumber(wrkStr);
 				wrkStr = wrkStr.replace(".0", "");
 				if (wrkStr.equals("")) {
@@ -1026,7 +977,6 @@ public class XFUtility {
 	static short getFloatFormat(HSSFWorkbook workbook, int decimalSize) {
 		HSSFDataFormat format = workbook.createDataFormat();
 		StringBuffer buf = new StringBuffer();
-		//
 		for (int i = 0; i <= decimalSize; i++) {
 			if (i == 0) {
 				buf.append("#,##0");
@@ -1037,7 +987,6 @@ public class XFUtility {
 				buf.append("0");
 			}
 		}
-		//
 		return format.getFormat(buf.toString());
 	}
 
@@ -1050,10 +999,10 @@ public class XFUtility {
 		StringBuffer buf = new StringBuffer();
 		ArrayList<String> keyFieldIDList = new ArrayList<String>();
 		ArrayList<Boolean> keyFieldIsLiteralRequiredList = new ArrayList<Boolean>();
-		//
+
 		String tableID = tableElement.getAttribute("ID");
 		String activeWhere = tableElement.getAttribute("ActiveWhere");
-		//
+
 		NodeList nodeList = tableElement.getElementsByTagName("Key");
 		for (int i = 0; i < nodeList.getLength(); i++) {
 			workElement = (org.w3c.dom.Element)nodeList.item(i);
@@ -1078,15 +1027,14 @@ public class XFUtility {
 				break;
 			}
 		}
-		//
+
 		workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
 		rangeKeyFieldValid = workTokenizer.nextToken();
-		//
+
 		buf.append("select ");
 		buf.append(rangeKeyFieldValid);
 		buf.append(" from ");
 		buf.append(tableID);
-		//
 		buf.append(" where ") ;
 		count = -1;
 		for (int i = 0; i < keyFieldIDList.size(); i++) {
@@ -1108,20 +1056,17 @@ public class XFUtility {
 					buf.append(operator.getValueOf(keyFieldIDList.get(i)).toString());
 				}
 		}
-		//
 		if (!activeWhere.equals("")) {
 			buf.append(" and ");
 			buf.append(activeWhere);
 		}
-		//
 		buf.append(" order by ");
 		buf.append(rangeKeyFieldValid);
-		//
 		XFTableOperator operatorExpire = new XFTableOperator(session, logBuf, buf.toString());
 		if (operatorExpire.next()) {
 			object = operatorExpire.getValueOf(rangeKeyFieldValid);
 		}
-		//
+
 		return object;
 	}
 
@@ -1131,7 +1076,7 @@ public class XFUtility {
 	 * @param stringToBeInserted :value to be replaced into "#EOL#"(usually it's "\n")
 	 * @return String :string value of processed string
 	 */
-	static String substringLinesWithTokenOfEOL(String originalString, String stringToBeInserted) {
+	public static String substringLinesWithTokenOfEOL(String originalString, String stringToBeInserted) {
 		StringBuffer processedString = new StringBuffer();
 		int lastEnd = 0;
 		for (int i = 0; i <= originalString.length(); i++) {
@@ -1152,7 +1097,7 @@ public class XFUtility {
 
 	static String getEditValueOfLong(long value, String editCode, int size) {
 		DecimalFormat integerFormat = new DecimalFormat("#,##0;#,##0-");
-		//
+
 		//a0 1,234,567.0000-
 		if (editCode.equals("a0")) {
 			integerFormat = new DecimalFormat("#,##0;#,##0-");
@@ -1177,13 +1122,13 @@ public class XFUtility {
 		if (editCode.equals("j1")) {
 			integerFormat = new DecimalFormat("#,##0;▲#,##0");
 		}
-		//
+
 		return integerFormat.format(value);
 	}
 
 	static String getEditValueOfDouble(double value, String editCode, int decimal) {
 		DecimalFormat floatFormat = new DecimalFormat("#,##0.0;#,##0.0-");
-		//
+
 		//a0 1,234,567.0000-
 		if (editCode.equals("a0")) {
 			if (decimal == 1) {
@@ -1292,12 +1237,12 @@ public class XFUtility {
 				floatFormat = new DecimalFormat("#,##0.00000;#,▲##0.00000");
 			}
 		}
-		//
+
 		return floatFormat.format(value);
 	}
 	
 	static String getUserExpressionOfUtilDate(java.util.Date date, String dateFormat, boolean isWithTime) {
-		//
+
 		//en00 06/17/10
 		//en01 Thur,06/17/01
 		//en10 Jun17,2010
@@ -1311,19 +1256,19 @@ public class XFUtility {
 		//jp21 2010年6月17日(木)
 		//jp30 H22/06/17
 		//jp31 H22/06/17(水)
-		//jp40 H22年06月17日
+		//jp40 H22年06月17日 
 		//jp41 H22年06月17日(水)
 		//jp50 平成22年06月17日
 		//jp51 平成22年06月17日(水)
-		//
+
 		Calendar cal = Calendar.getInstance();
 		if (date != null) { 
 			cal.setTime(date);
 		}
-		//
+
 		StringBuffer buf = new StringBuffer();
 		SimpleDateFormat formatter;
-		//
+
 		if (dateFormat.equals("")) {
 			if (isWithTime) {
 				formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S", new Locale("en", "US", "US"));
@@ -1332,7 +1277,7 @@ public class XFUtility {
 			}
 			buf.append(formatter.format(cal.getTime()));
 		}
-		//
+
 		if (dateFormat.equals("en00") || dateFormat.equals("en01")) {
 			if (dateFormat.equals("en01")) {
 				buf.append(getDayOfWeek(cal, dateFormat));
@@ -1344,7 +1289,7 @@ public class XFUtility {
 			}
 			buf.append(formatter.format(cal.getTime()));
 		}
-		//
+
 		if (dateFormat.equals("en10") || dateFormat.equals("en11")) {
 			if (dateFormat.equals("en11")) {
 				buf.append(getDayOfWeek(cal, dateFormat));
@@ -1356,7 +1301,7 @@ public class XFUtility {
 			}
 			buf.append(formatter.format(cal.getTime()));
 		}
-		//
+
 		if (dateFormat.equals("jp00") || dateFormat.equals("jp01")) {
 			if (isWithTime) {
 				formatter = new SimpleDateFormat("yy/MM/dd HH:mm");
@@ -1368,7 +1313,7 @@ public class XFUtility {
 				buf.append(getDayOfWeek(cal, dateFormat));
 			}
 		}
-		//
+
 		if (dateFormat.equals("jp10") || dateFormat.equals("jp11")) {
 			if (isWithTime) {
 				formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm");
@@ -1380,7 +1325,7 @@ public class XFUtility {
 				buf.append(getDayOfWeek(cal, dateFormat));
 			}
 		}
-		//
+
 		if (dateFormat.equals("jp20") || dateFormat.equals("jp21")) {
 			if (isWithTime) {
 				formatter = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
@@ -1392,7 +1337,7 @@ public class XFUtility {
 				buf.append(getDayOfWeek(cal, dateFormat));
 			}
 		}
-		//
+
 		if (dateFormat.equals("jp30") || dateFormat.equals("jp31")) {
 			if (isWithTime) {
 				formatter = new SimpleDateFormat("Gyy/MM/dd HH:mm", new Locale("ja", "JP", "JP"));
@@ -1404,7 +1349,7 @@ public class XFUtility {
 				buf.append(getDayOfWeek(cal, dateFormat));
 			}
 		}
-		//
+
 		if (dateFormat.equals("jp40") || dateFormat.equals("jp41")) {
 			if (isWithTime) {
 				formatter = new SimpleDateFormat("Gyy年MM月dd日 HH:mm", new Locale("ja", "JP", "JP"));
@@ -1416,7 +1361,7 @@ public class XFUtility {
 				buf.append(getDayOfWeek(cal, dateFormat));
 			}
 		}
-		//
+
 		if (dateFormat.equals("jp50") || dateFormat.equals("jp51")) {
 			if (isWithTime) {
 				formatter = new SimpleDateFormat("GGGGyy年MM月dd日 HH:mm", new Locale("ja", "JP", "JP"));
@@ -1428,7 +1373,7 @@ public class XFUtility {
 				buf.append(getDayOfWeek(cal, dateFormat));
 			}
 		}
-		//
+
 		return buf.toString();
 	}
 	
@@ -1447,7 +1392,6 @@ public class XFUtility {
 	
 	static com.lowagie.text.Image getImageForPDF(String fileName, float newWidth, float newHeight) {
 		com.lowagie.text.Image image = null;
-		//
 		try {
 			float percentWidth = 100f;
 			float percentHeight = 100f;
@@ -1483,62 +1427,8 @@ public class XFUtility {
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e.getMessage() + "\n" + fileName);
 		}
-		//
 		return image;
 	}
-
-//	static void setupImageCellForDetailColumn(HSSFWorkbook workBook, HSSFSheet workSheet, int rowNumber, int columnIndex, String fileName, HSSFPatriarch patriarch) {
-//		HSSFClientAnchor anchor = null;
-//		int imageType = -1;
-//		File imageFile = new File(fileName);
-//		if (imageFile.exists()) {
-//			boolean isValidFileType = false;
-//			if (fileName.contains(".png") || fileName.contains(".PNG")) {
-//				imageType = HSSFWorkbook.PICTURE_TYPE_PNG;
-//				isValidFileType = true;
-//			}
-//			if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
-//				imageType = HSSFWorkbook.PICTURE_TYPE_JPEG;
-//				isValidFileType = true;
-//			}
-//			if (isValidFileType) {
-//				FileInputStream fis = null;
-//				ByteArrayOutputStream bos = null;
-//				try {
-//					// read in the image file and copy the image bytes into the ByteArrayOutputStream//
-//					fis = new FileInputStream(imageFile);
-//					bos = new ByteArrayOutputStream();
-//					int c;
-//					while ((c = fis.read()) != -1) {
-//						bos.write(c);
-//					}
-//					// add the image bytes to the workbook //
-//					int pictureIndex = workBook.addPicture(bos.toByteArray(), imageType);
-//					anchor = new HSSFClientAnchor(0,0,0,0,
-//							(short)columnIndex, rowNumber, (short)(columnIndex+1), rowNumber+1);
-//					anchor.setAnchorType(0);
-//					anchor.setDx1(20);
-//					anchor.setDy1(20);
-//					anchor.setDx2(0);
-//					anchor.setDy2(0);
-//					patriarch.createPicture(anchor, pictureIndex);
-//				} catch(Exception e) {
-//					e.printStackTrace();
-//				} finally {
-//					try {
-//						if (fis != null) {
-//							fis.close();
-//						}
-//						if (bos != null) {
-//							bos.close();
-//						}
-//					} catch (IOException e) {
-//						e.printStackTrace();
-//					}
-//				}
-//			}
-//		}
-//	}
 	static void setupImageCellForDetailColumn(HSSFWorkbook workBook, HSSFSheet workSheet, int rowNumber, int columnIndex, String fileName, HSSFPatriarch patriarch) {
 		HSSFClientAnchor anchor = null;
 		int imageTypeInt = -1;
@@ -1613,7 +1503,6 @@ public class XFUtility {
 	}
 	
 	static void setupImageCellForField(HSSFWorkbook workBook, HSSFSheet workSheet, int columnIndex, int rowNumber, int cellWidth, int cellHeight, String fileName, HSSFPatriarch patriarch) throws Exception{
-		//HSSFClientAnchor anchor = null;
 		int imageTypeInt = -1;
 		String imageTypeString = "";
 		boolean isValidFileType = false;
@@ -1680,9 +1569,8 @@ public class XFUtility {
 	}
 	
 	static com.lowagie.text.Rectangle getPageSize(String size, String direction) {
-		//
 		com.lowagie.text.Rectangle rec = PageSize.A4; //Default//
-		//
+
 		if (direction.equals("LANDSCAPE")) {
 			if (size.equals("A2")) {
 				rec = PageSize.A2.rotate();
@@ -1731,7 +1619,7 @@ public class XFUtility {
 			if (size.equals("A6")) {
 				rec = PageSize.A6;
 			}
-			//
+
 			if (size.equals("B2")) {
 				rec = PageSize.B2;
 			}
@@ -1748,13 +1636,12 @@ public class XFUtility {
 				rec = PageSize.B6;
 			}
 		}
-		//
+
 		return rec;
 	}
 	
 	static void drawLineOrRect(String keyword, PdfContentByte cb) {
 		float x1, y1, x2, y2;
-		//
 		try {
 			if (keyword.contains("&Line(")) {
 				int pos = keyword.lastIndexOf(")");
@@ -1792,7 +1679,7 @@ public class XFUtility {
 	static Chunk getBarcodeChunkOfValue(String value, String type, PdfContentByte cb) throws BadElementException {
 		Chunk chunk = null;
 		com.lowagie.text.Image image;
-		//
+
 		if (type.equals("EAN8")) {
 			BarcodeEAN barcode = new BarcodeEAN();
 			barcode.setCodeType(BarcodeEAN.EAN8);
@@ -1831,38 +1718,18 @@ public class XFUtility {
 			image = barcode.getImage();
 			chunk = new Chunk(image, 0, 0);
 		}
-		//
+
 		return chunk;
 	}
 	
-//	static int getLengthOfEdittedNumericValue(int dataSize, int decimalSize, boolean acceptMinus) {
-//		int length = dataSize;
-//		//
-//		if (decimalSize > 0) {
-//			length = length + 1;
-//		}
-//		if (acceptMinus) {
-//			length = length + 1;
-//		}
-//		//
-//		int intSize = dataSize - decimalSize;
-//		while (intSize > 3) {
-//			length = length + 1;
-//			intSize = intSize - 3;
-//		}
-//		//
-//		return length;
-//	}
 	static int getLengthOfEdittedNumericValue(int dataSize, int decimalSize, ArrayList<String> dataTypeOptionList) {
 		int length = dataSize;
-		//
 		if (decimalSize > 0) {
 			length = length + 1;
 		}
 		if (dataTypeOptionList.contains("ACCEPT_MINUS")) {
 			length = length + 1;
 		}
-		//
 		if (!dataTypeOptionList.contains("NO_EDIT")) {
 			int intSize = dataSize - decimalSize;
 			while (intSize > 3) {
@@ -1870,16 +1737,14 @@ public class XFUtility {
 				intSize = intSize - 3;
 			}
 		}
-		//
 		return length;
 	}
 	
 	static int getWidthOfDateValue(String dateFormat, int fontSize) {
-		//
 		int width = 133;
 		JTextField textField = new JTextField();
 		FontMetrics metrics = textField.getFontMetrics(new java.awt.Font("Dialog", 0, fontSize));
-		//
+
 		if (dateFormat.equals("en00")) {
 			width = metrics.stringWidth("06/17/10");
 		}
@@ -1892,7 +1757,7 @@ public class XFUtility {
 		if (dateFormat.equals("en11")) {
 			width = metrics.stringWidth("Thur,Jun17,2001");
 		}
-		//
+
 		if (dateFormat.equals("jp00")) {
 			width = metrics.stringWidth("10/06/17");
 		}
@@ -1929,12 +1794,12 @@ public class XFUtility {
 		if (dateFormat.equals("jp51")) {
 			width = metrics.stringWidth("平成22年06月17日(木)");
 		}
-		//
+
 		return width + 10;
 	}
 	
 	static String getUserExpressionOfYearMonth(String yearMonth, String dateFormat) {
-		//
+
 		//en00 06/17/10
 		//en01 Thur,06/17/01
 		//en10 Jun17,2010
@@ -1952,16 +1817,16 @@ public class XFUtility {
 		//jp41 H22年06月17日(水)
 		//jp50 平成22年06月17日
 		//jp51 平成22年06月17日(水)
-		//
+
 		String result = "";
-		//
+
 		if (yearMonth.length() == 6) {
 			int year = Integer.parseInt(yearMonth.substring(0, 4));
 			int month = Integer.parseInt(yearMonth.substring(4, 6)) - 1;
 			SimpleDateFormat formatter;
 			Calendar cal = Calendar.getInstance();
 			cal.set(year, month, 1);
-			//
+
 			if (dateFormat.equals("en00")
 					|| dateFormat.equals("en01")
 					|| dateFormat.equals("en10")
@@ -1969,18 +1834,15 @@ public class XFUtility {
 				formatter = new SimpleDateFormat("MMM,yyyy", new Locale("en", "US", "US"));
 				result = formatter.format(cal.getTime());
 			}
-			//
 			if (dateFormat.equals("jp00")
 					|| dateFormat.equals("jp01")
 					|| dateFormat.equals("jp10")
 					|| dateFormat.equals("jp11")
 					|| dateFormat.equals("jp20")
 					|| dateFormat.equals("jp21")) {
-				//formatter = new SimpleDateFormat("yyyy年MM月", new Locale("ja", "JP", "JP"));
 				formatter = new SimpleDateFormat("yyyy年MM月", new Locale("ja", "US", "US"));
 				result = formatter.format(cal.getTime());
 			}
-			//
 			if (dateFormat.equals("jp30")
 					|| dateFormat.equals("jp31")
 					|| dateFormat.equals("jp40")
@@ -1991,14 +1853,14 @@ public class XFUtility {
 				result = formatter.format(cal.getTime());
 			}
 		}
-		//
+
 		if (yearMonth.length() == 4) {
 			int year = Integer.parseInt(yearMonth.substring(0, 4));
 			int month = 0;
 			SimpleDateFormat formatter;
 			Calendar cal = Calendar.getInstance();
 			cal.set(year, month, 1);
-			//
+
 			if (dateFormat.equals("en00")
 					|| dateFormat.equals("en01")
 					|| dateFormat.equals("en10")
@@ -2006,18 +1868,15 @@ public class XFUtility {
 				formatter = new SimpleDateFormat("fiscal yyyy", new Locale("en", "US", "US"));
 				result = formatter.format(cal.getTime());
 			}
-			//
 			if (dateFormat.equals("jp00")
 					|| dateFormat.equals("jp01")
 					|| dateFormat.equals("jp10")
 					|| dateFormat.equals("jp11")
 					|| dateFormat.equals("jp20")
 					|| dateFormat.equals("jp21")) {
-				//formatter = new SimpleDateFormat("yyyy年度", new Locale("ja", "JP", "JP"));
 				formatter = new SimpleDateFormat("yyyy年度", new Locale("ja", "US", "US"));
 				result = formatter.format(cal.getTime());
 			}
-			//
 			if (dateFormat.equals("jp30")
 					|| dateFormat.equals("jp31")
 					|| dateFormat.equals("jp40")
@@ -2028,7 +1887,7 @@ public class XFUtility {
 				result = formatter.format(cal.getTime());
 			}
 		}
-		//
+
 		return result;
 	}
 	
@@ -2042,9 +1901,7 @@ public class XFUtility {
 	    String[] monthArrayJp = {"１月度","２月度","３月度","４月度","５月度","６月度","７月度","８月度","９月度","10月度","11月度","12月度","１月度","２月度","３月度","４月度","５月度","６月度","７月度","８月度","９月度","10月度","11月度"};
 		String result = "";
 		int startMonth = 1;
-		//
 		startMonth = session.getSystemVariantInteger("FIRST_MONTH");
-		//
 		if (mSeq >= 1 && mSeq <= 12) {
 			if (language.equals("en")) {
 				result = monthArrayEn[mSeq + startMonth - 2];
@@ -2053,7 +1910,6 @@ public class XFUtility {
 				result = monthArrayJp[mSeq + startMonth - 2];
 			}
 		}
-		//
 		return result;
 	}
 	
@@ -2302,7 +2158,7 @@ public class XFUtility {
 		String result = "";
 		String language = dateFormat.substring(0, 2);
 		int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-		//
+
 		if (dayOfWeek == 1) {
 			if (language.equals("jp")) {
 				result = "(日)";
@@ -2359,7 +2215,7 @@ public class XFUtility {
 				result = "Sat,";
 			}
 		}
-		//
+
 		return result;
 	}
 	
@@ -2370,7 +2226,7 @@ public class XFUtility {
 		int month = -1;
 		int date = 0;
 		Calendar cal = Calendar.getInstance();
-		//
+
 		if (strDate != null) {
 			try {
 				pos1 = strDate.indexOf("-");
@@ -2403,13 +2259,13 @@ public class XFUtility {
 			} catch (NumberFormatException e) {
 				e.printStackTrace();
 			}
-			//
+
 			if (year > 0 && month > -1 && date > 0) {
 				cal.set(year, month, date);
 				utilDate = cal.getTime();
 			}
 		}
-		//
+
 		return utilDate;
 	}
 	
@@ -2440,19 +2296,16 @@ public class XFUtility {
 	static String convertDateFromUtilToString(java.util.Date utilDate) {
 		String strDate = "";
 		SimpleDateFormat yyyyMMdd = new SimpleDateFormat("yyyy-MM-dd");
-		//
 		if (utilDate != null) {
 			Calendar cal = Calendar.getInstance();
 			cal.setTime(utilDate);
 			strDate = yyyyMMdd.format(cal.getTime());
 		}
-		//
 		return  strDate;
 	}
 	
 	static Color convertStringToColor(String color) {
 		Color colorConverted = Color.black; //Default//
-		//
 		if (color.equals("black")) {
 			colorConverted = Color.black;
 		}
@@ -2468,13 +2321,11 @@ public class XFUtility {
 		if (color.equals("orange")) {
 			colorConverted = Color.orange;
 		}
-		//
 		return colorConverted;
 	}
-	//
+
 	static String convertColorToString(Color color) {
 		String colorConverted = "black"; //Default//
-		//
 		if (color.equals(Color.black)) {
 			colorConverted = "black";
 		}
@@ -2490,7 +2341,6 @@ public class XFUtility {
 		if (color.equals(Color.orange)) {
 			colorConverted = "orange";
 		}
-		//
 		return colorConverted;
 	}
 	
@@ -2517,7 +2367,7 @@ public class XFUtility {
 		button.setToolTipText(bf.toString());
 	}
 	
-	static void appendLog(String text, StringBuffer logBuf) {
+	public static void appendLog(String text, StringBuffer logBuf) {
 		if (logBuf != null) {
 			String wrkStr = logBuf.toString();
 			if (!text.startsWith("select") || !wrkStr.contains(text)) {
@@ -2572,37 +2422,30 @@ public class XFUtility {
 	
 	static String getMessageOfReturnCode(String code) {
 		String message = "";
-		//
 		if (code.equals("00")) {
 			message = RESOURCE.getString("ReturnMessage00");
 		}
-		//
 		if (code.equals("01")) {
 			message = RESOURCE.getString("ReturnMessage01");
 		}
-		//
 		if (code.equals("10")) {
 			message = RESOURCE.getString("ReturnMessage10");
 		}
 		if (code.equals("11")) {
 			message = RESOURCE.getString("ReturnMessage11");
 		}
-		//
 		if (code.equals("20")) {
 			message = RESOURCE.getString("ReturnMessage20");
 		}
 		if (code.equals("21")) {
 			message = RESOURCE.getString("ReturnMessage21");
 		}
-		//
 		if (code.equals("30")) {
 			message = RESOURCE.getString("ReturnMessage30");
 		}
-		//
 		if (code.equals("99")) {
 			message = RESOURCE.getString("ReturnMessage99");
 		}
-		//
 		return message;
 	}
 }
@@ -2853,34 +2696,34 @@ class XFHashMap extends Object {
 //    }
 //}
 
-interface XFExecutable {
-	public String getFunctionID();
-	public boolean isAvailable();
-	public HashMap<String, Object> execute(HashMap<String, Object> parameterList);
-	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parameterList);
-	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception;
-	public void startProgress(String text, int maxValue);
-	public void incrementProgress();
-	public void endProgress();
-}
+//public interface XFExecutable {
+//	public String getFunctionID();
+//	public boolean isAvailable();
+//	public HashMap<String, Object> execute(HashMap<String, Object> parameterList);
+//	public HashMap<String, Object> execute(org.w3c.dom.Element functionElement, HashMap<String, Object> parameterList);
+//	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception;
+//	public void startProgress(String text, int maxValue);
+//	public void incrementProgress();
+//	public void endProgress();
+//}
 
-interface XFScriptable {
-	public void cancelWithMessage(String message);
-	public void cancelWithException(Exception e);
-	public void cancelWithScriptException(ScriptException e, String scriptName);
-	public void callFunction(String functionID);
-	public void commit();
-	public void rollback();
-	public String getFunctionID();
-	public HashMap<String, Object> getParmMap();
-	public HashMap<String, Object> getReturnMap();
-	public void setProcessLog(String value);
-	public StringBuffer getProcessLog();
-	public XFTableOperator createTableOperator(String oparation, String tableID);
-	public XFTableOperator createTableOperator(String sqlText);
-	public Object getFieldObjectByID(String tableID, String fieldID);
-	public boolean isAvailable();
-}
+//public interface XFScriptable {
+//	public void cancelWithMessage(String message);
+//	public void cancelWithException(Exception e);
+//	public void cancelWithScriptException(ScriptException e, String scriptName);
+//	public void callFunction(String functionID);
+//	public void commit();
+//	public void rollback();
+//	public String getFunctionID();
+//	public HashMap<String, Object> getParmMap();
+//	public HashMap<String, Object> getReturnMap();
+//	public void setProcessLog(String value);
+//	public StringBuffer getProcessLog();
+//	public XFTableOperator createTableOperator(String oparation, String tableID);
+//	public XFTableOperator createTableOperator(String sqlText);
+//	public Object getFieldObjectByID(String tableID, String fieldID);
+//	public boolean isAvailable();
+//}
 
 interface XFTableColumnEditor {
 	public Object getInternalValue();
@@ -2943,15 +2786,14 @@ class XFImageField extends JPanel implements XFEditableField {
 	private Desktop desktop = Desktop.getDesktop();
 
 	public XFImageField(String fieldOptions, int size, String imageFileFolder){
-		//
 		super();
-		//
+
 		String wrkStr;
-		//
+
 		fieldOptions_ = fieldOptions;
 		size_ = size;
 		imageFileFolder_ = imageFileFolder;
-		//
+
 		jTextField.setEditable(false);
 		Border workBorder = jTextField.getBorder();
 		normalModeColor = jTextField.getBackground();
@@ -2960,7 +2802,7 @@ class XFImageField extends JPanel implements XFEditableField {
 		jTextField.setEditable(true);
 		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
 		jTextField.setDocument(new LimitDocument());
-		//
+
 		jButton.setFont(new java.awt.Font("Dialog", 0, 14));
 		jButton.setPreferredSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.setText(XFUtility.RESOURCE.getString("Refresh"));
@@ -2971,25 +2813,25 @@ class XFImageField extends JPanel implements XFEditableField {
 	    jPanelBottom.setLayout(new BorderLayout());
 	    jPanelBottom.add(jTextField, BorderLayout.CENTER);
 	    jPanelBottom.add(jButton, BorderLayout.EAST);
-		//
+
 	    this.setBorder(workBorder);
 		this.setLayout(new BorderLayout());
 		this.add(jPanelBottom, BorderLayout.SOUTH);
 		this.add(jScrollPane, BorderLayout.CENTER);
-		//
+
 		rows_ = DEFAULT_ROWS;
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ROWS");
 		if (!wrkStr.equals("")) {
 			rows_ = Integer.parseInt(wrkStr);
 		}
 		fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT - FIELD_VERTICAL_MARGIN - 3;
-		//
+
 		fieldWidth = DEFAULT_WIDTH;
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
 		if (!wrkStr.equals("")) {
 			fieldWidth = Integer.parseInt(wrkStr);
 		}
-		//
+
 		this.setSize(fieldWidth, fieldHeight);
 		this.setEditable(false);
 	}
@@ -3201,10 +3043,10 @@ class XFDateField extends JPanel implements XFEditableField {
     private java.util.Date date;
     private Session session_;
     private Object oldValue = null;
-	//private XFCalendar xFCalendar;
 
 	public XFDateField(Session session){
 		super();
+
 		session_ = session;
 		dateTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
 		dateTextField.setEditable(false);
@@ -3233,7 +3075,7 @@ class XFDateField extends JPanel implements XFEditableField {
 				}
 			} 
 		});
-		//
+
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("prompt.png"));
 	 	jButton.setIcon(imageIcon);
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
@@ -3252,13 +3094,11 @@ class XFDateField extends JPanel implements XFEditableField {
 				}
 			} 
 		});
-		//
+
 		this.setSize(new Dimension(XFUtility.getWidthOfDateValue(session.getDateFormat(), 14) + 26, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(dateTextField, BorderLayout.CENTER);
 		this.add(jButton, BorderLayout.EAST);
-		//
-		//xFCalendar = new XFCalendar(session_, this);
 	}
 	
 	public void setInternalBorder(Border border) {
@@ -3321,8 +3161,9 @@ class XFDateField extends JPanel implements XFEditableField {
 	
 	public void setValue(Object obj) {
 		dateTextField.setText("");
-		//
-		if (obj != null) {
+		if (obj == null) {
+			this.date = null;
+		} else {
 			if (obj.getClass().getName().equals("java.sql.Date")) {
 				this.date = XFUtility.convertDateFromSqlToUtil((java.sql.Date)obj);
 				dateTextField.setText(XFUtility.getUserExpressionOfUtilDate(this.date, session_.getDateFormat(), false));
@@ -3332,7 +3173,9 @@ class XFDateField extends JPanel implements XFEditableField {
 				dateTextField.setText(XFUtility.getUserExpressionOfUtilDate(this.date, session_.getDateFormat(), false));
 			}
 			if (obj.getClass().getName().equals("java.lang.String")) {
-				if (!obj.equals("")) {
+				if (obj.equals("")) {
+					this.date = null;
+				} else {
 					this.date = XFUtility.convertDateFromStringToUtil((String)obj);
 					dateTextField.setText(XFUtility.getUserExpressionOfUtilDate(this.date, session_.getDateFormat(), false));
 				}
@@ -3368,8 +3211,7 @@ class XFDateField extends JPanel implements XFEditableField {
 	
 	public void setUtilDateValue(java.util.Date utilDate) {
 		this.date = utilDate;
-		//
-		if (date == null) {
+		if (this.date == null) {
 			dateTextField.setText("");
 		} else {
 			dateTextField.setText(XFUtility.getUserExpressionOfUtilDate(utilDate, session_.getDateFormat(), false));
@@ -3400,7 +3242,6 @@ class XFDateField extends JPanel implements XFEditableField {
 	}
 	
 	public java.util.Date getDateOnCalendar(java.util.Date date) {
-		//return xFCalendar.getDateOnCalendar(date);
 		Point position = jButton.getLocationOnScreen();
 		position.x = position.x + Math.round(jButton.getWidth() / 2);
 		position.y = position.y + Math.round(jButton.getHeight() / 2);
@@ -3429,17 +3270,16 @@ class XFTextField extends JTextField implements XFEditableField {
 	private String fieldOptions_;
 	private String autoNumberKey = "";
 	private String oldValue = "";
-	//
+
 	public XFTextField(String basicType, int digits, int decimal, String dataTypeOptions, String fieldOptions) {
-		//
 		super();
-		//
+
 		basicType_ = basicType;
 		digits_ = digits;
 		decimal_ = decimal;
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		fieldOptions_ = fieldOptions;
-		//
+
 		if (basicType_.equals("INTEGER")) {
 			this.setHorizontalAlignment(SwingConstants.RIGHT);
 			this.setText(this.getFormattedNumber("0"));
@@ -3485,7 +3325,7 @@ class XFTextField extends JTextField implements XFEditableField {
 				}
 			} 
 		});
-		//
+
 		int fieldWidth, fieldHeight;
 		if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 			fieldWidth = digits_ * 14 + 10;
@@ -3504,7 +3344,7 @@ class XFTextField extends JTextField implements XFEditableField {
 			fieldWidth = 800;
 		}
 		fieldHeight = XFUtility.FIELD_UNIT_HEIGHT;
-		//
+
 		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
 		if (!wrkStr.equals("")) {
 			fieldWidth = Integer.parseInt(wrkStr);
@@ -3513,7 +3353,7 @@ class XFTextField extends JTextField implements XFEditableField {
 		if (!wrkStr.equals("")) {
 			autoNumberKey = wrkStr;
 		}
-		//
+
 		this.setSize(new Dimension(fieldWidth, fieldHeight));
 	}
 
@@ -3532,7 +3372,6 @@ class XFTextField extends JTextField implements XFEditableField {
 
 	public String getStringNumber(String text) {
 		String numberString = XFUtility.getStringNumber(text);
-		//
 		if (numberString.equals("")) {
 			if (basicType_.equals("INTEGER")) {
 				numberString = "0";
@@ -3570,7 +3409,6 @@ class XFTextField extends JTextField implements XFEditableField {
 				numberString = numberString.substring(0, 3) + "-" + numberString.substring(3, 7); 
 			}
 		}
-		//
 		return numberString;
 	}
 
@@ -3580,7 +3418,6 @@ class XFTextField extends JTextField implements XFEditableField {
 			|| basicType_.equals("FLOAT")
 			|| dataTypeOptionList.contains("DIAL")
 			|| dataTypeOptionList.contains("ZIPNO")) {
-			//
 			if (this.getText().equals("*AUTO")) {
 				text = this.getText();
 			} else {
@@ -3709,7 +3546,6 @@ class XFTextField extends JTextField implements XFEditableField {
 		public void focusGained(FocusEvent event){
 			Character.Subset[] subsets  = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
 			String lang = Locale.getDefault().getLanguage();
-			//
 			if (basicType_.equals("STRING")) {
 				if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 					if (lang.equals("ja")) {
@@ -3729,8 +3565,6 @@ class XFTextField extends JTextField implements XFEditableField {
 						getInputContext().setCharacterSubsets(subsets);
 						getInputContext().setCompositionEnabled(true);
 					} else {
-						//getInputContext().setCharacterSubsets(subsets);
-						//getInputContext().setCompositionEnabled(false);
 						InputContext ic = getInputContext();
 						if (ic != null) {
 							ic.setCharacterSubsets(subsets);
@@ -3739,8 +3573,6 @@ class XFTextField extends JTextField implements XFEditableField {
 					}
 				}
 			} else {
-				//getInputContext().setCharacterSubsets(subsets);
-				//getInputContext().setCompositionEnabled(false);
 				InputContext ic = getInputContext();
 				if (ic != null) {
 					ic.setCharacterSubsets(subsets);
@@ -3753,21 +3585,14 @@ class XFTextField extends JTextField implements XFEditableField {
 	class LimitedDocument extends PlainDocument {
 		private static final long serialVersionUID = 1L;
 		XFTextField adaptee;
-		//
 		LimitedDocument(XFTextField adaptee) {
 		  this.adaptee = adaptee;
 		}
-		//
 		public void insertString(int offset, String str, AttributeSet attr) {
 			try {
 				int integerSizeOfField = adaptee.digits_ - adaptee.decimal_;
-				//
+
 				if (adaptee.decimal_ > 0 && str.length() == 1) {
-//					if (adaptee.isEditable()
-//							&& !basicType_.equals("DATE")
-//							&& !basicType_.equals("TIME")
-//							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
-//							&& str.contains("-")) {
 					if (adaptee.isEditable()
 							&& (basicType_.equals("INTEGER") || basicType_.equals("FLOAT"))
 							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
@@ -3804,12 +3629,6 @@ class XFTextField extends JTextField implements XFEditableField {
 						}
 					}
 				} else {
-					//if (adaptee.isEditable() && dataTypeOptionList.contains("NO_MINUS") && str.contains("-")) {
-//					if (adaptee.isEditable()
-//							&& !basicType_.equals("DATE")
-//							&& !basicType_.equals("TIME")
-//							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
-//							&& str.contains("-")) {
 					if (adaptee.isEditable()
 							&& (basicType_.equals("INTEGER") || basicType_.equals("FLOAT"))
 							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
@@ -3877,12 +3696,12 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		fieldOptions_ = fieldOptions;
 		InputMap inputMap  = jTextArea.getInputMap(JTextArea.WHEN_FOCUSED);
 		ActionMap actionMap = jTextArea.getActionMap();
-		//
+
 		KeyStroke tab = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
 		KeyStroke shiftTab = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_MASK);
 		KeyStroke enter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
 		KeyStroke altEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_MASK);
-		//
+
 		inputMap.put(altEnter, inputMap.get(enter));
 		inputMap.put(enter, "none");
 		inputMap.put(tab, "Exit");
@@ -3901,25 +3720,25 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 			}
 		};
 		actionMap.put("Backward", transferFocusBackwardAction);
-		//
+
 		jTextArea.addFocusListener(new ComponentFocusListener());
 		jTextArea.setFont(new java.awt.Font("Dialog", 0, 14));
 		jTextArea.setLineWrap(true);
 		jTextArea.setWrapStyleWord(true);
 		jTextArea.setDocument(new LimitedDocument(this));
 		this.getViewport().add(jTextArea, null);
-		//
+
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ROWS");
 		if (!wrkStr.equals("")) {
 			rows_ = Integer.parseInt(wrkStr);
 		}
-		//
+
 		int fieldWidth = 800;
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
 		if (!wrkStr.equals("")) {
 			fieldWidth = Integer.parseInt(wrkStr);
 		}
-		//
+
 		int fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT + (rows_-1) * XFUtility.FIELD_VERTICAL_MARGIN;
 		if (rows_ == 1) {
 			fieldHeight = XFUtility.FIELD_UNIT_HEIGHT + XFUtility.FIELD_VERTICAL_MARGIN;
@@ -3977,7 +3796,6 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	
 	public void setEditable(boolean editable) {
 		jTextArea.setEditable(editable);
-		//
 		if (editable) {
 			jTextArea.setBackground(XFUtility.ACTIVE_COLOR);
 		} else {
@@ -4034,11 +3852,9 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	class LimitedDocument extends PlainDocument {
 		private static final long serialVersionUID = 1L;
 		XFTextArea adaptee;
-		//
 		LimitedDocument(XFTextArea adaptee) {
 		  this.adaptee = adaptee;
 		}
-		//
 		public void insertString(int offset, String str, AttributeSet a) {
 			try {
 				if (offset < adaptee.digits_ && super.getLength() < adaptee.digits_) {
@@ -4250,26 +4066,24 @@ class XFYMonthBox extends JPanel implements XFEditableField {
     private String language = "";
 	
 	public XFYMonthBox(Session session){
-		//
 		super();
-		//
+
 		session_ = session;
-		//
 		dateFormat = session_.getDateFormat();
 		language = session_.getDateFormat().substring(0, 2);
-		//
+
 		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
 		jTextField.setBounds(new Rectangle(0, 0, 85, XFUtility.FIELD_UNIT_HEIGHT));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
-		//
+
 		GregorianCalendar calendar = new GregorianCalendar();
 		int currentYear = calendar.get(Calendar.YEAR);
 		int minimumYear = currentYear - 30;
 		int maximumYear = currentYear + 10;
 		jComboBoxYear.setFont(new java.awt.Font("Dialog", 0, 14));
 		jComboBoxYear.addKeyListener(new XFYMonthBox_Year_keyAdapter(this));
-		//
+
 		SimpleDateFormat gengoFormatter = new SimpleDateFormat("Gyy", new Locale("ja", "JP", "JP"));
 		Calendar cal = Calendar.getInstance();
 		listYear.add("");
@@ -4301,10 +4115,10 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 		} else {
 			jComboBoxYear.addItem("H99");
 		}
-		//
+
 		jComboBoxMonth.setFont(new java.awt.Font("Dialog", 0, 14));
 		jComboBoxMonth.addKeyListener(new XFYMonthBox_Month_keyAdapter(this));
-		//
+
 		listMonth.add("");
 		listMonth.add("01");
 		listMonth.add("02");
@@ -4354,7 +4168,7 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 			jComboBoxMonth.addItem("11");
 			jComboBoxMonth.addItem("12");
 		}
-		//
+
 		this.setLayout(null);
 	}
 	
@@ -4492,28 +4306,26 @@ class XFFYearBox extends JPanel implements XFEditableField {
     private String language = "";
 	
 	public XFFYearBox(Session session){
-		//
 		super();
-		//
+
 		session_ = session;
-		//
 		dateFormat = session_.getDateFormat();
 		language = session_.getDateFormat().substring(0, 2);
-		//
+
 		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
 		jTextField.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
-		//
+
 		GregorianCalendar calendar = new GregorianCalendar();
 		int currentYear = calendar.get(Calendar.YEAR);
 		int minimumYear = currentYear - 30;
 		int maximumYear = currentYear + 10;
-		//
+
 		jComboBoxYear.setFont(new java.awt.Font("Dialog", 0, 12));
 		jComboBoxYear.addKeyListener(new XFFYearBox_keyAdapter(this));
 		jComboBoxYear.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
-		//
+
 		listYear.add("");
 		jComboBoxYear.addItem("");
 		for (int i = minimumYear; i <= maximumYear; i++) {
@@ -4532,7 +4344,7 @@ class XFFYearBox extends JPanel implements XFEditableField {
 		} else {
 			jComboBoxYear.addItem("H99");
 		}
-		//
+
 		this.setLayout(null);
 		this.setSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
 	}
@@ -4650,20 +4462,19 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 	private int oldValue_ = 0;
 	
 	public XFMSeqBox(Session session){
-		//
 		super();
-		//
+
 		session_ = session;
 		language = session_.getDateFormat().substring(0, 2);
 		startMonth = session_.getSystemVariantInteger("FIRST_MONTH");
-		//
+
 		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
-		//
+
 		jComboBoxMSeq.setFont(new java.awt.Font("Dialog", 0, 12));
 		jComboBoxMSeq.addKeyListener(new XFMSeqBox_keyAdapter(this));
-		//
+
 		listMSeq.add(0);
 		listMSeq.add(1);
 		listMSeq.add(2);
@@ -4677,7 +4488,7 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 		listMSeq.add(10);
 		listMSeq.add(11);
 		listMSeq.add(12);
-		//
+
 		if (language.equals("en")) {
 			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 50, XFUtility.FIELD_UNIT_HEIGHT));
 			jTextField.setBounds(new Rectangle(0, 0, 50, XFUtility.FIELD_UNIT_HEIGHT));
@@ -4687,7 +4498,7 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 				jComboBoxMSeq.addItem(monthArrayEn[i]);
 			}
 		}
-		//
+
 		if (language.equals("jp")) {
 			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 62, XFUtility.FIELD_UNIT_HEIGHT));
 			jTextField.setBounds(new Rectangle(0, 0, 62, XFUtility.FIELD_UNIT_HEIGHT));
@@ -4697,7 +4508,7 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 				jComboBoxMSeq.addItem(monthArrayJp[i]);
 			}
 		}
-		//
+
 		this.setLayout(null);
 	}
 	
@@ -4707,14 +4518,12 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 
 	public void setEditable(boolean editable) {
 		this.removeAll();
-		//
 		if (editable) {
 			this.add(jComboBoxMSeq);
 		} else {
 			this.add(jTextField);
 			this.setFocusable(false);
 		}
-		//
 		isEditable = editable;
 	}
 	
@@ -4803,7 +4612,7 @@ class XFCheckBox extends JCheckBox implements XFEditableField {
 	
 	public XFCheckBox(String dataTypeOptions){
 		super();
-		//
+
 		dataTypeOptions_ = dataTypeOptions;
 		String wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "BOOLEAN");
 		if (!wrkStr.equals("")) {
@@ -4817,14 +4626,13 @@ class XFCheckBox extends JCheckBox implements XFEditableField {
 			    valueFalse = workTokenizer.nextToken();
 			}
 		}
-		//
+
 	    this.setDisabledSelectedIcon(XFUtility.ICON_CHECK_1D);
 	    this.setDisabledIcon(XFUtility.ICON_CHECK_0D);
 	    this.setSelectedIcon(XFUtility.ICON_CHECK_1A);
 	    this.setIcon(XFUtility.ICON_CHECK_0A);
 	    this.setRolloverSelectedIcon(XFUtility.ICON_CHECK_1R);
 	    this.setRolloverIcon(XFUtility.ICON_CHECK_0R);
-		//
 		this.setText("");
 		this.setOpaque(false);
 		this.addActionListener(new XFCheckBox_actionAdapter());
@@ -5211,14 +5019,13 @@ class XFScript extends Object {
 	
 	public boolean isToBeRunAtEvent(String event1, String event2) {
 		boolean result = false;
-		//
 		if (!isSuspended) {
 			ArrayList<String> event1List = new ArrayList<String>();
 			StringTokenizer workTokenizer = new StringTokenizer(event1, ",");
 			while (workTokenizer.hasMoreTokens()) {
 				event1List.add(workTokenizer.nextToken());
 			}
-			//
+
 			for (int i = 0; i < event1List.size(); i++) {
 				if (eventP.contains(event1List.get(i))) {
 					if (event2.equals("")) {
@@ -5233,7 +5040,6 @@ class XFScript extends Object {
 				}
 			}
 		}
-		//
 		return result;
 	}
 	
@@ -5273,17 +5079,15 @@ class XFCalendar extends JDialog {
     private ArrayList<String> kbCalendarList = new ArrayList<String>(); 
     private HashMap<String, String> offDateMap = new HashMap<String,String>();
     private String normalMessage;
-    //private Component parent_;
 	private Color lightRedGray = new Color(228, 192, 192);
-	//private Color lightGreenGray = new Color(185, 216, 165);
 
-    //public XFCalendar(Session session, Component parent) {
     public XFCalendar(Session session) {
 		super();
+
 		this.setModal(true);
 		this.setTitle(XFUtility.RESOURCE.getString("Calendar"));
 		this.session_ = session;
-		//this.parent_ = parent;
+
 		jPanelMain.setLayout(new BorderLayout());
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -5435,24 +5239,11 @@ class XFCalendar extends JDialog {
 		jPanelMain.add(jPanelTop, BorderLayout.NORTH);
 		jPanelMain.add(jTabbedPaneCenter, BorderLayout.CENTER);
 		jPanelMain.add(jTextAreaBottom, BorderLayout.SOUTH);
+
 		this.getContentPane().add(jPanelMain);
-		//dlgSize = new Dimension(346,240);
 		dlgSize = new Dimension(352,259);
 		this.setPreferredSize(dlgSize);
 		this.setResizable(false);
-//		int posY;
-//    	if (parent_ != null && parent_.isValid()) {
-//    		Rectangle rec = parent_.getBounds();
-//    		Point point = parent_.getLocationOnScreen();
-//    		posX = point.x;
-//    		posY = point.y + rec.height;
-//    		if (posY + dlgSize.height > scrSize.height) {
-//    			posY = point.y - dlgSize.height;
-//    		}
-//    		this.setLocation(posX, posY);
-//    	} else {
-//    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
-//    	}
 		this.pack();
     }
 
@@ -5552,25 +5343,23 @@ class XFCalendar extends JDialog {
 	
 	String getYearMonthText(Calendar cal) {
 
-		////////////////////////////
-		//en00 06/17/10           //
-		//en01 Thur,06/17/01      //
-		//en10 Jun17,2010         //
-		//en11 Thur,Jun17,2001    //
-		////////////////////////////
-		//jp00 10/06/17           //
-		//jp01 10/06/17(木)       //
-		//jp10 2010/06/17         //
-		//jp11 2010/06/17(木)     //
-		//jp20 2010年6月17日                //
-		//jp21 2010年6月17日(木)  //
-		//jp30 H22/06/17          //
-		//jp31 H22/06/17(水)      //
-		//jp40 H22年06月17日                //
-		//jp41 H22年06月17日(水)  //
-		//jp50 平成22年06月17日          //
-		//jp51 平成22年06月17日(水)//
-		///////////////////////////
+		//en00 06/17/10
+		//en01 Thur,06/17/01
+		//en10 Jun17,2010
+		//en11 Thur,Jun17,2001
+		//
+		//jp00 10/06/17
+		//jp01 10/06/17(木)
+		//jp10 2010/06/17
+		//jp11 2010/06/17(木)
+		//jp20 2010年6月17日
+		//jp21 2010年6月17日(木)
+		//jp30 H22/06/17
+		//jp31 H22/06/17(水)
+		//jp40 H22年06月17日
+		//jp41 H22年06月17日(水)
+		//jp50 平成22年06月17日
+		//jp51 平成22年06月17日(水)
 
 		String result = "";
 		String dateFormat = session_.getDateFormat();
@@ -5591,7 +5380,6 @@ class XFCalendar extends JDialog {
 			formatter = new SimpleDateFormat("yyyy年 M月");
 			result = formatter.format(cal.getTime());
 		}
-
 		if (dateFormat.equals("jp30")
 				|| dateFormat.equals("jp31")
 				|| dateFormat.equals("jp40")

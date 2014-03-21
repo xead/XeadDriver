@@ -43,8 +43,18 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M33";
-	public static final String VERSION  = "1.1.33";
+	public static final String FULL_VERSION  = "V1.R1.M34";
+	public static final String VERSION  = "1.1.34";
+	//34
+	//・XF200の追加モードでのプロンプトリストフィールドの初期値設定に関する問題を修正した
+	//・日付フィールドの初期値設定に関する問題を修正した
+	//・WEBサービスにPUT命令を送信するためのセッション関数をcreateServiceRequest(...)として作り替えた
+	//・ハッシュ関数を利用するためのセッション関数としてgetDigestedValue(...)を追加した
+	//・XEAD Serverで利用するために、Sessionのコンストラクタや初期化ルーチンの構成を変更し、closeメソッドをpublicにした
+	//・XEAD Serverで利用するために、XFExecutableとXFScriptableをpublicなインタフェースとして独立させた
+	//・セッション履歴の項目「処理系」について、XEAD DriverとXEAD Serverのバージョン値を接頭語で区別できるようにした
+	//・パスワード変更ダイアログの新パスワードの入力フィールドを２つにした
+	//
 	//33
 	//・XF100,XF110で日時型フィールドを検索条件として指定した場合の問題を修正した
 	//・セッションパラメータSKIP_PRELOADの扱いに関する問題を修正した

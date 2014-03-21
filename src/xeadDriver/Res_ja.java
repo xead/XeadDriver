@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -192,6 +192,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "ModifyPassword", "パスワードの変更" },
 		{ "ModifyPasswordError1", "新しいパスワードは５～１０桁としてください。" },
 		{ "ModifyPasswordError2", "変更できません。現行パスワード\nが正しくない可能性があります。" },
+		{ "ModifyPasswordError3", "新しいパスワードの２つの値が一致しません。" },
 		{ "Next", "次へ" },
 		{ "No", "いいえ" },
 		{ "NumberFormatError", "小数点は入力できません。" },

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -47,8 +47,10 @@ public class DialogModifyPassword extends JDialog {
 	private JTextField jTextFieldUserName = new JTextField();
 	private JLabel jLabelPasswordCurrent = new JLabel();
 	private JPasswordField jPasswordCurrent = new JPasswordField();
-	private JLabel jLabelPasswordNew = new JLabel();
-	private JPasswordField jPasswordNew = new JPasswordField();
+	private JLabel jLabelPasswordNew1 = new JLabel();
+	private JPasswordField jPasswordNew1 = new JPasswordField();
+	private JLabel jLabelPasswordNew2 = new JLabel();
+	private JPasswordField jPasswordNew2 = new JPasswordField();
 	private Session session = null;
 	private String userID = "";
 	private boolean modified = false;
@@ -58,15 +60,15 @@ public class DialogModifyPassword extends JDialog {
 	public DialogModifyPassword(Session session) {
 		super(session, "", true);
 		try {
-			//
+
 		 	imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.DialogModifyPassword.class.getResource("ikey.png"));
 		 	this.setIconImage(imageTitle);
 			this.session = session;
 			this.setTitle(XFUtility.RESOURCE.getString("ModifyPassword"));
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
-			jPanelMain.setPreferredSize(new Dimension(290, 163));
+			jPanelMain.setPreferredSize(new Dimension(290, 196));
 			jPanelMain.setLayout(null);
-			//
+
 			jLabelUserName.setHorizontalAlignment(SwingConstants.RIGHT);
 			jLabelUserName.setBounds(new Rectangle(10, 17, 90, 25));
 			jLabelUserName.setFont(new java.awt.Font("Dialog", 0, 12));
@@ -74,7 +76,7 @@ public class DialogModifyPassword extends JDialog {
 			jTextFieldUserName.setFont(new java.awt.Font("Dialog", 0, 12));
 			jTextFieldUserName.setBounds(new Rectangle(105, 17, 160, 25));
 			jTextFieldUserName.setEditable(false);
-			//
+
 			jLabelPasswordCurrent.setHorizontalAlignment(SwingConstants.RIGHT);
 			jLabelPasswordCurrent.setBounds(new Rectangle(10, 50, 90, 25));
 			jLabelPasswordCurrent.setFont(new java.awt.Font("Dialog", 0, 12));
@@ -82,28 +84,36 @@ public class DialogModifyPassword extends JDialog {
 			jPasswordCurrent.setFont(new java.awt.Font("Dialog", 0, 12));
 			jPasswordCurrent.setBounds(new Rectangle(105, 50, 160, 25));
 			jPasswordCurrent.setDocument(new LimitedDocument(10));
-			//
-			jLabelPasswordNew.setHorizontalAlignment(SwingConstants.RIGHT);
-			jLabelPasswordNew.setBounds(new Rectangle(10, 83, 90, 25));
-			jLabelPasswordNew.setFont(new java.awt.Font("Dialog", 0, 12));
-			jLabelPasswordNew.setText(XFUtility.RESOURCE.getString("PasswordNew"));
-			jPasswordNew.setFont(new java.awt.Font("Dialog", 0, 12));
-			jPasswordNew.setBounds(new Rectangle(105, 83, 160, 25));
-			jPasswordNew.setDocument(new LimitedDocument(10));
-			//
-			jButtonClose.setBounds(new Rectangle(10, 125, 80, 25));
+
+			jLabelPasswordNew1.setHorizontalAlignment(SwingConstants.RIGHT);
+			jLabelPasswordNew1.setBounds(new Rectangle(10, 83, 90, 25));
+			jLabelPasswordNew1.setFont(new java.awt.Font("Dialog", 0, 12));
+			jLabelPasswordNew1.setText(XFUtility.RESOURCE.getString("PasswordNew"));
+			jPasswordNew1.setFont(new java.awt.Font("Dialog", 0, 12));
+			jPasswordNew1.setBounds(new Rectangle(105, 83, 160, 25));
+			jPasswordNew1.setDocument(new LimitedDocument(10));
+
+			jLabelPasswordNew2.setHorizontalAlignment(SwingConstants.RIGHT);
+			jLabelPasswordNew2.setBounds(new Rectangle(10, 116, 90, 25));
+			jLabelPasswordNew2.setFont(new java.awt.Font("Dialog", 0, 12));
+			jLabelPasswordNew2.setText(XFUtility.RESOURCE.getString("PasswordNew"));
+			jPasswordNew2.setFont(new java.awt.Font("Dialog", 0, 12));
+			jPasswordNew2.setBounds(new Rectangle(105, 116, 160, 25));
+			jPasswordNew2.setDocument(new LimitedDocument(10));
+
+			jButtonClose.setBounds(new Rectangle(10, 158, 80, 25));
 			jButtonClose.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonClose.setText(XFUtility.RESOURCE.getString("Close"));
 			jButtonClose.addActionListener(new ModifyPasswordDialog_jButtonClose_actionAdapter(this));
-			jButtonOK.setBounds(new Rectangle(100, 125, 90, 25));
+			jButtonOK.setBounds(new Rectangle(100, 158, 90, 25));
 			jButtonOK.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonOK.setText(XFUtility.RESOURCE.getString("Modify"));
 			jButtonOK.addActionListener(new ModifyPasswordDialog_jButtonOK_actionAdapter(this));
-			jButtonAbout.setBounds(new Rectangle(200, 125, 80, 25));
+			jButtonAbout.setBounds(new Rectangle(200, 158, 80, 25));
 			jButtonAbout.setFont(new java.awt.Font("Dialog", 0, 12));
 			jButtonAbout.setText("About");
 			jButtonAbout.addActionListener(new ModifyPasswordDialog_jButtonAbout_actionAdapter(this));
-			//
+
 			this.getContentPane().add(jPanelMain,  BorderLayout.CENTER);
 			jPanelMain.add(jButtonClose, null);
 			jPanelMain.add(jButtonOK, null);
@@ -112,10 +122,12 @@ public class DialogModifyPassword extends JDialog {
 			jPanelMain.add(jTextFieldUserName, null);
 			jPanelMain.add(jLabelPasswordCurrent, null);
 			jPanelMain.add(jPasswordCurrent, null);
-			jPanelMain.add(jLabelPasswordNew, null);
-			jPanelMain.add(jPasswordNew, null);
+			jPanelMain.add(jLabelPasswordNew1, null);
+			jPanelMain.add(jPasswordNew1, null);
+			jPanelMain.add(jLabelPasswordNew2, null);
+			jPanelMain.add(jPasswordNew2, null);
 			pack();
-			//
+
 			about = new DialogAbout(this); 
 		}
 		catch(Exception ex) {
@@ -131,12 +143,11 @@ public class DialogModifyPassword extends JDialog {
         Rectangle screenRect = session.getMenuRectangle();
 		this.setLocation(((screenRect.width - dlgSize.width) / 2) + screenRect.x, ((screenRect.height - dlgSize.height) / 2) + screenRect.y);
 		this.pack();
-		//
 		jPasswordCurrent.setText("");
-		jPasswordNew.setText("");
+		jPasswordNew1.setText("");
+		jPasswordNew2.setText("");
 		jPasswordCurrent.requestFocus();
 		super.setVisible(true);
-		//
 		return modified;
 	}
 
@@ -148,7 +159,8 @@ public class DialogModifyPassword extends JDialog {
 				this.setVisible(false);
 			} else {
 				jPasswordCurrent.setText("");
-				jPasswordNew.setText("");
+				jPasswordNew1.setText("");
+				jPasswordNew2.setText("");
 				jPasswordCurrent.requestFocus();
 			}
 		} finally {
@@ -157,44 +169,47 @@ public class DialogModifyPassword extends JDialog {
 	}
 
 	boolean passwordValidated() {
-		String passwordNew = "";
+		String passwordNew1 = "";
+		String passwordNew2 = "";
 		String passwordCurrent = "";
 		boolean validated = false;
-		//
+
 		passwordCurrent = new String(jPasswordCurrent.getPassword());
 		String passwordCurrentDigested = session.getDigestAdapter().digest(passwordCurrent);
-		//
-		passwordNew = new String(jPasswordNew.getPassword());
-		String passwordNewDigested = session.getDigestAdapter().digest(passwordNew);
-		//
-		if (passwordNew.length() < 5) {
+		passwordNew1 = new String(jPasswordNew1.getPassword());
+		String passwordNewDigested = session.getDigestAdapter().digest(passwordNew1);
+		passwordNew2 = new String(jPasswordNew2.getPassword());
+
+		if (passwordNew1.length() < 5) {
 			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("ModifyPasswordError1"));
 		} else {
-			try {
-				StringBuffer statementBuf = new StringBuffer();
-				statementBuf.append("update ");
-				statementBuf.append(session.getTableNameOfUser());
-				statementBuf.append(" set TXPASSWORD = '") ;
-				statementBuf.append(passwordNewDigested) ;
-				statementBuf.append("' where IDUSER = '") ;
-				statementBuf.append(userID) ;
-				statementBuf.append("' and TXPASSWORD = '") ;
-				statementBuf.append(passwordCurrentDigested);
-				statementBuf.append("'") ;
-				//
-				XFTableOperator operator = new XFTableOperator(session, null, statementBuf.toString(), true);
-				int count = operator.execute();
-				if (count == 1) {
-					validated = true;
-				} else {
-					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("ModifyPasswordError2"));
+			if (passwordNew1.equals(passwordNew2)) {
+				try {
+					StringBuffer statementBuf = new StringBuffer();
+					statementBuf.append("update ");
+					statementBuf.append(session.getTableNameOfUser());
+					statementBuf.append(" set TXPASSWORD = '") ;
+					statementBuf.append(passwordNewDigested) ;
+					statementBuf.append("' where IDUSER = '") ;
+					statementBuf.append(userID) ;
+					statementBuf.append("' and TXPASSWORD = '") ;
+					statementBuf.append(passwordCurrentDigested);
+					statementBuf.append("'") ;
+
+					XFTableOperator operator = new XFTableOperator(session, null, statementBuf.toString(), true);
+					int count = operator.execute();
+					if (count == 1) {
+						validated = true;
+					} else {
+						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("ModifyPasswordError2"));
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-				//
-			} catch (Exception e) {
-				e.printStackTrace();
+			} else {
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("ModifyPasswordError3"));
 			}
 		}
-		//
 		return validated;
 	}
 

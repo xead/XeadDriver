@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -192,6 +192,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "ModifyPassword", "Modify Password" },
 		{ "ModifyPasswordError1", "New password is invalid. Its\nlength must be more than 4." },
 		{ "ModifyPasswordError2", "It failed to modify password.\nCurrent passoword may be invalid." },
+		{ "ModifyPasswordError3", "Values of new password do not match." },
 		{ "Next", "Next" },
 		{ "No", "No" },
 		{ "NumberFormatError", "Decimal point is invalid." },

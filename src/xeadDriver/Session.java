@@ -66,7 +66,6 @@ import org.apache.http.client.*;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -80,11 +79,13 @@ import org.json.JSONObject;
 public class Session extends JFrame {
 	private static final long serialVersionUID = 1L;
 	private String systemName = "";
-	private String version = "";
+	private String systemVersion = "";
 	private String sessionID = "";
 	private String sessionStatus = "";
+	private String processorVersion = "";
 	private boolean noErrorsOccured = true;
 	private boolean skipPreload = false;
+	private boolean isOnlineSession = true;
 	private String databaseName = "";
 	private String databaseUser = "";
 	private String databasePassword = "";
@@ -162,7 +163,8 @@ public class Session extends JFrame {
 	private DigestAdapter digestAdapter = null;
 	private DialogLogin loginDialog = null;
 	private DialogModifyPassword modifyPasswordDialog = null;
-	private FunctionLauncher functionLauncher = new FunctionLauncher(this);
+	//private FunctionLauncher functionLauncher = new FunctionLauncher(this);
+	private FunctionLauncher functionLauncher = null;
 	private SortableDomElementListModel sortingList;
 	private NodeList functionList = null;
 	private NodeList tableList = null;
@@ -173,17 +175,20 @@ public class Session extends JFrame {
 	private Bindings globalScriptBindings = null;
 	private ScriptEngine scriptEngine = null;
 	private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
-	private DOMParser responseDocParser = new DOMParser();
+	private DOMParser domParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
 	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
 	private ArrayList<XFExecutable> preloadedFunctionList = new ArrayList<XFExecutable>();
-	private Application application;
+	private Application application = null;
 	private XFOptionDialog optionDialog = new XFOptionDialog(this);
 	private XFInputDialog inputDialog = new XFInputDialog(this);
 	private XFCheckListDialog checkListDialog = new XFCheckListDialog();
 	private XFLongTextEditor xfLongTextEditor = new XFLongTextEditor(this);
 
+	//////////////////////////////
+	// Construct Online Session //
+	//////////////////////////////
 	public Session(String[] args, Application app) {
 		String fileName = "";
 		String loginUser = "";
@@ -222,31 +227,44 @@ public class Session extends JFrame {
 				});
 				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("SessionError1"));
 				System.exit(0);
+
 			} else {
-				loginDialog = setupVariantsToGetLoginDialog(fileName, loginUser, loginPassword);
-				if (loginDialog == null) {
-					System.exit(0);
-				} else {
-					if (loginDialog.userIsValidated()) {
+				application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage1"));
 
-						userID = loginDialog.getUserID();
-						userName = loginDialog.getUserName();
-						userEmployeeNo = loginDialog.getUserEmployeeNo();
-						userEmailAddress = loginDialog.getUserEmailAddress();
-						userMenus = loginDialog.getUserMenus();
+				if (parseSystemDefinition(fileName)) {
+					if (setupSessionVariants()) {
 
-						setupSessionAndMenus();
+						loginDialog = new DialogLogin(this, loginUser, loginPassword);
+						if (loginDialog.userIsValidated()) {
 
-						EventQueue.invokeLater(new Runnable() {
-							@Override public void run() {
-								application.hideSplash();
-							}
-						});
-						this.setVisible(true);
-					}else {
-						closeSession(false);
+							userID = loginDialog.getUserID();
+							userName = loginDialog.getUserName();
+							userEmployeeNo = loginDialog.getUserEmployeeNo();
+							userEmailAddress = loginDialog.getUserEmailAddress();
+							userMenus = loginDialog.getUserMenus();
+							processorVersion = "D" + DialogAbout.VERSION; //XEAD Driver Version//
+
+							application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2"));
+
+							writeLogAndStartSession();
+							setupMenusAndComponents();
+
+							EventQueue.invokeLater(new Runnable() {
+								@Override public void run() {
+									application.hideSplash();
+								}
+							});
+							this.setVisible(true);
+
+						}else {
+							closeSession(false);
+							System.exit(0);
+						}
+					} else {
 						System.exit(0);
 					}
+				} else {
+					System.exit(0);
 				}
 			}
 		} catch(ScriptException e) {
@@ -263,11 +281,46 @@ public class Session extends JFrame {
 		}
 	}
 
-	private DialogLogin setupVariantsToGetLoginDialog(String fileName, String user, String password) throws Exception {
-		////////////////////////////////////////////////////////////////
-		// Parse XML formatted data into DOM with file name requested //
-		////////////////////////////////////////////////////////////////
-		application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage1"));
+	///////////////////////////////////
+	// Construct WEB-Service Session //
+	///////////////////////////////////
+	public Session(String fileName, String version) throws Exception {
+		try {
+			isOnlineSession = false;
+
+			if (parseSystemDefinition(fileName)) {
+				if (setupSessionVariants()) {
+					userID = "00000";
+					userName = "Server Administrator";
+					userEmployeeNo = "";
+					userEmailAddress = "";
+					userMenus = "";
+					processorVersion = "S" + version; //XEAD Server Version//
+
+					writeLogAndStartSession();
+				} else {
+					noErrorsOccured = false;
+					closeSession(false);
+					System.exit(0);
+				}
+			} else {
+				noErrorsOccured = false;
+				closeSession(false);
+				System.exit(0);
+			}
+
+		} catch(Exception e) {
+			noErrorsOccured = false;
+			closeSession(false);
+			System.exit(0);
+			throw e;
+		}
+	}
+
+	////////////////////////////////////////////////////////////////
+	// Parse XML formatted data into DOM with file name requested //
+	////////////////////////////////////////////////////////////////
+	private boolean parseSystemDefinition(String fileName) throws Exception {
 		if (fileName.startsWith("http:")
 				|| fileName.startsWith("https:")
 				|| fileName.startsWith("file:")) {
@@ -275,38 +328,42 @@ public class Session extends JFrame {
 				URL url = new URL(fileName);
 				URLConnection connection = url.openConnection();
 				InputStream inputStream = connection.getInputStream();
-				DOMParser parser = new DOMParser();
-				parser.parse(new InputSource(inputStream));
-				domDocument = parser.getDocument();
+				//DOMParser parser = new DOMParser();
+				domParser.parse(new InputSource(inputStream));
+				domDocument = domParser.getDocument();
+				return true;
 			} catch (Exception e) {
 				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError2") + fileName + XFUtility.RESOURCE.getString("SessionError3") + "\n" + e.getMessage());
-				return null;
+				return false;
 			}
 		} else {
 			File xeafFile = new File(fileName);
 			if (xeafFile.exists()) {
 				currentFolder = xeafFile.getParent();
 				try {
-					DOMParser parser = new DOMParser();
-					parser.parse(new InputSource(new FileInputStream(fileName)));
-					domDocument = parser.getDocument();
+					//DOMParser parser = new DOMParser();
+					domParser.parse(new InputSource(new FileInputStream(fileName)));
+					domDocument = domParser.getDocument();
+					return true;
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError2") + fileName + XFUtility.RESOURCE.getString("SessionError3") + "\n" + e.getMessage());
-					return null;
+					return false;
 				}
 			} else {
 				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError21") + fileName + XFUtility.RESOURCE.getString("SessionError22"));
-				return null;
+				return false;
 			}
 		}
+	}
 
-		////////////////////////////////////////////////////////////
-		// Extract various elements of system definition from DOM //
-		////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////
+	// Setup session variants according to system definition //
+	///////////////////////////////////////////////////////////
+	private boolean setupSessionVariants() throws Exception {
 		NodeList nodeList = domDocument.getElementsByTagName("System");
 		org.w3c.dom.Element element = (org.w3c.dom.Element)nodeList.item(0);
 		systemName = element.getAttribute("Name");
-		version = element.getAttribute("Version");
+		systemVersion = element.getAttribute("Version");
 		welcomePageURL = element.getAttribute("WelcomePageURL");
 		dateFormat = element.getAttribute("DateFormat");
 		calendar.setLenient(false);
@@ -418,7 +475,7 @@ public class Session extends JFrame {
 				} else {
 					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + databaseName + XFUtility.RESOURCE.getString("SessionError7") + e.getMessage());
 				}
-				return null;
+				return false;
 			}
 		}
 
@@ -448,6 +505,60 @@ public class Session extends JFrame {
 			baseFontMap.put(wrkStr, baseFont);
 		}
 
+		/////////////////////////////
+		// Setup MD5-Hash Digester //
+		/////////////////////////////
+		digestAdapter = new DigestAdapter("MD5");
+
+		////////////////////////////////////////
+		// Return if variants setup succeeded //
+		////////////////////////////////////////
+		return true;
+	}
+
+	private void writeLogAndStartSession() throws ScriptException, Exception {
+
+		/////////////////////////////////
+		// Setup session no and status //
+		/////////////////////////////////
+		sessionID = this.getNextNumber("NRSESSION");
+		sessionStatus = "ACT";
+
+		//////////////////////////////////////////
+		// insert a new record to session table //
+		//////////////////////////////////////////
+		String sql = "insert into " + sessionTable
+		+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, VLVERSION, KBSESSIONSTATUS) values ("
+		+ "'" + sessionID + "'," + "'" + userID + "'," + "CURRENT_TIMESTAMP,"
+		+ "'" + getIpAddress() + "','" + processorVersion + "','" + sessionStatus + "')";
+		XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+		operator.execute();
+
+		//////////////////////////////////////
+		// setup off date list for calendar //
+		//////////////////////////////////////
+		operator = new XFTableOperator(this, null, "select * from " + calendarTable, true);
+		while (operator.next()) {
+			offDateList.add(operator.getValueOf("KBCALENDAR").toString() + ";" +operator.getValueOf("DTOFF").toString());
+		}
+
+		/////////////////////////////
+		// setup function launcher //
+		/////////////////////////////
+		functionLauncher = new FunctionLauncher(this);
+
+		////////////////////////////////////////////////////
+		// setup global bindings and execute login-script //
+		////////////////////////////////////////////////////
+		globalScriptBindings = scriptEngineManager.getBindings();
+		globalScriptBindings.put("session", this);
+		scriptEngine = scriptEngineManager.getEngineByName("js");
+		if (!loginScript.equals("")) {
+			scriptEngine.eval(loginScript);
+		}
+	}
+
+	private void setupMenusAndComponents() throws Exception {
 		jTabbedPaneMenu.setFont(new java.awt.Font("SansSerif", 0, 14));
 		jTabbedPaneMenu.addKeyListener(new Session_keyAdapter(this));
 		jTabbedPaneMenu.requestFocus();
@@ -560,7 +671,7 @@ public class Session extends JFrame {
 		jSplitPane1.add(jScrollPaneMessages, JSplitPane.BOTTOM);
 
 		this.enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		this.setTitle(systemName + " " + version);
+		this.setTitle(systemName + " " + systemVersion);
 		imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
 		this.setIconImage(imageTitle);
 		screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -596,41 +707,7 @@ public class Session extends JFrame {
 			}
 		}
 
-		digestAdapter = new DigestAdapter("MD5");
 		modifyPasswordDialog = new DialogModifyPassword(this);
-
-		/////////////////////////
-		// Return Login Dialog //
-		/////////////////////////
-		return new DialogLogin(this, user, password);
-	}
-
-	private void setupSessionAndMenus() throws ScriptException, Exception {
-		application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2"));
-
-		/////////////////////////////////
-		// Setup session no and status //
-		/////////////////////////////////
-		sessionID = this.getNextNumber("NRSESSION");
-		sessionStatus = "ACT";
-
-		//////////////////////////////////////////
-		// insert a new record to session table //
-		//////////////////////////////////////////
-		String sql = "insert into " + sessionTable
-		+ " (NRSESSION, IDUSER, DTLOGIN, TXIPADDRESS, VLVERSION, KBSESSIONSTATUS) values ("
-		+ "'" + sessionID + "'," + "'" + userID + "'," + "CURRENT_TIMESTAMP,"
-		+ "'" + getIpAddress() + "','" + DialogAbout.VERSION + "','" + sessionStatus + "')";
-		XFTableOperator operator = new XFTableOperator(this, null, sql, true);
-		operator.execute();
-
-		//////////////////////////////////////
-		// setup off date list for calendar //
-		//////////////////////////////////////
-		operator = new XFTableOperator(this, null, "select * from " + calendarTable, true);
-		while (operator.next()) {
-			offDateList.add(operator.getValueOf("KBCALENDAR").toString() + ";" +operator.getValueOf("DTOFF").toString());
-		}
 
 		///////////////////////////////////////////////
 		// Setup elements on menu and show first tab //
@@ -649,16 +726,9 @@ public class Session extends JFrame {
 		}
 		setupOptionsOfMenuWithTabNo(0);
 
-		////////////////////////////////////////////////////
-		// setup global bindings and execute login-script //
-		////////////////////////////////////////////////////
-		globalScriptBindings = scriptEngineManager.getBindings();
-		globalScriptBindings.put("session", this);
-		scriptEngine = scriptEngineManager.getEngineByName("js");
-		if (!loginScript.equals("")) {
-			scriptEngine.eval(loginScript);
-		}
-
+		//////////////////////////////
+		// setup calendar component //
+		//////////////////////////////
 		xfCalendar = new XFCalendar(this);
 
 		/////////////////////////////////////////////////////////
@@ -1703,7 +1773,7 @@ public class Session extends JFrame {
 		return resultYear + resultMonth;
 	}
 
-	void closeSession(boolean isToWriteLogAndClose) {
+	public void closeSession(boolean isToWriteLogAndClose) {
 
 		///////////////////////
 		// Write session log //
@@ -1842,7 +1912,7 @@ public class Session extends JFrame {
 		}
 	}
 
-	int writeLogOfFunctionStarted(String functionID, String functionName) {
+	public int writeLogOfFunctionStarted(String functionID, String functionName) {
 		sqProgram++;
 		try {
 			String sql = "insert into " + sessionDetailTable
@@ -1856,7 +1926,7 @@ public class Session extends JFrame {
 		return sqProgram;
 	}
 
-	void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String tableOperationLog, String errorLog) {
+	public void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String tableOperationLog, String errorLog) {
 		String logString = "";
 		StringBuffer bf = new StringBuffer();
 
@@ -2084,15 +2154,17 @@ public class Session extends JFrame {
 		private XFExecutable lastPanelFunction = null;
 
 		public FunctionLauncher(Session session) {
-			xF000[0] = new XF000(session, 0);
-			xF100[0] = new XF100(session, 0);
-			xF110[0] = new XF110(session, 0);
-			xF200[0] = new XF200(session, 0);
-			xF290[0] = new XF290(session, 0);
-			xF300[0] = new XF300(session, 0);
-			xF310[0] = new XF310(session, 0);
-			xF390[0] = new XF390(session, 0);
 			session_ = session;
+			xF000[0] = new XF000(session, 0);
+			if (session_.isOnlineSession) {
+				xF100[0] = new XF100(session, 0);
+				xF110[0] = new XF110(session, 0);
+				xF200[0] = new XF200(session, 0);
+				xF290[0] = new XF290(session, 0);
+				xF300[0] = new XF300(session, 0);
+				xF310[0] = new XF310(session, 0);
+				xF390[0] = new XF390(session, 0);
+			}
 		}
 
 		public HashMap<String, Object> execute(String functionID, HashMap<String, Object> parmMap) {
@@ -2480,10 +2552,6 @@ public class Session extends JFrame {
 		}
 	}
 
-	//public HttpClient getHttpClient() {
-	//	return httpClient;
-	//}
-
 	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
 		ReferChecker checker = null;
 		org.w3c.dom.Element element = getTableElement(tableID);
@@ -2516,8 +2584,8 @@ public class Session extends JFrame {
 			String contentType = httpResponse.getEntity().getContentType().getValue();
 			if (contentType.contains("text/xml")) {
 				inputStream = httpResponse.getEntity().getContent();
-				responseDocParser.parse(new InputSource(inputStream));
-				response = responseDocParser.getDocument();
+				domParser.parse(new InputSource(inputStream));
+				response = domParser.getDocument();
 			}
 			if (contentType.contains("application/json")) {
 				String text = EntityUtils.toString(httpResponse.getEntity());
@@ -2542,50 +2610,58 @@ public class Session extends JFrame {
 		}
 		return response;
 	}
-
-	public Object requestWebService(String uriText, Object document, String requestContentType) {
-		Object response = null;
-		HttpResponse httpResponse = null;
-		InputStream inputStream = null;
-		HttpClient httpClient = new DefaultHttpClient();
-		try {
-			HttpPost httpPost = new HttpPost();
-			httpPost.setURI(new URI(uriText));
-			if (requestContentType != null && !requestContentType.equals("")) {
-				httpPost.setHeader("Content-Type", requestContentType);
-			}
-			httpPost.setEntity(new StringEntity(document.toString()));
-			httpResponse = httpClient.execute(httpPost);  
-			String responseContentType = httpResponse.getEntity().getContentType().getValue();
-			if (responseContentType.contains("text/xml")) {
-				inputStream = httpResponse.getEntity().getContent();
-				responseDocParser.parse(new InputSource(inputStream));
-				response = responseDocParser.getDocument();
-			}
-			if (responseContentType.contains("application/json")) {
-				String text = EntityUtils.toString(httpResponse.getEntity());
-				if (text.startsWith("[")) {
-					response = new JSONArray(text);
-				} else {
-					response = new JSONObject(text);
-				}
-			}
-			if (responseContentType.contains("text/plain")) {
-				response = EntityUtils.toString(httpResponse.getEntity());
-			}
-		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
-		} finally {
-			httpClient.getConnectionManager().shutdown();
-			try {
-				if (inputStream != null) {
-					inputStream.close();
-				}
-			} catch(Exception e) {}
-		}
-		return response;
-	}
 	
+	public XFHttpRequest createServiceRequest(String uri) {
+		return new XFHttpRequest(uri, domParser);
+	}
+
+//	public Object requestWebService(String uriText, Object document, String requestContentType) {
+//		Object response = null;
+//		HttpResponse httpResponse = null;
+//		InputStream inputStream = null;
+//		HttpClient httpClient = new DefaultHttpClient();
+//		try {
+//			HttpPost httpPost = new HttpPost();
+//			httpPost.setURI(new URI(uriText));
+//			if (requestContentType != null && !requestContentType.equals("")) {
+//				httpPost.setHeader("Content-Type", requestContentType);
+//			}
+//			httpPost.setEntity(new StringEntity(document.toString()));
+//			httpResponse = httpClient.execute(httpPost);  
+//			String responseContentType = httpResponse.getEntity().getContentType().getValue();
+//			if (responseContentType.contains("text/xml")) {
+//				inputStream = httpResponse.getEntity().getContent();
+//				responseDocParser.parse(new InputSource(inputStream));
+//				response = responseDocParser.getDocument();
+//			}
+//			if (responseContentType.contains("application/json")) {
+//				String text = EntityUtils.toString(httpResponse.getEntity());
+//				if (text.startsWith("[")) {
+//					response = new JSONArray(text);
+//				} else {
+//					response = new JSONObject(text);
+//				}
+//			}
+//			if (responseContentType.contains("text/plain")) {
+//				response = EntityUtils.toString(httpResponse.getEntity());
+//			}
+//		} catch (Exception ex) {
+//			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
+//		} finally {
+//			httpClient.getConnectionManager().shutdown();
+//			try {
+//				if (inputStream != null) {
+//					inputStream.close();
+//				}
+//			} catch(Exception e) {}
+//		}
+//		return response;
+//	}
+	
+	public Document parseStringToGetXmlDocument(String data) throws Exception {
+		domParser.parse(data);
+		return domParser.getDocument();
+	}
 	public Document createXmlDocument() throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 	    DocumentBuilder db = dbf.newDocumentBuilder();
@@ -2647,6 +2723,21 @@ public class Session extends JFrame {
 	public JSONObject getJsonObject(JSONArray array, int index) throws Exception {
 		return array.getJSONObject(index);
 	}
+	
+	public String getDigestedValue(String value, String algorithm) {
+		String digestedValue = "";
+		if (algorithm.equals("MD5")) {
+			digestedValue = digestAdapter.digest(value);
+		} else {
+			try {
+				DigestAdapter adapter = new DigestAdapter(algorithm);
+				digestedValue = adapter.digest(value);
+			} catch (NoSuchAlgorithmException e) {
+				return digestedValue;
+			}
+		}
+		return digestedValue;
+	}
 
 	public String getAddressFromZipNo(String zipNo) {
 		String value = "";
@@ -2658,8 +2749,8 @@ public class Session extends JFrame {
 			response = httpClient.execute(httpGet);  
 			if (response.getStatusLine().getStatusCode() < 400){
 				inputStream = response.getEntity().getContent();
-				responseDocParser.parse(new InputSource(inputStream));
-				responseDoc = responseDocParser.getDocument();
+				domParser.parse(new InputSource(inputStream));
+				responseDoc = domParser.getDocument();
 				org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("groovewebservice").item(0);
 				if (rootNode.getElementsByTagName("address").getLength() == 0) {
 					JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage54") + "\n" + zipNo);
@@ -2897,7 +2988,7 @@ public class Session extends JFrame {
 	}
 
 	String getVersion() {
-		return version;
+		return systemVersion;
 	}
 
 	String getTableNameOfUser() {

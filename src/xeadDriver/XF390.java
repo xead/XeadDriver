@@ -1368,10 +1368,10 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 						if (fmt.equals("")) {
 							fmt = session_.getDateFormat();
 						}
-						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(value)), fmt, false);
+						wrkStr = value.toString().substring(0, 10);
+						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(wrkStr)), fmt, false);
 					}
 					if (basicType.equals("INTEGER")) {
-						//value = XFUtility.getEditValueOfInteger(Integer.parseInt(value), fmt, headerFieldList.get(i).getDataSize());
 						if (headerFieldList.get(i).getDataTypeOptionList().contains("NO_EDIT")
 								|| headerFieldList.get(i).getDataTypeOptionList().contains("ZERO_SUPPRESS")) {
 							value = XFUtility.getFormattedIntegerValue(value, headerFieldList.get(i).getDataTypeOptionList(), headerFieldList.get(i).getDataSize());
@@ -1380,7 +1380,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 						}
 					}
 					if (basicType.equals("FLOAT")) {
-						//value = XFUtility.getEditValueOfFloat(Float.parseFloat(value), fmt, headerFieldList.get(i).getDecimalSize());
 						value = XFUtility.getEditValueOfDouble(Double.parseDouble(value), fmt, headerFieldList.get(i).getDecimalSize());
 					}
 					if (headerFieldList.get(i).getDataTypeOptionList().contains("YMONTH") || headerFieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
@@ -1454,7 +1453,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 }
 
 class XF390_HeaderField extends XFColumnScriptable {
-	private static final long serialVersionUID = 1L;
 	org.w3c.dom.Element tableElement = null;
 	private String dataSourceName_ = "";
 	private String tableID_ = "";
@@ -1567,7 +1565,7 @@ class XF390_HeaderField extends XFColumnScriptable {
 			}
 		}
 		//
-		xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, "");
+		xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, "", dialog_.getSession().systemFont);
 		xFTextField.setLocation(5, 0);
 		component = xFTextField;
 	}
@@ -1810,7 +1808,6 @@ class XF390_HeaderField extends XFColumnScriptable {
 }
 
 class XF390_Phrase extends Object {
-	private static final long serialVersionUID = 1L;
 	org.w3c.dom.Element phraseElement_ = null;
 	private String block = "";
 	private String alignment = "";
@@ -1980,7 +1977,6 @@ class XF390_Phrase extends Object {
 }
 
 class XF390_HeaderTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element functionElement_ = null;
 	private String tableID = "";
@@ -2176,7 +2172,6 @@ class XF390_HeaderTable extends Object {
 }
 
 class XF390_HeaderReferTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element referElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF390 dialog_ = null;
@@ -2475,7 +2470,6 @@ class XF390_HeaderReferTable extends Object {
 }
 
 class XF390_DetailTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element functionElement_ = null;
 	private String tableID_ = "";
@@ -2769,7 +2763,6 @@ class XF390_DetailTable extends Object {
 }
 
 class XF390_DetailColumn extends XFColumnScriptable {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element functionColumnElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF390 dialog_ = null;
@@ -3109,7 +3102,8 @@ class XF390_DetailColumn extends XFColumnScriptable {
 						if (editCode.equals("")) {
 							editCode = dialog_.getSession().getDateFormat();
 						}
-						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(value_.toString())), editCode, false);
+						String wrkStr = value_.toString().substring(0, 10);
+						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(wrkStr)), editCode, false);
 					}
 				} else {
 					if (basicType.equals("DATETIME")) {
@@ -3286,7 +3280,6 @@ class XF390_DetailColumn extends XFColumnScriptable {
 }
 
 class XF390_DetailReferTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element referElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF390 dialog_ = null;

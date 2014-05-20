@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2011 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Editor.
@@ -43,8 +43,8 @@ import javax.swing.undo.UndoManager;
 
 public class XFLongTextEditor extends JDialog {
 	private static final long serialVersionUID = 1L;
-	private static final int DIALOG_WIDTH = 500;
-	private static final int DIALOG_HEIGHT = 200;
+	private static final int DIALOG_WIDTH = 600;
+	private static final int DIALOG_HEIGHT = 300;
 	private JScrollPane jScrollPane = new JScrollPane();
 	private JTextArea jTextArea = new JTextArea();
 	private ArrayList<String> dataTypeOptionList_ = null;
@@ -61,9 +61,11 @@ public class XFLongTextEditor extends JDialog {
 		}
 	};
 	private UndoManager undoManager = new UndoManager();
+	private Session session_;
 	
 	public XFLongTextEditor(Session session) {
 		super(session, "", true);
+		session_ = session;
 		try {
 			init();
 		}
@@ -75,7 +77,7 @@ public class XFLongTextEditor extends JDialog {
 	private void init() throws Exception {
 		this.getContentPane().setLayout(new BorderLayout());
 		jTextArea.addFocusListener(new ComponentFocusListener());
-		jTextArea.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextArea.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextArea.getDocument().addUndoableEditListener(undoManager);
 		jScrollPane.getViewport().setView(jTextArea);
 		InputMap inputMap = jScrollPane.getInputMap(JSplitPane.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);

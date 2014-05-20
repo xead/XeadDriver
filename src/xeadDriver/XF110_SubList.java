@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -47,6 +47,7 @@ import java.util.EventObject;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
@@ -61,6 +62,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.hssf.util.CellRangeAddress;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.w3c.dom.*;
+
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -155,9 +157,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private ScriptEngine scriptEngine;
 	private Bindings scriptBindings;
 	private String scriptNameRunning = "";
-	private final int FIELD_HORIZONTAL_MARGIN = 1;
-	private final int FIELD_VERTICAL_MARGIN = 5;
-	private final int FONT_SIZE = 14;
+	//private final int FIELD_HORIZONTAL_MARGIN = 1;
+	//private final int FIELD_VERTICAL_MARGIN = 5;
+	//private final int FONT_SIZE = 14;
 	private boolean readyToShowDialog;
 	private boolean isInvalid = false;
 	private XF110 dialog_;
@@ -195,7 +197,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
-		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
+		jTextAreaMessages.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextAreaMessages.setFocusable(false);
 		jTextAreaMessages.setLineWrap(true);
 		jTextAreaMessages.setWrapStyleWord(true);
@@ -204,7 +206,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jPanelCenter.setBorder(null);
 		jPanelCenter.add(jScrollPaneTable, BorderLayout.CENTER);
 
-		jTableMain.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
+		jTableMain.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTableMain.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		jTableMain.setRowSelectionAllowed(false);
 		jTableMain.setFocusable(false);
@@ -274,11 +276,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setLayout(new BorderLayout());
 		jPanelBottom.setBorder(null);
-		jLabelFunctionID.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jLabelFunctionID.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jLabelFunctionID.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelFunctionID.setForeground(Color.gray);
 		jLabelFunctionID.setFocusable(false);
-		jLabelSessionID.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jLabelSessionID.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jLabelSessionID.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelSessionID.setForeground(Color.gray);
 		jLabelSessionID.setFocusable(false);
@@ -287,7 +289,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jPanelButtons.setFocusable(false);
 		gridLayoutInfo.setColumns(1);
 		gridLayoutInfo.setRows(2);
-		gridLayoutInfo.setVgap(4);
 		jPanelInfo.setLayout(gridLayoutInfo);
 		jPanelInfo.add(jLabelSessionID);
 		jPanelInfo.add(jLabelFunctionID);
@@ -296,11 +297,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jProgressBar.setString(XFUtility.RESOURCE.getString("ChrossCheck"));
 		gridLayoutButtons.setColumns(7);
 		gridLayoutButtons.setRows(1);
-		gridLayoutButtons.setHgap(2);
 
 		for (int i = 0; i < 7; i++) {
 			jButtonArray[i] = new JButton();
-			jButtonArray[i].setBounds(new Rectangle(0, 0, 90, 30));
+			jButtonArray[i].setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 			jButtonArray[i].setFocusable(false);
 			jButtonArray[i].addActionListener(new XF110_SubListFunctionButton_actionAdapter(this));
 			jPanelButtonArray[i] = new JPanel();
@@ -333,7 +333,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		//////////////////////////////
 		jLabelSessionID.setText(session_.getSessionID());
 		jLabelFunctionID.setText(dialog_.jLabelFunctionID.getText());
-		FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		FontMetrics metrics = jLabelFunctionID.getFontMetrics(jLabelFunctionID.getFont());
 		jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 		this.setTitle(functionElement_.getAttribute("Name"));
 		initialMsg = functionElement_.getAttribute("InitialMsg");
@@ -380,7 +380,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		headersRenderer = new TableHeadersRenderer(); 
 		cellsRenderer = new TableCellsRenderer(headersRenderer); 
 		cellsEditor = new TableCellsEditor(headersRenderer); 
-		jTableMain.setRowHeight(headersRenderer.getHeight());
+		jTableMain.setRowHeight(XFUtility.ROW_UNIT_HEIGHT_EDITABLE);
 		tableModelMain = new TableModelEditableList();
 		jTableMain.setModel(tableModelMain);
 		tableModelMain.addColumn(""); //column index:0 //
@@ -513,7 +513,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			}
 		}
 
-		setupFunctionKeysAndButtons();
+		//setupFunctionKeysAndButtons();
 	}
 	
 	private void setupBatchTableAndFieldsConfiguration() throws Exception {
@@ -563,15 +563,15 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			}
 			if (firstVisibleField) {
 				posX = 0;
-				posY = this.FIELD_VERTICAL_MARGIN + 3;
+				posY = XFUtility.FIELD_VERTICAL_MARGIN + 3;
 				firstVisibleField = false;
 				hasAnyBatchFields = true;
 			} else {
 				if (batchFieldList.get(i).isHorizontal()) {
-					posX = posX + dimOfPriviousField.width + batchFieldList.get(i).getPositionMargin() + this.FIELD_HORIZONTAL_MARGIN;
+					posX = posX + dimOfPriviousField.width + batchFieldList.get(i).getPositionMargin() + XFUtility.FIELD_HORIZONTAL_MARGIN;
 				} else {
 					posX = 0;
-					posY = posY + dimOfPriviousField.height+ batchFieldList.get(i).getPositionMargin() + this.FIELD_VERTICAL_MARGIN;
+					posY = posY + dimOfPriviousField.height+ batchFieldList.get(i).getPositionMargin() + XFUtility.FIELD_VERTICAL_MARGIN;
 				}
 			}
 			dim = batchFieldList.get(i).getPreferredSize();
@@ -601,20 +601,16 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			batchFunctionID = functionElement_.getAttribute("BatchRecordFunction");
 			jCheckBoxToExecuteBatchFunction.setSelected(true);
 			if (!functionElement_.getAttribute("BatchRecordFunctionMsg").equals("")) {
-				jCheckBoxToExecuteBatchFunction.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+				jCheckBoxToExecuteBatchFunction.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 				jCheckBoxToExecuteBatchFunction.setText(functionElement_.getAttribute("BatchRecordFunctionMsg"));
-				FontMetrics metrics = jCheckBoxToExecuteBatchFunction.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
+				FontMetrics metrics = jCheckBoxToExecuteBatchFunction.getFontMetrics(jCheckBoxToExecuteBatchFunction.getFont());
 				if (firstVisibleField) {
 					posX = 0;
-					posY = this.FIELD_VERTICAL_MARGIN + 3;
+					posY = XFUtility.FIELD_VERTICAL_MARGIN + 3;
 					firstVisibleField = false;
 					hasAnyBatchFields = true;
 				} else {
 					posX = posX + dimOfPriviousField.width + 50;
-					//if (posX > dialog_.getPreferredSize().width - 50) {
-					//	posX = 0;
-					//	posY = posY + dimOfPriviousField.height+ this.FIELD_VERTICAL_MARGIN;
-					//}
 				}
 				jCheckBoxToExecuteBatchFunction.setBounds(posX, posY + 1, metrics.stringWidth(jCheckBoxToExecuteBatchFunction.getText()) + 35, 20);
 				jPanelBatchFields.add(jCheckBoxToExecuteBatchFunction);
@@ -770,7 +766,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			} else {
 				jTextAreaMessages.setText(initialMsg);
 			}
-			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 125);
+			setupFunctionKeysAndButtons();
+			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 150);
 			jPanelBottom.remove(jProgressBar);
 			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 			this.pack();
@@ -1143,7 +1140,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 
 				workIndex = Integer.parseInt(element.getAttribute("Position"));
 				actionDefinitionArray[workIndex] = element.getAttribute("Action");
-				XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "");
+				XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8);
 				jButtonArray[workIndex].setVisible(true);
 
 				inputMapTableMain.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
@@ -1579,7 +1576,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		public TableHeadersRenderer() {
 			arrangeColumnsPosition(true);
 			centerPanel.setLayout(null);
-			numberLabel.setFont(new java.awt.Font("SansSerif", 0, 14));
+			numberLabel.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 			numberLabel.setBorder(new HeaderBorder());
 			numberLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			this.setLayout(new BorderLayout());
@@ -1674,7 +1671,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			for (int i = 0; i < detailColumnList.size(); i++) {
 				if (detailColumnList.get(i).isVisibleOnPanel()) {
 					header = new JLabel();
-					header.setFont(new java.awt.Font("SansSerif", 0, 14));
+					header.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 					if (detailColumnList.get(i).getValueType().equals("IMAGE")
 							|| detailColumnList.get(i).getValueType().equals("FLAG")) {
 						header.setHorizontalAlignment(SwingConstants.CENTER);
@@ -1690,7 +1687,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					header.setOpaque(true);
 
 					width = detailColumnList.get(i).getWidth();
-					height = XFUtility.ROW_UNIT_HEIGHT * detailColumnList.get(i).getRows();
+					height = XFUtility.ROW_UNIT_HEIGHT_EDITABLE * detailColumnList.get(i).getRows();
 					if (i > 0) {
 						fromX = headerList.get(i-1).getBounds().x + headerList.get(i-1).getBounds().width;
 						fromY = headerList.get(i-1).getBounds().y + headerList.get(i-1).getBounds().height;
@@ -1774,7 +1771,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 
 		public TableCellsRenderer(TableHeadersRenderer headersRenderer) {
 			headersRenderer_ = headersRenderer;
-			numberCell.setFont(new java.awt.Font("SansSerif", 0, 12));
+			numberCell.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 			numberCell.setBorder(new CellBorder());
 			numberCell.setHorizontalAlignment(SwingConstants.CENTER);
 			multiLinesPanel.setLayout(null);
@@ -1803,21 +1800,12 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			rowObject.setValuesToDetailColumns();
 			numberCell.setText(rowObject.getRowNumberString());
 			for (int i = 0; i < cellList.size(); i++) {
-				cellList.get(i).setFont(new java.awt.Font("Monospaced", 0, 14));
+				cellList.get(i).setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 				if (detailColumnList.get(i).getValueType().equals("IMAGE")
 							|| detailColumnList.get(i).getValueType().equals("FLAG")) {
 					cellList.get(i).setIcon((Icon)detailColumnList.get(i).getExternalValue());
 				} else {
 					cellList.get(i).setText((String)detailColumnList.get(i).getExternalValue());
-//					if (detailColumnList.get(i).getColor().equals(Color.black)) {
-//						if (isSelected) {
-//							cellList.get(i).setForeground(table.getSelectionForeground());
-//						} else {
-//							cellList.get(i).setForeground(table.getForeground());
-//						}
-//					} else {
-//						cellList.get(i).setForeground(Color.getColor(detailColumnList.get(i).getColor()));
-//					}
 					if (isSelected) {
 						cellList.get(i).setForeground(table.getSelectionForeground());
 					} else {
@@ -1848,7 +1836,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			multiLinesPanel.removeAll();
 			for (int i = 0; i < headersRenderer_.getColumnHeaderList().size(); i++) {
 				cell = new JLabel();
-				cell.setFont(new java.awt.Font("SansSerif", 0, 14));
+				cell.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 				cell.setHorizontalAlignment(headersRenderer_.getColumnHeaderList().get(i).getHorizontalAlignment());
 				rec = headersRenderer_.getColumnHeaderList().get(i).getBounds();
 				cell.setBounds(rec.x, rec.y, rec.width, rec.height);
@@ -1891,7 +1879,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			headersRenderer_ = headersRenderer;
 			numberCell.setBorder(new CellBorder());
 			numberCell.setHorizontalAlignment(SwingConstants.CENTER);
-			numberCell.setFont(new java.awt.Font("SansSerif", 0, 12));
+			numberCell.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 			numberCell.setOpaque(true);
 			multiLinesPanel.setLayout(null);
 			multiLinesPanel.setOpaque(false);
@@ -3117,19 +3105,13 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 		jLabelField.setText(fieldCaption);
 		jLabelField.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelField.setVerticalAlignment(SwingConstants.TOP);
-		jLabelField.setFont(new java.awt.Font("Dialog", 0, 14));
-		FontMetrics metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
+		jLabelField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		if (fieldOptionList.contains("CAPTION_LENGTH_VARIABLE")) {
+			FontMetrics metrics = jLabelField.getFontMetrics(jLabelField.getFont());
 			jLabelField.setPreferredSize(new Dimension(metrics.stringWidth(fieldCaption), XFUtility.FIELD_UNIT_HEIGHT));
 		} else {
-			jLabelField.setPreferredSize(new Dimension(120, XFUtility.FIELD_UNIT_HEIGHT));
-			if (metrics.stringWidth(fieldCaption) > 120) {
-				jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
-				metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-				if (metrics.stringWidth(fieldCaption) > 120) {
-					jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
-				}
-			}
+			jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+			XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
 		}
 
 		if (fieldOptionList.contains("PROMPT_LIST")) {
@@ -3166,17 +3148,17 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 						component.setLocation(5, 0);
 					} else {
 						if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-							component = new XFTextArea(dataSize, dataTypeOptions, fieldOptions);
+							component = new XFTextArea(dataSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 							component.setLocation(5, 0);
 							component.setEditable(false);
 						} else {
 							if (dataTypeOptionList.contains("URL")) {
-								component = new XFUrlField(dataSize, fieldOptions);
+								component = new XFUrlField(dataSize, fieldOptions, dialog_.getSession().systemFont);
 								component.setLocation(5, 0);
 								component.setEditable(false);
 							} else {
 								if (dataTypeOptionList.contains("IMAGE")) {
-									component = new XFImageField(fieldOptions, dataSize, dialog_.getSession().getImageFileFolder());
+									component = new XFImageField(fieldOptions, dataSize, dialog_.getSession().getImageFileFolder(), dialog_.getSession().systemFont);
 									component.setLocation(5, 0);
 									isImage = true;
 								} else {
@@ -3200,7 +3182,7 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 													component.setLocation(5, 0);
 													component.setEditable(false);
 												} else {
-													component = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions);
+													component = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 													component.setLocation(5, 0);
 													component.setEditable(false);
 												}
@@ -3245,16 +3227,16 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 		if (!wrkStr.equals("")) {
 			jLabelFieldComment.setText(" " + wrkStr);
 			jLabelFieldComment.setForeground(Color.blue);
-			jLabelFieldComment.setFont(new java.awt.Font("Dialog", 0, 12));
+			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
-			metrics = jLabelFieldComment.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
+			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 6, this.getPreferredSize().height));
 		}
 
 		if (dataTypeOptionList.contains("ZIPADRS")) {
 			jButtonToRefferZipNo = new JButton();
 			jButtonToRefferZipNo.setText("<");
-			jButtonToRefferZipNo.setFont(new java.awt.Font("SansSerif", 0, 9));
+			jButtonToRefferZipNo.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 			jButtonToRefferZipNo.setPreferredSize(new Dimension(37, this.getPreferredSize().height));
 			jButtonToRefferZipNo.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -3283,7 +3265,6 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 			});
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + 34, this.getPreferredSize().height));
 		}
-
 		if (jButtonToRefferZipNo != null || jLabelFieldComment != null) {
 			jPanelFieldComment = new JPanel();
 			jPanelFieldComment.setLayout(new BorderLayout());
@@ -3310,8 +3291,6 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 		}
 		this.setToolTipText(wrkStr);
 		component.setToolTipText(wrkStr);
-
-		//dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XF110_SubListBatchField(String tableID, String tableAlias, String fieldID, XF110_SubList dialog){
@@ -3378,7 +3357,7 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 			}
 		}
 
-		component = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions);
+		component = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 		component.setLocation(5, 0);
 		component.setEditable(false);
 
@@ -3394,8 +3373,6 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
 		}
-
-		//dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 	}
 
 	public XFEditableField getComponent() {
@@ -3405,19 +3382,6 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 	public void setRefferComponent(XFEditableField compo) {
 		refferComponent = compo;
 	}
-
-//	public void checkPromptKeyEdit(){
-//		if (!XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL").equals("")) {
-//			if (((XF110_SubListBatchPromptCall)component).hasEditControlledKey()) {
-//				this.setEditable(false);
-//			}
-//		}
-//		if (fieldOptionList.contains("PROMPT_LIST")) {
-//			if (((XF110_SubListBatchComboBox)component).hasEditControlledKey()) {
-//				this.setEditable(false);
-//			}
-//		}
-//	}
 
 	public boolean isPromptListField(){
 		return fieldOptionList.contains("PROMPT_LIST");
@@ -3759,7 +3723,7 @@ class XF110_SubListCellEditorWithTextField extends XFTextField implements XFTabl
 	private XF110_SubList dialog_ = null;
 
 	public XF110_SubListCellEditorWithTextField(XF110_SubListDetailColumn detailColumn, XF110_SubList dialog) {
-		super(detailColumn.getBasicType(), detailColumn.getDataSize(), detailColumn.getDecimalSize(), detailColumn.getDataTypeOptions(), detailColumn.getFieldOptions());
+		super(detailColumn.getBasicType(), detailColumn.getDataSize(), detailColumn.getDecimalSize(), detailColumn.getDataTypeOptions(), detailColumn.getFieldOptions(), dialog.getSession().systemFont);
 		dialog_ = dialog;
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.setEditable(true);
@@ -3897,7 +3861,7 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 		jTextField.setOpaque(true);
 		jTextField.setBorder(null);
 		jTextField.setEditable(false);
-		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF310.class.getResource("prompt.png"));
 	 	jButton.setIcon(imageIcon);
@@ -3994,8 +3958,8 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 		int minimumYear = currentYear - 10;
 		int maximumYear = currentYear + 10;
 
-		jComboBoxYear.setFont(new java.awt.Font("Dialog", 0, 11));
-		jComboBoxYear.setBounds(new Rectangle(-1, 0, 50, XFUtility.ROW_UNIT_HEIGHT));
+		jComboBoxYear.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
+		jComboBoxYear.setBounds(new Rectangle(0, 0, 70, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		jComboBoxYear.addItem("");
 		for (int i = minimumYear; i <= maximumYear; i++) {
 			jComboBoxYear.addItem(String.valueOf(i));
@@ -4010,8 +3974,8 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 			}
 		});
-		jComboBoxMonth.setFont(new java.awt.Font("Dialog", 0, 11));
-		jComboBoxMonth.setBounds(new Rectangle(48, 0, 38, XFUtility.ROW_UNIT_HEIGHT));
+		jComboBoxMonth.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
+		jComboBoxMonth.setBounds(new Rectangle(70, 0, 50, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		jComboBoxMonth.addItem("");
 		jComboBoxMonth.addItem("01");
 		jComboBoxMonth.addItem("02");
@@ -4034,11 +3998,11 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 			}
 		});
-		jLabel.setFont(new java.awt.Font("Monospaced", 0, 14));
+		jLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jLabel.setBackground(SystemColor.control);
-		jLabel.setBounds(new Rectangle(0, 0, 85, XFUtility.ROW_UNIT_HEIGHT));
+		jLabel.setBounds(new Rectangle(0, 0, 120, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 
-		this.setSize(new Dimension(85, XFUtility.ROW_UNIT_HEIGHT));
+		this.setSize(new Dimension(120, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.addFocusListener(new java.awt.event.FocusAdapter() {
 			public void focusGained(FocusEvent e) {
@@ -4145,7 +4109,6 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 class XF110_SubListCellEditorWithImageField extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
 	private JLabel jLabel = new JLabel();
-	//private JButton jButton = new JButton(XFUtility.RESOURCE.getString("Edit"));
 	private JButton jButton = new JButton();
 	private XF110_SubList dialog_ = null;
 	private String imageFileName_ = "";
@@ -4239,8 +4202,7 @@ class XF110_SubListCellEditorWithFYearBox extends JPanel implements XFTableColum
 		int minimumYear = currentYear - 10;
 		int maximumYear = currentYear + 10;
 
-		jComboBoxYear.setFont(new java.awt.Font("Dialog", 0, 11));
-		jComboBoxYear.setBounds(new Rectangle(-1, 0, 50, 17));
+		jComboBoxYear.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBoxYear.addItem("");
 		for (int i = minimumYear; i <= maximumYear; i++) {
 			jComboBoxYear.addItem(String.valueOf(i));
@@ -4255,10 +4217,10 @@ class XF110_SubListCellEditorWithFYearBox extends JPanel implements XFTableColum
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 			}
 		});
-		jLabel.setFont(new java.awt.Font("Monospaced", 0, 14));
+		jLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jLabel.setBackground(SystemColor.control);
 
-		this.setSize(new Dimension(50, 17));
+		this.setSize(new Dimension(70, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.addFocusListener(new java.awt.event.FocusAdapter() {
 			public void focusGained(FocusEvent e) {
@@ -4358,7 +4320,7 @@ class XF110_SubListCellEditorWithMSeqBox extends JPanel implements XFTableColumn
 		language = dialog_.getSession().getDateFormat().substring(0, 2);
 		startMonth = dialog_.getSession().getSystemVariantInteger("FIRST_MONTH");
 
-		jComboBoxMSeq.setFont(new java.awt.Font("Dialog", 0, 12));
+		jComboBoxMSeq.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBoxMSeq.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
@@ -4382,8 +4344,8 @@ class XF110_SubListCellEditorWithMSeqBox extends JPanel implements XFTableColumn
 		listMSeq.add(11);
 		listMSeq.add(12);
 		if (language.equals("en")) {
-			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 50, XFUtility.FIELD_UNIT_HEIGHT));
-			this.setSize(new Dimension(50, XFUtility.FIELD_UNIT_HEIGHT));
+			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 70, XFUtility.FIELD_UNIT_HEIGHT));
+			this.setSize(new Dimension(70, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMSeq.addItem("");
 			for (int i = startMonth -1; i < startMonth + 11; i++) {
 				jComboBoxMSeq.addItem(monthArrayEn[i]);
@@ -4391,14 +4353,14 @@ class XF110_SubListCellEditorWithMSeqBox extends JPanel implements XFTableColumn
 		}
 
 		if (language.equals("jp")) {
-			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 62, XFUtility.FIELD_UNIT_HEIGHT));
-			this.setSize(new Dimension(62, XFUtility.FIELD_UNIT_HEIGHT));
+			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
+			this.setSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMSeq.addItem("");
 			for (int i = startMonth -1; i < startMonth + 11; i++) {
 				jComboBoxMSeq.addItem(monthArrayJp[i]);
 			}
 		}
-		jLabel.setFont(new java.awt.Font("Monospaced", 0, 14));
+		jLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jLabel.setBackground(SystemColor.control);
 
 		this.setBorder(BorderFactory.createEmptyBorder());
@@ -4546,6 +4508,7 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 			}
 		}
 
+		jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jComboBox.setFocusable(false);
 		jComboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
@@ -4557,13 +4520,12 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 				setupRecordList();
 			}
 		});
-		jLabel.setFont(new java.awt.Font("Monospaced", 0, 14));
+		jLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jLabel.setBackground(SystemColor.control);
 
 		this.addFocusListener(new java.awt.event.FocusAdapter() {
 			public void focusGained(FocusEvent e) {
 				dialog_.getCellsEditor().updateActiveColumnIndex();
-				//jComboBox.requestFocus();
 			}
 		});
 		this.setLayout(new BorderLayout());
@@ -4608,7 +4570,6 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 						if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
 							if (dialog_.getDetailColumnList().get(j).isNullable()) {
 								blankItemRequired = true;
-								//blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getNullValue());
 								if (dialog_.getDetailColumnList().get(j).isVisibleOnPanel()) {
 									blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getValue());
 								} else {
@@ -4753,8 +4714,7 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 		jTextField = new JTextField();
 		jTextField.setOpaque(true);
 		jTextField.setBorder(null);
-		//jTextField.setEditable(false);
-		jTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
+		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 
 		StringTokenizer workTokenizer = new StringTokenizer(fieldElement_.getAttribute("DataSource"), "." );
 		tableAlias = workTokenizer.nextToken();
@@ -4892,24 +4852,8 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 	public boolean isEditable() {
 		return jButton.isEnabled();
 	}
-	
-//	public boolean hasEditControlledKey() {
-//		boolean anyOfKeysAreEditControlled = false;
-//		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
-//			for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
-//				if (fieldsToGetToList_.get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
-//					if (!dialog_.getDetailColumnList().get(j).isEditable() && dialog_.getDetailTable().getTableID().equals(dialog_.getDetailColumnList().get(j).getTableAlias())) {
-//						anyOfKeysAreEditControlled = true;
-//						break;
-//					}
-//				}
-//			}
-//		}
-//		return anyOfKeysAreEditControlled;
-//	}
 
 	public Object getInternalValue() {
-		//return jTextField.getText();
 		String text = "";
 		String basicType = XFUtility.getBasicTypeOf(dataType);
 		if (basicType.equals("INTEGER")
@@ -4953,7 +4897,6 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 }
 	
 class XF110_SubListDetailRowNumber extends Object {
-	private static final long serialVersionUID = 1L;
 	private int number_;
 	private HashMap<String, Object> keyValueMap_;
 	private HashMap<String, Object> columnValueMapWithDSName_;
@@ -4966,7 +4909,6 @@ class XF110_SubListDetailRowNumber extends Object {
 		number_ = num;
 		keyValueMap_ = keyMap;
 		columnValueMapWithDSName_ = columnValueMap;
-		//columnOldValueMapWithDSName_ = (HashMap<String, Object>)columnMap.clone();
 		columnOldValueMapWithDSName_ = columnOldValueMap;
 		columnEditableMapWithDSName_ = columnEditableMap;
 		dialog_ = dialog;
@@ -5058,7 +5000,6 @@ class XF110_SubListDetailRowNumber extends Object {
 					setErrorOnCellAt(i);
 				}
 				rowNumber = this.getRowIndex() + 1;
-				//messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
 				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()) {
 					messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2") + dialog_.getDetailColumnList().get(i).getError());
 				} else {
@@ -5115,7 +5056,6 @@ class XF110_SubListDetailRowNumber extends Object {
 }
 
 class XF110_SubListDetailColumn extends XFColumnScriptable {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element functionColumnElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF110_SubList dialog_ = null;
@@ -5173,9 +5113,6 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		isVisibleOnPanel = true;
 		if (tableID_.equals(dialog_.getDetailTable().getTableID()) && tableAlias_.equals(tableID_)) {
 			isFieldOnDetailTable = true;
-			//if (fieldOptionList.contains("LIST1")) {
-			//	isVisibleOnPanel = false;
-			//}
 			ArrayList<String> keyNameList = dialog_.getDetailTable().getKeyFieldIDList();
 			for (int i = 0; i < keyNameList.size(); i++) {
 				if (keyNameList.get(i).equals(fieldID_)) {
@@ -5185,13 +5122,9 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 				}
 			}
 		} else {
-			//if (fieldOptionList.contains("LIST1")) {
-			//	isVisibleOnPanel = false;
-			//} else {
-				if (!fieldOptionList.contains("PROMPT_LIST")) {
-					isNonEditableField = true;
-				}
-			//}
+			if (!fieldOptionList.contains("PROMPT_LIST")) {
+				isNonEditableField = true;
+			}
 		}
 
 		org.w3c.dom.Element workElement = dialog.getSession().getFieldElement(tableID_, fieldID_);
@@ -5238,7 +5171,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		}
 
 		JLabel jLabel = new JLabel();
-		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
+		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
 
 		ArrayList<String> fieldOptionList = XFUtility.getOptionList(fieldOptions);
@@ -5255,7 +5188,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 				flagTrue = workTokenizer.nextToken();
 			}
 			valueType = "FLAG";
-			fieldWidth = 20;
+			fieldWidth = 25;
 			editor = new XF110_SubListCellEditorWithCheckBox(dataTypeOptions, dialog_);
 		} else {
 			if (fieldOptionList.contains("PROMPT_LIST")) {
@@ -5270,18 +5203,18 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 					}
 				}
 				if (dataTypeOptionList.contains("KANJI")) {
-					fieldWidth = dataSize * 14 + 5;
+					fieldWidth = dataSize * XFUtility.FONT_SIZE + 5;
 				} else {
-					fieldWidth = dataSize * 7 + 15;
+					fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
 				}
 				editor = new XF110_SubListCellEditorWithComboBox(functionColumnElement_.getAttribute("DataSource"), dataTypeOptions, dialog_, referTable, isNullable);
 			} else {
 				wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 				if (!wrkStr.equals("")) {
 					if (dataTypeOptionList.contains("KANJI")) {
-						fieldWidth = dataSize * 14 + 5;
+						fieldWidth = dataSize * XFUtility.FONT_SIZE + 5;
 					} else {
-						fieldWidth = dataSize * 7 + 12;
+						fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
 					}
 					editor = new XF110_SubListCellEditorWithPromptCall(functionColumnElement_, wrkStr, dialog_);
 					wrkStr = XFUtility.getOptionValueWithKeyword(wrkStr, "PROMPT_CALL_TO_GET_TO");
@@ -5315,27 +5248,27 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 					} else {
 						if ((dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS"))
 								&& !dataType.equals("VARCHAR") && !dataType.equals("LONG VARCHAR")) {
-							fieldWidth = dataSize * 14 + 5;
+							fieldWidth = dataSize * XFUtility.FONT_SIZE + 5;
 							editor = new XF110_SubListCellEditorWithTextField(this, dialog_);
 						} else {
 							if (dataTypeOptionList.contains("YMONTH")) {
-								fieldWidth = 85;
+								fieldWidth = 100;
 								editor = new XF110_SubListCellEditorWithYMonthBox(dialog_);
 							} else {
 								if (dataTypeOptionList.contains("MSEQ")) {
-									fieldWidth = 70;
+									fieldWidth = 80;
 									editor = new XF110_SubListCellEditorWithMSeqBox(dialog_);
 								} else {
 									if (dataTypeOptionList.contains("FYEAR")) {
-										fieldWidth = 60;
+										fieldWidth = 100;
 										editor = new XF110_SubListCellEditorWithFYearBox(dialog_);
 									} else {
 										if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-											fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * 7 + 21;
+											fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
 											editor = new XF110_SubListCellEditorWithTextField(this, dialog_);
 										} else {
 											if (basicType.equals("DATE")) {
-												fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), 14);
+												fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
 												editor = new XF110_SubListCellEditorWithDateField(dialog_);
 											} else {
 												if (dataTypeOptionList.contains("IMAGE")) {
@@ -5345,11 +5278,10 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 													editor = new XF110_SubListCellEditorWithImageField(dialog_);
 												} else {
 													if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-														fieldWidth = 320;
+														fieldWidth = 400;
 														editor = new XF110_SubListCellEditorWithLongTextEditor(fieldCaption, dataTypeOptionList, dialog_);
-
 													} else {
-														fieldWidth = dataSize * 7 + 15;
+														fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
 														editor = new XF110_SubListCellEditorWithTextField(this, dialog_);
 													}
 												}
@@ -5366,8 +5298,8 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 
 		isEditable = !isNonEditableField;
 
-		if (fieldWidth > 320) {
-			fieldWidth = 320;
+		if (fieldWidth > 400) {
+			fieldWidth = 400;
 		}
 		if (captionWidth > fieldWidth) {
 			fieldWidth = captionWidth;
@@ -5462,21 +5394,6 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		//	dialog_.getEngineScriptBindings().put(this.getFieldIDInScript(), this);
 		//}
 	}
-
-//	public void checkPromptKeyEdit(){
-//		if (!XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL").equals("")
-//				&& !isNonEditableField) {
-//			if (((XF110_SubListCellEditorWithPromptCall)editor).hasEditControlledKey()) {
-//				this.setEditable(false);
-//			}
-//		}
-//		if (fieldOptionList.contains("PROMPT_LIST")
-//				&& !isNonEditableField) {
-//			if (((XF110_SubListCellEditorWithComboBox)editor).hasEditControlledKey()) {
-//				this.setEditable(false);
-//			}
-//		}
-//	}
 	
 	public boolean isNullError(Object object){
 		String basicType = this.getBasicType();
@@ -5649,7 +5566,8 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 					if (value_ == null || value_.equals("")) {
 						value = "";
 					} else {
-						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(value_.toString())), dialog_.getSession().getDateFormat(), false);
+						String wrkStr = value_.toString().substring(0, 10);
+						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(wrkStr)), dialog_.getSession().getDateFormat(), false);
 					}
 				} else {
 					if (basicType.equals("DATETIME")) {
@@ -5688,7 +5606,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 							}
 							if (valueType.equals("IMAGE")) {
 								String fileName = dialog_.getSession().getImageFileFolder() + value_.toString().trim();
-								int iconHeight = fieldRows * XFUtility.ROW_UNIT_HEIGHT;
+								int iconHeight = fieldRows * XFUtility.ROW_UNIT_HEIGHT_EDITABLE;
 								value = XFUtility.createSmallIcon(fileName, fieldWidth, iconHeight);
 							}
 							if (valueType.equals("FLAG")) {
@@ -5855,7 +5773,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 }
 
 class XF110_SubListBatchTable extends Object {
-	private static final long serialVersionUID = 1L;
+	//private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element tableElement = null;
 	private String tableID = "";
 	private ArrayList<String> keyFieldIDList = new ArrayList<String>();
@@ -6116,7 +6034,7 @@ class XF110_SubListBatchTable extends Object {
 }
 
 class XF110_SubListBatchReferTable extends Object {
-	private static final long serialVersionUID = 1L;
+	//private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element referElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF110_SubList dialog_ = null;
@@ -6540,7 +6458,7 @@ class XF110_SubListBatchReferTable extends Object {
 }
 
 class XF110_SubListDetailTable extends Object {
-	private static final long serialVersionUID = 1L;
+	//private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element functionElement_ = null;
 	private String tableID_ = "";
@@ -6947,7 +6865,7 @@ class XF110_SubListDetailTable extends Object {
 }
 
 class XF110_SubListDetailReferTable extends Object {
-	private static final long serialVersionUID = 1L;
+	//private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element referElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF110_SubList dialog_ = null;
@@ -7423,11 +7341,11 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 		fieldID =workTokenizer.nextToken();
 		dialog_ = dialog;
 
-		jTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
+		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
-		FontMetrics metrics = jTextField.getFontMetrics(new java.awt.Font("Monospaced", 0, 14));
-		jComboBox.setFont(new java.awt.Font("Monospaced", 0, 14));
+		FontMetrics metrics = jTextField.getFontMetrics(jTextField.getFont());
+		jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jComboBox.addKeyListener(new java.awt.event.KeyAdapter() {
 			public void keyPressed(KeyEvent e)  {
 			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
@@ -7509,9 +7427,9 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 					ArrayList<String> workDataTypeOptionList = XFUtility.getOptionList(workElement.getAttribute("TypeOptions"));
 					int dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 					if (workDataTypeOptionList.contains("KANJI")) {
-						fieldWidth = dataSize * 14 + 20;
+						fieldWidth = dataSize * XFUtility.FONT_SIZE + 20;
 					} else {
-						fieldWidth = dataSize * 7 + 30;
+						fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 30;
 					}
 					if (fieldWidth > 800) {
 						fieldWidth = 800;
@@ -7543,7 +7461,6 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
 						if (dialog_.getBatchFieldList().get(j).isNullable()) {
 							blankItemRequired = true;
-							//blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getNullValue());
 							if (dialog_.getBatchFieldList().get(j).isVisibleOnPanel()) {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
 							} else {
@@ -7717,10 +7634,10 @@ class XF110_SubListBatchCodeText extends JTextField implements XFEditableField {
 		String strWrk;
 		dataTypeOptions_ = dataTypeOptions;
 		dialog_ = dialog;
-		this.setFont(new java.awt.Font("Monospaced", 0, 14));
+		this.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		this.setEditable(false);
 		this.setFocusable(false);
-		FontMetrics metrics = this.getFontMetrics(new java.awt.Font("Monospaced", 0, 14));
+		FontMetrics metrics = this.getFontMetrics(this.getFont());
 		strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "VALUES");
 		if (!strWrk.equals("")) {
 			codeValueList.add("");
@@ -7857,9 +7774,7 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
-		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions);
-		//xFTextField.setEditable(false);
-		//xFTextField.setFocusable(false);
+		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 		xFTextField.setEditable(tableID.equals(dialog_.getBatchTable().getTableID()));
 		xFTextField.setFocusable(tableID.equals(dialog_.getBatchTable().getTableID()));
 		xFTextField.setLocation(5, 0);

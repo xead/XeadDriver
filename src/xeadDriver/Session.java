@@ -60,7 +60,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.xerces.parsers.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
+
 import com.lowagie.text.pdf.BaseFont;
+
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -69,10 +71,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
 import javax.mail.*;
 import javax.mail.internet.*;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -110,6 +114,7 @@ public class Session extends JFrame {
 	private File outputFolder = null;
 	private String welcomePageURL = "";
 	private String dateFormat = "";
+	public String systemFont = "";
 	private int sqProgram = 0;
 	private String currentFolder = "";
 	private String loginScript = "";
@@ -163,7 +168,6 @@ public class Session extends JFrame {
 	private DigestAdapter digestAdapter = null;
 	private DialogLogin loginDialog = null;
 	private DialogModifyPassword modifyPasswordDialog = null;
-	//private FunctionLauncher functionLauncher = new FunctionLauncher(this);
 	private FunctionLauncher functionLauncher = null;
 	private SortableDomElementListModel sortingList;
 	private NodeList functionList = null;
@@ -181,10 +185,10 @@ public class Session extends JFrame {
 	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
 	private ArrayList<XFExecutable> preloadedFunctionList = new ArrayList<XFExecutable>();
 	private Application application = null;
-	private XFOptionDialog optionDialog = new XFOptionDialog(this);
-	private XFInputDialog inputDialog = new XFInputDialog(this);
-	private XFCheckListDialog checkListDialog = new XFCheckListDialog();
-	private XFLongTextEditor xfLongTextEditor = new XFLongTextEditor(this);
+	private XFOptionDialog optionDialog = null;
+	private XFInputDialog inputDialog = null;
+	private XFCheckListDialog checkListDialog = null;
+	private XFLongTextEditor xfLongTextEditor = null;
 
 	//////////////////////////////
 	// Construct Online Session //
@@ -235,14 +239,14 @@ public class Session extends JFrame {
 					if (setupSessionVariants()) {
 
 						loginDialog = new DialogLogin(this, loginUser, loginPassword);
-						if (loginDialog.userIsValidated()) {
+						if (loginDialog.userIsValidated(true)) {
 
 							userID = loginDialog.getUserID();
 							userName = loginDialog.getUserName();
 							userEmployeeNo = loginDialog.getUserEmployeeNo();
 							userEmailAddress = loginDialog.getUserEmailAddress();
 							userMenus = loginDialog.getUserMenus();
-							processorVersion = "D" + DialogAbout.VERSION; //XEAD Driver Version//
+							processorVersion = "D" + DialogAbout.VERSION;
 
 							application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2"));
 
@@ -284,29 +288,33 @@ public class Session extends JFrame {
 	///////////////////////////////////
 	// Construct WEB-Service Session //
 	///////////////////////////////////
-	public Session(String fileName, String version) throws Exception {
+	public Session(String fileName, String user, String password, String xeadServerVersion) throws Exception {
 		try {
 			isOnlineSession = false;
 
 			if (parseSystemDefinition(fileName)) {
 				if (setupSessionVariants()) {
-					userID = "00000";
-					userName = "Server Administrator";
-					userEmployeeNo = "";
-					userEmailAddress = "";
-					userMenus = "";
-					processorVersion = "S" + version; //XEAD Server Version//
 
-					writeLogAndStartSession();
+					loginDialog = new DialogLogin(this, user, password);
+					if (loginDialog.userIsValidated(false)) {
+
+						userID = loginDialog.getUserID();
+						userName = loginDialog.getUserName();
+						userEmployeeNo = loginDialog.getUserEmployeeNo();
+						userEmailAddress = loginDialog.getUserEmailAddress();
+						userMenus = "";
+						processorVersion = "S" + xeadServerVersion;
+
+						writeLogAndStartSession();
+
+					} else {
+						throw new Exception("User or password is invalid.");
+					}
 				} else {
-					noErrorsOccured = false;
-					closeSession(false);
-					System.exit(0);
+					throw new Exception("System definition file is invalid to setup session.");
 				}
 			} else {
-				noErrorsOccured = false;
-				closeSession(false);
-				System.exit(0);
+				throw new Exception("Failed to parse the system definition file.");
 			}
 
 		} catch(Exception e) {
@@ -328,7 +336,6 @@ public class Session extends JFrame {
 				URL url = new URL(fileName);
 				URLConnection connection = url.openConnection();
 				InputStream inputStream = connection.getInputStream();
-				//DOMParser parser = new DOMParser();
 				domParser.parse(new InputSource(inputStream));
 				domDocument = domParser.getDocument();
 				return true;
@@ -341,7 +348,6 @@ public class Session extends JFrame {
 			if (xeafFile.exists()) {
 				currentFolder = xeafFile.getParent();
 				try {
-					//DOMParser parser = new DOMParser();
 					domParser.parse(new InputSource(new FileInputStream(fileName)));
 					domDocument = domParser.getDocument();
 					return true;
@@ -366,8 +372,20 @@ public class Session extends JFrame {
 		systemVersion = element.getAttribute("Version");
 		welcomePageURL = element.getAttribute("WelcomePageURL");
 		dateFormat = element.getAttribute("DateFormat");
+		systemFont = element.getAttribute("SystemFont");
+		if (systemFont.equals("")) {
+			systemFont = "SanSerif";
+		}
 		calendar.setLenient(false);
 
+		/////////////
+		// Dialogs //
+		/////////////
+		optionDialog = new XFOptionDialog(this);
+		inputDialog = new XFInputDialog(this);
+		checkListDialog = new XFCheckListDialog(this);
+		xfLongTextEditor = new XFLongTextEditor(this);
+		
 		////////////////////
 		// System Folders //
 		////////////////////
@@ -559,14 +577,16 @@ public class Session extends JFrame {
 	}
 
 	private void setupMenusAndComponents() throws Exception {
-		jTabbedPaneMenu.setFont(new java.awt.Font("SansSerif", 0, 14));
+		jTabbedPaneMenu.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE+2));
+		jTabbedPaneMenu.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		jTabbedPaneMenu.addKeyListener(new Session_keyAdapter(this));
 		jTabbedPaneMenu.requestFocus();
 		jTabbedPaneMenu.addChangeListener(new Session_jTabbedPaneMenu_changeAdapter(this));
-		jLabelUser.setFont(new java.awt.Font("SansSerif", 0, 14));
-		jLabelSession.setFont(new java.awt.Font("SansSerif", 0, 14));
+		jLabelUser.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
+		jLabelSession.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
 
 		jEditorPaneNews.setBorder(BorderFactory.createEtchedBorder());
+		jEditorPaneNews.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
 		jEditorPaneNews.setEditable(false);
 		jEditorPaneNews.setContentType("text/html");
 		jEditorPaneNews.addHyperlinkListener(new Session_jEditorPane_actionAdapter(this));
@@ -604,13 +624,13 @@ public class Session extends JFrame {
 		}
 
 		jScrollPaneMenu.getViewport().add(jPanelMenu, null);
-		jPanelMenuTopMargin.setPreferredSize(new Dimension(15, 15));
+		jPanelMenuTopMargin.setPreferredSize(new Dimension(20, 20));
 		jPanelMenuTopMargin.setOpaque(false);
-		jPanelMenuLeftMargin.setPreferredSize(new Dimension(40, 40));
+		jPanelMenuLeftMargin.setPreferredSize(new Dimension(80, 80));
 		jPanelMenuLeftMargin.setOpaque(false);
-		jPanelMenuRightMargin.setPreferredSize(new Dimension(40, 40));
+		jPanelMenuRightMargin.setPreferredSize(new Dimension(80, 80));
 		jPanelMenuRightMargin.setOpaque(false);
-		jPanelMenuBottomMargin.setPreferredSize(new Dimension(10, 10));
+		jPanelMenuBottomMargin.setPreferredSize(new Dimension(20, 20));
 		jPanelMenuBottomMargin.setOpaque(false);
 		jPanelMenuCenter.setOpaque(false);
 		jPanelMenu.setLayout(new BorderLayout());
@@ -623,10 +643,10 @@ public class Session extends JFrame {
 		gridLayoutMenuButtons.setColumns(2);
 		gridLayoutMenuButtons.setRows(10);
 		gridLayoutMenuButtons.setHgap(80);
-		gridLayoutMenuButtons.setVgap(15);
+		gridLayoutMenuButtons.setVgap(20);
 		for (int i = 0; i < 20; i++) {
 			jButtonMenuOptionArray[i] = new JButton();
-			jButtonMenuOptionArray[i].setFont(new java.awt.Font("SansSerif", 0, 16));
+			jButtonMenuOptionArray[i].setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE+2));
 			jButtonMenuOptionArray[i].addActionListener(new Session_jButton_actionAdapter(this));
 			jButtonMenuOptionArray[i].addKeyListener(new Session_keyAdapter(this));
 		}
@@ -660,7 +680,7 @@ public class Session extends JFrame {
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
-		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, 14));
+		jTextAreaMessages.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
 		jTextAreaMessages.setFocusable(false);
 		jTextAreaMessages.setLineWrap(true);
 		jSplitPane2.setOrientation(JSplitPane.VERTICAL_SPLIT);
@@ -688,7 +708,7 @@ public class Session extends JFrame {
 		}
 		this.addComponentListener(new ComponentAdapter(){
 			public void componentResized(ComponentEvent e) {
-				jSplitPane2.setDividerLocation(getHeight() / 4);
+				jSplitPane2.setDividerLocation(getHeight() / 5);
 				jSplitPane1.setDividerLocation(getHeight() - (getHeight() / 7));
 			}
 		});
@@ -697,9 +717,9 @@ public class Session extends JFrame {
 		this.getContentPane().add(jSplitPane1, BorderLayout.CENTER);
 		this.pack();
 		this.validate();
-		if (screenSize.height < 1000) {
+		//if (screenSize.height < 1000) {
 			this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-		}
+		//}
 
 		for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 20; j++) {
@@ -1849,7 +1869,7 @@ public class Session extends JFrame {
 	}
 	
 	void logout(WindowEvent e) {
-		Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
+		Object[] bts = {XFUtility.RESOURCE.getString("Yes"), XFUtility.RESOURCE.getString("No")};
 		int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
 				systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 		if (rtn == 0) {
@@ -1953,6 +1973,10 @@ public class Session extends JFrame {
 			bf.append("\n");
 			bf.append(errorLog.replace("'", "\""));
 			logString = bf.toString();
+		}
+		
+		if (logString.length() > 3800) {
+			logString = logString.substring(0, 3800);
 		}
 
 		if (programStatus.equals("99")) {

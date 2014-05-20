@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -60,7 +60,6 @@ import javax.swing.ListCellRenderer;
 ////////////////////////////////////////////////////////////////
 public class XFCheckListDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
-	private static final int LIST_CELL_HEIGHT = 22;
     private JPanel jPanelMain = new JPanel();
 	private DefaultListModel listModel = new DefaultListModel();
     private JList jList = new JList(listModel);
@@ -76,17 +75,19 @@ public class XFCheckListDialog extends JDialog {
     private String checkedKeyList = "";
     private XFCheckListDialog_keyAdapter keyListener = new XFCheckListDialog_keyAdapter();
     private XFCheckListDialog_mouseAdapter mouseListener = new XFCheckListDialog_mouseAdapter();
+    private Session session_;
 
-    public XFCheckListDialog() {
+    public XFCheckListDialog(Session session) {
 		super();
 
+		session_ = session;
 		this.setModal(true);
 		this.setResizable(false);
 		this.getContentPane().setLayout(new BorderLayout());
 		jPanelMain.setLayout(new BorderLayout());
 		jList.setBorder(null);
 		jList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		jList.setFixedCellHeight(LIST_CELL_HEIGHT);
+		jList.setFixedCellHeight(XFUtility.ROW_UNIT_HEIGHT);
 		jList.addKeyListener(keyListener);
 		jList.addMouseListener(mouseListener);
 		XFCheckListDialog_CheckBoxListRenderer renderer = new XFCheckListDialog_CheckBoxListRenderer();
@@ -97,13 +98,13 @@ public class XFCheckListDialog extends JDialog {
 		jPanelMain.add(jScrollPane, BorderLayout.CENTER);
 
 		jPanelButtons.setBorder(BorderFactory.createEtchedBorder());
-		jPanelButtons.setPreferredSize(new Dimension(350, 43));
-		jButtonOK.setBounds(new Rectangle(103, 10, 73, 25));
-		jButtonOK.setFont(new java.awt.Font("Dialog", 0, 12));
+		jPanelButtons.setPreferredSize(new Dimension(300, 43));
+		jButtonOK.setBounds(new Rectangle(160, 8, 100, 27));
+		jButtonOK.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonOK.setText("OK");
 		jButtonOK.addActionListener(new XFCheckListDialog_jButtonOK_actionAdapter(this));
-		jButtonCancel.setBounds(new Rectangle(15, 10, 73, 25));
-		jButtonCancel.setFont(new java.awt.Font("Dialog", 0, 12));
+		jButtonCancel.setBounds(new Rectangle(30, 8, 100, 27));
+		jButtonCancel.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonCancel.setText(XFUtility.RESOURCE.getString("Cancel"));
 		jButtonCancel.addActionListener(new XFCheckListDialog_jButtonCancel_actionAdapter(this));
 		jPanelButtons.setLayout(null);
@@ -133,6 +134,7 @@ public class XFCheckListDialog extends JDialog {
 		listModel.clear();
 		for (int i = 0; i < keyList.size(); i++) {
 				JCheckBox checkBox = new JCheckBox();
+				checkBox.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 				checkBox.setText(textList.get(i));
 				if (initialSelectKeyList.contains(keyList.get(i))) {
 					checkBox.setSelected(true);
@@ -142,10 +144,10 @@ public class XFCheckListDialog extends JDialog {
 		jList.setSelectedIndex(0);
 		jList.requestFocus();
 
-    	int width = 200;
-    	int height = keyList.size() * LIST_CELL_HEIGHT + 70;
-    	if (height > 290) {
-    		height = 290;
+    	int width = 300;
+    	int height = keyList.size() * XFUtility.ROW_UNIT_HEIGHT + 70;
+    	if (height > 400) {
+    		height = 400;
     	}
 		dlgSize = new Dimension(width, height + 30);
    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
@@ -171,7 +173,7 @@ public class XFCheckListDialog extends JDialog {
     	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus){
     		JCheckBox checkBox = (JCheckBox)value;
     		setText(checkBox.getText());
-			setFont(new java.awt.Font("Dialog", 0, 14));
+			setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
     		setSelected(checkBox.isSelected());
     		setEnabled(checkBox.isEnabled());
     		if (isSelected) {

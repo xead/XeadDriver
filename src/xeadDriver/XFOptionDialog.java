@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2012 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -32,17 +32,13 @@ package xeadDriver;
  */
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
-import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -55,10 +51,9 @@ import javax.swing.ListSelectionModel;
 ////////////////////////////////////////////////////////////////
 public class XFOptionDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
-	private static final int LIST_CELL_HEIGHT = 20;
     private JPanel jPanelMain = new JPanel();
     private JList jList = null;
-    private Component parent_;
+	private Session session_;
     private Dimension scrSize, dlgSize;
     private int maxCellWidth = 0;
     private ArrayList<String> optionList = new ArrayList<String>();
@@ -66,14 +61,15 @@ public class XFOptionDialog extends JDialog {
     private XFOptionDialog_keyAdapter keyListener = new XFOptionDialog_keyAdapter();
     private XFOptionDialog_mouseAdapter mouseListener = new XFOptionDialog_mouseAdapter();
     private JLabel jLabel = new JLabel();
-	private FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
+	private FontMetrics metrics;
 
-    public XFOptionDialog(Component parent) {
+    public XFOptionDialog(Session session) {
 		super();
+		session_ = session;
 		this.setModal(true);
-		this.parent_ = parent;
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		jPanelMain.setLayout(null);
+		jPanelMain.setLayout(new BorderLayout());
+		metrics = jLabel.getFontMetrics(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		this.getContentPane().add(jPanelMain,  BorderLayout.CENTER);
 		this.setResizable(false);
     }
@@ -93,9 +89,9 @@ public class XFOptionDialog extends JDialog {
 
     public int request(String title) {
     	selectedIndex = -1;
-    	//
+
     	int width = maxCellWidth + 10;
-    	int height = optionList.size() * LIST_CELL_HEIGHT + 5;
+    	int height = optionList.size() * XFUtility.FIELD_UNIT_HEIGHT;
 		FontMetrics metricsTitle = jLabel.getFontMetrics(this.getFont());
 		int dialogWidth = width + 20;
 		int titleWidth = metricsTitle.stringWidth(title) + 50;
@@ -104,38 +100,25 @@ public class XFOptionDialog extends JDialog {
 			width = dialogWidth - 20;
 		}
     	this.setTitle(title);
-    	//
+
     	jPanelMain.removeAll();
     	jList = new JList(optionList.toArray());
-		jList.setFont(new java.awt.Font("Dialog", 0, 14));
+		jList.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jList.setSelectedIndex(0);
 		jList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		jList.setFixedCellHeight(LIST_CELL_HEIGHT);
+		jList.setFixedCellHeight(XFUtility.FIELD_UNIT_HEIGHT);
 		jList.addKeyListener(keyListener);
 		jList.addMouseListener(mouseListener);
-		jList.setBorder(BorderFactory.createEtchedBorder());
-		jList.setBounds(10, 10, width, height);
-		jPanelMain.add(jList);
-		//
-		dlgSize = new Dimension(dialogWidth, height + 20);
+		jList.setBorder(null);
+		jPanelMain.add(jList, BorderLayout.CENTER);
+
+		dlgSize = new Dimension(dialogWidth, height + 10);
 		jPanelMain.setPreferredSize(dlgSize);
-    	if (parent_ != null && parent_.isValid()) {
-    		int posY, posX;
-    		Rectangle rec = parent_.getBounds();
-    		Point point = parent_.getLocationOnScreen();
-    		posX = point.x;
-    		posY = point.y + rec.height;
-    		if (posY + dlgSize.height > scrSize.height) {
-    			posY = point.y - dlgSize.height;
-    		}
-    		this.setLocation(posX, posY);
-    	} else {
-    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
-    	}
-    	//
+   		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
+
 		this.pack();
     	this.setVisible(true);
-    	//
+
     	return selectedIndex;
     }
 

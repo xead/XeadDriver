@@ -2,26 +2,26 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="DERBY_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Program Files/Sun/JavaDB/lib/derby.jar"/>
-	<classpathentry kind="lib" path="D:/Xerces-J-bin.2.9.1/xerces-2_9_1/xercesImpl.jar"/>
-	<classpathentry kind="lib" path="D:/poi-bin-3.2-FINAL-20081019/poi-3.2-FINAL/poi-3.2-FINAL-20081019.jar"/>
-	<classpathentry kind="lib" path="C:/Program Files/Sun/JavaDB/lib/derbyclient.jar"/>
-	<classpathentry kind="lib" path="D:/iText/iText-2.1.7.jar"/>
-	<classpathentry kind="lib" path="D:/iText/iTextAsian.jar"/>
-	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/httpmime-4.1.2.jar"/>
-	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/httpclient-4.1.2.jar"/>
-	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/httpclient-cache-4.1.2.jar"/>
-	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/httpcore-4.1.2.jar"/>
-	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="D:/apps/httpcomponents-client-4.1.2-bin/httpcomponents-client-4.1.2/lib/commons-codec-1.4.jar"/>
-	<classpathentry kind="lib" path="D:/GitRepos/XeadServer/jar/xeadsrv.jar"/>
-	<classpathentry kind="lib" path="D:/XeadFramework/lib/postgresql-9.1-901.jdbc3.jar"/>
-	<classpathentry kind="lib" path="D:/Java/jaf-1.1.1/activation.jar"/>
-	<classpathentry kind="lib" path="D:/Java/javamail-1.4.5/mail.jar"/>
-	<classpathentry kind="lib" path="D:/XeadFramework/lib/mysql-connector-java-5.1.18-bin.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/derby.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/xercesImpl.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/poi-3.2-FINAL-20081019.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/derbyclient.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/iText-2.1.7.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/iTextAsian.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/httpmime-4.1.2.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/httpclient-4.1.2.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/httpclient-cache-4.1.2.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/httpcore-4.1.2.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/commons-codec-1.4.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/xeadsrv.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/postgresql-9.1-901.jdbc3.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/activation.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/mail.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/mysql-connector-java-5.1.18-bin.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="D:/Java/rhino1_6R2/js.jar"/>
-	<classpathentry kind="lib" path="D:/Java/oracle-driver/ojdbc6.jar"/>
-	<classpathentry kind="lib" path="D:/JSON/java-json.jar/java-json.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/ojdbc6.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/java-json.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/sqljdbc4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

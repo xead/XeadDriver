@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.StringTokenizer;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
@@ -62,16 +63,18 @@ public class XFInputDialogField extends JPanel {
 		jLabelField.setFocusable(false);
 		jLabelField.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelField.setVerticalAlignment(SwingConstants.TOP);
-		jLabelField.setFont(new java.awt.Font("Dialog", 0, 14));
-		metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-		jLabelField.setPreferredSize(new Dimension(130, XFUtility.FIELD_UNIT_HEIGHT));
-		if (metrics.stringWidth(fieldCaption) > 125) {
-			jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
-			metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-			if (metrics.stringWidth(fieldCaption) > 125) {
-				jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
-			}
-		}
+		jLabelField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+		jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+		XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
+		metrics = jLabelField.getFontMetrics(jLabelField.getFont());
+//		jLabelField.setPreferredSize(new Dimension(130, XFUtility.FIELD_UNIT_HEIGHT));
+//		if (metrics.stringWidth(fieldCaption) > 125) {
+//			jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
+//			metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
+//			if (metrics.stringWidth(fieldCaption) > 125) {
+//				jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
+//			}
+//		}
 		if (inputType_.equals("ALPHA")
 				|| inputType_.equals("KANJI")
 				|| inputType_.equals("NUMERIC")) {
@@ -95,14 +98,13 @@ public class XFInputDialogField extends JPanel {
 			JCheckBox field = new JCheckBox();
 			component = field;
 		}
-		component.setFont(new java.awt.Font("Monospaced", 0, 14));
-		metrics = component.getFontMetrics(new java.awt.Font("Monospaced", 0, 14));
+		component.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		this.setOpaque(false);
 		if (inputType_.equals("DATE")) {
-			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), 14);
+			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
 			this.setBounds(this.getBounds().x, this.getBounds().y, 200 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
 		} else {
-			this.setBounds(this.getBounds().x, this.getBounds().y, 200, XFUtility.FIELD_UNIT_HEIGHT);
+			this.setBounds(this.getBounds().x, this.getBounds().y, 250, XFUtility.FIELD_UNIT_HEIGHT);
 		}
 		this.setLayout(new BorderLayout());
 		this.add(jLabelField, BorderLayout.WEST);
@@ -120,11 +122,11 @@ public class XFInputDialogField extends JPanel {
 		if (inputType_.equals("DATE")) {
 			((XFDateField)component).setEditable(isEditable_);
 			((XFDateField)component).setFocusable(isEditable_);
-			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), 14);
+			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
 			if (isEditable_) {
-				this.setBounds(this.getBounds().x, this.getBounds().y, 150 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
+				this.setBounds(this.getBounds().x, this.getBounds().y, 200 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
 			} else {
-				this.setBounds(this.getBounds().x, this.getBounds().y, 124 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
+				this.setBounds(this.getBounds().x, this.getBounds().y, 174 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
 			}
 		}
 		if (inputType_.equals("LISTBOX")) {
@@ -153,11 +155,11 @@ public class XFInputDialogField extends JPanel {
 
    private void setFieldWidth() {
 	   int width = 0;
-	   int charWidth = 7;
+	   int charWidth = XFUtility.FONT_SIZE/2 + 2 ;
 	   int length = size_;
 	   //
 	   if (inputType_.equals("KANJI")) {
-		   charWidth = 14;
+		   charWidth = XFUtility.FONT_SIZE;
 	   }
 	   if (inputType_.equals("NUMERIC")) {
 		   for (int i = size_-1 ; i > 0; i--) {
@@ -175,9 +177,9 @@ public class XFInputDialogField extends JPanel {
 		   width = 50;
 	   }
 	   if (jButton == null) {
-		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 135, this.getBounds().height);
+		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 150, this.getBounds().height);
 	   } else {
-		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 135 + 26, this.getBounds().height);
+		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 150 + 26, this.getBounds().height);
 	   }
 	   isAutoSizing = false;
    }
@@ -190,7 +192,6 @@ public class XFInputDialogField extends JPanel {
 			   || inputType_.equals("KANJI")
 			   || inputType_.equals("NUMERIC")) {
 		   if (inputType_.equals("ALPHA") || inputType_.equals("KANJI")) {
-			   //((JTextField)component).setText(value.toString());
 			   String strValue = value.toString();
 			   if (strValue.length() > size_) {
 				   strValue = strValue.substring(0, size_);
@@ -207,9 +208,9 @@ public class XFInputDialogField extends JPanel {
 			   ((JTextField)component).setText(stringValue);
 		   }
 		   if (isAutoSizing) {
-			   int width = this.getBounds().width - 130;
+			   int width = this.getBounds().width - 180;
 			   if (metrics.stringWidth(value.toString()) > width) {
-				   this.setBounds(this.getBounds().x, this.getBounds().y, metrics.stringWidth(value.toString()) + 130, this.getBounds().height);
+				   this.setBounds(this.getBounds().x, this.getBounds().y, metrics.stringWidth(value.toString()) + 180, this.getBounds().height);
 			   }
 		   }
 	   }
@@ -287,9 +288,9 @@ public class XFInputDialogField extends JPanel {
    public void addItem(String text, Object value) {
 		if (inputType_.equals("LISTBOX")) {
 			((JComboBox)component).addItem(text);
-			int width = this.getBounds().width - 160;
+			int width = this.getBounds().width - 180;
 			if (metrics.stringWidth(text) > width) {
-				this.setBounds(this.getBounds().x, this.getBounds().y, metrics.stringWidth(text) + 160, this.getBounds().height);
+				this.setBounds(this.getBounds().x, this.getBounds().y, metrics.stringWidth(text) + 180, this.getBounds().height);
 			}
 			valueList.add(value);
 		}

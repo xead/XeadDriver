@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -70,6 +70,7 @@ import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.awt.*;
+
 import javax.imageio.ImageIO;
 //import javax.script.ScriptException;
 import javax.swing.*;
@@ -89,17 +90,20 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
+
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFDataFormat;
 import org.apache.poi.hssf.usermodel.HSSFPatriarch;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.w3c.dom.*;
+
 import com.lowagie.text.BadElementException;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.PageSize;
@@ -112,10 +116,14 @@ import com.lowagie.text.pdf.PdfContentByte;
 
 public class XFUtility {
 	public static final ResourceBundle RESOURCE = ResourceBundle.getBundle("xeadDriver.Res");
-	public static final int FIELD_UNIT_HEIGHT = 24;
+	public static final int FIELD_UNIT_HEIGHT = 25;
+	public static final int FIELD_HORIZONTAL_MARGIN = 1;
 	public static final int FIELD_VERTICAL_MARGIN = 5;
-	public static final int ROW_UNIT_HEIGHT = 24;
-	public static final int SEQUENCE_WIDTH = 30;
+	public static final int DEFAULT_LABEL_WIDTH = 150;
+	public static final int ROW_UNIT_HEIGHT = 25;
+	public static final int ROW_UNIT_HEIGHT_EDITABLE = 27;
+	public static final int SEQUENCE_WIDTH = 45;
+	public static final int FONT_SIZE = 18;
 	public static final String DEFAULT_UPDATE_COUNTER = "UPDCOUNTER";
 	public static final Color ERROR_COLOR = new Color(238,187,203);
 	public static final Color ACTIVE_COLOR = SystemColor.white;
@@ -1069,6 +1077,42 @@ public class XFUtility {
 
 		return object;
 	}
+	
+	static int adjustFontSizeToGetPreferredWidthOfLabel(JLabel jLabel, int initialWidth) {
+		int width = initialWidth;
+//		if (metrics.stringWidth(jLabel.getText()) > width) {
+//		jLabel.setFont(new java.awt.Font(jLabel.getFont().getFontName(), 0, jLabel.getFont().getSize()-1));
+//		metrics = jLabel.getFontMetrics(jLabel.getFont());
+//		if (metrics.stringWidth(jLabel.getText()) > width) {
+//			jLabel.setFont(new java.awt.Font(jLabel.getFont().getFontName(), 0, jLabel.getFont().getSize()-1));
+//			metrics = jLabel.getFontMetrics(jLabel.getFont());
+//			if (metrics.stringWidth(jLabel.getText()) > width) {
+//				jLabel.setFont(new java.awt.Font(jLabel.getFont().getFontName(), 0, jLabel.getFont().getSize()-1));
+//				metrics = jLabel.getFontMetrics(jLabel.getFont());
+//				if (metrics.stringWidth(jLabel.getText()) > width) {
+//					jLabel.setFont(new java.awt.Font(jLabel.getFont().getFontName(), 0, jLabel.getFont().getSize()-1));
+//					metrics = jLabel.getFontMetrics(jLabel.getFont());
+//					if (metrics.stringWidth(jLabel.getText()) > width) {
+//						jLabel.setFont(new java.awt.Font(jLabel.getFont().getFontName(), 0, jLabel.getFont().getSize()-1));
+//						metrics = jLabel.getFontMetrics(jLabel.getFont());
+//					}
+//				}
+//			}
+//		}
+//	}
+		int initialFontSize = jLabel.getFont().getSize();
+		FontMetrics metrics = jLabel.getFontMetrics(jLabel.getFont());
+		if (metrics.stringWidth(jLabel.getText()) > width) {
+			for (int i = initialFontSize; i > 10; i--) {
+				jLabel.setFont(new java.awt.Font(jLabel.getFont().getFontName(), 0, jLabel.getFont().getSize()-1));
+				metrics = jLabel.getFontMetrics(jLabel.getFont());
+				if (metrics.stringWidth(jLabel.getText()) <= width) {
+					break;
+				}
+			}
+		}
+		return metrics.stringWidth(jLabel.getText());
+	}
 
 	/**
 	 * Method to process String value with EOL mark
@@ -1740,10 +1784,10 @@ public class XFUtility {
 		return length;
 	}
 	
-	static int getWidthOfDateValue(String dateFormat, int fontSize) {
+	static int getWidthOfDateValue(String dateFormat, String fontName, int fontSize) {
 		int width = 133;
 		JTextField textField = new JTextField();
-		FontMetrics metrics = textField.getFontMetrics(new java.awt.Font("Dialog", 0, fontSize));
+		FontMetrics metrics = textField.getFontMetrics(new java.awt.Font(fontName, 0, fontSize));
 
 		if (dateFormat.equals("en00")) {
 			width = metrics.stringWidth("06/17/10");
@@ -2353,7 +2397,7 @@ public class XFUtility {
 		return sortableDomElementListModel;
 	}
 
-	static void setCaptionToButton(JButton button, org.w3c.dom.Element element, String buttonText) {
+	static void setCaptionToButton(JButton button, org.w3c.dom.Element element, String buttonText, int buttonWidth) {
         StringBuffer bf = new StringBuffer();
         bf.append("F");
 		bf.append(element.getAttribute("Number"));
@@ -2365,6 +2409,16 @@ public class XFUtility {
 		}
 		button.setText(bf.toString());
 		button.setToolTipText(bf.toString());
+
+		JButton dummy;
+		for (int i = XFUtility.FONT_SIZE; i > 8; i--) {
+			dummy = new JButton(bf.toString());
+			dummy.setFont(new java.awt.Font(button.getFont().getFontName(), 0 , i));
+			if (dummy.getPreferredSize().width <= buttonWidth) {
+				button.setFont(new java.awt.Font(button.getFont().getFontName(), 0 , i));
+				break;
+			}
+		}
 	}
 	
 	public static void appendLog(String text, StringBuffer logBuf) {
@@ -2476,7 +2530,6 @@ class HorizontalAlignmentHeaderRenderer implements TableCellRenderer{
 }
 
 class XFHashMap extends Object {
-	private static final long serialVersionUID = 1L;
 	private ArrayList<String> keyFieldList = new ArrayList<String>();
 	private ArrayList<Object> keyValueList = new ArrayList<Object>();
 	public void addValue(String fieldID, Object value) {
@@ -2785,7 +2838,7 @@ class XFImageField extends JPanel implements XFEditableField {
 	private String oldValue = "";
 	private Desktop desktop = Desktop.getDesktop();
 
-	public XFImageField(String fieldOptions, int size, String imageFileFolder){
+	public XFImageField(String fieldOptions, int size, String imageFileFolder, String fontName){
 		super();
 
 		String wrkStr;
@@ -2800,10 +2853,10 @@ class XFImageField extends JPanel implements XFEditableField {
 		jTextField.setBorder(BorderFactory.createLineBorder(normalModeColor));
 		jTextField.setBackground(Color.white);
 		jTextField.setEditable(true);
-		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextField.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jTextField.setDocument(new LimitDocument());
 
-		jButton.setFont(new java.awt.Font("Dialog", 0, 14));
+		jButton.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jButton.setPreferredSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.setText(XFUtility.RESOURCE.getString("Refresh"));
 		jButton.addActionListener(new XFImageField_jButton_actionAdapter(this));
@@ -3048,7 +3101,7 @@ class XFDateField extends JPanel implements XFEditableField {
 		super();
 
 		session_ = session;
-		dateTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
+		dateTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		dateTextField.setEditable(false);
 		dateTextField.addFocusListener(new FocusAdapter() {
 			public void focusGained(FocusEvent event) {
@@ -3095,7 +3148,7 @@ class XFDateField extends JPanel implements XFEditableField {
 			} 
 		});
 
-		this.setSize(new Dimension(XFUtility.getWidthOfDateValue(session.getDateFormat(), 14) + 26, XFUtility.FIELD_UNIT_HEIGHT));
+		this.setSize(new Dimension(XFUtility.getWidthOfDateValue(session.getDateFormat(), session_.systemFont, XFUtility.FONT_SIZE) + 26, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(dateTextField, BorderLayout.CENTER);
 		this.add(jButton, BorderLayout.EAST);
@@ -3117,12 +3170,12 @@ class XFDateField extends JPanel implements XFEditableField {
 	public void setEditable(boolean editable) {
 		if (editable) {
 			this.add(jButton, BorderLayout.EAST);
-			dateTextField.setFont(new java.awt.Font("SansSerif", 0, 12));
+			dateTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE-2));
 			dateTextField.setBackground(SystemColor.text);
 			dateTextField.setFocusable(true);
 		} else {
 			this.remove(jButton);
-			dateTextField.setFont(new java.awt.Font("Monospaced", 0, 14));
+			dateTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 			dateTextField.setBackground(SystemColor.control);
 			dateTextField.setFocusable(false);
 		}
@@ -3168,6 +3221,10 @@ class XFDateField extends JPanel implements XFEditableField {
 				this.date = XFUtility.convertDateFromSqlToUtil((java.sql.Date)obj);
 				dateTextField.setText(XFUtility.getUserExpressionOfUtilDate(this.date, session_.getDateFormat(), false));
 			}
+			if (obj.getClass().getName().equals("java.sql.Timestamp")) {
+				this.date = XFUtility.convertDateFromStringToUtil(obj.toString().substring(0, 10));
+				dateTextField.setText(XFUtility.getUserExpressionOfUtilDate(this.date, session_.getDateFormat(), false));
+			}
 			if (obj.getClass().getName().equals("java.util.Date")) {
 				this.date = (java.util.Date)obj;
 				dateTextField.setText(XFUtility.getUserExpressionOfUtilDate(this.date, session_.getDateFormat(), false));
@@ -3190,10 +3247,10 @@ class XFDateField extends JPanel implements XFEditableField {
 	public void setNarrower(int width) {
 		int workWidth;
 		if (this.getWidth() > width) {
-			for (int fontSize = 13; fontSize >= 9; fontSize--) {
-				workWidth = XFUtility.getWidthOfDateValue(session_.getDateFormat(), fontSize) + 26;
+			for (int fontSize = XFUtility.FONT_SIZE; fontSize >= 9; fontSize--) {
+				workWidth = XFUtility.getWidthOfDateValue(session_.getDateFormat(), session_.systemFont, fontSize) + 26;
 				if (workWidth <= width || fontSize == 9) {
-					dateTextField.setFont(new java.awt.Font("Dialog", 0, fontSize));
+					dateTextField.setFont(new java.awt.Font(session_.systemFont, 0, fontSize));
 					break;
 				}
 			}
@@ -3271,11 +3328,19 @@ class XFTextField extends JTextField implements XFEditableField {
 	private String autoNumberKey = "";
 	private String oldValue = "";
 
-	public XFTextField(String basicType, int digits, int decimal, String dataTypeOptions, String fieldOptions) {
+	public XFTextField(String basicType, int digits, int decimal, String dataTypeOptions, String fieldOptions, String fontName) {
 		super();
 
 		basicType_ = basicType;
-		digits_ = digits;
+
+		////////////////////////////
+		// digits of VARCHAR is 0 //
+		////////////////////////////
+		if (digits == 0) {
+			digits_ = 10;
+		} else {
+			digits_ = digits;
+		}
 		decimal_ = decimal;
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		fieldOptions_ = fieldOptions;
@@ -3314,7 +3379,7 @@ class XFTextField extends JTextField implements XFEditableField {
 			}
 		}
 		this.addFocusListener(new ComponentFocusListener());
-		this.setFont(new java.awt.Font("Monospaced", 0, 14));
+		this.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		this.setDocument(new LimitedDocument(this));
 		this.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
@@ -3328,15 +3393,15 @@ class XFTextField extends JTextField implements XFEditableField {
 
 		int fieldWidth, fieldHeight;
 		if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
-			fieldWidth = digits_ * 14 + 10;
+			fieldWidth = digits_ * XFUtility.FONT_SIZE + 10;
 		} else {
 			if (basicType_.equals("INTEGER") || basicType_.equals("FLOAT")) {
-				fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList) * 7 + 21;
+				fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
 			} else {
 				if (basicType_.equals("DATETIME")) {
-					fieldWidth = 24 * 7;
+					fieldWidth = 24 * (XFUtility.FONT_SIZE/2 + 2);
 				} else {
-					fieldWidth = digits_ * 7 + 10;
+					fieldWidth = digits_ * (XFUtility.FONT_SIZE/2 + 2) + 10;
 				}
 			}
 		}
@@ -3682,11 +3747,7 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	private String oldValue = "";
 	private int digits_ = 5;
 
-	public XFTextArea(){
-		this(5, "", "");
-	}
-
-	public XFTextArea(int digits, String dataTypeOptions, String fieldOptions){
+	public XFTextArea(int digits, String dataTypeOptions, String fieldOptions, String fontName){
 		super();
 
 		digits_ = digits;
@@ -3722,7 +3783,7 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		actionMap.put("Backward", transferFocusBackwardAction);
 
 		jTextArea.addFocusListener(new ComponentFocusListener());
-		jTextArea.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextArea.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jTextArea.setLineWrap(true);
 		jTextArea.setWrapStyleWord(true);
 		jTextArea.setDocument(new LimitedDocument(this));
@@ -3871,47 +3932,50 @@ class XFInputAssistField extends JComboBox implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private String tableID_ = "";
 	private String fieldID_ = "";
+	private ArrayList<String> dataTypeOptionList;
 	private Vector<String> valueList = new Vector<String>();
 	private int rows_ = 1;
     private Session session_;
     private String oldValue = "";
 
-	public XFInputAssistField(String tableID, String fieldID, Session session){
+	public XFInputAssistField(String tableID, String fieldID, int digits, String dataTypeOptions, Session session){
 		super();
+		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		tableID_ = tableID;
 		fieldID_ = fieldID;
 		session_ = session;
 
-		org.w3c.dom.Element workElement = session_.getFieldElement(tableID, fieldID);
-		if (workElement == null) {
-			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
-		}
-		int dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		if (dataSize > 50) {
-			dataSize = 50;
-		}
 		String wrkStr;
-		int fieldWidth = dataSize * 7;
-		FontMetrics metrics = this.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
+		int fieldWidth = 100;
+		this.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		//FontMetrics metrics = this.getFontMetrics(this.getFont());
 		String sql = "select distinct " + fieldID_ + " from " + tableID_ + " order by " + fieldID;
 		XFTableOperator operator = new XFTableOperator(session_, null, sql, true);
 		try {
 			while (operator.next()) {
 				wrkStr = operator.getValueOf(fieldID).toString().trim();
 				valueList.add(wrkStr);
-				if (metrics.stringWidth(wrkStr) > fieldWidth) {
-					fieldWidth = metrics.stringWidth(wrkStr);
-				}
+				//if (metrics.stringWidth(wrkStr) > fieldWidth) {
+				//	fieldWidth = metrics.stringWidth(wrkStr);
+				//}
 			}
 		} catch (Exception e) {
 		}
-		if (fieldWidth > 200) {
-			fieldWidth = 200;
+		//if (fieldWidth > 300) {
+		//	fieldWidth = 300;
+		//}
+		if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
+			fieldWidth = digits * XFUtility.FONT_SIZE + 10;
+		} else {
+			fieldWidth = digits * (XFUtility.FONT_SIZE/2 + 2) + 10;
 		}
+		if (fieldWidth > 800) {
+			fieldWidth = 800;
+		}
+
 		DefaultComboBoxModel model = new DefaultComboBoxModel(valueList);
 		this.setModel(model);
 		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
-		this.setFont(new java.awt.Font("Dialog", 0, 14));
 		this.setEditable(true);
 		this.setSelectedIndex(-1);
 		JTextField field = (JTextField)this.getEditor().getEditorComponent();
@@ -4072,8 +4136,7 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 		dateFormat = session_.getDateFormat();
 		language = session_.getDateFormat().substring(0, 2);
 
-		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
-		jTextField.setBounds(new Rectangle(0, 0, 85, XFUtility.FIELD_UNIT_HEIGHT));
+		jTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
 
@@ -4081,7 +4144,7 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 		int currentYear = calendar.get(Calendar.YEAR);
 		int minimumYear = currentYear - 30;
 		int maximumYear = currentYear + 10;
-		jComboBoxYear.setFont(new java.awt.Font("Dialog", 0, 14));
+		jComboBoxYear.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jComboBoxYear.addKeyListener(new XFYMonthBox_Year_keyAdapter(this));
 
 		SimpleDateFormat gengoFormatter = new SimpleDateFormat("Gyy", new Locale("ja", "JP", "JP"));
@@ -4116,7 +4179,7 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 			jComboBoxYear.addItem("H99");
 		}
 
-		jComboBoxMonth.setFont(new java.awt.Font("Dialog", 0, 14));
+		jComboBoxMonth.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jComboBoxMonth.addKeyListener(new XFYMonthBox_Month_keyAdapter(this));
 
 		listMonth.add("");
@@ -4133,9 +4196,10 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 		listMonth.add("11");
 		listMonth.add("12");
 		if (language.equals("en")) {
-			jComboBoxMonth.setBounds(new Rectangle(0, 0, 55, XFUtility.FIELD_UNIT_HEIGHT));
-			jComboBoxYear.setBounds(new Rectangle(56, 0, 60, XFUtility.FIELD_UNIT_HEIGHT));
-			this.setSize(new Dimension(116, XFUtility.FIELD_UNIT_HEIGHT));
+			jComboBoxMonth.setBounds(new Rectangle(0, 0, 70, XFUtility.FIELD_UNIT_HEIGHT));
+			jComboBoxYear.setBounds(new Rectangle(71, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
+			jTextField.setBounds(new Rectangle(0, 0, 151, XFUtility.FIELD_UNIT_HEIGHT));
+			this.setSize(new Dimension(151, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMonth.addItem("");
 			jComboBoxMonth.addItem("Jan");
 			jComboBoxMonth.addItem("Feb");
@@ -4151,9 +4215,10 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 			jComboBoxMonth.addItem("Dec");
 		}
 		if (language.equals("jp")) {
-			jComboBoxYear.setBounds(new Rectangle(0, 0, 60, XFUtility.FIELD_UNIT_HEIGHT));
-			jComboBoxMonth.setBounds(new Rectangle(61, 0, 45, XFUtility.FIELD_UNIT_HEIGHT));
-			this.setSize(new Dimension(106, XFUtility.FIELD_UNIT_HEIGHT));
+			jComboBoxYear.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
+			jComboBoxMonth.setBounds(new Rectangle(81, 0, 60, XFUtility.FIELD_UNIT_HEIGHT));
+			jTextField.setBounds(new Rectangle(0, 0, 141, XFUtility.FIELD_UNIT_HEIGHT));
+			this.setSize(new Dimension(141, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMonth.addItem("");
 			jComboBoxMonth.addItem("01");
 			jComboBoxMonth.addItem("02");
@@ -4312,19 +4377,19 @@ class XFFYearBox extends JPanel implements XFEditableField {
 		dateFormat = session_.getDateFormat();
 		language = session_.getDateFormat().substring(0, 2);
 
-		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
-		jTextField.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
+		jTextField.setBounds(new Rectangle(0, 0, 110, XFUtility.FIELD_UNIT_HEIGHT));
 
 		GregorianCalendar calendar = new GregorianCalendar();
 		int currentYear = calendar.get(Calendar.YEAR);
 		int minimumYear = currentYear - 30;
 		int maximumYear = currentYear + 10;
 
-		jComboBoxYear.setFont(new java.awt.Font("Dialog", 0, 12));
+		jComboBoxYear.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBoxYear.addKeyListener(new XFFYearBox_keyAdapter(this));
-		jComboBoxYear.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
+		jComboBoxYear.setBounds(new Rectangle(0, 0, 110, XFUtility.FIELD_UNIT_HEIGHT));
 
 		listYear.add("");
 		jComboBoxYear.addItem("");
@@ -4346,7 +4411,7 @@ class XFFYearBox extends JPanel implements XFEditableField {
 		}
 
 		this.setLayout(null);
-		this.setSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
+		this.setSize(new Dimension(110, XFUtility.FIELD_UNIT_HEIGHT));
 	}
 	
 	public void addActionListener(ActionListener listener) {
@@ -4468,11 +4533,11 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 		language = session_.getDateFormat().substring(0, 2);
 		startMonth = session_.getSystemVariantInteger("FIRST_MONTH");
 
-		jTextField.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
 
-		jComboBoxMSeq.setFont(new java.awt.Font("Dialog", 0, 12));
+		jComboBoxMSeq.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBoxMSeq.addKeyListener(new XFMSeqBox_keyAdapter(this));
 
 		listMSeq.add(0);
@@ -4490,9 +4555,9 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 		listMSeq.add(12);
 
 		if (language.equals("en")) {
-			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 50, XFUtility.FIELD_UNIT_HEIGHT));
-			jTextField.setBounds(new Rectangle(0, 0, 50, XFUtility.FIELD_UNIT_HEIGHT));
-			this.setSize(new Dimension(50, XFUtility.FIELD_UNIT_HEIGHT));
+			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 60, XFUtility.FIELD_UNIT_HEIGHT));
+			jTextField.setBounds(new Rectangle(0, 0, 60, XFUtility.FIELD_UNIT_HEIGHT));
+			this.setSize(new Dimension(60, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMSeq.addItem("");
 			for (int i = startMonth -1; i < startMonth + 11; i++) {
 				jComboBoxMSeq.addItem(monthArrayEn[i]);
@@ -4500,9 +4565,9 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 		}
 
 		if (language.equals("jp")) {
-			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 62, XFUtility.FIELD_UNIT_HEIGHT));
-			jTextField.setBounds(new Rectangle(0, 0, 62, XFUtility.FIELD_UNIT_HEIGHT));
-			this.setSize(new Dimension(62, XFUtility.FIELD_UNIT_HEIGHT));
+			jComboBoxMSeq.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
+			jTextField.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
+			this.setSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMSeq.addItem("");
 			for (int i = startMonth -1; i < startMonth + 11; i++) {
 				jComboBoxMSeq.addItem(monthArrayJp[i]);
@@ -4724,18 +4789,14 @@ class XFUrlField extends JPanel implements XFEditableField {
 	private int rows_ = 1;
 	private String oldValue = "";
 
-	public XFUrlField(){
-		this(40, "");
-	}
-
-	public XFUrlField(int digits, String fieldOptions){
+	public XFUrlField(int digits, String fieldOptions, String fontName){
 		super();
 
-		jTextField.setFont(new java.awt.Font(XFUtility.RESOURCE.getString("URLFont"), 0, 14));
+		jTextField.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jTextField.setDocument(new LimitedDocument(digits));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
-		Font labelFont = new java.awt.Font(XFUtility.RESOURCE.getString("URLFont"), 0, 14);
+		Font labelFont = new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE);
 		jLabel.setFont(labelFont);
 		jLabel.setForeground(Color.blue);
 		jLabel.setHorizontalAlignment(SwingConstants.LEFT);
@@ -4749,7 +4810,7 @@ class XFUrlField extends JPanel implements XFEditableField {
 		if (!wrkStr.equals("")) {
 			fieldWidth = Integer.parseInt(wrkStr);
 		} else {
-			fieldWidth = digits * 7 + 10;
+			fieldWidth = digits * (XFUtility.FONT_SIZE/2) + 10;
 		}
 		if (fieldWidth > 800) {
 			fieldWidth = 800;
@@ -4923,7 +4984,6 @@ class CellBorder implements Border {
 }
 
 class TableCellReadOnly extends Object {
-	private static final long serialVersionUID = 1L;
 	private Object internalValue_ = null;
 	private Object externalValue_ = null;
 	private Color color_ = null;
@@ -4991,7 +5051,6 @@ class SortableDomElementListModel extends DefaultListModel {
 }
 
 class XFScript extends Object {
-	private static final long serialVersionUID = 1L;
 	private ArrayList<String> fieldList = new ArrayList<String>();
 	private String tableID = "";
 	private String scriptName = "";
@@ -5062,6 +5121,7 @@ class XFCalendar extends JDialog {
     private JPanel jPanelCenter = new JPanel();
     private JTabbedPane jTabbedPaneCenter = new JTabbedPane();
     private JLabel jLabelYearMonth = new JLabel();
+    private JLabel jLabelDateComment = new JLabel();
     private JLabel jLabelSun = new JLabel();
     private JLabel jLabelMon = new JLabel();
     private JLabel jLabelTue = new JLabel();
@@ -5078,7 +5138,6 @@ class XFCalendar extends JDialog {
     private Date selectedDate = null;
     private ArrayList<String> kbCalendarList = new ArrayList<String>(); 
     private HashMap<String, String> offDateMap = new HashMap<String,String>();
-    private String normalMessage;
 	private Color lightRedGray = new Color(228, 192, 192);
 
     public XFCalendar(Session session) {
@@ -5093,40 +5152,44 @@ class XFCalendar extends JDialog {
 
 		jPanelTop.setPreferredSize(new Dimension(346, 20));
 		jPanelTop.setLayout(null);
-		jLabelYearMonth.setFont(new java.awt.Font("Dialog", 0, 18));
-		jLabelYearMonth.setHorizontalAlignment(SwingConstants.CENTER);
-		jLabelYearMonth.setBounds(0, 0, 344, 20);
+		jLabelYearMonth.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jLabelYearMonth.setBounds(5, 0, 200, 20);
+		jLabelDateComment.setFont(new java.awt.Font(session_.systemFont, 0, 12));
+		jLabelDateComment.setHorizontalAlignment(SwingConstants.RIGHT);
+		jLabelDateComment.setForeground(Color.gray);
+		jLabelDateComment.setBounds(200, 3, 142, 17);
 		jPanelTop.add(jLabelYearMonth);
+		jPanelTop.add(jLabelDateComment);
 
 		jPanelCenter.setBackground(Color.white);
 		jPanelCenter.setBorder(null);
 		jPanelCenter.setLayout(null);
 		jPanelCenter.setPreferredSize(new Dimension(332, 158));
-		jLabelSun.setFont(new java.awt.Font("Dialog", 0, 12));
+		jLabelSun.setFont(new java.awt.Font(session_.systemFont, 0, 12));
 		jLabelSun.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelSun.setBounds(3, 2, 48, 13);
 		jPanelCenter.add(jLabelSun);
-		jLabelMon.setFont(new java.awt.Font("Dialog", 0, 12));
+		jLabelMon.setFont(new java.awt.Font(session_.systemFont, 0, 12));
 		jLabelMon.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelMon.setBounds(50, 2, 48, 13);
 		jPanelCenter.add(jLabelMon);
-		jLabelTue.setFont(new java.awt.Font("Dialog", 0, 12));
+		jLabelTue.setFont(new java.awt.Font(session_.systemFont, 0, 12));
 		jLabelTue.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelTue.setBounds(98, 2, 48, 13);
 		jPanelCenter.add(jLabelTue);
-		jLabelWed.setFont(new java.awt.Font("Dialog", 0, 12));
+		jLabelWed.setFont(new java.awt.Font(session_.systemFont, 0, 12));
 		jLabelWed.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelWed.setBounds(146, 2, 48, 13);
 		jPanelCenter.add(jLabelWed);
-		jLabelThu.setFont(new java.awt.Font("Dialog", 0, 12));
+		jLabelThu.setFont(new java.awt.Font(session_.systemFont, 0, 12));
 		jLabelThu.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelThu.setBounds(194, 2, 48, 13);
 		jPanelCenter.add(jLabelThu);
-		jLabelFri.setFont(new java.awt.Font("Dialog", 0, 12));
+		jLabelFri.setFont(new java.awt.Font(session_.systemFont, 0, 12));
 		jLabelFri.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelFri.setBounds(242, 2, 48, 13);
 		jPanelCenter.add(jLabelFri);
-		jLabelSat.setFont(new java.awt.Font("Dialog", 0, 12));
+		jLabelSat.setFont(new java.awt.Font(session_.systemFont, 0, 12));
 		jLabelSat.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelSat.setBounds(290, 2, 48, 13);
 		jPanelCenter.add(jLabelSat);
@@ -5193,11 +5256,10 @@ class XFCalendar extends JDialog {
 		}
 
 		jTextAreaBottom.setPreferredSize(new Dimension(346, 40));
-		jTextAreaBottom.setFont(new java.awt.Font("Dialog", 0, 12));
+		jTextAreaBottom.setFont(new java.awt.Font(session_.systemFont, 0, 12));
 		jTextAreaBottom.setEditable(false);
 		jTextAreaBottom.setBackground(SystemColor.control);
-		normalMessage = XFUtility.RESOURCE.getString("CalendarComment");
-		jTextAreaBottom.setText(normalMessage);
+		jTextAreaBottom.setText(XFUtility.RESOURCE.getString("CalendarComment"));
 
 		try {
 			StringBuffer statementBuf = new StringBuffer();
@@ -5212,7 +5274,9 @@ class XFCalendar extends JDialog {
 		}
 
 		int count = 0;
+		jTabbedPaneCenter.setFont(new java.awt.Font(session_.systemFont, 0, 14));
 		jTabbedPaneCenter.setTabPlacement(JTabbedPane.BOTTOM);
+		jTabbedPaneCenter.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		jTabbedPaneCenter.addChangeListener(new XFCalendar_changeAdapter(this));
 		try {
 			StringBuffer statementBuf = new StringBuffer();
@@ -5241,7 +5305,7 @@ class XFCalendar extends JDialog {
 		jPanelMain.add(jTextAreaBottom, BorderLayout.SOUTH);
 
 		this.getContentPane().add(jPanelMain);
-		dlgSize = new Dimension(352,259);
+		dlgSize = new Dimension(352,272);
 		this.setPreferredSize(dlgSize);
 		this.setResizable(false);
 		this.pack();
@@ -5251,6 +5315,7 @@ class XFCalendar extends JDialog {
     	selectedDate = date;
     	this.date = date;
 
+    	jLabelDateComment.setText("");
     	int index = kbCalendarList.indexOf(kbCalendar);
     	if (index >= 0) {
     		jTabbedPaneCenter.setSelectedIndex(index);
@@ -5334,11 +5399,7 @@ class XFCalendar extends JDialog {
 		}
 
 		dateButtonArray[indexOfFocusedDate].requestFocus();
-		if (dateButtonArray[indexOfFocusedDate].getToolTipText().equals("")) {
-			jTextAreaBottom.setText(normalMessage);
-		} else {
-			jTextAreaBottom.setText(dateButtonArray[indexOfFocusedDate].getToolTipText());
-		}
+    	jLabelDateComment.setText(dateButtonArray[indexOfFocusedDate].getToolTipText());
 	}
 	
 	String getYearMonthText(Calendar cal) {
@@ -5526,7 +5587,7 @@ class XFCalendar extends JDialog {
 		private Date date;
 		public DateButton() {
 			super();
-			this.setFont(new java.awt.Font("Dialog", java.awt.Font.BOLD, 12));
+			this.setFont(new java.awt.Font(session_.systemFont, java.awt.Font.BOLD, 12));
 			this.addFocusListener(new DateButton_FocusAdapter());
 		}
 		public void setDate(Date date) {
@@ -5543,11 +5604,7 @@ class XFCalendar extends JDialog {
 				Component com = getFocusOwner();
 				for (int i = 0; i < 42; i++) {
 					if (com.equals(dateButtonArray[i])) {
-						if (dateButtonArray[i].getToolTipText().equals("")) {
-							jTextAreaBottom.setText(normalMessage);
-						} else {
-							jTextAreaBottom.setText(dateButtonArray[i].getToolTipText());
-						}
+						jLabelDateComment.setText(dateButtonArray[i].getToolTipText());
 					}
 				}
 		  }

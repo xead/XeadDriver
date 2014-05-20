@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -54,6 +53,8 @@ import javax.swing.JTextArea;
 ////////////////////////////////////////////////////////////////
 public class XFInputDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
+    private static final int BUTTONS_PANEL_HEIGHT = 43;
+    private JPanel jPanelMain = new JPanel();
     private JPanel jPanelTop = new JPanel();
     private JPanel jPanelCenter = new JPanel();
     private JPanel jPanelBottom = new JPanel();
@@ -69,8 +70,8 @@ public class XFInputDialog extends JDialog {
     private int reply;
 	private int nextLocationTopY = 6;
 	private int nextLocationCenterY = 6;
-	private int messageHeight = 100;
-	private int dialogWidth = 230;
+	private int messageHeight = 55;
+	private int dialogWidth = 300;
 	private Session session_;
 
     public XFInputDialog(Session session) {
@@ -79,29 +80,33 @@ public class XFInputDialog extends JDialog {
 		this.parent_ = session;
 		this.session_ = session;
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+		jPanelMain.setLayout(new BorderLayout());
+		jPanelMain.setBorder(null);
 		jPanelTop.setLayout(null);
 		jPanelTop.setBorder(BorderFactory.createEtchedBorder());
 		jPanelCenter.setLayout(null);
 		jPanelBottom.setLayout(new BorderLayout());
 		jPanelButtons.setLayout(null);
-		jTextArea.setFont(new java.awt.Font("Dialog", 0, 14));
+		jTextArea.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextArea.setEditable(false);
 		jTextArea.setFocusable(false);
 		jTextArea.setLineWrap(true);
 		jTextArea.setWrapStyleWord(true);
 		jScrollPane.getViewport().add(jTextArea);
 		jScrollPane.setFocusable(false);
-		jButtonClose.setFont(new java.awt.Font("Dialog", 0, 14));
+		jButtonClose.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonClose.setText(XFUtility.RESOURCE.getString("Close"));
 		jButtonClose.addActionListener(new XFInputDialog_jButtonClose_actionAdapter(this));
-		jButtonOK.setFont(new java.awt.Font("Dialog", 0, 14));
+		jButtonOK.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonOK.setText("OK");
 		jButtonOK.addActionListener(new XFInputDialog_jButtonOK_actionAdapter(this));
+    	jPanelButtons.setPreferredSize(new Dimension(100, BUTTONS_PANEL_HEIGHT));
 		jPanelButtons.add(jButtonClose);
 		jPanelButtons.add(jButtonOK);
 		jPanelBottom.add(jScrollPane, BorderLayout.CENTER);
 		jPanelBottom.add(jPanelButtons,  BorderLayout.SOUTH);
-		this.getContentPane().add(jPanelBottom,  BorderLayout.SOUTH);
+		jPanelMain.add(jPanelBottom,  BorderLayout.SOUTH);
+		this.getContentPane().add(jPanelMain,  BorderLayout.CENTER);
 		this.getRootPane().setDefaultButton(jButtonOK);
 		this.setResizable(false);
     }
@@ -114,7 +119,8 @@ public class XFInputDialog extends JDialog {
     	nextLocationTopY = 6;
     	nextLocationCenterY = 6;
     	jTextArea.setText("");
-    	messageHeight = 100;
+    	messageHeight = 55;
+    	dialogWidth = 300;
     	jButtonClose.requestFocus();
     }
 
@@ -149,12 +155,12 @@ public class XFInputDialog extends JDialog {
 		XFInputDialogField field = new XFInputDialogField(caption, inputType, parmID, this);
 		if (areaIndex == 0) {
 			field.setBounds(new Rectangle(5, nextLocationTopY, field.getBounds().width, field.getBounds().height));
-			nextLocationTopY = nextLocationTopY + 28;
+			nextLocationTopY = nextLocationTopY + XFUtility.FIELD_UNIT_HEIGHT + 5;
 			jPanelTop.add(field);
 		}
 		if (areaIndex == 1) {
 			field.setBounds(new Rectangle(5, nextLocationCenterY, field.getBounds().width, field.getBounds().height));
-			nextLocationCenterY = nextLocationCenterY + 28;
+			nextLocationCenterY = nextLocationCenterY + XFUtility.FIELD_UNIT_HEIGHT + 5;
 			jPanelCenter.add(field);
 		}
 		fieldList.add(field);
@@ -164,10 +170,10 @@ public class XFInputDialog extends JDialog {
 
     public int request(String title) {
     	reply = -1;
-    	//
+
     	XFInputDialogField firstEditableFieldOnTopPanel = null;
     	XFInputDialogField firstEditableFieldOnCenterPanel = null;
-    	int wrkInt, width = 230;
+    	int wrkInt, width = 300;
 	    for (int i = 0; i < fieldList.size(); i++) {
 	    	if (fieldList.get(i).isEditable()
 	    			&& areaIndexList.get(i) == 0
@@ -179,7 +185,6 @@ public class XFInputDialog extends JDialog {
 	    			&& firstEditableFieldOnCenterPanel == null) {
 	    		firstEditableFieldOnCenterPanel = fieldList.get(i);
 	    	}
-	    	//wrkInt = fieldList.get(i).getBounds().width + 50;
 	    	wrkInt = fieldList.get(i).getBounds().width + 30;
 	    	if (wrkInt > width) {
 	    		width = wrkInt;
@@ -188,7 +193,7 @@ public class XFInputDialog extends JDialog {
 	    if (dialogWidth > width) {
 	    	width = dialogWidth;
 	    }
-	    //
+
 	    if (firstEditableFieldOnTopPanel != null) {
 	    	firstEditableFieldOnTopPanel.requestFocus();
 	    } else {
@@ -198,44 +203,42 @@ public class XFInputDialog extends JDialog {
 		    	jButtonClose.requestFocus();
 		    }
 	    }
-	    //
+
 	    if (nextLocationTopY > 6 && nextLocationCenterY > 6) {
-	    	dlgSize = new Dimension(width, nextLocationTopY + 2 + nextLocationCenterY + 4 + messageHeight + 32);
+	    	dlgSize = new Dimension(width, nextLocationTopY + 6 + nextLocationCenterY + messageHeight + BUTTONS_PANEL_HEIGHT);
 	    	jPanelTop.setPreferredSize(new Dimension(width, nextLocationTopY + 2));
-	    	this.getContentPane().add(jPanelTop,  BorderLayout.NORTH);
-	    	this.getContentPane().add(jPanelCenter,  BorderLayout.CENTER);
+	    	jPanelMain.add(jPanelTop,  BorderLayout.NORTH);
+	    	jPanelMain.add(jPanelCenter,  BorderLayout.CENTER);
 	    }
 	    if (nextLocationTopY == 6 && nextLocationCenterY > 6) {
-	    	dlgSize = new Dimension(width, nextLocationCenterY + 2 + messageHeight + 32);
-			this.getContentPane().remove(jPanelTop);
-	    	this.getContentPane().add(jPanelCenter,  BorderLayout.CENTER);
+	    	dlgSize = new Dimension(width, nextLocationCenterY + 2 + messageHeight + BUTTONS_PANEL_HEIGHT);
+	    	jPanelMain.remove(jPanelTop);
+	    	jPanelMain.add(jPanelCenter,  BorderLayout.CENTER);
 	    }
 	    if (nextLocationTopY > 6 && nextLocationCenterY == 6) {
-	    	dlgSize = new Dimension(width, nextLocationTopY + 4 + messageHeight + 32);
-	    	this.getContentPane().add(jPanelTop,  BorderLayout.CENTER);
-			this.getContentPane().remove(jPanelCenter);
+	    	dlgSize = new Dimension(width, nextLocationTopY + 2 + messageHeight + BUTTONS_PANEL_HEIGHT);
+	    	jPanelMain.add(jPanelTop,  BorderLayout.CENTER);
+	    	jPanelMain.remove(jPanelCenter);
 	    }
 	    if (nextLocationTopY == 6 && nextLocationCenterY == 6) {
-	    	dlgSize = new Dimension(width, messageHeight + 32);
-			this.getContentPane().remove(jPanelTop);
-			this.getContentPane().remove(jPanelCenter);
+	    	dlgSize = new Dimension(width, messageHeight + BUTTONS_PANEL_HEIGHT);
+	    	jPanelMain.remove(jPanelTop);
+	    	jPanelMain.remove(jPanelCenter);
 	    }
-    	jPanelBottom.setPreferredSize(new Dimension(width, messageHeight));
-    	jPanelButtons.setPreferredSize(new Dimension(width, 34));
-		//
-		wrkInt = (width - 220) / 2;
-		jButtonClose.setBounds(wrkInt, 2, 80, 30);
-		jButtonOK.setBounds(wrkInt + 140, 2, 80, 30);
+    	jPanelBottom.setPreferredSize(new Dimension(width, messageHeight + BUTTONS_PANEL_HEIGHT));
+
+		wrkInt = (width - 240) / 2;
+		jButtonClose.setBounds(wrkInt, 8, 100, 27);
+		jButtonOK.setBounds(wrkInt + 140, 8, 100, 27);
     	jTextArea.setCaretPosition(0);
-    	//
-		JLabel jLabel = new JLabel();
-		FontMetrics metricsTitle = jLabel.getFontMetrics(this.getFont());
+
+		FontMetrics metricsTitle = this.getFontMetrics(this.getFont());
 		int titleWidth = metricsTitle.stringWidth(title) + 50;
 		if (titleWidth > width) {
 			width = titleWidth;
 	    	dlgSize = new Dimension(width, dlgSize.height);
 		}
-    	this.setPreferredSize(dlgSize);
+		jPanelMain.setPreferredSize(dlgSize);
     	this.setTitle(title);
     	if (parent_ != null && parent_.isValid()) {
     		int posY, posX;
@@ -252,7 +255,7 @@ public class XFInputDialog extends JDialog {
     	}
 		this.pack();
     	this.setVisible(true);
-    	//
+
     	return reply;
     }
 

@@ -48,7 +48,6 @@ import org.w3c.dom.*;
 // Subject Table : The table which has joins to the target table  //
 ////////////////////////////////////////////////////////////////////
 public class ReferChecker extends Object {
-	private static final long serialVersionUID = 1L;
 	private Session session_;
 	private org.w3c.dom.Element targetTableElement_;
 	private String targetTableID_;
@@ -269,7 +268,6 @@ public class ReferChecker extends Object {
 }
 
 class ReferChecker_SubjectTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element subjectTableElement_;
 	private org.w3c.dom.Element referElement_;
 	private String subjectTableID;
@@ -920,7 +918,6 @@ class ReferChecker_SubjectTable extends Object {
 }
 
 class ReferChecker_ReferTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private ReferChecker_SubjectTable subjectTable_;
 	private ReferChecker deleteChecker;
 	private org.w3c.dom.Element referElement_;
@@ -1203,7 +1200,6 @@ class ReferChecker_ReferTable extends Object {
 }
 
 class ReferChecker_Field extends XFColumnScriptable {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element tableElement = null;
 	private ReferChecker_SubjectTable subjectTable_ = null;
 	private String tableAlias = "";

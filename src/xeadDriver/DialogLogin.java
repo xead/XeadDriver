@@ -36,6 +36,7 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.PlainDocument;
+
 import java.awt.event.*;
 import java.util.Date;
 
@@ -52,7 +53,7 @@ public class DialogLogin extends JDialog {
 	private Session session = null;
 	private String userID, userName, userEmployeeNo, userEmailAddress, userMenus = "";
 	private boolean validated = false;
-	private DialogAbout aboutDialog;
+	private DialogAbout dialogAbout;
 
 	public DialogLogin(Session session, String loginUser, String loginPassword) {
 		super(session, "", true);
@@ -61,41 +62,43 @@ public class DialogLogin extends JDialog {
 			int fieldSize;
 
 			this.session = session;
-			this.setTitle(session.getSystemName() + " " + session.getVersion());
+			Image imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
+			this.setIconImage(imageTitle);
+			this.setTitle(session.getSystemName());
 			jPanelMain.setBorder(BorderFactory.createEtchedBorder());
-			jPanelMain.setPreferredSize(new Dimension(290, 130));
+			jPanelMain.setPreferredSize(new Dimension(400, 130));
 			jPanelMain.setLayout(null);
 
 			jLabelUserID.setHorizontalAlignment(SwingConstants.RIGHT);
-			jLabelUserID.setBounds(new Rectangle(10, 17, 80, 25));
-			jLabelUserID.setFont(new java.awt.Font("Dialog", 0, 14));
+			jLabelUserID.setBounds(new Rectangle(5, 15, 130, 25));
+			jLabelUserID.setFont(new java.awt.Font(session.systemFont, 0, 16));
 			jLabelUserID.setText(XFUtility.RESOURCE.getString("UserID"));
 			fieldElement = this.session.getFieldElement(session.getTableNameOfUser(), "IDUSER");
 			fieldSize = Integer.parseInt(fieldElement.getAttribute("Size"));
-			jTextFieldUserID.setFont(new java.awt.Font("Dialog", 0, 14));
-			jTextFieldUserID.setBounds(new Rectangle(100, 17, fieldSize * 10, 25));
+			jTextFieldUserID.setFont(new java.awt.Font(session.systemFont, 0, 16));
+			jTextFieldUserID.setBounds(new Rectangle(140, 15, fieldSize * 14, 25));
 			jTextFieldUserID.setDocument(new LimitedDocument(fieldSize));
 			jTextFieldUserID.setText(loginUser);
 
 			jLabelPassword.setHorizontalAlignment(SwingConstants.RIGHT);
-			jLabelPassword.setBounds(new Rectangle(10, 52, 80, 25));
-			jLabelPassword.setFont(new java.awt.Font("Dialog", 0, 14));
+			jLabelPassword.setBounds(new Rectangle(5, 50, 130, 25));
+			jLabelPassword.setFont(new java.awt.Font(session.systemFont, 0, 16));
 			jLabelPassword.setText(XFUtility.RESOURCE.getString("Password"));
-			jPasswordField.setFont(new java.awt.Font("Dialog", 0, 12));
-			jPasswordField.setBounds(new Rectangle(100, 52, 140, 25));
+			jPasswordField.setFont(new java.awt.Font(session.systemFont, 0, 16));
+			jPasswordField.setBounds(new Rectangle(140, 50, 180, 25));
 			jPasswordField.setDocument(new LimitedDocument(10));
 			jPasswordField.setText(loginPassword);
 
-			jButtonClose.setBounds(new Rectangle(10, 92, 80, 25));
-			jButtonClose.setFont(new java.awt.Font("Dialog", 0, 12));
+			jButtonClose.setBounds(new Rectangle(30, 90, 100, 29));
+			jButtonClose.setFont(new java.awt.Font(session.systemFont, 0, 16));
 			jButtonClose.setText(XFUtility.RESOURCE.getString("Close"));
 			jButtonClose.addActionListener(new LoginDialog_jButtonClose_actionAdapter(this));
-			jButtonOK.setBounds(new Rectangle(100, 92, 90, 25));
-			jButtonOK.setFont(new java.awt.Font("Dialog", 0, 12));
+			jButtonOK.setBounds(new Rectangle(150, 90, 100, 29));
+			jButtonOK.setFont(new java.awt.Font(session.systemFont, 0, 16));
 			jButtonOK.setText(XFUtility.RESOURCE.getString("LogIn"));
 			jButtonOK.addActionListener(new LoginDialog_jButtonOK_actionAdapter(this));
-			jButtonAbout.setBounds(new Rectangle(200, 92, 80, 25));
-			jButtonAbout.setFont(new java.awt.Font("Dialog", 0, 12));
+			jButtonAbout.setBounds(new Rectangle(270, 90, 100, 29));
+			jButtonAbout.setFont(new java.awt.Font(session.systemFont, 0, 16));
 			jButtonAbout.setText("About");
 			jButtonAbout.addActionListener(new LoginDialog_jButtonAbout_actionAdapter(this));
 
@@ -109,13 +112,13 @@ public class DialogLogin extends JDialog {
 			jPanelMain.add(jPasswordField, null);
 			pack();
 
-			aboutDialog = new DialogAbout(this);
+			dialogAbout = new DialogAbout(this, session.systemFont);
 		} catch(Exception ex) {
 			ex.printStackTrace();
 		}
 	}
 
-	public boolean userIsValidated() throws Exception {
+	public boolean userIsValidated(boolean isOnlineJob) throws Exception {
 		jPanelMain.getRootPane().setDefaultButton(jButtonOK);
 		Dimension dlgSize = this.getPreferredSize();
 		Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -124,7 +127,11 @@ public class DialogLogin extends JDialog {
 
 		String password = new String(jPasswordField.getPassword());
 		if (jTextFieldUserID.getText().equals("") || password.equals("")) {
-			super.setVisible(true);
+			if (isOnlineJob) {
+				super.setVisible(true);
+			} else {
+				validated = false;
+			}
 		} else {
 			jButtonOK_actionPerformed(null);
 		}
@@ -154,7 +161,7 @@ public class DialogLogin extends JDialog {
 	}
 
 	void jButtonAbout_actionPerformed(ActionEvent e) {
-		aboutDialog.request();
+		dialogAbout.request();
 	}
 
 	boolean isValidPassword(String userID, String password) throws Exception {

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -853,7 +853,8 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 						if (fmt.equals("")) {
 							fmt = session_.getDateFormat();
 						}
-						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(value)), fmt, false);
+						wrkStr = value.toString().substring(0, 10);
+						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(wrkStr)), fmt, false);
 					}
 					if (basicType.equals("INTEGER")) {
 						if (fieldList.get(i).getDataTypeOptionList().contains("NO_EDIT")
@@ -901,7 +902,6 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 }
 
 class XF290_Field extends XFColumnScriptable {
-	private static final long serialVersionUID = 1L;
 	org.w3c.dom.Element tableElement = null;
 	private String dataSourceName_ = "";
 	private String tableID_ = "";
@@ -982,9 +982,6 @@ class XF290_Field extends XFColumnScriptable {
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
-		//if (dataSize > 50) {
-		//	dataSize = 50;
-		//}
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
@@ -1023,7 +1020,7 @@ class XF290_Field extends XFColumnScriptable {
 			}
 		}
 		//
-		xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, "");
+		xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, "", dialog_.getSession().systemFont);
 		xFTextField.setLocation(5, 0);
 		component = xFTextField;
 	}
@@ -1271,7 +1268,6 @@ class XF290_Field extends XFColumnScriptable {
 }
 
 class XF290_Phrase extends Object {
-	private static final long serialVersionUID = 1L;
 	org.w3c.dom.Element phraseElement_ = null;
 	private String block = "";
 	private String alignment = "";
@@ -1441,7 +1437,6 @@ class XF290_Phrase extends Object {
 }
 
 class XF290_PrimaryTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element functionElement_ = null;
 	private String tableID = "";
@@ -1637,7 +1632,6 @@ class XF290_PrimaryTable extends Object {
 }
 
 class XF290_ReferTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element referElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF290 dialog_ = null;

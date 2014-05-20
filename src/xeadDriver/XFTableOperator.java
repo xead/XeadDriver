@@ -72,6 +72,7 @@ public class XFTableOperator {
     private StringBuffer logBuf_ = null;
     private boolean hasFoundRecord_ = false;
     private boolean isAutoCommit_ = false;
+    private int maxCount_ = 0;
 
 	public XFTableOperator(Session session, StringBuffer logBuf, String operation, String tableID) throws Exception {
 		this(session, logBuf, operation, tableID, false);
@@ -104,6 +105,11 @@ public class XFTableOperator {
 
 	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText) {
 		this(session, logBuf, sqlText, false);
+	}
+
+	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText, int maxCount) {
+		this(session, logBuf, sqlText, false);
+		maxCount_ = maxCount;
 	}
 	
 	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText, boolean isAutoCommit) {
@@ -521,6 +527,9 @@ public class XFTableOperator {
 				if (connection != null) {
 					if (operation_.toUpperCase().equals("SELECT")) {
 						statement = connection.createStatement();
+						if (maxCount_ > 0) {
+							statement.setMaxRows(maxCount_);
+						}
 						ResultSet result = statement.executeQuery(this.getSqlText());
 						relation_ = new Relation(result);
 						processRowCount = relation_.getRowCount();
@@ -662,6 +671,12 @@ public class XFTableOperator {
 			}
 		}
     	return hasNext;
+    }
+    
+    public void setCursorAt(int index) {
+    	if (relation_ != null) {
+    		relation_.setRowIndex(index);
+    	}
     }
     
     public boolean previous() {

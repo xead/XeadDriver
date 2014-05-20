@@ -43,8 +43,16 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R1.M34";
-	public static final String VERSION  = "1.1.34";
+	public static final String FULL_VERSION  = "V1.R2.M0";
+	public static final String VERSION  = "1.2.0";
+	//1.2.0
+	//・フォントをシステム定義によって可変にした
+	//・基本フォントサイズを14から18に変更してパネルのレイアウトロジックを変更した
+	//・機能ボタンのフォントサイズをボタン幅に合わせて調整するようにした
+	//・DB接続処理まわりの仕様を改善した
+	//・SQL Serverに対応した（ただしjarにドライバを組み込んだのみでロジック上の変更なし）
+	//・XF100,110の読込単位行数の扱いを改善するとともにと、最大表示行数に関するロジックを組み込んだ
+	//
 	//34
 	//・XF200の追加モードでのプロンプトリストフィールドの初期値設定に関する問題を修正した
 	//・日付フィールドの初期値設定に関する問題を修正した
@@ -200,6 +208,7 @@ public class DialogAbout extends JDialog implements ActionListener {
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String COPYRIGHT = "Copyright 2014 DBC,Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+
 	/**
 	 * Components on dialog
 	 */
@@ -218,10 +227,12 @@ public class DialogAbout extends JDialog implements ActionListener {
 	private HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
 	private Desktop desktop = Desktop.getDesktop();
 	private JDialog parent_;
+	private String font_;
 
-	public DialogAbout(JDialog parent) {
+	public DialogAbout(JDialog parent, String font) {
 		super(parent);
 		parent_ = parent;
+		font_ = font;
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		try {
 			jbInit();
@@ -241,42 +252,43 @@ public class DialogAbout extends JDialog implements ActionListener {
 		insetsPanel2.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		insetsPanel2.setPreferredSize(new Dimension(75, 52));
 		insetsPanel2.add(imageLabel, BorderLayout.EAST);
-		//
-		labelName.setFont(new java.awt.Font("Serif", 1, 16));
+
+		labelName.setFont(new java.awt.Font(font_, 1, 20));
 		labelName.setHorizontalAlignment(SwingConstants.CENTER);
 		labelName.setText(PRODUCT_NAME);
-		labelName.setBounds(new Rectangle(-5, 9, 190, 18));
-		labelVersion.setFont(new java.awt.Font("Dialog", 0, 12));
+		labelName.setBounds(new Rectangle(0, 8, 240, 22));
+		labelVersion.setFont(new java.awt.Font(font_, 0, 16));
 		labelVersion.setHorizontalAlignment(SwingConstants.CENTER);
 		labelVersion.setText(FULL_VERSION);
-		labelVersion.setBounds(new Rectangle(-5, 32, 190, 15));
-		labelCopyright.setFont(new java.awt.Font("Dialog", 0, 12));
+		labelVersion.setBounds(new Rectangle(0, 32, 240, 20));
+		labelCopyright.setFont(new java.awt.Font(font_, 0, 16));
 		labelCopyright.setHorizontalAlignment(SwingConstants.CENTER);
 		labelCopyright.setText(COPYRIGHT);
-		labelCopyright.setBounds(new Rectangle(-5, 53, 190, 15));
-		labelURL.setFont(new java.awt.Font("Dialog", 0, 12));
+		labelCopyright.setBounds(new Rectangle(0, 53, 240, 20));
+		labelURL.setFont(new java.awt.Font(font_, 0, 14));
 		labelURL.setHorizontalAlignment(SwingConstants.CENTER);
 		labelURL.setText("<html><u><font color='blue'>" + URL_DBC);
-		labelURL.setBounds(new Rectangle(-5, 73, 190, 15));
+		labelURL.setBounds(new Rectangle(0, 75, 240, 20));
 		labelURL.addMouseListener(new About_labelURL_mouseAdapter(this));
 		insetsPanel3.setLayout(null);
 		insetsPanel3.setBorder(BorderFactory.createEmptyBorder(10, 60, 10, 10));
-		insetsPanel3.setPreferredSize(new Dimension(190, 80));
+		insetsPanel3.setPreferredSize(new Dimension(250, 80));
 		insetsPanel3.add(labelName, null);
 		insetsPanel3.add(labelVersion, null);
 		insetsPanel3.add(labelCopyright, null);
 		insetsPanel3.add(labelURL, null);
-		//
+
 		buttonOK.setText("OK");
+		buttonOK.setFont(new java.awt.Font(font_, 0, 16));
 		buttonOK.addActionListener(this);
 		insetsPanel1.add(buttonOK, null);
-		//
+
 		panel1.add(insetsPanel1, BorderLayout.SOUTH);
 		panel1.add(panel2, BorderLayout.NORTH);
-		panel2.setPreferredSize(new Dimension(270, 90));
+		panel2.setPreferredSize(new Dimension(350, 100));
 		panel2.add(insetsPanel2, BorderLayout.CENTER);
 		panel2.add(insetsPanel3, BorderLayout.EAST);
-		//
+
 		this.setTitle("About XEAD Driver");
 		this.getContentPane().add(panel1, null);
 		this.setResizable(false);

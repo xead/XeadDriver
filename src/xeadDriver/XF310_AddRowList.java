@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -80,6 +81,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+
 import org.w3c.dom.NodeList;
 
 class XF310_AddRowList extends JDialog implements XFScriptable {
@@ -114,7 +116,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	private ScriptEngine scriptEngine;
 	private Bindings scriptBindings;
 	private int result;
-	private final int FONT_SIZE = 14;
 	private boolean isInvalid = false;
 	private boolean isWithoutButtonToAddBlank;
 	private boolean isWithoutButtonToCallFunction;
@@ -132,7 +133,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		dialog_ = dialog;
 		jPanelMain.setLayout(new BorderLayout());
 		jPanelTop.setLayout(new BorderLayout());
-		jTableMain.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
+		jTableMain.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTableMain.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		jTableMain.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		jTableMain.setRowSelectionAllowed(true);
@@ -235,20 +236,20 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		jScrollPaneTable.getViewport().add(jTableMain, null);
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
-		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
+		jTextAreaMessages.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextAreaMessages.setFocusable(false);
 		jTextAreaMessages.setLineWrap(true);
 		jTextAreaMessages.setWrapStyleWord(true);
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
-		jScrollPaneMessages.setPreferredSize(new Dimension(10, 35));
+		jScrollPaneMessages.setPreferredSize(new Dimension(10, 50));
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setLayout(new BorderLayout());
 		jPanelBottom.setBorder(null);
-		jLabelFunctionID.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jLabelFunctionID.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jLabelFunctionID.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelFunctionID.setForeground(Color.gray);
 		jLabelFunctionID.setFocusable(false);
-		jLabelSessionID.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jLabelSessionID.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jLabelSessionID.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelSessionID.setForeground(Color.gray);
 		jLabelSessionID.setFocusable(false);
@@ -257,7 +258,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		jPanelButtons.setFocusable(false);
 		gridLayoutInfo.setColumns(1);
 		gridLayoutInfo.setRows(2);
-		gridLayoutInfo.setVgap(4);
 		jPanelInfo.setLayout(gridLayoutInfo);
 		jPanelInfo.add(jLabelSessionID);
 		jPanelInfo.add(jLabelFunctionID);
@@ -270,10 +270,9 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		jPanelBottom.add(jPanelButtons, BorderLayout.CENTER);
 		gridLayoutButtons.setColumns(6);
 		gridLayoutButtons.setRows(1);
-		gridLayoutButtons.setHgap(2);
 		for (int i = 0; i < 6; i++) {
 			jButtonArray[i] = new JButton();
-			jButtonArray[i].setBounds(new Rectangle(0, 0, 90, 30));
+			jButtonArray[i].setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 			jButtonArray[i].setFocusable(false);
 			jButtonArray[i].addActionListener(new XF310_AddRowListFunctionButton_actionAdapter(this));
 			jPanelButtonArray[i] = new JPanel();
@@ -293,7 +292,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		this.setTitle(dialog_.getTitle() + " - " + dialog_.getAddRowListTitle());
 		jLabelSessionID.setText(dialog_.getSession().getSessionID());
 		jLabelFunctionID.setText(dialog_.getFunctionInfo());
-		FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		FontMetrics metrics = jLabelFunctionID.getFontMetrics(jLabelFunctionID.getFont());
 		jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 
 		addRowListTable = new XF310_AddRowListTable(dialog_.getFunctionElement(), this);
@@ -759,7 +758,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			element = (org.w3c.dom.Element)buttonList.item(i);
 			workIndex = Integer.parseInt(element.getAttribute("Position"));
 			actionDefinitionArray[workIndex] = element.getAttribute("Action");
-			XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "");
+			XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", dialog_.getPreferredSize().width / 7);
 			jButtonArray[workIndex].setVisible(true);
 			inputMap.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
 			actionMap.put("actionButton" + workIndex, actionButtonArray[workIndex]);
@@ -1121,7 +1120,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			arrangeColumnsPosition(true);
 			centerPanel.setLayout(null);
 			this.setLayout(new BorderLayout());
-			numberLabel.setFont(new java.awt.Font("SansSerif", 0, 14));
+			numberLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 			numberLabel.setBorder(new HeaderBorder());
 			numberLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			if (addSelectedActionName.equals("")) {
@@ -1131,7 +1130,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				westPanel = new JPanel();
 				westPanel.setLayout(new GridLayout(1,2));
 				checkBoxLabel = new JLabel(XFUtility.RESOURCE.getString("Sel"));
-				checkBoxLabel.setFont(new java.awt.Font("SansSerif", 0, 14));
+				checkBoxLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 				checkBoxLabel.setBorder(new HeaderBorder());
 				checkBoxLabel.setHorizontalAlignment(SwingConstants.CENTER);
 				westPanel.add(numberLabel);
@@ -1288,7 +1287,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			for (int i = 0; i < addRowListColumnList.size(); i++) {
 				if (addRowListColumnList.get(i).isVisibleOnPanel()) {
 					header = new JLabel();
-					header.setFont(new java.awt.Font("SansSerif", 0, 14));
+					header.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 					if (addRowListColumnList.get(i).getValueType().equals("IMAGE")
 							|| addRowListColumnList.get(i).getValueType().equals("FLAG")) {
 						header.setHorizontalAlignment(SwingConstants.CENTER);
@@ -1398,7 +1397,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 
 		public TableCellsRenderer(TableHeadersRenderer headersRenderer) {
 			headersRenderer_ = headersRenderer;
-			numberCell.setFont(new java.awt.Font("SansSerif", 0, 12));
+			numberCell.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 			numberCell.setBorder(new CellBorder());
 			numberCell.setHorizontalAlignment(SwingConstants.CENTER);
 			multiLinesPanel.setLayout(null);
@@ -1479,7 +1478,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 
 			for (int i = 0; i < headersRenderer_.getColumnHeaderList().size(); i++) {
 				cell = new JLabel();
-				cell.setFont(new java.awt.Font("SansSerif", 0, 14));
+				cell.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 				cell.setHorizontalAlignment(headersRenderer_.getColumnHeaderList().get(i).getHorizontalAlignment());
 				rec = headersRenderer_.getColumnHeaderList().get(i).getBounds();
 				cell.setBounds(rec.x, rec.y, rec.width, rec.height);
@@ -1503,7 +1502,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 }
 
 class XF310_AddRowListTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element functionElement_ = null;
 	private String tableID_ = "";
@@ -1982,7 +1980,6 @@ class XF310_AddRowListTable extends Object {
 }
 
 class XF310_AddRowListColumn extends XFColumnScriptable {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element functionColumnElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF310_AddRowList dialog_ = null;
@@ -2064,7 +2061,7 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 		}
 
 		JLabel jLabel = new JLabel();
-		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
+		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		int captionWidth = metrics.stringWidth(fieldCaption) + 18;
 
 		ArrayList<String> fieldOptionList = XFUtility.getOptionList(fieldOptions);
@@ -2079,7 +2076,7 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 				flagTrue = workTokenizer.nextToken();
 			}
 			valueType = "FLAG";
-			fieldWidth = 20;
+			fieldWidth = 25;
 		} else {
 			String basicType = this.getBasicType();
 			wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
@@ -2103,29 +2100,29 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 				}
 			} else {
 				if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
-					fieldWidth = dataSize * 14 + 5;
+					fieldWidth = dataSize * XFUtility.FONT_SIZE + 5;
 				} else {
 					if (dataTypeOptionList.contains("FYEAR")) {
-						fieldWidth = 85;
+						fieldWidth = 100;
 					} else {
 						if (dataTypeOptionList.contains("YMONTH")) {
-							fieldWidth = 85;
+							fieldWidth = 120;
 						} else {
 							if (dataTypeOptionList.contains("MSEQ")) {
-								fieldWidth = 50;
+								fieldWidth = 80;
 							} else {
 								if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-									fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * 7 + 21;
+									fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
 								} else {
 									if (basicType.equals("DATE")) {
-										fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), 14);
+										fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
 									} else {
 										if (dataTypeOptionList.contains("IMAGE")) {
 											valueType = "IMAGE";
 											fieldWidth = 60;
 											fieldRows = 2;
 										} else {
-											fieldWidth = dataSize * 7 + 15;
+											fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
 										}
 									}
 								}
@@ -2136,8 +2133,8 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 			}
 		}
 
-		if (fieldWidth > 320) {
-			fieldWidth = 320;
+		if (fieldWidth > 400) {
+			fieldWidth = 400;
 		}
 		if (captionWidth > fieldWidth) {
 			fieldWidth = captionWidth;
@@ -2274,7 +2271,8 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 					if (value_ == null || value_.equals("")) {
 						value = "";
 					} else {
-						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(value_.toString())), dialog_.getSession().getDateFormat(), false);
+						String wrkStr = value_.toString().substring(0, 10);
+						value = XFUtility.getUserExpressionOfUtilDate(XFUtility.convertDateFromSqlToUtil(java.sql.Date.valueOf(wrkStr)), dialog_.getSession().getDateFormat(), false);
 					}
 				} else {
 					if (basicType.equals("DATETIME")) {
@@ -2477,7 +2475,6 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 }
 
 class XF310_AddRowListReferTable extends Object {
-	private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element referElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF310_AddRowList dialog_ = null;

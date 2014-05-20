@@ -49,10 +49,10 @@ public class Application {
 		splashIcon = new JLabel(image);
 		splashIcon.setLayout(null);
 		splashLabel = new JLabel();
-		splashLabel.setFont(new java.awt.Font("Dialog", 0, 12));
+		splashLabel.setFont(new java.awt.Font("Dialog", 0, 16));
 		splashLabel.setForeground(Color.cyan);
 		splashLabel.setOpaque(false);
-		splashLabel.setBounds(0, 92, 500, 15);
+		splashLabel.setBounds(0, 89, 500, 18);
 		splashLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		splashLabel.setText(XFUtility.RESOURCE.getString("SplashMessage0"));
 		splashIcon.add(splashLabel);

@@ -457,7 +457,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			jPanelBottom.remove(jProgressBar);
 			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 			jPanelHeaderFields.setPreferredSize(new Dimension(biggestWidth, biggestHeight));
-			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 150);
+			jSplitPaneMain.setDividerLocation(this.getHeight() - 150);
 			jSplitPaneMain.updateUI();
 			this.pack();
 
@@ -3146,11 +3146,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		jTextAreaMessages.setText(sb.toString());
 
-		int heightOfErrorMessages = (messageList.size() + 1) * 20;
-		if (heightOfErrorMessages <= 40) {
+		int heightOfErrorMessages = (messageList.size() + 1) * 25;
+		if (heightOfErrorMessages <= 50) {
 			jSplitPaneMain.setDividerLocation(this.getHeight() - 150);
 		}
-		if (heightOfErrorMessages > 40 && heightOfErrorMessages <= 240) {
+		if (heightOfErrorMessages > 50 && heightOfErrorMessages <= 240) {
 			jSplitPaneMain.setDividerLocation(this.getHeight() - heightOfErrorMessages - 80);
 		}
 		if (heightOfErrorMessages > 240) {
@@ -3610,7 +3610,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 						component.setLocation(5, 0);
 					} else {
 						if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-							component = new XFTextArea(dataSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
+							component = new XFTextArea(dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 							component.setLocation(5, 0);
 							component.setEditable(false);
 						} else {

@@ -767,7 +767,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				jTextAreaMessages.setText(initialMsg);
 			}
 			setupFunctionKeysAndButtons();
-			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 150);
+			jSplitPaneMain.setDividerLocation(this.getHeight() - 150);
 			jPanelBottom.remove(jProgressBar);
 			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 			this.pack();
@@ -2682,7 +2682,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			for (int i = 0; i < jTableMain.getRowCount(); i++) {
 				rowObject = (XF110_SubListDetailRowNumber)tableModelMain.getValueAt(i, 0);
 				if (rowObject.getFirstErrorCellIndex() > -1) {
-					//jTableMain.editCellAt(i, 0);
 					cellsEditor.requestFocusOnCellAt(i, rowObject.getFirstErrorCellIndex());
 					break;
 				}
@@ -2705,11 +2704,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		}
 		jTextAreaMessages.setText(sb.toString());
 
-		int heightOfErrorMessages = (messageList.size() + 1) * 20;
-		if (heightOfErrorMessages <= 40) {
-			jSplitPaneMain.setDividerLocation(this.getHeight() - 40 - 80);
+		int heightOfErrorMessages = (messageList.size() + 1) * 25;
+		if (heightOfErrorMessages <= 50) {
+			jSplitPaneMain.setDividerLocation(this.getHeight() - 150);
 		}
-		if (heightOfErrorMessages > 40 && heightOfErrorMessages <= 240) {
+		if (heightOfErrorMessages > 50 && heightOfErrorMessages <= 240) {
 			jSplitPaneMain.setDividerLocation(this.getHeight() - heightOfErrorMessages - 80);
 		}
 		if (heightOfErrorMessages > 240) {
@@ -3148,7 +3147,7 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 						component.setLocation(5, 0);
 					} else {
 						if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-							component = new XFTextArea(dataSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
+							component = new XFTextArea(dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 							component.setLocation(5, 0);
 							component.setEditable(false);
 						} else {

@@ -72,7 +72,6 @@ import java.util.Vector;
 import java.awt.*;
 
 import javax.imageio.ImageIO;
-//import javax.script.ScriptException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
@@ -116,6 +115,7 @@ import com.lowagie.text.pdf.PdfContentByte;
 
 public class XFUtility {
 	public static final ResourceBundle RESOURCE = ResourceBundle.getBundle("xeadDriver.Res");
+
 	public static final int FIELD_UNIT_HEIGHT = 25;
 	public static final int FIELD_HORIZONTAL_MARGIN = 1;
 	public static final int FIELD_VERTICAL_MARGIN = 5;
@@ -124,13 +124,15 @@ public class XFUtility {
 	public static final int ROW_UNIT_HEIGHT_EDITABLE = 27;
 	public static final int SEQUENCE_WIDTH = 45;
 	public static final int FONT_SIZE = 18;
+	
 	public static final String DEFAULT_UPDATE_COUNTER = "UPDCOUNTER";
+
 	public static final Color ERROR_COLOR = new Color(238,187,203);
 	public static final Color ACTIVE_COLOR = SystemColor.white;
 	public static final Color INACTIVE_COLOR = SystemColor.control;
 	public static final Color ODD_ROW_COLOR = new Color(240, 240, 255);
 	public static final Color SELECTED_ACTIVE_COLOR = new Color(49,106,197);
-	public static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm:ss.SSS");
+
 	public static final ImageIcon ICON_CHECK_0A = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0A.PNG")));
 	public static final ImageIcon ICON_CHECK_1A = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1A.PNG")));
 	public static final ImageIcon ICON_CHECK_0D = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0D.PNG")));
@@ -138,6 +140,8 @@ public class XFUtility {
 	public static final ImageIcon ICON_CHECK_0R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0R.PNG")));
 	public static final ImageIcon ICON_CHECK_1R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1R.PNG")));
 	public static final ImageIcon ICON_NOT_AVAILABLE = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iNotAvailable.PNG")));
+
+	public static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm:ss.SSS");
 	public static final DecimalFormat INTEGER_FORMAT = new DecimalFormat("#,##0");
 	public static final DecimalFormat FLOAT_FORMAT0 = new DecimalFormat("#,##0");
 	public static final DecimalFormat FLOAT_FORMAT1 = new DecimalFormat("#,##0.0");
@@ -146,6 +150,12 @@ public class XFUtility {
 	public static final DecimalFormat FLOAT_FORMAT4 = new DecimalFormat("#,##0.0000");
 	public static final DecimalFormat FLOAT_FORMAT5 = new DecimalFormat("#,##0.00000");
 	public static final DecimalFormat FLOAT_FORMAT6 = new DecimalFormat("#,##0.000000");
+
+	private static final String DRIVER_DERBY = "org.apache.derby.jdbc.ClientDriver";
+	private static final String DRIVER_MYSQL = "com.mysql.jdbc.Driver";
+	private static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";
+	private static final String DRIVER_ORACLE = "oracle.jdbc.driver.OracleDriver";
+	private static final String DRIVER_SQLSERVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
 	
 	static String getStringNumber(String text) {
 		char[] numberDigit = {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
@@ -548,6 +558,33 @@ public class XFUtility {
 		return returnValue;
 	}
 	
+	///////////////////////////////////////////////////////
+	// Loading Class of Database Driver                  //
+	// This step is required for Tomcat7 not for Tomcat6 //
+	///////////////////////////////////////////////////////
+	static void loadDriverClass(String dbName) throws ClassNotFoundException {
+		if (dbName.contains("derby:")) {
+			Class.forName(DRIVER_DERBY);
+			return;
+		}
+		if (dbName.contains("mysql:")) {
+			Class.forName(DRIVER_MYSQL);
+			return;
+		}
+		if (dbName.contains("postgresql:")) {
+			Class.forName(DRIVER_POSTGRESQL);
+			return;
+		}
+		if (dbName.contains("oracle:")) {
+			Class.forName(DRIVER_ORACLE);
+			return;
+		}
+		if (dbName.contains("sqlserver:")) {
+			Class.forName(DRIVER_SQLSERVER);
+			return;
+		}
+	}
+
 	static ArrayList<String> getOptionList(String options) {
 		ArrayList<String> typeOptionList = new ArrayList<String>();
 		StringTokenizer workTokenizer = new StringTokenizer(options, ",");
@@ -3745,14 +3782,13 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	private JTextArea jTextArea = new JTextArea();
 	private int rows_ = 2;
 	private String oldValue = "";
-	private int digits_ = 5;
+	//private int digits_ = 5;
 
-	public XFTextArea(int digits, String dataTypeOptions, String fieldOptions, String fontName){
+	//public XFTextArea(int digits, String dataTypeOptions, String fieldOptions, String fontName){
+	public XFTextArea(String dataTypeOptions, String fieldOptions, String fontName){
 		super();
-
-		digits_ = digits;
+		//digits_ = digits;
 		String wrkStr;
-
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		fieldOptions_ = fieldOptions;
 		InputMap inputMap  = jTextArea.getInputMap(JTextArea.WHEN_FOCUSED);
@@ -3786,7 +3822,7 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		jTextArea.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jTextArea.setLineWrap(true);
 		jTextArea.setWrapStyleWord(true);
-		jTextArea.setDocument(new LimitedDocument(this));
+		//jTextArea.setDocument(new LimitedDocument(this));
 		this.getViewport().add(jTextArea, null);
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ROWS");
@@ -3910,22 +3946,22 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		return rows_;
 	}
 
-	class LimitedDocument extends PlainDocument {
-		private static final long serialVersionUID = 1L;
-		XFTextArea adaptee;
-		LimitedDocument(XFTextArea adaptee) {
-		  this.adaptee = adaptee;
-		}
-		public void insertString(int offset, String str, AttributeSet a) {
-			try {
-				if (offset < adaptee.digits_ && super.getLength() < adaptee.digits_) {
-					super.insertString( offset, str, a );
-				}
-			} catch (BadLocationException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+//	class LimitedDocument extends PlainDocument {
+//		private static final long serialVersionUID = 1L;
+//		XFTextArea adaptee;
+//		LimitedDocument(XFTextArea adaptee) {
+//		  this.adaptee = adaptee;
+//		}
+//		public void insertString(int offset, String str, AttributeSet a) {
+//			try {
+//				if (offset < adaptee.digits_ && super.getLength() < adaptee.digits_) {
+//					super.insertString( offset, str, a );
+//				}
+//			} catch (BadLocationException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//	}
 }
 
 class XFInputAssistField extends JComboBox implements XFEditableField {

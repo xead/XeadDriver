@@ -43,8 +43,13 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M0";
-	public static final String VERSION  = "1.2.0";
+	public static final String FULL_VERSION  = "V1.R2.M1";
+	public static final String VERSION  = "1.2.1";
+	//1.2.1
+	//・XF100,110の読込単位行数の扱いを刷新した
+	//・XF110,200,310のメッセージ表示域のサイズ設定のロジックを改善した
+	//・桁数なしのVARCHARのフィールドで項目値が表示されなかった問題を修正した
+	//
 	//1.2.0
 	//・フォントをシステム定義によって可変にした
 	//・基本フォントサイズを14から18に変更してパネルのレイアウトロジックを変更した

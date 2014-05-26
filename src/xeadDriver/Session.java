@@ -168,6 +168,7 @@ public class Session extends JFrame {
 	private DigestAdapter digestAdapter = null;
 	private DialogLogin loginDialog = null;
 	private DialogModifyPassword modifyPasswordDialog = null;
+	private DialogCheckRead checkReadDialog = null;
 	private FunctionLauncher functionLauncher = null;
 	private SortableDomElementListModel sortingList;
 	private NodeList functionList = null;
@@ -462,6 +463,7 @@ public class Session extends JFrame {
 			subDBNameList.add(wrkStr);
 		}
 
+
 		///////////////////
 		// DB-Method URL //
 		///////////////////
@@ -474,6 +476,7 @@ public class Session extends JFrame {
 				// Setup committing connections.                                             //
 				// Note that default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
 				///////////////////////////////////////////////////////////////////////////////
+				XFUtility.loadDriverClass(databaseName);
 				connectionManualCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
 				connectionManualCommit.setAutoCommit(false);
 				connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
@@ -483,12 +486,13 @@ public class Session extends JFrame {
 				// Setup read-only connections for Sub-DB definitions //
 				////////////////////////////////////////////////////////
 				for (int i = 0; i < subDBIDList.size(); i++) {
+					XFUtility.loadDriverClass(subDBNameList.get(i));
 					subDBConnection = DriverManager.getConnection(subDBNameList.get(i), subDBUserList.get(i), subDBPasswordList.get(i));
 					subDBConnection.setReadOnly(true);
 					subDBConnectionList.add(subDBConnection);
 				}
 			} catch (Exception e) {
-				if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("jdbc:derby://")) {
+				if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
 					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
 				} else {
 					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + databaseName + XFUtility.RESOURCE.getString("SessionError7") + e.getMessage());
@@ -728,6 +732,7 @@ public class Session extends JFrame {
 		}
 
 		modifyPasswordDialog = new DialogModifyPassword(this);
+		checkReadDialog = new DialogCheckRead(this);
 
 		///////////////////////////////////////////////
 		// Setup elements on menu and show first tab //
@@ -3005,6 +3010,10 @@ public class Session extends JFrame {
 
 	DigestAdapter getDigestAdapter() {
 		return digestAdapter;
+	}
+
+	public DialogCheckRead getDialogCheckRead() {
+		return checkReadDialog;
 	}
 
 	String getSystemName() {

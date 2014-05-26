@@ -3260,7 +3260,7 @@ class XF300_HeaderField extends XFFieldScriptable {
 		}
 
 		if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-			xFTextArea = new XFTextArea(dataSize, "", fieldOptions, dialog_.getSession().systemFont);
+			xFTextArea = new XFTextArea("", fieldOptions, dialog_.getSession().systemFont);
 			xFTextArea.setLocation(5, 0);
 			xFTextArea.setEditable(false);
 			component = xFTextArea;

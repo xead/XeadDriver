@@ -125,7 +125,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	public Bindings scriptBindings;
 	private String scriptNameRunning = "";
 	private int initialReadCount = 0;
-	private int maxReadCount = 0;
 	private ByteArrayOutputStream exceptionLog;
 	private PrintStream exceptionStream;
 	private String exceptionHeader = "";
@@ -593,8 +592,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			////////////////////////////////////////////////
 			// Put the panel with filters on jPanelCenter //
 			////////////////////////////////////////////////
-			//jPanelCenter.add(jPanelTop, BorderLayout.NORTH);
-			//filterList.get(0).requestFocus();
 			jPanelFilters.setPreferredSize(new Dimension(filtersWidth, posY + dimOfPriviousField.height));
 			jPanelTop.add(jScrollPaneFilters, BorderLayout.CENTER);
 			if (firstEditableFilter != null) {
@@ -617,11 +614,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			initialReadCount = 0;
 		} else {
 			initialReadCount = Integer.parseInt(functionElement_.getAttribute("InitialReadCount"));
-		}
-		if (functionElement_.getAttribute("MaxReadCount").equals("")) {
-			maxReadCount = 0;
-		} else {
-			maxReadCount = Integer.parseInt(functionElement_.getAttribute("MaxReadCount"));
 		}
 		jLabelSessionID.setText(session_.getSessionID());
 		if (instanceArrayIndex_ >= 0) {
@@ -853,7 +845,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		ArrayList<String> orderByFieldList;
 		ArrayList<String> orderByFieldTypeList;
 		ArrayList<Object> orderByValueList;
-		String workStr, sql;
+		String wrkStr, sql;
 		XFTableOperator primaryTableOp, referTableOp;
 
 		try {
@@ -866,31 +858,23 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			headersRenderer.clearSortingColumn();
 			jScrollPaneTable.updateUI();
 
-			//boolean toBeSelected = true;
-			//boolean readyToEvaluate;
-			//countOfRows = 0;
-			//int blockRows = 0;
-			//workingRowList.clear();
-			//referOperatorList.clear();
 			boolean toBeSelected = true;
+			boolean dialogCheckReadRequested = false;
 			boolean readyToEvaluate;
 			countOfRows = 0;
 			int countOfBlockUnit = initialReadCount;
 			int blockRows = 0;
-			int fromRow = 1;
+			int originalFromRow = 0;
+			int fromRow = originalFromRow;
 			workingRowList.clear();
 			referOperatorList.clear();
-			boolean isFirstTime = true;
 
-			primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(), maxReadCount);
-			int countOfTotalRecords = primaryTableOp.execute();
-			int countToBeRead = countOfTotalRecords;
+			if (countOfBlockUnit == 0) {
+				primaryTableOp = createTableOperator(primaryTable_.getSelectSQL());
+			} else {
+				primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
+			}
 			while (primaryTableOp.next()) {
-				
-				if (isFirstTime && maxReadCount > 0 && countOfTotalRecords == maxReadCount) {
-					JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ReadCountMessage5") + maxReadCount + XFUtility.RESOURCE.getString("ReadCountMessage6"));
-				}
-				isFirstTime = false;
 
 				for (int i = 0; i < columnList.size(); i++) {
 					columnList.get(i).setReadyToValidate(false);
@@ -965,10 +949,10 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 								orderByFieldTypeList = new ArrayList<String>();
 								orderByValueList = new ArrayList<Object>();
 								for (int i = 0; i < orderByFieldList.size(); i++) {
-									workStr = orderByFieldList.get(i).replace("(D)", "");
-									workStr = workStr.replace("(A)", "");
+									wrkStr = orderByFieldList.get(i).replace("(D)", "");
+									wrkStr = wrkStr.replace("(A)", "");
 									for (int j = 0; j < columnList.size(); j++) {
-										if (columnList.get(j).getDataSourceName().equals(workStr)) {
+										if (columnList.get(j).getDataSourceName().equals(wrkStr)) {
 											orderByFieldTypeList.add(columnList.get(j).getBasicType());
 											orderByValueList.add(columnList.get(j).getExternalValue());
 											break;
@@ -980,55 +964,35 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 
 							countOfRows++;
 							blockRows++;
-//							if (initialReadCount > 0 && blockRows == initialReadCount) {
-//								Object[] bts = {XFUtility.RESOURCE.getString("ReadEnd"), XFUtility.RESOURCE.getString("ReadMore")};
-//								int reply = JOptionPane.showOptionDialog(jPanelMain, countOfRows + XFUtility.RESOURCE.getString("ReadCountMessage"), XFUtility.RESOURCE.getString("ReadCountCheck"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
-//								if (reply == 0) {
-//									break;
-//								} else {
-//									blockRows = 0;
-//								}
-//							}
-							if (countOfBlockUnit > 0 && blockRows == countOfBlockUnit && countOfRows < countToBeRead) {
-								jTableMain.scrollRectToVisible(jTableMain.getCellRect(tableModelMain.getRowCount()-1, 0, true));
-								Object[] bts = {XFUtility.RESOURCE.getString("ReadMore1")+initialReadCount+XFUtility.RESOURCE.getString("ReadMore2"), XFUtility.RESOURCE.getString("ReadMore1")+(initialReadCount*5)+XFUtility.RESOURCE.getString("ReadMore2"), XFUtility.RESOURCE.getString("ReadFrom")};
-								int reply = JOptionPane.showOptionDialog(jPanelMain, 
-										countOfTotalRecords + XFUtility.RESOURCE.getString("ReadCountMessage1") + fromRow + XFUtility.RESOURCE.getString("ReadCountMessage2") + (fromRow + countOfRows -1) + XFUtility.RESOURCE.getString("ReadCountMessage3") ,
-										XFUtility.RESOURCE.getString("ReadCountCheck"),
-										JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
-										null, bts, bts[0]);
-								if (reply < 0) {
-									break;
-								} else {
+							if (countOfBlockUnit > 0 && blockRows == countOfBlockUnit) {
+								primaryTableOp = null; //clear heap//
+								dialogCheckReadRequested = true;
+								if (countOfRows > 0) {
+									jTableMain.scrollRectToVisible(jTableMain.getCellRect(countOfRows-1, 0, true));
+								}
+								//////////////////////////////////////
+								// row number of the first row is 0 //
+								//////////////////////////////////////
+								boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, countOfRows, fromRow+countOfBlockUnit, countOfBlockUnit);
+								if (repliedOK) {
 									blockRows = 0;
-									if (reply == 0) {
-										countOfBlockUnit = initialReadCount;
-									}
-									if (reply == 1) {
-										countOfBlockUnit = initialReadCount * 5;
-									}
-									if (reply == 2) {
-										String fromRowString = Integer.toString(fromRow);
-										fromRowString = JOptionPane.showInputDialog(null, XFUtility.RESOURCE.getString("ReadCountMessage4"), fromRowString);
-										try {
-											fromRow = Integer.parseInt(fromRowString);
-											if (fromRow >= 1) {
-												rowCount = tableModelMain.getRowCount();
-												for (int i = 0; i < rowCount; i++) {
-													tableModelMain.removeRow(0);
-												}
-												countOfBlockUnit = initialReadCount;
-												countOfRows = 0;
-												workingRowList.clear();
-												primaryTableOp.setCursorAt(fromRow-1);
-												countToBeRead = countOfTotalRecords - fromRow;
-											}
-										} catch (Exception e) {
-											break;
+									fromRow = session_.getDialogCheckRead().getNextRow();
+									countOfBlockUnit = session_.getDialogCheckRead().getCountUnit();
+									if (session_.getDialogCheckRead().isRestarting()) {
+										originalFromRow = session_.getDialogCheckRead().getNextRow();
+										rowCount = tableModelMain.getRowCount();
+										for (int i = 0; i < rowCount; i++) {
+											tableModelMain.removeRow(0);
 										}
+										countOfRows = 0;
+										workingRowList.clear();
 									}
+									primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
+								} else {
+									break;
 								}
 							}
+
 						}
 					}
 				}
@@ -1048,8 +1012,20 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			jTableMain.requestFocus();
 			messageList.clear();
 			if (countOfRows > 0) {
-				jTableMain.setRowSelectionInterval(0, 0);
-				messageList.add(XFUtility.RESOURCE.getString("FunctionMessage5") + buttonNextCaption + XFUtility.RESOURCE.getString("FunctionMessage6"));
+				if (dialogCheckReadRequested) {
+					jTableMain.scrollRectToVisible(jTableMain.getCellRect(tableModelMain.getRowCount()-1, 0, true));
+				} else {
+					jTableMain.scrollRectToVisible(jTableMain.getCellRect(0, 0, true));
+					jTableMain.setRowSelectionInterval(0, 0);
+				}
+				wrkStr = "";
+				if (originalFromRow > 0) {
+					wrkStr = XFUtility.RESOURCE.getString("DialogCheckReadMessage1")
+							+ (originalFromRow+1) + XFUtility.RESOURCE.getString("DialogCheckReadMessage2")
+							+ (fromRow+blockRows) + XFUtility.RESOURCE.getString("DialogCheckReadMessage3")
+							+ countOfRows + XFUtility.RESOURCE.getString("DialogCheckReadMessage4");
+				}
+				messageList.add(XFUtility.RESOURCE.getString("FunctionMessage5") + buttonNextCaption + XFUtility.RESOURCE.getString("FunctionMessage6") + wrkStr);
 			} else {
 				messageList.add(XFUtility.RESOURCE.getString("FunctionMessage4"));
 			}
@@ -1793,10 +1769,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		return new XFTableOperator(session_, processLog, sqlText);
 	}
 
-	public XFTableOperator createTableOperator(String sqlText, int maxCount) {
-		return new XFTableOperator(session_, processLog, sqlText, maxCount);
-	}
-
 	public HashMap<String, Object> getReturnMap() {
 		return returnMap_;
 	}
@@ -1828,10 +1800,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	public void setExceptionHeader(String value) {
 		exceptionHeader = value;
 	}
-
-	//public Bindings getScriptBindings() {
-	//	return 	scriptBindings;
-	//}
 	
 	public Object getFieldObjectByID(String tableID, String fieldID) {
 		String id = tableID + "_" + fieldID;
@@ -2434,25 +2402,6 @@ class XF110_Filter extends JPanel {
 		} else {
 			jLabelField.setPreferredSize(new Dimension(width + horizontalMargin, XFUtility.FIELD_UNIT_HEIGHT));
 		}
-//		jLabelField.setFont(new java.awt.Font("Dialog", 0, 14));
-//		FontMetrics metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-//		if (metrics1.stringWidth(fieldCaption) > 110) {
-//			jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
-//			metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-//			if (metrics1.stringWidth(fieldCaption) > 110) {
-//				jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
-//				metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 10));
-//			} else {
-//				jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
-//			}
-//		} else {
-//			jLabelField.setFont(new java.awt.Font("Dialog", 0, 14));
-//		}
-//		if (isVertical || dialog_.getFilterList().size() == 0) {
-//			jLabelField.setPreferredSize(new Dimension(110, 20));
-//		} else {
-//			jLabelField.setPreferredSize(new Dimension(metrics1.stringWidth(fieldCaption) + horizontalMargin, 20));
-//		}
 
 		jPanelField.setLayout(null);
 		this.setLayout(new BorderLayout());
@@ -2483,7 +2432,6 @@ class XF110_Filter extends JPanel {
 				////////////////////////////////////////////////////////////////////////////////
 				if (fieldOptionList.contains("PROMPT_LIST1") || fieldOptionList.contains("PROMPT_LIST2")) {
 					FontMetrics metrics2 = jLabelField.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
-					//int valueIndex = -1;
 					String wrkText, wrkKey;
 
 					wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
@@ -2494,7 +2442,6 @@ class XF110_Filter extends JPanel {
 						component = jComboBox;
 						int fieldWidth = 20;
 						if (fieldOptionList.contains("PROMPT_LIST1")) {
-							//valueIndex++;
 							keyValueList.add("");
 							jComboBox.addItem("");
 						}
@@ -2503,7 +2450,6 @@ class XF110_Filter extends JPanel {
 							String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
 							XFTableOperator operator = dialog_.getReferOperator(sql);
 							while (operator.next()) {
-								//valueIndex++;
 								wrkKey = operator.getValueOf("KBUSERKUBUN").toString().trim();
 								keyValueList.add(wrkKey);
 								wrkText = operator.getValueOf("TXUSERKUBUN").toString().trim();
@@ -2528,12 +2474,10 @@ class XF110_Filter extends JPanel {
 							component = jComboBox;
 							int fieldWidth = 20;
 							if (fieldOptionList.contains("PROMPT_LIST1")) {
-								//valueIndex++;
 								jComboBox.addItem("");
 							}
 							StringTokenizer workTokenizer = new StringTokenizer(wrkStr, ";" );
 							while (workTokenizer.hasMoreTokens()) {
-								//valueIndex++;
 								wrkKey = workTokenizer.nextToken();
 								jComboBox.addItem(wrkKey);
 								if (metrics2.stringWidth(wrkKey) > fieldWidth) {
@@ -2554,13 +2498,11 @@ class XF110_Filter extends JPanel {
 								if (referTableList.get(i).getTableID().equals(tableID)) {
 									if (referTableList.get(i).getTableAlias().equals("") || referTableList.get(i).getTableAlias().equals(tableAlias)) {
 										if (fieldOptionList.contains("PROMPT_LIST1")) {
-											//valueIndex++;
 											jComboBox.addItem("");
 										}
 										try {
 											XFTableOperator operator = dialog_.createTableOperator(referTableList.get(i).getSelectSQLToList(fieldID));
 											while (operator.next()) {
-												//valueIndex++;
 												wrkKey = operator.getValueOf(fieldID).toString().trim();
 												jComboBox.addItem(wrkKey);
 												if (metrics2.stringWidth(wrkKey) > fieldWidth) {
@@ -3862,7 +3804,6 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 								listValue = xFTextField.getText();
 								xFTextField.setText("*LIST");
 							} else {
-								//listValue = "";
 								if (kubunValueList == null) {
 									listValue = "";
 								} else {
@@ -3910,7 +3851,6 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 
 	public Object getInternalValue() {
 		String text = "";
-		//if (xFTextField.getText().equals("*LIST")) {
 		if (xFTextField.getText().equals("*LIST") || kubunValueList != null) {
 			text = listValue;
 		} else {
@@ -4573,7 +4513,6 @@ class XF110_Column extends XFColumnScriptable {
 }
 
 class XF110_PrimaryTable extends Object {
-	//private static final long serialVersionUID = 1L;
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element functionElement_ = null;
 	private String tableID = "";
@@ -4586,6 +4525,7 @@ class XF110_PrimaryTable extends Object {
 	private XF110 dialog_;
 	private StringTokenizer workTokenizer;
 	private boolean hasOrderByAsItsOwnPhysicalFields = true;
+	private String databaseName = "";
 
 	public XF110_PrimaryTable(org.w3c.dom.Element functionElement, XF110 dialog){
 		super();
@@ -4595,6 +4535,13 @@ class XF110_PrimaryTable extends Object {
 		tableID = functionElement.getAttribute("PrimaryTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
 		activeWhere = tableElement.getAttribute("ActiveWhere");
+
+		if (tableElement.getAttribute("DB").equals("")) {
+			databaseName = dialog_.getSession().getDatabaseName();
+		} else {
+			databaseName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
+		}
+
 		updateCounterID = tableElement.getAttribute("UpdateCounter");
 		if (updateCounterID.equals("")) {
 			updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
@@ -4627,8 +4574,6 @@ class XF110_PrimaryTable extends Object {
 				keyFieldIDList.add(workTokenizer.nextToken());
 			}
 		}
-
-		//fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
 
 		workTokenizer = new StringTokenizer(functionElement_.getAttribute("OrderBy"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
@@ -4665,6 +4610,180 @@ class XF110_PrimaryTable extends Object {
 
 	public String getUpdateCounterID(){
 		return updateCounterID;
+	}
+
+	public String getSelectSQL(int fromRow, int thruRow){
+		StringBuffer buf = new StringBuffer();
+
+		if (databaseName.contains("postgresql:") || databaseName.contains("mysql:")) {
+
+			/////////////////////////////////////////////////////
+			// SELECT fields FROM table WHERE ... ORDER BY ... //
+			//   LIMIT (thruRow - fromRow) OFFSET fromRow      //
+			/////////////////////////////////////////////////////
+			buf.append(getSelectSQL());
+			buf.append(" limit ");
+			buf.append(thruRow - fromRow + 1);
+			buf.append(" offset ");
+			buf.append(fromRow);
+
+		} else {
+
+			if (databaseName.contains("derby:")) {
+
+				////////////////////////////////////////////////////////////////////
+				// SELECT fields FROM table WHERE ... ORDER BY ...                //
+				//   OFFSET fromRow ROWS FETCH NEXT (thruRow - fromRow) ROWS ONLY //
+				////////////////////////////////////////////////////////////////////
+				buf.append(getSelectSQL());
+				buf.append(" offset ");
+				buf.append(fromRow);
+				buf.append(" rows fetch next ");
+				buf.append(thruRow - fromRow + 1);
+				buf.append(" rows only");
+
+			} else {
+
+				////////////////////////////////////////////////////////////////////////////
+				// SELECT * FROM ( SELECT fields, ROW_NUMBER() OVER (ORDER BY ...) rNum   //
+				//	 FROM table WHERE ... )t WHERE t.rNum >= fromRow AND t.rNum < thruRow //
+				////////////////////////////////////////////////////////////////////////////
+
+				///////////////////////////
+				// Fields to be selected //
+				///////////////////////////
+				int count = 0;
+				buf.append("select * from (select ");
+				for (int i = 0; i < dialog_.getColumnList().size(); i++) {
+					if (dialog_.getColumnList().get(i).getTableID().equals(tableID)
+							&& !dialog_.getColumnList().get(i).isVirtualField()) {
+						if (count > 0) {
+							buf.append(",");
+						}
+						count++;
+						buf.append(dialog_.getColumnList().get(i).getFieldID());
+					}
+				}
+
+				buf.append(", row_number() over ");
+
+				/////////////////////
+				// Order-by fields //
+				/////////////////////
+				if (this.hasOrderByAsItsOwnPhysicalFields) {
+					ArrayList<String> orderByFieldList = getOrderByFieldIDList(dialog_.isListingInNormalOrder());
+					if (orderByFieldList.size() > 0) {
+						int pos0,pos1;
+						buf.append("(order by ");
+						for (int i = 0; i < orderByFieldList.size(); i++) {
+							if (i > 0) {
+								buf.append(",");
+							}
+							pos0 = orderByFieldList.get(i).indexOf(".");
+							pos1 = orderByFieldList.get(i).indexOf("(A)");
+							if (pos1 >= 0) {
+								buf.append(orderByFieldList.get(i).substring(pos0+1, pos1));
+							} else {
+								pos1 = orderByFieldList.get(i).indexOf("(D)");
+								if (pos1 >= 0) {
+									buf.append(orderByFieldList.get(i).substring(pos0+1, pos1));
+									buf.append(" DESC ");
+								} else {
+									buf.append(orderByFieldList.get(i).substring(pos0+1, orderByFieldList.get(i).length()));
+								}
+							}
+						}
+						buf.append(") rNum");
+					} else {
+						buf.append("(order by ");
+						for (int i = 0; i < keyFieldIDList.size(); i++) {
+							if (i > 0) {
+								buf.append(",");
+							}
+							buf.append(keyFieldIDList.get(i));
+							if (!dialog_.isListingInNormalOrder()) {
+								buf.append(" DESC ");
+							}
+						}
+						buf.append(") rNum");
+					}
+				}
+
+				//////////////
+				// Table ID //
+				//////////////
+				buf.append(" from ");
+				buf.append(tableID);
+
+				////////////////////////////
+				// Fixed where conditions //
+				////////////////////////////
+				fixedWhere = XFUtility.getFixedWhereValue(functionElement_.getAttribute("FixedWhere"), dialog_.getSession());
+				boolean hasWhere = false;
+				if (activeWhere.equals("")) {
+					if (!fixedWhere.equals("")) {
+						hasWhere = true;
+						buf.append(" where ((");
+						buf.append(fixedWhere);
+						buf.append(")");
+					}
+				} else {
+					hasWhere = true;
+					buf.append(" where ((");
+					buf.append(activeWhere);
+					buf.append(")");
+					if (!fixedWhere.equals("")) {
+						buf.append(" and (");
+						buf.append(fixedWhere);
+						buf.append(")");
+					}
+				}
+
+				///////////////////////
+				// Filter conditions //
+				///////////////////////
+				count = 0;
+				String filterGroupID = "";
+				for (int i = 0; i < dialog_.getFilterList().size(); i++) {
+					if (dialog_.getFilterList().get(i).isPrimaryWhere()
+							&& !dialog_.getFilterList().get(i).getSQLWhereValue().equals("")) {
+						if (filterGroupID.equals(dialog_.getFilterList().get(i).getFilterGroupID())
+								&& !filterGroupID.equals("")) {
+							buf.append(" or ");
+						} else {
+							if (count > 0) {
+								buf.append(") and (");
+							} else {
+								if (hasWhere) {
+									buf.append(" and (");
+								} else {
+									if (activeWhere.equals("") && fixedWhere.equals("")) {
+										buf.append(" where ((");
+									}
+								}
+							}
+							filterGroupID = dialog_.getFilterList().get(i).getFilterGroupID();
+						}
+						count++;
+						hasWhere = true;
+						buf.append(dialog_.getFilterList().get(i).getSQLWhereValue());
+					}
+				}
+				if (!filterGroupID.equals("")) {
+					buf.append(")");
+				}
+				if (hasWhere) {
+					buf.append(")");
+				}
+
+				buf.append(" ) t where t.rNum >= ");
+				buf.append(fromRow);
+				buf.append(" and t.rNum < ");
+				buf.append(thruRow);
+
+			}
+		}
+		return buf.toString();
 	}
 
 	public String getSelectSQL(){

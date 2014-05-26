@@ -1387,11 +1387,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		jTextAreaMessages.setText(sb.toString());
 		//
-		int heightOfErrorMessages = (messageList.size() + 1) * 22;
-		if (heightOfErrorMessages <= 44) {
+		int heightOfErrorMessages = (messageList.size() + 1) * 25;
+		if (heightOfErrorMessages <= 50) {
 			jSplitPaneMain.setDividerLocation(this.getHeight() - 150);
 		}
-		if (heightOfErrorMessages > 44 && heightOfErrorMessages <= 240) {
+		if (heightOfErrorMessages > 50 && heightOfErrorMessages <= 240) {
 			jSplitPaneMain.setDividerLocation(this.getHeight() - heightOfErrorMessages - 80);
 		}
 		if (heightOfErrorMessages > 240) {
@@ -2359,7 +2359,7 @@ class XF200_Field extends XFFieldScriptable {
 						component.setLocation(5, 0);
 					} else {
 						if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-							component = new XFTextArea(dataSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
+							component = new XFTextArea(dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 							component.setLocation(5, 0);
 						} else {
 							if (dataTypeOptionList.contains("URL")) {

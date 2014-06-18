@@ -50,10 +50,11 @@ import java.awt.Toolkit;
 import java.awt.event.*;
 import java.awt.im.InputContext;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.text.DateFormat;
@@ -96,11 +97,13 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 
-import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
-import org.apache.poi.hssf.usermodel.HSSFDataFormat;
-import org.apache.poi.hssf.usermodel.HSSFPatriarch;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.util.IOUtils;
+import org.apache.poi.xssf.usermodel.XSSFDataFormat;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.w3c.dom.*;
 
 import com.lowagie.text.BadElementException;
@@ -1019,8 +1022,24 @@ public class XFUtility {
 		}
 	}
 	
-	static short getFloatFormat(HSSFWorkbook workbook, int decimalSize) {
-		HSSFDataFormat format = workbook.createDataFormat();
+//	static short getFloatFormat(HSSFWorkbook workbook, int decimalSize) {
+//		HSSFDataFormat format = workbook.createDataFormat();
+//		StringBuffer buf = new StringBuffer();
+//		for (int i = 0; i <= decimalSize; i++) {
+//			if (i == 0) {
+//				buf.append("#,##0");
+//			} else {
+//				if (i == 1) {
+//					buf.append(".");
+//				}
+//				buf.append("0");
+//			}
+//		}
+//		return format.getFormat(buf.toString());
+//	}
+	
+	static short getFloatFormat(XSSFWorkbook workbook, int decimalSize) {
+		XSSFDataFormat format = workbook.createDataFormat();
 		StringBuffer buf = new StringBuffer();
 		for (int i = 0; i <= decimalSize; i++) {
 			if (i == 0) {
@@ -1510,142 +1529,52 @@ public class XFUtility {
 		}
 		return image;
 	}
-	static void setupImageCellForDetailColumn(HSSFWorkbook workBook, HSSFSheet workSheet, int rowNumber, int columnIndex, String fileName, HSSFPatriarch patriarch) {
-		HSSFClientAnchor anchor = null;
-		int imageTypeInt = -1;
-		String imageTypeString = "";
-		ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
-		boolean isValidFileType = false;
-		//////////////////////
-		// Check image type //
-		//////////////////////
-		if (fileName.contains(".png") || fileName.contains(".PNG")) {
-			imageTypeInt = HSSFWorkbook.PICTURE_TYPE_PNG;
-			imageTypeString = "png";
-			isValidFileType = true;
+
+	static void setupImageCell(XSSFWorkbook workBook, XSSFSheet workSheet, int rowIndexFrom, int rowIndexThru, int columnIndexFrom, int columnIndexThru, String fileName) {
+		//////////////////////////
+		// Determine Image Type //
+		//////////////////////////
+		int imageTypeIndex = -1;
+		String fileNameCapital = fileName.toUpperCase();
+		if (fileNameCapital.contains(".PNG")) {
+			imageTypeIndex = XSSFWorkbook.PICTURE_TYPE_PNG;
 		}
-		if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
-			imageTypeInt = HSSFWorkbook.PICTURE_TYPE_JPEG;
-			imageTypeString = "jpg";
-			isValidFileType = true;
+		if (fileNameCapital.contains(".JPG")
+				|| fileNameCapital.contains(".JPE")
+				|| fileNameCapital.contains(".JPEG")) {
+			imageTypeIndex = XSSFWorkbook.PICTURE_TYPE_JPEG;
 		}
-		if (isValidFileType) {
-			//////////////////////////////////////////////
-			// Setup image byte data with its file name //
-			//////////////////////////////////////////////
-			if (fileName.startsWith("http://")) {
-				fileName = fileName.replace("\\", "/");
-				try {
-					URL url = new URL(fileName);
-					BufferedImage image = ImageIO.read(url);
-					ImageIO.write(image, imageTypeString, imageBytes);
-					imageBytes.flush();
-				} catch (Exception e) { //required as URL can be invalid //
-				} finally {
-					try {
-						imageBytes.close();
-					} catch (IOException e) {
-					}
-				}
-			} else {
-				File imageFile = new File(fileName);
-				if (imageFile.exists()) {
-					FileInputStream fis = null;
-					try {
-						fis = new FileInputStream(imageFile);
-						int c;
-						while ((c = fis.read()) != -1) {
-							imageBytes.write(c);
-						}
-					} catch (Exception e) {
-					} finally {
-						try {
-							if (fis != null) {
-								fis.close();
-							}
-							imageBytes.close();
-						} catch (IOException e) {
-						}
-					}
-				}
+		if (fileNameCapital.contains(".GIF")) {
+			imageTypeIndex = XSSFWorkbook.PICTURE_TYPE_GIF;
+		}
+
+		/////////////////////////////////////////
+		// Add image byte data to the workbook //
+		/////////////////////////////////////////
+		if (imageTypeIndex != -1) {
+			try {
+				InputStream inputStream = new FileInputStream(fileName);
+				byte[] bytes = IOUtils.toByteArray(inputStream);
+				int pictureIndex = workBook.addPicture(bytes, imageTypeIndex);
+				inputStream.close();
+
+				CreationHelper helper = workBook.getCreationHelper();
+				Drawing drawing = workSheet.createDrawingPatriarch();
+				ClientAnchor anchor = helper.createClientAnchor();
+				anchor.setCol1(columnIndexFrom);
+				anchor.setRow1(rowIndexFrom);
+				anchor.setCol2(columnIndexThru);
+				anchor.setRow2(rowIndexThru);
+				anchor.setDx1(20);
+				anchor.setDy1(20);
+				anchor.setDx2(0);
+				anchor.setDy2(0);
+				drawing.createPicture(anchor, pictureIndex);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-			/////////////////////////////////////////
-			// Add image byte data to the workbook //
-			/////////////////////////////////////////
-			int pictureIndex = workBook.addPicture(imageBytes.toByteArray(), imageTypeInt);
-			anchor = new HSSFClientAnchor(0,0,0,0, (short)columnIndex, rowNumber, (short)(columnIndex+1), rowNumber+1);
-			anchor.setAnchorType(0);
-			anchor.setDx1(20);
-			anchor.setDy1(20);
-			anchor.setDx2(0);
-			anchor.setDy2(0);
-			patriarch.createPicture(anchor, pictureIndex);
-		}
-	}
-	
-	static void setupImageCellForField(HSSFWorkbook workBook, HSSFSheet workSheet, int columnIndex, int rowNumber, int cellWidth, int cellHeight, String fileName, HSSFPatriarch patriarch) throws Exception{
-		int imageTypeInt = -1;
-		String imageTypeString = "";
-		boolean isValidFileType = false;
-		ByteArrayOutputStream imageBytes = new ByteArrayOutputStream();
-		//////////////////////
-		// Check image type //
-		//////////////////////
-		if (fileName.contains(".png") || fileName.contains(".PNG")) {
-			imageTypeInt = HSSFWorkbook.PICTURE_TYPE_PNG;
-			imageTypeString = "png";
-			isValidFileType = true;
-		}
-		if (fileName.contains(".jpg") || fileName.contains(".JPG") || fileName.contains(".jpeg") || fileName.contains(".JPEG")) {
-			imageTypeInt = HSSFWorkbook.PICTURE_TYPE_JPEG;
-			imageTypeString = "jpg";
-			isValidFileType = true;
-		}
-		if (isValidFileType) {
-			//////////////////////////////////////////////
-			// Setup image byte data with its file name //
-			//////////////////////////////////////////////
-			if (fileName.startsWith("http://")) {
-				try {
-					fileName = fileName.replace("\\", "/");
-					URL url;
-					url = new URL(fileName);
-					BufferedImage image = ImageIO.read(url);
-					ImageIO.write(image, imageTypeString, imageBytes);
-					imageBytes.flush();
-				} catch (Exception e) { //required as URL can be invalid //
-				} finally {
-					imageBytes.close();
-				}
-			} else {
-				File imageFile = new File(fileName);
-				if (imageFile.exists()) {
-					FileInputStream fis = null;
-					try {
-						fis = new FileInputStream(imageFile);
-						int c;
-						while ((c = fis.read()) != -1) {
-							imageBytes.write(c);
-						}
-					} finally {
-						if (fis != null) {
-							fis.close();
-						}
-						imageBytes.close();
-					}
-				}
-			}
-			/////////////////////////////////////////
-			// Add image byte data to the workbook //
-			/////////////////////////////////////////
-			int pictureIndex = workBook.addPicture(imageBytes.toByteArray(), imageTypeInt);
-			HSSFClientAnchor anchor = new HSSFClientAnchor(0,0,0,0, (short)columnIndex, rowNumber, (short)(columnIndex + cellWidth), rowNumber + cellHeight);
-			anchor.setAnchorType(0);
-			anchor.setDx1(30);
-			anchor.setDy1(30);
-			anchor.setDx2(-30);
-			anchor.setDy2(-250);
-			patriarch.createPicture(anchor, pictureIndex);
 		}
 	}
 	
@@ -1811,7 +1740,7 @@ public class XFUtility {
 		if (dataTypeOptionList.contains("ACCEPT_MINUS")) {
 			length = length + 1;
 		}
-		if (!dataTypeOptionList.contains("NO_EDIT")) {
+		if (!dataTypeOptionList.contains("NO_EDIT") && !dataTypeOptionList.contains("ZERO_SUPPRESS")) {
 			int intSize = dataSize - decimalSize;
 			while (intSize > 3) {
 				length = length + 1;
@@ -2451,7 +2380,7 @@ public class XFUtility {
 		for (int i = XFUtility.FONT_SIZE; i > 8; i--) {
 			dummy = new JButton(bf.toString());
 			dummy.setFont(new java.awt.Font(button.getFont().getFontName(), 0 , i));
-			if (dummy.getPreferredSize().width <= buttonWidth) {
+			if (dummy.getPreferredSize().width <= buttonWidth-2) {
 				button.setFont(new java.awt.Font(button.getFont().getFontName(), 0 , i));
 				break;
 			}
@@ -3646,6 +3575,7 @@ class XFTextField extends JTextField implements XFEditableField {
 			}
 		}
 		public void focusGained(FocusEvent event){
+			selectAll();
 			Character.Subset[] subsets  = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
 			String lang = Locale.getDefault().getLanguage();
 			if (basicType_.equals("STRING")) {
@@ -3782,12 +3712,9 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	private JTextArea jTextArea = new JTextArea();
 	private int rows_ = 2;
 	private String oldValue = "";
-	//private int digits_ = 5;
 
-	//public XFTextArea(int digits, String dataTypeOptions, String fieldOptions, String fontName){
 	public XFTextArea(String dataTypeOptions, String fieldOptions, String fontName){
 		super();
-		//digits_ = digits;
 		String wrkStr;
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		fieldOptions_ = fieldOptions;
@@ -3822,7 +3749,6 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		jTextArea.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jTextArea.setLineWrap(true);
 		jTextArea.setWrapStyleWord(true);
-		//jTextArea.setDocument(new LimitedDocument(this));
 		this.getViewport().add(jTextArea, null);
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ROWS");
@@ -3907,6 +3833,9 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 			}
 		}
 		public void focusGained(FocusEvent event){
+			if (jTextArea.isEditable()) {
+				jTextArea.selectAll();
+			}
 			Character.Subset[] subsets  = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
 			String lang = Locale.getDefault().getLanguage();
 			if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {

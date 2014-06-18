@@ -1,5 +1,12 @@
 Manifest-Version: 1.0 
 Sealed: true 
 Main-Class: xeadDriver.Application
-Class-Path: ./xercesImpl.jar ./poi-3.2-FINAL-20081019.jar ./iText-2.1.7.jar ./iTextAsian.jar ./commons-codec-1.4.jar ./commons-logging-1.1.1.jar ./httpclient-4.1.2.jar ./httpclient-cache-4.1.2.jar ./httpcore-4.1.2.jar ./httpmime-4.1.2.jar ./xeadsrv.jar ./derby.jar ./derbyclient.jar ./mysql-connector-java-5.1.18-bin.jar ./postgresql-9.1-901.jdbc3.jar ./ojdbc6.jar ./sqljdbc4.jar ./activation.jar ./mail.jar ./java-json.jar
+Class-Path: ./xercesImpl.jar ./poi-3.10-FINAL-20140208.jar ./poi-ooxml-
+ 3.10-FINAL-20140208.jar ./poi-ooxml-schemas-3.10-FINAL-20140208.jar ./
+ dom4j-1.6.1.jar ./xmlbeans-2.3.0.jar ./iText-2.1.7.jar ./iTextAsian.ja
+ r ./commons-codec-1.4.jar ./commons-logging-1.1.1.jar ./httpclient-4.1
+ .2.jar ./httpclient-cache-4.1.2.jar ./httpcore-4.1.2.jar ./httpmime-4.
+ 1.2.jar ./xeadsrv.jar ./derby.jar ./derbyclient.jar ./mysql-connector-
+ java-5.1.18-bin.jar ./postgresql-9.1-901.jdbc3.jar ./ojdbc6.jar ./sqlj
+ dbc4.jar ./activation.jar ./mail.jar ./java-json.jar
 

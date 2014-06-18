@@ -48,6 +48,7 @@ import java.util.*;
 import java.util.List;
 import java.security.*;
 import java.net.URI;
+
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.html.HTMLEditorKit;
@@ -57,6 +58,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.apache.xerces.parsers.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
@@ -2196,9 +2198,9 @@ public class Session extends JFrame {
 			}
 		}
 
-		public HashMap<String, Object> execute(String functionID, HashMap<String, Object> parmMap) {
+		public HashMap<String, Object> execute(String functionID, HashMap<String, Object> parmMap) throws Exception {
 			HashMap<String, Object> returnMap = new HashMap<String, Object>();
-
+			boolean isInvalidFunctionID = true;
 			XFExecutable workFunction = lastPanelFunction;
 
 			XFExecutable preloadedFunction = session_.getPreloadedFunction(functionID); 
@@ -2208,7 +2210,15 @@ public class Session extends JFrame {
 					functionElement = (org.w3c.dom.Element)functionList.item(i);
 					if (functionElement.getAttribute("ID").equals(functionID)) {
 						returnMap = this.execute(functionElement, parmMap);
+						isInvalidFunctionID = false;
 						break;
+					}
+				}
+				if (isInvalidFunctionID) {
+					if (functionID.equals("")) {
+						throw new Exception("Calling canceled as the function for the action is not specified.");
+					} else {
+						throw new Exception("Calling canceled as its function id '" + functionID + "' is invalid.");
 					}
 				}
 			} else {
@@ -2489,7 +2499,12 @@ public class Session extends JFrame {
 			if (isLogoutOption) {
 				return null;
 			} else {
-				return functionLauncher.execute(functionElement_.getAttribute("ID"), new HashMap<String, Object>());
+				try {
+					return functionLauncher.execute(functionElement_.getAttribute("ID"), new HashMap<String, Object>());
+				} catch (Exception e) {
+					JOptionPane.showMessageDialog(null, e.getMessage());
+					return null;
+				}
 			}
 		}
 	}

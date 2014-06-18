@@ -4,7 +4,6 @@
 	<classpathentry kind="con" path="DERBY_CONTAINER"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/derby.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/xercesImpl.jar"/>
-	<classpathentry kind="lib" path="C:/XeadProject/Driver/poi-3.2-FINAL-20081019.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/derbyclient.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/iText-2.1.7.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/iTextAsian.jar"/>
@@ -23,5 +22,10 @@
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/ojdbc6.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/java-json.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/sqljdbc4.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/poi-3.10-FINAL-20140208.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/poi-ooxml-schemas-3.10-FINAL-20140208.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/poi-ooxml-3.10-FINAL-20140208.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/xmlbeans-2.3.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

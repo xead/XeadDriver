@@ -31,9 +31,6 @@ package xeadDriver;
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-import javax.swing.table.*;
-import javax.swing.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -42,16 +39,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.StringTokenizer;
-
-import org.w3c.dom.*;
-import org.apache.poi.hssf.usermodel.*;
-import org.apache.poi.hssf.util.*;
-
 import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
+import javax.swing.table.*;
+import javax.swing.*;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Footer;
+import org.apache.poi.xssf.usermodel.*;
+import org.w3c.dom.*;
 
 public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	private static final long serialVersionUID = 1L;
@@ -119,7 +117,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	private PrintStream exceptionStream;
 	private String exceptionHeader = "";
 	private boolean isListingInNormalOrder;
-	private HSSFPatriarch patriarch = null;
+	//private HSSFPatriarch patriarch = null;
 	private HashMap<String, CompiledScript> compiledScriptMap = new HashMap<String, CompiledScript>();
 	private int headersWidth = 0;
 	private int filtersWidth = 0;
@@ -1347,6 +1345,286 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		 }
 	 }
 	
+//	private URI getExcellBookURI() {
+//		File xlsFile = null;
+//		String xlsFileName = "";
+//		FileOutputStream fileOutputStream = null;
+//		String imageFileName = "";
+//		String wrkStr;
+//		int currentRowNumber = -1;
+//
+//		HSSFWorkbook workBook = new HSSFWorkbook();
+//		wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
+//		HSSFSheet workSheet = workBook.createSheet(wrkStr);
+//		workSheet.setDefaultRowHeight( (short) 300);
+//		HSSFFooter workSheetFooter = workSheet.getFooter();
+//		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
+//		patriarch = workSheet.createDrawingPatriarch();
+//
+//		HSSFFont fontHeader = workBook.createFont();
+//		fontHeader = workBook.createFont();
+//		fontHeader.setFontName(XFUtility.RESOURCE.getString("XLSFontHDR"));
+//		fontHeader.setFontHeightInPoints((short)11);
+//
+//		HSSFFont fontDetailBlack = workBook.createFont();
+//		fontDetailBlack.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
+//		fontDetailBlack.setFontHeightInPoints((short)11);
+//		HSSFFont fontDetailRed = workBook.createFont();
+//		fontDetailRed.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
+//		fontDetailRed.setFontHeightInPoints((short)11);
+//		fontDetailRed.setColor(HSSFColor.RED.index);
+//		HSSFFont fontDetailBlue = workBook.createFont();
+//		fontDetailBlue.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
+//		fontDetailBlue.setFontHeightInPoints((short)11);
+//		fontDetailBlue.setColor(HSSFColor.BLUE.index);
+//		HSSFFont fontDetailGreen = workBook.createFont();
+//		fontDetailGreen.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
+//		fontDetailGreen.setFontHeightInPoints((short)11);
+//		fontDetailGreen.setColor(HSSFColor.GREEN.index);
+//		HSSFFont fontDetailOrange = workBook.createFont();
+//		fontDetailOrange.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
+//		fontDetailOrange.setFontHeightInPoints((short)11);
+//		fontDetailOrange.setColor(HSSFColor.ORANGE.index);
+//
+//		HSSFCellStyle styleHeader = workBook.createCellStyle();
+//		styleHeader.setBorderBottom(HSSFCellStyle.BORDER_THIN);
+//		styleHeader.setBorderLeft(HSSFCellStyle.BORDER_THIN);
+//		styleHeader.setBorderRight(HSSFCellStyle.BORDER_THIN);
+//		styleHeader.setBorderTop(HSSFCellStyle.BORDER_THIN);
+//		styleHeader.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
+//		styleHeader.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+//		styleHeader.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+//		styleHeader.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
+//		styleHeader.setFont(fontHeader);
+//		styleHeader.setWrapText(true);
+//
+//		HSSFCellStyle styleHeaderNumber = workBook.createCellStyle();
+//		styleHeaderNumber.setBorderBottom(HSSFCellStyle.BORDER_THIN);
+//		styleHeaderNumber.setBorderLeft(HSSFCellStyle.BORDER_THIN);
+//		styleHeaderNumber.setBorderRight(HSSFCellStyle.BORDER_THIN);
+//		styleHeaderNumber.setBorderTop(HSSFCellStyle.BORDER_THIN);
+//		styleHeaderNumber.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
+//		styleHeaderNumber.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
+//		styleHeaderNumber.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+//		styleHeaderNumber.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
+//		styleHeaderNumber.setFont(fontHeader);
+//
+//		HSSFCellStyle styleDataInteger = workBook.createCellStyle();
+//		styleDataInteger.setBorderBottom(HSSFCellStyle.BORDER_THIN);
+//		styleDataInteger.setBorderLeft(HSSFCellStyle.BORDER_THIN);
+//		styleDataInteger.setBorderRight(HSSFCellStyle.BORDER_THIN);
+//		styleDataInteger.setBorderTop(HSSFCellStyle.BORDER_THIN);
+//		styleDataInteger.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+//		styleDataInteger.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+//		styleDataInteger.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+//
+//		try {
+//			xlsFile = session_.createTempFile(functionElement_.getAttribute("ID"), ".xls");
+//			xlsFileName = xlsFile.getPath();
+//			fileOutputStream = new FileOutputStream(xlsFileName);
+//			TableCellReadOnly cellObject = null;
+//			XF100_RowNumber rowObject;
+//			HSSFFont font = null;
+//
+//			///////////////////////////
+//			// Setup column headings //
+//			///////////////////////////
+//			currentRowNumber++;
+//			HSSFRow rowCaption = workSheet.createRow(currentRowNumber);
+//			HSSFCell cell = rowCaption.createCell(0);
+//			cell.setCellStyle(styleHeaderNumber);
+//			workSheet.setColumnWidth(0, headersRenderer.getSequenceWidth() * 40);
+//			wrkStr = XFUtility.getCaptionForCell(headersRenderer.getSequenceLabel());
+//			cell.setCellValue(new HSSFRichTextString(wrkStr));
+//			for (int j = 0; j < columnList.size(); j++) {
+//				if (columnList.get(j).isVisibleOnPanel()) {
+//					cell = rowCaption.createCell(j+1);
+//					if (columnList.get(j).getBasicType().equals("INTEGER")
+//							|| columnList.get(j).getBasicType().equals("FLOAT")) {
+//						if (columnList.get(j).getTypeOptionList().contains("MSEQ") || columnList.get(j).getTypeOptionList().contains("FYEAR")) {
+//							cell.setCellStyle(styleHeader);
+//						} else {
+//							cell.setCellStyle(styleHeaderNumber);
+//						}
+//					} else {
+//						cell.setCellStyle(styleHeader);
+//					}
+//					Rectangle rect = headersRenderer.getColumnHeaderList().get(j).getBounds();
+//					workSheet.setColumnWidth(j+1, rect.width * 40);
+//					wrkStr = XFUtility.getCaptionForCell(headersRenderer.getColumnHeaderList().get(j).getText());
+//					wrkStr = wrkStr.replaceAll("<html>" , "");
+//					wrkStr = wrkStr.replaceAll("<u>" , "");
+//					cell.setCellValue(new HSSFRichTextString(wrkStr));
+//				} else {
+//					break;
+//				}
+//			}
+//
+//			///////////////////////
+//			// create data cells //
+//			///////////////////////
+//			for (int i = 0; i < tableModelMain.getRowCount(); i++) {
+//				currentRowNumber++;
+//				HSSFRow rowData = workSheet.createRow(currentRowNumber);
+//
+//				cell = rowData.createCell(0); //Column of Sequence Number
+//				cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+//				cell.setCellStyle(styleDataInteger);
+//				cell.setCellValue(i + 1);
+//
+//				rowObject = (XF100_RowNumber)tableModelMain.getValueAt(i,0);
+//				for (int j = 0; j < columnList.size(); j++) {
+//					if (columnList.get(j).isVisibleOnPanel()) {
+//						cellObject = (TableCellReadOnly)rowObject.getCellObjectList().get(j);
+//						font = fontDetailBlack;
+//						if (cellObject.getColor().equals(Color.red)) {
+//							font = fontDetailRed;
+//						}
+//						if (cellObject.getColor().equals(Color.blue)) {
+//							font = fontDetailBlue;
+//						}
+//						if (cellObject.getColor().equals(Color.green)) {
+//							font = fontDetailGreen;
+//						}
+//						if (cellObject.getColor().equals(Color.orange)) {
+//							font = fontDetailOrange;
+//						}
+//						setupCellAttributes(rowData.createCell(j+1), workBook, columnList.get(j).getBasicType(), columnList.get(j).getTypeOptionList(), cellObject, font, columnList.get(j).getDecimalSize());
+//						if (cellObject.getValueType().equals("IMAGE") && !cellObject.getInternalValue().equals("")) {
+//							imageFileName = session_.getImageFileFolder() + cellObject.getInternalValue();
+//							XFUtility.setupImageCellForDetailColumn(workBook, workSheet, currentRowNumber, j+1, imageFileName, patriarch);
+//						}
+//					}
+//				}
+//			}
+//
+//			///////////////////////////////
+//			// Setup comments on filters //
+//			///////////////////////////////
+//			currentRowNumber++;
+//			HSSFRow rowRemarks = workSheet.createRow(currentRowNumber);
+//			cell = rowRemarks.createCell(0);
+//			StringBuffer buf = new StringBuffer();
+//			buf.append(XFUtility.RESOURCE.getString("XLSComment2"));
+//			for (int j = 0; j < filterList.size(); j++) {
+//				if (j>0) {
+//					buf.append("ÅA");
+//				}
+//				buf.append(filterList.get(j).getCaptionAndValue());
+//			}
+//			cell.setCellValue(new HSSFRichTextString(buf.toString()));
+//
+//			workBook.write(fileOutputStream);
+//			messageList.add(XFUtility.RESOURCE.getString("XLSComment1"));
+//
+//		} catch(Exception e) {
+//			messageList.add(XFUtility.RESOURCE.getString("XLSErrorMessage"));
+//			e.printStackTrace(exceptionStream);
+//		} finally {
+//			try {
+//				fileOutputStream.close();
+//			} catch(Exception e) {
+//				e.printStackTrace(exceptionStream);
+//			}
+//		}
+//		return xlsFile.toURI();
+//	}
+//	
+//	private void setupCellAttributes(HSSFCell cell, HSSFWorkbook workbook, String basicType, ArrayList<String> typeOptionList, TableCellReadOnly object, HSSFFont font, int decimalSize) {
+//		String wrk;
+//
+//		Color color = object.getColor();
+//		if (color.equals(Color.red)) {
+//			font.setColor(HSSFColor.RED.index);
+//		}
+//		if (color.equals(Color.blue)) {
+//			font.setColor(HSSFColor.BLUE.index);
+//		}
+//		if (color.equals(Color.green)) {
+//			font.setColor(HSSFColor.GREEN.index);
+//		}
+//		if (color.equals(Color.orange)) {
+//			font.setColor(HSSFColor.ORANGE.index);
+//		}
+//
+//		HSSFCellStyle style = workbook.createCellStyle();
+//		style.setFont(font);
+//		style.setBorderBottom(HSSFCellStyle.BORDER_THIN);
+//		style.setBorderLeft(HSSFCellStyle.BORDER_THIN);
+//		style.setBorderRight(HSSFCellStyle.BORDER_THIN);
+//		style.setBorderTop(HSSFCellStyle.BORDER_THIN);
+//
+//		if (basicType.equals("INTEGER")) {
+//			if (typeOptionList.contains("MSEQ") || typeOptionList.contains("FYEAR")) {
+//				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+//				cell.setCellValue(new HSSFRichTextString(object.getExternalValue().toString()));
+//				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+//				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+//				style.setWrapText(true);
+//				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
+//				cell.setCellStyle(style);
+//			} else {
+//				if (object.getExternalValue() == null) {
+//					wrk = "";
+//				} else {
+//					wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
+//				}
+//				if (wrk.equals("") || typeOptionList.contains("NO_EDIT")) {
+//					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+//					cell.setCellValue(new HSSFRichTextString(wrk));
+//				} else {
+//					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+//					cell.setCellValue(Double.parseDouble(wrk));
+//				}
+//				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+//				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+//				if (!typeOptionList.contains("NO_EDIT")
+//						&& !typeOptionList.contains("ZERO_SUPPRESS")) {
+//					style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+//				}
+//				cell.setCellStyle(style);
+//			}
+//		} else {
+//			if (basicType.equals("FLOAT")) {
+//				if (object.getExternalValue() == null) {
+//					wrk = "";
+//				} else {
+//					wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
+//				}
+//				if (wrk.equals("") || typeOptionList.contains("NO_EDIT")) {
+//					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+//					cell.setCellValue(new HSSFRichTextString(wrk));
+//				} else {
+//					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+//					cell.setCellValue(Double.parseDouble(wrk));
+//				}
+//				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+//				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+//				if (!typeOptionList.contains("NO_EDIT")
+//					&& !typeOptionList.contains("ZERO_SUPPRESS")) {
+//					style.setDataFormat(XFUtility.getFloatFormat(workbook, decimalSize));
+//				}
+//				cell.setCellStyle(style);
+//			} else {
+//				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+//				if (object.getExternalValue() == null || object.getValueType().equals("IMAGE")) {
+//					wrk = "";
+//				} else {
+//					if (object.getValueType().equals("FLAG")) {
+//						wrk = object.getInternalValue().toString();
+//					} else {
+//						wrk = object.getExternalValue().toString();
+//					}
+//				}
+//				cell.setCellValue(new HSSFRichTextString(wrk));
+//				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+//				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+//				style.setWrapText(true);
+//				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
+//				cell.setCellStyle(style);
+//			}
+//		}
+//	}
 	private URI getExcellBookURI() {
 		File xlsFile = null;
 		String xlsFileName = "";
@@ -1355,89 +1633,77 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		String wrkStr;
 		int currentRowNumber = -1;
 
-		HSSFWorkbook workBook = new HSSFWorkbook();
+		XSSFWorkbook workBook = new XSSFWorkbook();
 		wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
-		HSSFSheet workSheet = workBook.createSheet(wrkStr);
+		XSSFSheet workSheet = workBook.createSheet(wrkStr);
 		workSheet.setDefaultRowHeight( (short) 300);
-		HSSFFooter workSheetFooter = workSheet.getFooter();
-		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
-		patriarch = workSheet.createDrawingPatriarch();
+		Footer workSheetFooter = workSheet.getFooter();
+		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page &P / &N");
+		XSSFDataFormat format = workBook.createDataFormat();
 
-		HSSFFont fontHeader = workBook.createFont();
-		fontHeader = workBook.createFont();
-		fontHeader.setFontName(XFUtility.RESOURCE.getString("XLSFontHDR"));
-		fontHeader.setFontHeightInPoints((short)11);
+		XSSFFont fontDefault = workBook.createFont();
+		fontDefault.setFontName(session_.systemFont);
+		fontDefault.setFontHeightInPoints((short)11);
 
-		HSSFFont fontDetailBlack = workBook.createFont();
-		fontDetailBlack.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-		fontDetailBlack.setFontHeightInPoints((short)11);
-		HSSFFont fontDetailRed = workBook.createFont();
-		fontDetailRed.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-		fontDetailRed.setFontHeightInPoints((short)11);
-		fontDetailRed.setColor(HSSFColor.RED.index);
-		HSSFFont fontDetailBlue = workBook.createFont();
-		fontDetailBlue.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-		fontDetailBlue.setFontHeightInPoints((short)11);
-		fontDetailBlue.setColor(HSSFColor.BLUE.index);
-		HSSFFont fontDetailGreen = workBook.createFont();
-		fontDetailGreen.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-		fontDetailGreen.setFontHeightInPoints((short)11);
-		fontDetailGreen.setColor(HSSFColor.GREEN.index);
-		HSSFFont fontDetailOrange = workBook.createFont();
-		fontDetailOrange.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-		fontDetailOrange.setFontHeightInPoints((short)11);
-		fontDetailOrange.setColor(HSSFColor.ORANGE.index);
-
-		HSSFCellStyle styleHeader = workBook.createCellStyle();
-		styleHeader.setBorderBottom(HSSFCellStyle.BORDER_THIN);
-		styleHeader.setBorderLeft(HSSFCellStyle.BORDER_THIN);
-		styleHeader.setBorderRight(HSSFCellStyle.BORDER_THIN);
-		styleHeader.setBorderTop(HSSFCellStyle.BORDER_THIN);
-		styleHeader.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
-		styleHeader.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
-		styleHeader.setAlignment(HSSFCellStyle.ALIGN_LEFT);
-		styleHeader.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
-		styleHeader.setFont(fontHeader);
+		XSSFCellStyle styleHeader = workBook.createCellStyle();
+		styleHeader.setBorderBottom(XSSFCellStyle.BORDER_THIN);
+		styleHeader.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+		styleHeader.setBorderRight(XSSFCellStyle.BORDER_THIN);
+		styleHeader.setBorderTop(XSSFCellStyle.BORDER_THIN);
+		styleHeader.setFillForegroundColor(new XSSFColor(Color.LIGHT_GRAY));
+		styleHeader.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
+		styleHeader.setAlignment(XSSFCellStyle.ALIGN_LEFT);
+		styleHeader.setVerticalAlignment(XSSFCellStyle.VERTICAL_CENTER);
+		styleHeader.setFont(fontDefault);
 		styleHeader.setWrapText(true);
 
-		HSSFCellStyle styleHeaderNumber = workBook.createCellStyle();
-		styleHeaderNumber.setBorderBottom(HSSFCellStyle.BORDER_THIN);
-		styleHeaderNumber.setBorderLeft(HSSFCellStyle.BORDER_THIN);
-		styleHeaderNumber.setBorderRight(HSSFCellStyle.BORDER_THIN);
-		styleHeaderNumber.setBorderTop(HSSFCellStyle.BORDER_THIN);
-		styleHeaderNumber.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
-		styleHeaderNumber.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
-		styleHeaderNumber.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-		styleHeaderNumber.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
-		styleHeaderNumber.setFont(fontHeader);
+		XSSFCellStyle styleHeaderNumber = workBook.createCellStyle();
+		styleHeaderNumber.setBorderBottom(XSSFCellStyle.BORDER_THIN);
+		styleHeaderNumber.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+		styleHeaderNumber.setBorderRight(XSSFCellStyle.BORDER_THIN);
+		styleHeaderNumber.setBorderTop(XSSFCellStyle.BORDER_THIN);
+		styleHeaderNumber.setFillForegroundColor(new XSSFColor(Color.LIGHT_GRAY));
+		styleHeaderNumber.setFillPattern(XSSFCellStyle.SOLID_FOREGROUND);
+		styleHeaderNumber.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
+		styleHeaderNumber.setVerticalAlignment(XSSFCellStyle.VERTICAL_CENTER);
+		styleHeaderNumber.setFont(fontDefault);
 
-		HSSFCellStyle styleDataInteger = workBook.createCellStyle();
-		styleDataInteger.setBorderBottom(HSSFCellStyle.BORDER_THIN);
-		styleDataInteger.setBorderLeft(HSSFCellStyle.BORDER_THIN);
-		styleDataInteger.setBorderRight(HSSFCellStyle.BORDER_THIN);
-		styleDataInteger.setBorderTop(HSSFCellStyle.BORDER_THIN);
-		styleDataInteger.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-		styleDataInteger.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-		styleDataInteger.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+		XSSFCellStyle styleDataInteger = workBook.createCellStyle();
+		styleDataInteger.setBorderBottom(XSSFCellStyle.BORDER_THIN);
+		styleDataInteger.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+		styleDataInteger.setBorderRight(XSSFCellStyle.BORDER_THIN);
+		styleDataInteger.setBorderTop(XSSFCellStyle.BORDER_THIN);
+		styleDataInteger.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
+		styleDataInteger.setVerticalAlignment(XSSFCellStyle.VERTICAL_TOP);
+		styleDataInteger.setDataFormat(format.getFormat("#,##0"));
+
+		XSSFCellStyle styleRowNumber = workBook.createCellStyle();
+		styleRowNumber.setBorderBottom(XSSFCellStyle.BORDER_THIN);
+		styleRowNumber.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+		styleRowNumber.setBorderRight(XSSFCellStyle.BORDER_THIN);
+		styleRowNumber.setBorderTop(XSSFCellStyle.BORDER_THIN);
+		styleRowNumber.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
+		styleRowNumber.setVerticalAlignment(XSSFCellStyle.VERTICAL_TOP);
+		styleRowNumber.setDataFormat(format.getFormat("###0"));
+		styleRowNumber.setFont(fontDefault);
 
 		try {
-			xlsFile = session_.createTempFile(functionElement_.getAttribute("ID"), ".xls");
+			xlsFile = session_.createTempFile(functionElement_.getAttribute("ID"), ".xlsx");
 			xlsFileName = xlsFile.getPath();
 			fileOutputStream = new FileOutputStream(xlsFileName);
 			TableCellReadOnly cellObject = null;
 			XF100_RowNumber rowObject;
-			HSSFFont font = null;
 
 			///////////////////////////
 			// Setup column headings //
 			///////////////////////////
 			currentRowNumber++;
-			HSSFRow rowCaption = workSheet.createRow(currentRowNumber);
-			HSSFCell cell = rowCaption.createCell(0);
+			XSSFRow rowCaption = workSheet.createRow(currentRowNumber);
+			XSSFCell cell = rowCaption.createCell(0);
 			cell.setCellStyle(styleHeaderNumber);
-			workSheet.setColumnWidth(0, headersRenderer.getSequenceWidth() * 40);
+			workSheet.setColumnWidth(0, XFUtility.SEQUENCE_WIDTH * 40);
 			wrkStr = XFUtility.getCaptionForCell(headersRenderer.getSequenceLabel());
-			cell.setCellValue(new HSSFRichTextString(wrkStr));
+			cell.setCellValue(new XSSFRichTextString(wrkStr));
 			for (int j = 0; j < columnList.size(); j++) {
 				if (columnList.get(j).isVisibleOnPanel()) {
 					cell = rowCaption.createCell(j+1);
@@ -1452,11 +1718,11 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 						cell.setCellStyle(styleHeader);
 					}
 					Rectangle rect = headersRenderer.getColumnHeaderList().get(j).getBounds();
-					workSheet.setColumnWidth(j+1, rect.width * 40);
+					workSheet.setColumnWidth(j+1, rect.width * 30);
 					wrkStr = XFUtility.getCaptionForCell(headersRenderer.getColumnHeaderList().get(j).getText());
 					wrkStr = wrkStr.replaceAll("<html>" , "");
 					wrkStr = wrkStr.replaceAll("<u>" , "");
-					cell.setCellValue(new HSSFRichTextString(wrkStr));
+					cell.setCellValue(new XSSFRichTextString(wrkStr));
 				} else {
 					break;
 				}
@@ -1467,34 +1733,22 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			///////////////////////
 			for (int i = 0; i < tableModelMain.getRowCount(); i++) {
 				currentRowNumber++;
-				HSSFRow rowData = workSheet.createRow(currentRowNumber);
+				XSSFRow rowData = workSheet.createRow(currentRowNumber);
 
-				cell = rowData.createCell(0); //Column of Sequence Number
-				cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-				cell.setCellStyle(styleDataInteger);
+				cell = rowData.createCell(0); //Column of Row Number
+				cell.setCellType(XSSFCell.CELL_TYPE_NUMERIC);
+				cell.setCellStyle(styleRowNumber);
 				cell.setCellValue(i + 1);
 
 				rowObject = (XF100_RowNumber)tableModelMain.getValueAt(i,0);
 				for (int j = 0; j < columnList.size(); j++) {
 					if (columnList.get(j).isVisibleOnPanel()) {
 						cellObject = (TableCellReadOnly)rowObject.getCellObjectList().get(j);
-						font = fontDetailBlack;
-						if (cellObject.getColor().equals(Color.red)) {
-							font = fontDetailRed;
-						}
-						if (cellObject.getColor().equals(Color.blue)) {
-							font = fontDetailBlue;
-						}
-						if (cellObject.getColor().equals(Color.green)) {
-							font = fontDetailGreen;
-						}
-						if (cellObject.getColor().equals(Color.orange)) {
-							font = fontDetailOrange;
-						}
-						setupCellAttributes(rowData.createCell(j+1), workBook, columnList.get(j).getBasicType(), columnList.get(j).getTypeOptionList(), cellObject, font, columnList.get(j).getDecimalSize());
+						setupCellAttributes(rowData.createCell(j+1), workBook, columnList.get(j).getBasicType(), columnList.get(j).getTypeOptionList(), cellObject, columnList.get(j).getDecimalSize());
 						if (cellObject.getValueType().equals("IMAGE") && !cellObject.getInternalValue().equals("")) {
 							imageFileName = session_.getImageFileFolder() + cellObject.getInternalValue();
-							XFUtility.setupImageCellForDetailColumn(workBook, workSheet, currentRowNumber, j+1, imageFileName, patriarch);
+							//XFUtility.setupImageCellForColumn(workBook, workSheet, currentRowNumber, j+1, imageFileName);
+							XFUtility.setupImageCell(workBook, workSheet, currentRowNumber, currentRowNumber+1, j+1, j+2, imageFileName);
 						}
 					}
 				}
@@ -1504,8 +1758,11 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			// Setup comments on filters //
 			///////////////////////////////
 			currentRowNumber++;
-			HSSFRow rowRemarks = workSheet.createRow(currentRowNumber);
+			XSSFRow rowRemarks = workSheet.createRow(currentRowNumber);
 			cell = rowRemarks.createCell(0);
+			CellStyle style = workBook.createCellStyle();
+			style.setFont(fontDefault);
+			cell.setCellStyle(style);
 			StringBuffer buf = new StringBuffer();
 			buf.append(XFUtility.RESOURCE.getString("XLSComment2"));
 			for (int j = 0; j < filterList.size(); j++) {
@@ -1514,7 +1771,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				}
 				buf.append(filterList.get(j).getCaptionAndValue());
 			}
-			cell.setCellValue(new HSSFRichTextString(buf.toString()));
+			cell.setCellValue(new XSSFRichTextString(buf.toString()));
 
 			workBook.write(fileOutputStream);
 			messageList.add(XFUtility.RESOURCE.getString("XLSComment1"));
@@ -1531,39 +1788,32 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		return xlsFile.toURI();
 	}
-	
-	private void setupCellAttributes(HSSFCell cell, HSSFWorkbook workbook, String basicType, ArrayList<String> typeOptionList, TableCellReadOnly object, HSSFFont font, int decimalSize) {
+
+	private void setupCellAttributes(XSSFCell cell, XSSFWorkbook workbook, String basicType, ArrayList<String> typeOptionList, TableCellReadOnly object, int decimalSize) {
 		String wrk;
 
-		Color color = object.getColor();
-		if (color.equals(Color.red)) {
-			font.setColor(HSSFColor.RED.index);
+		XSSFFont font = workbook.createFont();
+		font.setFontHeightInPoints((short)11);
+		font.setFontName(session_.systemFont);
+		if (object.getColor() != Color.BLACK) {
+			font.setColor(new XSSFColor(object.getColor()));
 		}
-		if (color.equals(Color.blue)) {
-			font.setColor(HSSFColor.BLUE.index);
-		}
-		if (color.equals(Color.green)) {
-			font.setColor(HSSFColor.GREEN.index);
-		}
-		if (color.equals(Color.orange)) {
-			font.setColor(HSSFColor.ORANGE.index);
-		}
-
-		HSSFCellStyle style = workbook.createCellStyle();
+		XSSFDataFormat format = workbook.createDataFormat();
+		CellStyle style = workbook.createCellStyle();
 		style.setFont(font);
-		style.setBorderBottom(HSSFCellStyle.BORDER_THIN);
-		style.setBorderLeft(HSSFCellStyle.BORDER_THIN);
-		style.setBorderRight(HSSFCellStyle.BORDER_THIN);
-		style.setBorderTop(HSSFCellStyle.BORDER_THIN);
+		style.setBorderBottom(XSSFCellStyle.BORDER_THIN);
+		style.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+		style.setBorderRight(XSSFCellStyle.BORDER_THIN);
+		style.setBorderTop(XSSFCellStyle.BORDER_THIN);
 
 		if (basicType.equals("INTEGER")) {
 			if (typeOptionList.contains("MSEQ") || typeOptionList.contains("FYEAR")) {
-				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-				cell.setCellValue(new HSSFRichTextString(object.getExternalValue().toString()));
-				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
-				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+				cell.setCellType(XSSFCell.CELL_TYPE_STRING);
+				cell.setCellValue(new XSSFRichTextString(object.getExternalValue().toString()));
+				style.setAlignment(XSSFCellStyle.ALIGN_LEFT);
+				style.setVerticalAlignment(XSSFCellStyle.VERTICAL_TOP);
 				style.setWrapText(true);
-				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
+				style.setDataFormat(format.getFormat("text"));
 				cell.setCellStyle(style);
 			} else {
 				if (object.getExternalValue() == null) {
@@ -1572,17 +1822,17 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
 				}
 				if (wrk.equals("") || typeOptionList.contains("NO_EDIT")) {
-					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-					cell.setCellValue(new HSSFRichTextString(wrk));
+					cell.setCellType(XSSFCell.CELL_TYPE_STRING);
+					cell.setCellValue(new XSSFRichTextString(wrk));
 				} else {
-					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+					cell.setCellType(XSSFCell.CELL_TYPE_NUMERIC);
 					cell.setCellValue(Double.parseDouble(wrk));
 				}
-				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+				style.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
+				style.setVerticalAlignment(XSSFCellStyle.VERTICAL_TOP);
 				if (!typeOptionList.contains("NO_EDIT")
 						&& !typeOptionList.contains("ZERO_SUPPRESS")) {
-					style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
+					style.setDataFormat(format.getFormat("#,##0"));
 				}
 				cell.setCellStyle(style);
 			}
@@ -1594,21 +1844,21 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
 				}
 				if (wrk.equals("") || typeOptionList.contains("NO_EDIT")) {
-					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-					cell.setCellValue(new HSSFRichTextString(wrk));
+					cell.setCellType(XSSFCell.CELL_TYPE_STRING);
+					cell.setCellValue(new XSSFRichTextString(wrk));
 				} else {
-					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
+					cell.setCellType(XSSFCell.CELL_TYPE_NUMERIC);
 					cell.setCellValue(Double.parseDouble(wrk));
 				}
-				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+				style.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
+				style.setVerticalAlignment(XSSFCellStyle.VERTICAL_TOP);
 				if (!typeOptionList.contains("NO_EDIT")
-					&& !typeOptionList.contains("ZERO_SUPPRESS")) {
+						&& !typeOptionList.contains("ZERO_SUPPRESS")) {
 					style.setDataFormat(XFUtility.getFloatFormat(workbook, decimalSize));
 				}
 				cell.setCellStyle(style);
 			} else {
-				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
+				cell.setCellType(XSSFCell.CELL_TYPE_STRING);
 				if (object.getExternalValue() == null || object.getValueType().equals("IMAGE")) {
 					wrk = "";
 				} else {
@@ -1618,11 +1868,11 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 						wrk = object.getExternalValue().toString();
 					}
 				}
-				cell.setCellValue(new HSSFRichTextString(wrk));
-				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
-				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
+				cell.setCellValue(new XSSFRichTextString(wrk));
+				style.setAlignment(XSSFCellStyle.ALIGN_LEFT);
+				style.setVerticalAlignment(XSSFCellStyle.VERTICAL_TOP);
 				style.setWrapText(true);
-				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
+				style.setDataFormat(format.getFormat("text"));
 				cell.setCellStyle(style);
 			}
 		}

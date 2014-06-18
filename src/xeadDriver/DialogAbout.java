@@ -43,8 +43,16 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M1";
-	public static final String VERSION  = "1.2.1";
+	public static final String FULL_VERSION  = "V1.R2.M2";
+	public static final String VERSION  = "1.2.2";
+	//1.2.2
+	//・入力フィールドにフォーカスが当たったとき、値を全選択状態にするようにした
+	//・カラム数上限255の制限をなくすために、EXCEL出力についてxlsからxlsx形式に変更した
+	//・XF110,200,310について、更新排他制御フィールドが載っていないテーブルを扱う際に異常終了するのでなく、更新排他制御をしないようにした
+	//・XF110,310について、スプリットラインの初期設定値のずれを修正した
+	//・XF300,310について、キー入力ダイアログのサイズを修正した
+	//propertiesの読み取りロジックを改善した
+	//
 	//1.2.1
 	//・XF100,110の読込単位行数の扱いを刷新した
 	//・XF110,200,310のメッセージ表示域のサイズ設定のロジックを改善した

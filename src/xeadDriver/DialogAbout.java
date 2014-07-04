@@ -43,8 +43,16 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M2";
-	public static final String VERSION  = "1.2.2";
+	public static final String FULL_VERSION  = "V1.R2.M3";
+	public static final String VERSION  = "1.2.3";
+	//1.2.3
+	//・getTaxAmount(...)のセッション関数で日付がnullの場合に異常終了せずに税額０円を返すようにした
+	//・エラー発生時にはエラーログのみを書きだして、テーブル操作ログを書かないようにした（テーブル操作ログが長すぎることがあるため）
+	//・XF300の見出し域フィールドが入力可能になるケースがある問題を修正した
+	//・XF390で結合フィールドを一覧順に選ぶと区分フィールドの出力でエラーになる問題を修正した
+	//・DBとの接続が切れている場合に再接続をガイドするようにした
+	//・XF110で多段表示できなくなっていた問題を修正した
+	//
 	//1.2.2
 	//・入力フィールドにフォーカスが当たったとき、値を全選択状態にするようにした
 	//・カラム数上限255の制限をなくすために、EXCEL出力についてxlsからxlsx形式に変更した

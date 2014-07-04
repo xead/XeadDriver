@@ -108,7 +108,7 @@ public class Session extends JFrame {
 	private String sessionDetailTable = "";
 	private String numberingTable = "";
 	private String calendarTable = "";
-	private String taxTable = "";
+	public String taxTable = "";
 	private String exchangeRateAnnualTable = "";
 	private String exchangeRateMonthlyTable = "";
 	private String menuIDUsing = "";
@@ -451,7 +451,7 @@ public class Session extends JFrame {
 		databaseUser = element.getAttribute("DatabaseUser");
 		databasePassword = element.getAttribute("DatabasePassword");
 		org.w3c.dom.Element subDBElement;
-		Connection subDBConnection;
+		//Connection subDBConnection;
 		NodeList subDBList = domDocument.getElementsByTagName("SubDB");
 		for (int i = 0; i < subDBList.getLength(); i++) {
 			subDBElement = (org.w3c.dom.Element)subDBList.item(i);
@@ -473,32 +473,8 @@ public class Session extends JFrame {
 			appServerName = element.getAttribute("AppServerName");
 		}
 		if (appServerName.equals("")) {
-			try {
-				///////////////////////////////////////////////////////////////////////////////
-				// Setup committing connections.                                             //
-				// Note that default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
-				///////////////////////////////////////////////////////////////////////////////
-				XFUtility.loadDriverClass(databaseName);
-				connectionManualCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
-				connectionManualCommit.setAutoCommit(false);
-				connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
-				connectionAutoCommit.setAutoCommit(true);
-
-				////////////////////////////////////////////////////////
-				// Setup read-only connections for Sub-DB definitions //
-				////////////////////////////////////////////////////////
-				for (int i = 0; i < subDBIDList.size(); i++) {
-					XFUtility.loadDriverClass(subDBNameList.get(i));
-					subDBConnection = DriverManager.getConnection(subDBNameList.get(i), subDBUserList.get(i), subDBPasswordList.get(i));
-					subDBConnection.setReadOnly(true);
-					subDBConnectionList.add(subDBConnection);
-				}
-			} catch (Exception e) {
-				if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
-					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
-				} else {
-					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + databaseName + XFUtility.RESOURCE.getString("SessionError7") + e.getMessage());
-				}
+			boolean isOkay = setupConnectionToDatabase(true);
+			if (!isOkay) {
 				return false;
 			}
 		}
@@ -540,6 +516,43 @@ public class Session extends JFrame {
 		return true;
 	}
 
+	public boolean setupConnectionToDatabase(boolean isToStartSession) {
+		try {
+			///////////////////////////////////////////////////////////////////////////////
+			// Setup committing connections.                                             //
+			// Note that default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
+			///////////////////////////////////////////////////////////////////////////////
+			XFUtility.loadDriverClass(databaseName);
+			connectionManualCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
+			connectionManualCommit.setAutoCommit(false);
+			connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
+			connectionAutoCommit.setAutoCommit(true);
+
+			////////////////////////////////////////////////////////
+			// Setup read-only connections for Sub-DB definitions //
+			////////////////////////////////////////////////////////
+			Connection subDBConnection;
+			subDBConnectionList.clear();
+			for (int i = 0; i < subDBIDList.size(); i++) {
+				XFUtility.loadDriverClass(subDBNameList.get(i));
+				subDBConnection = DriverManager.getConnection(subDBNameList.get(i), subDBUserList.get(i), subDBPasswordList.get(i));
+				subDBConnection.setReadOnly(true);
+				subDBConnectionList.add(subDBConnection);
+			}
+			return true;
+		} catch (Exception e) {
+			if (isToStartSession) {
+				if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
+					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
+				} else {
+					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + databaseName + XFUtility.RESOURCE.getString("SessionError7") + e.getMessage());
+				}
+			}
+			return false;
+		}
+	}
+
+	
 	private void writeLogAndStartSession() throws ScriptException, Exception {
 
 		/////////////////////////////////
@@ -1627,7 +1640,7 @@ public class Session extends JFrame {
 	public int getTaxAmount(String date, int amount) {
 		int fromDate = 0;
 		int taxAmount = 0;
-		if (!date.equals("") && date != null) {
+		if (date != null && !date.equals("")) {
 			int targetDate = Integer.parseInt(date.replaceAll("-", "").replaceAll("/", ""));
 			float rate = 0;
 			try {
@@ -1961,29 +1974,31 @@ public class Session extends JFrame {
 			bf.append(tableOperationLog.replace("'", "\""));
 			logString = bf.toString();
 		} else {
-			int totalLength = tableOperationLog.length() + errorLog.length();
-			if (totalLength > 20000) {
-				StringBuffer bf2 = new StringBuffer();
-				int wrkInt = 20000 - tableOperationLog.length();
-				if (wrkInt > 100) {
-					bf2.append(errorLog.substring(0, wrkInt));
-					bf2.append(" ...");
-					errorLog = bf2.toString();
-				} else {
-					bf2.append(tableOperationLog.substring(0, 20000));
-					bf2.append("\n");
-					bf2.append(" ... Some of error log was discarded as it is too long.");
-					tableOperationLog = bf2.toString();
-				}
-			}
-			bf.append(tableOperationLog.replace("'", "\""));
-			bf.append("\n");
 			bf.append(errorLog.replace("'", "\""));
 			logString = bf.toString();
+//			int totalLength = tableOperationLog.length() + errorLog.length();
+//			if (totalLength > 20000) {
+//				StringBuffer bf2 = new StringBuffer();
+//				int wrkInt = 20000 - tableOperationLog.length();
+//				if (wrkInt > 100) {
+//					bf2.append(errorLog.substring(0, wrkInt));
+//					bf2.append(" ...");
+//					errorLog = bf2.toString();
+//				} else {
+//					bf2.append(tableOperationLog.substring(0, 20000));
+//					bf2.append("\n");
+//					bf2.append(" ... Some of error log was discarded as it is too long.");
+//					tableOperationLog = bf2.toString();
+//				}
+//			}
+//			bf.append(tableOperationLog.replace("'", "\""));
+//			bf.append("\n");
+//			bf.append(errorLog.replace("'", "\""));
+//			logString = bf.toString();
 		}
 		
 		if (logString.length() > 3800) {
-			logString = logString.substring(0, 3800);
+			logString = logString.substring(0, 3800) + "...";
 		}
 
 		if (programStatus.equals("99")) {

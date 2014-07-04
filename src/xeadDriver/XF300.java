@@ -4090,7 +4090,6 @@ class XF300_HeaderField extends XFFieldScriptable {
 	}
 
 	public void setEditable(boolean editable){
-		component.setEditable(editable);
 	}
 
 	public boolean isEditable() {

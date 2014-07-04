@@ -451,6 +451,7 @@ public class XFUtility {
 				image = ImageIO.read(url);
 			} else {
 				if (fileName.toUpperCase().contains(".GIF")
+						|| fileName.toUpperCase().contains(".BMP")
 						|| fileName.toUpperCase().contains(".JPEG")
 						|| fileName.toUpperCase().contains(".JPG")
 						|| fileName.toUpperCase().contains(".JPE")
@@ -1546,6 +1547,9 @@ public class XFUtility {
 		}
 		if (fileNameCapital.contains(".GIF")) {
 			imageTypeIndex = XSSFWorkbook.PICTURE_TYPE_GIF;
+		}
+		if (fileNameCapital.contains(".BMP")) {
+			imageTypeIndex = XSSFWorkbook.PICTURE_TYPE_BMP;
 		}
 
 		/////////////////////////////////////////
@@ -2864,11 +2868,11 @@ class XFImageField extends JPanel implements XFEditableField {
 		}
 		isEditable = editable;
 	}
-	
+
 	public void setWidth(int width) {
 		this.setSize(width, this.getHeight());
 	}
-	
+
 	public void setToolTipText(String text) {
 		jTextField.setToolTipText(text);
 	}
@@ -2876,7 +2880,7 @@ class XFImageField extends JPanel implements XFEditableField {
 	public Object getInternalValue() {
 		return jTextField.getText();
 	}
-	
+
 	public void setOldValue(Object value) {
 		oldValue = value.toString();
 	}
@@ -2884,11 +2888,11 @@ class XFImageField extends JPanel implements XFEditableField {
 	public Object getOldValue() {
 		return oldValue;
 	}
-	
+
 	public Object getExternalValue() {
 		return imageFileFolder_ + jTextField.getText();
 	}
-	
+
 	public void setValue(Object obj) {
 		if (obj == null) {
 			setupImage("");
@@ -2930,9 +2934,9 @@ class XFImageField extends JPanel implements XFEditableField {
 		/////////////////////////////////////
 		// Setup text and bounds of JLabel //
 		/////////////////////////////////////
-		//if ((!jTextField.getText().equals("") && imageIcon == null)
 		if (isExistingFile) {
 			if (imageFileName.toUpperCase().contains(".GIF")
+					|| imageFileName.toUpperCase().contains(".BMP")
 					|| imageFileName.toUpperCase().contains(".JPG")
 					|| imageFileName.toUpperCase().contains(".JPE")
 					|| imageFileName.toUpperCase().contains(".JPEG")

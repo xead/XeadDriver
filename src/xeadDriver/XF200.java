@@ -3554,9 +3554,10 @@ class XF200_CodeText extends JTextField implements XFEditableField {
 						wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
 						textValueList.add(wrk);
 						if (metrics.stringWidth(wrk) > fieldWidth) {
-							fieldWidth = metrics.stringWidth(wrk) + 12;
+							fieldWidth = metrics.stringWidth(wrk);
 						}
 					}
+					fieldWidth = fieldWidth + 10;
 					if (codeValueList.size() == 0) {
 						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError24") + dataSourceName + XFUtility.RESOURCE.getString("FunctionError25"));
 					}

@@ -822,7 +822,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					columnValueList = new ArrayList<String>();
 					for (int i = 0; i < detailColumnList.size(); i++) {
 						if (detailColumnList.get(i).isVisibleColumn()) {
-							columnValueList.add(detailColumnList.get(i).getExternalValue().toString());
+							columnValueList.add(detailColumnList.get(i).getInternalValue().toString());
 						}
 					}
 					orderByValueList = new ArrayList<String>();
@@ -3112,9 +3112,8 @@ class XF390_DetailColumn extends XFColumnScriptable {
 						}
 					} else {
 						if (this.isKubunField) {
-							if (value_ == null || value_.toString().trim().equals("")) {
-								value = "";
-							} else {
+							value = "";
+							if (value_ != null && !value_.toString().trim().equals("")) {
 								String wrkStr = value_.toString().trim();
 								for (int i = 0; i < kubunValueList.size(); i++) {
 									if (kubunValueList.get(i).equals(wrkStr)) {

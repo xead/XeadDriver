@@ -4582,6 +4582,9 @@ class XF310_CellEditorWithTextField extends XFTextField implements XFTableColumn
 		dialog_ = dialog;
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.setOpaque(true);
+		if (detailColumn.getDataTypeOptions().contains("KANJI")) {
+			this.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
+		}
 		if (detailColumn.getBasicType().equals("INTEGER") || detailColumn.getBasicType().equals("FLOAT")) {
 			this.setHorizontalAlignment(SwingConstants.RIGHT);
 		} else {

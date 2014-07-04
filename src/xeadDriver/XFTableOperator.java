@@ -39,7 +39,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.swing.JOptionPane;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -49,6 +51,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+
 import xeadServer.Relation;
 
 ////////////////////////////////////////////////////////////////////
@@ -497,7 +500,10 @@ public class XFTableOperator {
         }
     	//
 		if (session_.getAppServerName().equals("")) {
-			count = executeOnLocal();
+			try {
+				count = executeOnLocal();
+			} catch (SQLException e) {
+			}
 		} else {
 			count = executeOnServer();
 		}
@@ -510,59 +516,80 @@ public class XFTableOperator {
     	//
 		Connection connection = null;
 		Statement statement = null;
+		boolean isExecutePending = true;
         //
 		if (!dbID.equals("") && !operation_.toUpperCase().equals("SELECT") && !operation_.toUpperCase().equals("COUNT")) {
 			String message = "Update/Insert/Delete are not permitted to the read-only database.";
 			JOptionPane.showMessageDialog(null, message);
 			throw new Exception(message);
 		} else {
-			try {
-				if (dbID.equals("")) {
-					if (isAutoCommit_) {
-						connection = session_.getConnectionAutoCommit();
+			while (isExecutePending) {
+				try {
+					if (dbID.equals("")) {
+						if (isAutoCommit_) {
+							connection = session_.getConnectionAutoCommit();
+						} else {
+							connection = session_.getConnectionManualCommit();
+						}
 					} else {
-						connection = session_.getConnectionManualCommit();
+						connection = session_.getConnectionReadOnly(dbID);
 					}
-				} else {
-					connection = session_.getConnectionReadOnly(dbID);
-				}
-				if (connection != null) {
-					if (operation_.toUpperCase().equals("SELECT")) {
-						statement = connection.createStatement();
-						ResultSet result = statement.executeQuery(this.getSqlText());
-						relation_ = new Relation(result);
-						processRowCount = relation_.getRowCount();
-						result.close();
-					} else {
-						if (operation_.toUpperCase().equals("COUNT")) {
+					if (connection != null) {
+						if (operation_.toUpperCase().equals("SELECT")) {
 							statement = connection.createStatement();
 							ResultSet result = statement.executeQuery(this.getSqlText());
-							if (result.next()) {
-								processRowCount = result.getInt(1);
-							}
+							relation_ = new Relation(result);
+							processRowCount = relation_.getRowCount();
 							result.close();
 						} else {
-							statement = connection.createStatement();
-							processRowCount = statement.executeUpdate(this.getSqlText());
+							if (operation_.toUpperCase().equals("COUNT")) {
+								statement = connection.createStatement();
+								ResultSet result = statement.executeQuery(this.getSqlText());
+								if (result.next()) {
+									processRowCount = result.getInt(1);
+								}
+								result.close();
+							} else {
+								statement = connection.createStatement();
+								processRowCount = statement.executeUpdate(this.getSqlText());
+							}
+						}
+						statement.close();
+						isExecutePending = false;
+					}
+				} catch (SQLException e) {
+					if (logBuf_ != null) {
+						XFUtility.appendLog(e.getMessage(), logBuf_);
+					}
+					try {
+						statement.executeQuery("SELECT * FROM " + session_.taxTable);
+						isExecutePending = false;
+						throw new Exception(e.getMessage());
+					} catch (SQLException e1) {
+						Object[] bts = {XFUtility.RESOURCE.getString("DBConnectMessage1"), XFUtility.RESOURCE.getString("DBConnectMessage2")};
+						int reply = JOptionPane.showOptionDialog(null, XFUtility.RESOURCE.getString("DBConnectMessage3"),
+								XFUtility.RESOURCE.getString("DBConnectMessage4"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[1]);
+						if (reply == 0) {
+							System.exit(0);
+						}
+						if (reply == 1) {
+							boolean isOkay = session_.setupConnectionToDatabase(false);
+							if (isOkay) {
+								isExecutePending = false;
+							}
 						}
 					}
-					statement.close();
+				} catch (OutOfMemoryError e) {
+					if (logBuf_ != null) {
+						XFUtility.appendLog(e.getMessage(), logBuf_);
+					}
+					throw new Exception(e.getMessage());
+				} catch (Exception e) {
+					if (logBuf_ != null) {
+						XFUtility.appendLog(e.getMessage(), logBuf_);
+					}
+					throw e;
 				}
-			} catch (SQLException e) {
-				if (logBuf_ != null) {
-					XFUtility.appendLog(e.getMessage(), logBuf_);
-				}
-				throw new Exception(e.getMessage());
-			} catch (OutOfMemoryError e) {
-				if (logBuf_ != null) {
-					XFUtility.appendLog(e.getMessage(), logBuf_);
-				}
-				throw new Exception(e.getMessage());
-			} catch (Exception e) {
-				if (logBuf_ != null) {
-					XFUtility.appendLog(e.getMessage(), logBuf_);
-				}
-				throw e;
 			}
 		}
 		//

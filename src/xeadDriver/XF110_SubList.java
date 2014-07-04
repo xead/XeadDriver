@@ -365,7 +365,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		headersRenderer = new TableHeadersRenderer(); 
 		cellsRenderer = new TableCellsRenderer(headersRenderer); 
 		cellsEditor = new TableCellsEditor(headersRenderer); 
-		jTableMain.setRowHeight(XFUtility.ROW_UNIT_HEIGHT_EDITABLE);
+		jTableMain.setRowHeight(headersRenderer.getHeight());
 		tableModelMain = new TableModelEditableList();
 		jTableMain.setModel(tableModelMain);
 		tableModelMain.addColumn(""); //column index:0 //
@@ -497,8 +497,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				scriptBindings.put(detailColumnList.get(i).getFieldIDInScript(), detailColumnList.get(i));
 			}
 		}
-
-		//setupFunctionKeysAndButtons();
 	}
 	
 	private void setupBatchTableAndFieldsConfiguration() throws Exception {
@@ -937,7 +935,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		jProgressBar.setString(text);
 		jProgressBar.setPreferredSize(jPanelInfo.getPreferredSize());
 		jPanelBottom.add(jProgressBar, BorderLayout.EAST);
-		//this.pack();
 	}
 	
 	public void incrementProgress() {
@@ -951,7 +948,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	public void endProgress() {
 		jPanelBottom.remove(jProgressBar);
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
-		//this.pack();
 		jPanelBottom.repaint();
 	}
 
@@ -4108,6 +4104,9 @@ class XF110_SubListCellEditorWithTextField extends XFTextField implements XFTabl
 		dialog_ = dialog;
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.setEditable(true);
+		if (detailColumn.getDataTypeOptions().contains("KANJI")) {
+			this.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
+		}
 		if (detailColumn.getBasicType().equals("INTEGER") || detailColumn.getBasicType().equals("FLOAT")) {
 			this.setHorizontalAlignment(SwingConstants.RIGHT);
 		} else {
@@ -8061,9 +8060,10 @@ class XF110_SubListBatchCodeText extends JTextField implements XFEditableField {
 						wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
 						textValueList.add(wrk);
 						if (metrics.stringWidth(wrk) > fieldWidth) {
-							fieldWidth = metrics.stringWidth(wrk) + 12;
+							fieldWidth = metrics.stringWidth(wrk);
 						}
 					}
+					fieldWidth = fieldWidth + 10;
 					if (codeValueList.size() == 0) {
 						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError24") + dataSourceName + XFUtility.RESOURCE.getString("FunctionError25"));
 					}

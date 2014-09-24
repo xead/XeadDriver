@@ -57,6 +57,11 @@ public class XFFieldScriptable extends JPanel {
 	}
 	public void setColor(String colorName) {
 	}
+	public boolean isEnabled() {
+		return true;
+	}
+	public void setEnabled(boolean enabled) {
+	}
 	public boolean isEditable() {
 		return false;
 	}

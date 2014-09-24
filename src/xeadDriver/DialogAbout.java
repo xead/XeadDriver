@@ -43,8 +43,17 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M3";
-	public static final String VERSION  = "1.2.3";
+	public static final String FULL_VERSION  = "V1.R2.M4";
+	public static final String VERSION  = "1.2.4";
+	//1.2.4
+	//・起動時にJavaのバージョンをチェックするようにした
+	//・XF300の明細タブを無効化するためのパラメータを設けた
+	//・instance関数としてsetVariant(...)とgetVariant(...)を設けた
+	//・テーブルスクリプト中のデータソースオブジェクトにenabledのプロパティを追加した
+	//・DATETIMEのデータ型を導入した
+	//・メニューの画像表示のロジックと様式を改善した
+	//・BYTEAのデータ型を処理するためのロジックを組み込んだ
+	//
 	//1.2.3
 	//・getTaxAmount(...)のセッション関数で日付がnullの場合に異常終了せずに税額０円を返すようにした
 	//・エラー発生時にはエラーログのみを書きだして、テーブル操作ログを書かないようにした（テーブル操作ログが長すぎることがあるため）

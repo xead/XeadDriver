@@ -53,6 +53,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -88,6 +89,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
@@ -97,6 +99,7 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Drawing;
@@ -302,8 +305,8 @@ public class XFUtility {
 		if (basicType.equals("STRING") || basicType.equals("DATETIME") || basicType.equals("TIME") || basicType.equals("DATE")) {
 			value = "";
 		}
-		if (basicType.equals("DATE")) {
-			value = null;
+		if (basicType.equals("BYTEA")) {
+			value = new XFByteArray(null);
 		}
 		return value;
 	}
@@ -322,10 +325,30 @@ public class XFUtility {
 				isNull = true;
 			}
 		}
+//		if (basicType.equals("DATE")) {
+//			String strValue = value.toString();
+//			if (strValue == null || strValue.equals("")) {
+//				isNull = true;
+//			}
+//		}
 		if (basicType.equals("DATE")) {
-			String strValue = value.toString();
-			if (strValue == null || strValue.equals("")) {
+			if (value == null) {
 				isNull = true;
+			} else {
+				String strValue = value.toString();
+				if (strValue.equals("")) {
+					isNull = true;
+				}
+			}
+		}
+		if (basicType.equals("BYTEA")) {
+			if (value == null) {
+				isNull = true;
+			} else {
+				XFByteArray byteArray = (XFByteArray)value;
+				if (byteArray.getInternalValue() == null || byteArray.getInternalValue().equals("")) {
+					isNull = true;
+				}
 			}
 		}
 		return isNull;
@@ -351,7 +374,7 @@ public class XFUtility {
 		ArrayList<String> fieldList = new ArrayList<String>();
 		int pos, posWrk, wrkInt, posWrk2;
 		String[] sectionDigit = {"(", ")", "{", "}", "+", "-", "/", "*", "=", "<", ">", ";", "|", "&", "\n", "\t", ",", " ", "!"};
-		String[] fieldProperty = {"value", "oldValue", "color", "editable", "error", "valueChanged"};
+		String[] fieldProperty = {"value", "oldValue", "color", "enabled", "editable", "error", "valueChanged"};
 		boolean isFirstDigitOfField;
 		String variantExpression, wrkStr1, wrkStr2, dataSource;
 		org.w3c.dom.Element element;
@@ -763,8 +786,8 @@ public class XFUtility {
 		if (dataType.equals("CLOB")) {
 			basicType = "CLOB";
 		}
-		if (dataType.equals("BLOB")) {
-			basicType = "BLOB";
+		if (dataType.equals("BYTEA")) {
+			basicType = "BYTEA";
 		}
 		if (dataType.equals("DATE")) {
 			basicType = "DATE";
@@ -775,6 +798,9 @@ public class XFUtility {
 		if (dataType.startsWith("TIMESTAMP")) {
 			basicType = "DATETIME";
 		}
+		if (dataType.equals("DATETIME")) {
+			basicType = "DATETIME";
+		}
 		return basicType;
 	}
 	
@@ -782,7 +808,8 @@ public class XFUtility {
 		if (basicType.equals("STRING")
 				|| basicType.equals("DATE")
 				|| basicType.equals("TIME")
-				|| basicType.equals("DATETIME")) {
+				|| basicType.equals("DATETIME")
+				|| basicType.equals("BYTEA")) {
 			return true;
 		} else {
 			return false;
@@ -832,6 +859,22 @@ public class XFUtility {
 				}
 			}
 		}
+		if (basicType.equals("BYTEA")) {
+			if (value == null) {
+				returnValue = "''";
+			} else {
+//				if (value instanceof XFByteArray) {
+					XFByteArray xfByteArray = (XFByteArray)value;
+					byte[] byteArray = (byte[])xfByteArray.getInternalValue();
+					String stringByteArray = new String(byteArray);
+					returnValue = "'"+ stringByteArray + "'";
+//				} else {
+//					byte[] byteArray = (byte[])value;
+//					String stringByteArray = new String(byteArray);
+//					returnValue = "'"+ stringByteArray + "'";
+//				}
+			}
+		}
 		return returnValue;
 	}
 
@@ -863,14 +906,18 @@ public class XFUtility {
 		String wrkStr;
 		Object valueReturn = null;
 		if (isLiteralRequiredBasicType(basicType)) {
-			if (value == null) {
-				if (basicType.equals("DATE")) {
-					valueReturn = "";
-				} else {
-					valueReturn = null;
-				}
+			if (basicType.equals("BYTEA")) {
+				valueReturn = new XFByteArray(value);
 			} else {
-				valueReturn = value.toString().trim();
+				if (value == null) {
+					if (basicType.equals("DATE")) {
+						valueReturn = "";
+					} else {
+						valueReturn = null;
+					}
+				} else {
+					valueReturn = value.toString().trim();
+				}
 			}
 		} else {
 			if (basicType.equals("INTEGER")) {
@@ -950,12 +997,15 @@ public class XFUtility {
 				}
 			}
 		}
-		if (basicType.equals("DATE")) {
-			if (valueObject == null) {
-				editableField.setValue(null);
-			} else {
-				editableField.setValue(valueObject);
-			}
+//		if (basicType.equals("DATE")) {
+//			if (valueObject == null) {
+//				editableField.setValue(null);
+//			} else {
+//				editableField.setValue(valueObject);
+//			}
+//		}
+		if (basicType.equals("DATE") || basicType.equals("BYTEA")) {
+			editableField.setValue(valueObject);
 		}
 		if (basicType.equals("DATETIME") || basicType.equals("TIME")) {
 			if (valueObject == null) {
@@ -1082,6 +1132,7 @@ public class XFUtility {
 							|| wrkStr.equals("VARCHAR")
 							|| wrkStr.equals("LONG VARCHAR")
 							|| wrkStr.equals("DATE")
+							|| wrkStr.equals("DATETIME")
 							|| wrkStr.startsWith("TIME")
 							|| wrkStr.startsWith("TIMESTAMP")) {
 						keyFieldIsLiteralRequiredList.add(true);
@@ -2757,19 +2808,23 @@ interface XFTableColumnEditor {
 	public void setBounds(Rectangle rec);
 	public void setColorOfError();
 	public void setColorOfNormal(int row);
+	public void setEnabled(boolean ednabled);
 	public void setEditable(boolean isEditable);
 	public void setFocusable(boolean isFocusable);
 	public void setValue(Object value);
 	public void requestFocus();
 	public boolean hasFocus();
+	public boolean isEnabled();
 	public boolean isEditable();
 }
 
 interface XFEditableField {
+	public void setEnabled(boolean ednabled);
 	public void setEditable(boolean editable);
 	public void setFocusable(boolean focusable);
 	public void setToolTipText(String text);
 	public void requestFocus();
+	public boolean isEnabled();
 	public boolean isEditable();
 	public boolean isComponentFocusable();
 	public void setValue(Object obj);
@@ -3287,6 +3342,778 @@ class XFDateField extends JPanel implements XFEditableField {
 	}
 }
 
+class XFByteArray extends Object {
+    private String type_ = "null";
+    private Object value_ = null;
+    private XFColumnScriptable typeColumn_ = null;
+    private XFFieldScriptable typeField_ = null;
+
+	public XFByteArray(Object value){
+		value_ = value;
+	}
+
+	public void setValue(Object value) {
+		value_ = value;
+	}
+	
+	public void setType(String type) {
+		type_ = type;
+		if (typeColumn_ != null) {
+			typeColumn_.setValue(type_);
+		}
+		if (typeField_ != null) {
+			typeField_.setValue(type_);
+		}
+	}
+	
+	public String getType() {
+		return type_;
+	}
+
+	public Object getInternalValue() {
+		return value_;
+	}
+
+	public void setInternalValue(Object value){
+		value_ = value;
+	}
+
+	public Object getExternalValue() {
+		return "<"+ type_ +">";
+	}
+	
+	public void setTypeColumn(XFColumnScriptable typeColumn) {
+		typeColumn_ = typeColumn;
+		type_ = typeColumn_.getValue().toString();
+	}
+	
+	public XFColumnScriptable getTypeColumn() {
+		return typeColumn_;
+	}
+	
+	public void setTypeField(XFFieldScriptable typeField) {
+		typeField_ = typeField;
+		type_ = typeField_.getValue().toString();
+	}
+	
+	public XFFieldScriptable getTypeField() {
+		return typeField_;
+	}
+}
+
+//class XFByteaField extends JPanel implements XFEditableField {
+//	private static final long serialVersionUID = 1L;
+//	private int rows_ = 1;
+//	private String typeFieldID_ = "";
+//	private XFFieldScriptable typeField_ = null;
+//	private XFColumnScriptable typeColumn_ = null;
+//	private String fieldOptions_ = "";
+//	private JLabel jLabel = new JLabel();
+//	private JButton jButton = new JButton();
+//	private String type_ = "null";
+//	private Object value_ = null;
+//	private Object oldValue_ = null;
+//	private boolean isEditable_ = false;
+//	private Session session_;
+//
+//	public XFByteaField(String typeFieldID, String fieldOptions, Session session) {
+//		super();
+//
+//		typeFieldID_ = typeFieldID;
+//		fieldOptions_ = fieldOptions;
+//		session_ = session;
+//
+//		jLabel.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+//		jLabel.setText(this.getExternalValue().toString());
+//
+//		ImageIcon imageIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("prompt.png"));
+//	 	jButton.setIcon(imageIcon);
+//		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
+//		jButton.addActionListener(new ActionListener() {
+//			public void actionPerformed(ActionEvent e) {
+//				processBytea();
+//			}
+//		});
+//		jButton.addKeyListener(new KeyAdapter() {
+//			public void keyPressed(KeyEvent e) {
+//			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
+//					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+//						jButton.doClick();
+//					}
+//				}
+//			} 
+//		});
+//
+//		int fieldWidth = 100;
+//		int fieldHeight = XFUtility.FIELD_UNIT_HEIGHT;
+//		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
+//		if (!wrkStr.equals("")) {
+//			fieldWidth = Integer.parseInt(wrkStr);
+//		}
+//		JTextField field = new JTextField();
+//		this.setBorder(field.getBorder());
+//		this.setLayout(new BorderLayout());
+//		this.add(jLabel, BorderLayout.CENTER);
+//		this.add(jButton, BorderLayout.EAST);
+//		this.setSize(new Dimension(fieldWidth, fieldHeight));
+//		this.setFocusable(true);
+//		this.addFocusListener(new java.awt.event.FocusAdapter() {
+//			public void focusGained(FocusEvent e) {
+//				jButton.requestFocus();
+//			}
+//		});
+//	}
+//
+//	public boolean isComponentFocusable() {
+//		return this.isFocusable();
+//	}
+//
+//	public boolean isEditable() {
+//		return isEditable_;
+//	}
+//	
+//	public void setWidth(int width) {
+//		this.setSize(width, this.getHeight());
+//	}
+//	
+//	public void setEditable(boolean isEditable) {
+//		isEditable_ = isEditable;
+//	}
+//	
+//	public void setTypeField(XFFieldScriptable typeField) {
+//		if (typeField != null) {
+//			typeField_ = typeField;
+//			String work = typeField_.getValue().toString();
+//			if (!work.equals("")) {
+//				type_ = work;
+//				jLabel.setText(this.getExternalValue().toString());
+//			}
+//		}
+//	}
+//	
+//	public void setTypeColumn(XFColumnScriptable typeColumn) {
+//		if (typeColumn != null) {
+//			typeColumn_ = typeColumn;
+//			String work = typeColumn_.getValue().toString();
+//			if (!work.equals("")) {
+//				type_ = work;
+//				jLabel.setText(this.getExternalValue().toString());
+//			}
+//		}
+//	}
+//
+//	public Object getInternalValue() {
+//		return value_;
+//	}
+//	
+//	public void setOldValue(Object value) {
+//		oldValue_ = (XFByteArray)value;
+//	}
+//
+//	public Object getOldValue() {
+//		return oldValue_;
+//	}
+//
+//	public Object getExternalValue() {
+//		return "<"+ type_ + ">";
+//	}
+//	
+//	public void setValue(Object value) {
+////		value_ = value;
+//		//value_.setValue(value);
+////		if (value_ == null) {
+////			type_ = "null";
+////			if (typeField_ != null) {
+////				typeField_.setValue("");
+////			}
+////			if (typeColumn_ != null) {
+////				typeColumn_.setValue("");
+////			}
+////			jLabel.setText(this.getExternalValue().toString());
+////		} else {
+////			if (value_.toString().equals("")) {
+////				type_ = "null";
+////				if (typeField_ != null) {
+////					typeField_.setValue("");
+////				}
+////				if (typeColumn_ != null) {
+////					typeColumn_.setValue("");
+////				}
+////				jLabel.setText(this.getExternalValue().toString());
+////			} else {
+////				value_ = new XFByteArray(value);
+////			}
+////		}
+//		if (value == null) {
+//			type_ = "null";
+//			if (typeField_ != null) {
+//				typeField_.setValue("");
+//			}
+//			if (typeColumn_ != null) {
+//				typeColumn_.setValue("");
+//			}
+//			jLabel.setText(this.getExternalValue().toString());
+//		} else {
+//			if (value.toString().equals("")) {
+//				type_ = "null";
+//				if (typeField_ != null) {
+//					typeField_.setValue("");
+//				}
+//				if (typeColumn_ != null) {
+//					typeColumn_.setValue("");
+//				}
+//				jLabel.setText(this.getExternalValue().toString());
+//			}
+//		}
+//		value_ = new XFByteArray(value);
+//	}
+//	
+//	public int getRows() {
+//		return rows_;
+//	}
+//
+//	public String getTypeFieldID() {
+//		return typeFieldID_;
+//	}
+//	
+//	public boolean isUpdated() {
+//		return (oldValue_ != value_);
+//	}
+//	
+//	private void processBytea() {
+//		if (isEditable_) {
+//			Object[] bts = {XFUtility.RESOURCE.getString("ByteaFieldMessage1"), XFUtility.RESOURCE.getString("ByteaFieldMessage2"), XFUtility.RESOURCE.getString("ByteaFieldMessage3"), XFUtility.RESOURCE.getString("Close")};
+//			int rtn = JOptionPane.showOptionDialog(session_, XFUtility.RESOURCE.getString("ByteaFieldMessage5"),
+//					XFUtility.RESOURCE.getString("ByteaFieldMessage4"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+//			
+//			///////////////////////////
+//			// Browsing file content //
+//			///////////////////////////
+//			if (rtn == 0) {
+//				browseBytea();
+//			}
+//
+//			/////////////////////////////////////////////
+//			// Uploading file content into BYTEA field //
+//			/////////////////////////////////////////////
+//			if (rtn == 1) {
+//				session_.jFileChooser.resetChoosableFileFilters();
+//				session_.jFileChooser.setDialogTitle(XFUtility.RESOURCE.getString("ByteaFieldMessage6"));
+//				int reply = session_.jFileChooser.showDialog(session_, XFUtility.RESOURCE.getString("ByteaFieldMessage7"));
+//				if (reply == JFileChooser.APPROVE_OPTION) {
+//					try {
+//						File file = new File(session_.jFileChooser.getSelectedFile().getPath());
+//						int point = file.getAbsolutePath().lastIndexOf(".");
+//						if (point == -1) {
+//							JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage8"));
+//						} else {
+//							type_ = file.getAbsolutePath().substring(point + 1);
+//							if (typeField_ != null) {
+//								typeField_.setValue(type_);
+//							}
+//							if (typeColumn_ != null) {
+//								typeColumn_.setValue(type_);
+//							}
+//							jLabel.setText(this.getExternalValue().toString());
+//							FileInputStream inputStream = new FileInputStream(file);
+//							byte[] binaryByteArray = new byte[(int) file.length()];
+//							inputStream.read(binaryByteArray);
+//							inputStream.close();
+//							setValue(Base64.encodeBase64(binaryByteArray));
+//						}
+//					} catch (Exception e) {
+//						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage9") + e.getMessage());
+//						e.printStackTrace();
+//					}
+//				}
+//			}
+//
+//			///////////////////
+//			// Clear content //
+//			///////////////////
+//			if (rtn == 2) {
+//				setValue(null);
+//			}
+//		} else {
+//
+//			///////////////////////////
+//			// Browsing file content //
+//			///////////////////////////
+//			browseBytea();
+//		}
+//	}
+//
+//	private void browseBytea() {
+//		if (type_.equals("bin")) {
+//			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage10"));
+//		} else {
+//		    try {
+//		    	byte[] base64ByteArray = null;
+//		    	if (value_ instanceof XFByteArray) {
+//			    	XFByteArray xfByteArray = (XFByteArray)value_;
+//			    	base64ByteArray = (byte[])xfByteArray.getInternalValue();
+//		    	} else {
+//		    		base64ByteArray = (byte[])value_;
+//		    	}
+//				byte[] binaryByteArray = Base64.decodeBase64(base64ByteArray);
+//				File binaryFile = session_.createTempFile("BINARY", "." + type_);
+//				FileOutputStream outputStream = new FileOutputStream(binaryFile);
+//				outputStream.write(binaryByteArray);
+//				outputStream.close();	
+//				session_.getDesktop().browse(binaryFile.toURI());
+//			} catch (Exception e) {
+//				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage11") + e.getMessage());
+//			}
+//		}
+//	}
+//}
+
+class XFByteaField extends JPanel implements XFEditableField {
+	private static final long serialVersionUID = 1L;
+	private int rows_ = 1;
+	private String typeFieldID_ = "";
+	private XFFieldScriptable typeField_ = null;
+	//private XFColumnScriptable typeColumn_ = null;
+	private String fieldOptions_ = "";
+	private JLabel jLabel = new JLabel();
+	private JButton jButton = new JButton();
+	private String type_ = "null";
+	private Object value_ = null;
+	private Object oldValue_ = null;
+	private boolean isEditable_ = false;
+	private Session session_;
+
+	public XFByteaField(String typeFieldID, String fieldOptions, Session session) {
+		super();
+
+		typeFieldID_ = typeFieldID;
+		fieldOptions_ = fieldOptions;
+		session_ = session;
+
+		jLabel.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jLabel.setText(this.getExternalValue().toString());
+
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
+		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
+		jButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				processBytea();
+			}
+		});
+		jButton.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent e) {
+			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						jButton.doClick();
+					}
+				}
+			} 
+		});
+
+		int fieldWidth = 100;
+		int fieldHeight = XFUtility.FIELD_UNIT_HEIGHT;
+		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
+		if (!wrkStr.equals("")) {
+			fieldWidth = Integer.parseInt(wrkStr);
+		}
+		JTextField field = new JTextField();
+		this.setBorder(field.getBorder());
+		this.setLayout(new BorderLayout());
+		this.add(jLabel, BorderLayout.CENTER);
+		this.add(jButton, BorderLayout.EAST);
+		this.setSize(new Dimension(fieldWidth, fieldHeight));
+		this.setFocusable(true);
+		this.addFocusListener(new java.awt.event.FocusAdapter() {
+			public void focusGained(FocusEvent e) {
+				jButton.requestFocus();
+			}
+		});
+	}
+
+	public boolean isComponentFocusable() {
+		return this.isFocusable();
+	}
+
+	public boolean isEditable() {
+		return isEditable_;
+	}
+	
+	public void setWidth(int width) {
+		this.setSize(width, this.getHeight());
+	}
+	
+	public void setEditable(boolean isEditable) {
+		isEditable_ = isEditable;
+	}
+	
+	public void setTypeField(XFFieldScriptable typeField) {
+		if (typeField != null) {
+			typeField_ = typeField;
+			String work = typeField_.getValue().toString();
+			if (!work.equals("")) {
+				type_ = work;
+				jLabel.setText(this.getExternalValue().toString());
+			}
+		}
+	}
+	
+//	public void setTypeColumn(XFColumnScriptable typeColumn) {
+//		if (typeColumn != null) {
+//			typeColumn_ = typeColumn;
+//			String work = typeColumn_.getValue().toString();
+//			if (!work.equals("")) {
+//				type_ = work;
+//				jLabel.setText(this.getExternalValue().toString());
+//			}
+//		}
+//	}
+
+	public Object getInternalValue() {
+		return value_;
+	}
+	
+	public void setOldValue(Object value) {
+		oldValue_ = value;
+	}
+
+	public Object getOldValue() {
+		return oldValue_;
+	}
+
+	public Object getExternalValue() {
+		return "<"+ type_ + ">";
+	}
+	
+	public void setValue(Object value) {
+		value_ = value;
+		if (value_ == null) {
+			type_ = "null";
+			if (typeField_ != null) {
+				typeField_.setValue("");
+			}
+//			if (typeColumn_ != null) {
+//				typeColumn_.setValue("");
+//			}
+			jLabel.setText(this.getExternalValue().toString());
+		} else {
+			if (value_.toString().equals("")) {
+				type_ = "null";
+				if (typeField_ != null) {
+					typeField_.setValue("");
+				}
+//				if (typeColumn_ != null) {
+//					typeColumn_.setValue("");
+//				}
+				jLabel.setText(this.getExternalValue().toString());
+			}
+		}
+	}
+	
+	public int getRows() {
+		return rows_;
+	}
+
+	public String getTypeFieldID() {
+		return typeFieldID_;
+	}
+	
+	public boolean isUpdated() {
+		return (oldValue_ != value_);
+	}
+	
+	private void processBytea() {
+		if (isEditable_) {
+			Object[] bts = {XFUtility.RESOURCE.getString("ByteaFieldMessage1"), XFUtility.RESOURCE.getString("ByteaFieldMessage2"), XFUtility.RESOURCE.getString("ByteaFieldMessage3")};
+			int rtn = JOptionPane.showOptionDialog(session_, XFUtility.RESOURCE.getString("ByteaFieldMessage5"),
+					XFUtility.RESOURCE.getString("ByteaFieldMessage4"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+			
+			///////////////////////////
+			// Browsing file content //
+			///////////////////////////
+			if (rtn == 0) {
+				browseBytea();
+			}
+
+			/////////////////////////////////////////////
+			// Uploading file content into BYTEA field //
+			/////////////////////////////////////////////
+			if (rtn == 1) {
+				session_.jFileChooser.resetChoosableFileFilters();
+				session_.jFileChooser.setDialogTitle(XFUtility.RESOURCE.getString("ByteaFieldMessage6"));
+				int reply = session_.jFileChooser.showDialog(session_, XFUtility.RESOURCE.getString("ByteaFieldMessage7"));
+				if (reply == JFileChooser.APPROVE_OPTION) {
+					try {
+						File file = new File(session_.jFileChooser.getSelectedFile().getPath());
+						int point = file.getAbsolutePath().lastIndexOf(".");
+						if (point == -1) {
+							JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage8"));
+						} else {
+							type_ = file.getAbsolutePath().substring(point + 1);
+							if (typeField_ != null) {
+								typeField_.setValue(type_);
+							}
+//							if (typeColumn_ != null) {
+//								typeColumn_.setValue(type_);
+//							}
+							jLabel.setText(this.getExternalValue().toString());
+							FileInputStream inputStream = new FileInputStream(file);
+							byte[] binaryByteArray = new byte[(int) file.length()];
+							inputStream.read(binaryByteArray);
+							inputStream.close();
+							setValue(Base64.encodeBase64(binaryByteArray));
+						}
+					} catch (Exception e) {
+						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage9") + e.getMessage());
+						e.printStackTrace();
+					}
+				}
+			}
+
+			///////////////////
+			// Clear content //
+			///////////////////
+			if (rtn == 2) {
+				setValue(null);
+			}
+		} else {
+
+			///////////////////////////
+			// Browsing file content //
+			///////////////////////////
+			browseBytea();
+		}
+	}
+
+	private void browseBytea() {
+		if (type_.equals("") || type_.equals("null")) {
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage10"));
+		} else {
+		    try {
+		    	byte[] base64ByteArray = (byte[])value_;
+				byte[] binaryByteArray = Base64.decodeBase64(base64ByteArray);
+				File binaryFile = session_.createTempFile("BYTEA", "." + type_);
+				FileOutputStream outputStream = new FileOutputStream(binaryFile);
+				outputStream.write(binaryByteArray);
+				outputStream.close();	
+				session_.getDesktop().browse(binaryFile.toURI());
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage11") + e.getMessage());
+			}
+		}
+	}
+}
+
+class XFByteaColumn extends JPanel implements XFEditableField {
+	private static final long serialVersionUID = 1L;
+	private int rows_ = 1;
+	private String typeColumnID_ = "";
+	private XFColumnScriptable typeColumn_ = null;
+	private String fieldOptions_ = "";
+	private JLabel jLabel = new JLabel();
+	private JButton jButton = new JButton();
+	private XFByteArray value_ = null;
+	private XFByteArray oldValue_ = null;
+	private boolean isEditable_ = false;
+	private Session session_;
+
+	public XFByteaColumn(String typeFieldID, String fieldOptions, Session session) {
+		super();
+
+		typeColumnID_ = typeFieldID;
+		fieldOptions_ = fieldOptions;
+		session_ = session;
+
+		jLabel.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jLabel.setText(this.getExternalValue().toString());
+
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
+		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
+		jButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				processBytea();
+			}
+		});
+		jButton.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent e) {
+			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						jButton.doClick();
+					}
+				}
+			} 
+		});
+
+		int fieldWidth = 100;
+		int fieldHeight = XFUtility.FIELD_UNIT_HEIGHT;
+		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
+		if (!wrkStr.equals("")) {
+			fieldWidth = Integer.parseInt(wrkStr);
+		}
+		JTextField field = new JTextField();
+		this.setBorder(field.getBorder());
+		this.setLayout(new BorderLayout());
+		this.add(jLabel, BorderLayout.CENTER);
+		this.add(jButton, BorderLayout.EAST);
+		this.setSize(new Dimension(fieldWidth, fieldHeight));
+		this.setFocusable(true);
+		this.addFocusListener(new java.awt.event.FocusAdapter() {
+			public void focusGained(FocusEvent e) {
+				jButton.requestFocus();
+			}
+		});
+	}
+
+	public boolean isComponentFocusable() {
+		return this.isFocusable();
+	}
+
+	public boolean isEditable() {
+		return isEditable_;
+	}
+	
+	public void setWidth(int width) {
+		this.setSize(width, this.getHeight());
+	}
+	
+	public void setEditable(boolean isEditable) {
+		isEditable_ = isEditable;
+	}
+	
+	public void setTypeColumn(XFColumnScriptable typeColumn) {
+		if (typeColumn != null) {
+			typeColumn_ = typeColumn;
+			jLabel.setText(this.getExternalValue().toString());
+		}
+	}
+
+	public Object getInternalValue() {
+		return value_;
+	}
+	
+	public void setOldValue(Object value) {
+		oldValue_ = (XFByteArray)value;
+	}
+
+	public Object getOldValue() {
+		return oldValue_;
+	}
+
+	public Object getExternalValue() {
+		if (typeColumn_ == null) {
+			return "<null>";
+		} else {
+			return "<"+ typeColumn_.getValue().toString() + ">";
+		}
+	}
+	
+	public void setValue(Object value) {
+		value_ = (XFByteArray)value;
+		if (value_ == null) {
+			typeColumn_.setValue("null");
+		} else {
+			typeColumn_ = value_.getTypeColumn();
+			if (value_.getInternalValue().equals("")) {
+				typeColumn_.setValue("null");
+			}
+		}
+		jLabel.setText(this.getExternalValue().toString());
+	}
+	
+	public int getRows() {
+		return rows_;
+	}
+
+	public String getTypeColumnID() {
+		return typeColumnID_;
+	}
+	
+	public boolean isUpdated() {
+		return !oldValue_.getInternalValue().equals(value_.getInternalValue());
+	}
+	
+	private void processBytea() {
+		if (isEditable_) {
+			Object[] bts = {XFUtility.RESOURCE.getString("ByteaFieldMessage1"), XFUtility.RESOURCE.getString("ByteaFieldMessage2"), XFUtility.RESOURCE.getString("ByteaFieldMessage3")};
+			int rtn = JOptionPane.showOptionDialog(session_, XFUtility.RESOURCE.getString("ByteaFieldMessage5"),
+					XFUtility.RESOURCE.getString("ByteaFieldMessage4"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+			
+			///////////////////////////
+			// Browsing file content //
+			///////////////////////////
+			if (rtn == 0) {
+				browseBytea();
+			}
+
+			/////////////////////////////////////////////
+			// Uploading file content into BYTEA field //
+			/////////////////////////////////////////////
+			if (rtn == 1) {
+				session_.jFileChooser.resetChoosableFileFilters();
+				session_.jFileChooser.setDialogTitle(XFUtility.RESOURCE.getString("ByteaFieldMessage6"));
+				int reply = session_.jFileChooser.showDialog(session_, XFUtility.RESOURCE.getString("ByteaFieldMessage7"));
+				if (reply == JFileChooser.APPROVE_OPTION) {
+					try {
+						File file = new File(session_.jFileChooser.getSelectedFile().getPath());
+						int point = file.getAbsolutePath().lastIndexOf(".");
+						if (point == -1) {
+							JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage8"));
+						} else {
+							if (typeColumn_ != null) {
+								typeColumn_.setValue(file.getAbsolutePath().substring(point + 1));
+							}
+							jLabel.setText(this.getExternalValue().toString());
+							FileInputStream inputStream = new FileInputStream(file);
+							byte[] binaryByteArray = new byte[(int) file.length()];
+							inputStream.read(binaryByteArray);
+							inputStream.close();
+							setValue(Base64.encodeBase64(binaryByteArray));
+						}
+					} catch (Exception e) {
+						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage9") + e.getMessage());
+						e.printStackTrace();
+					}
+				}
+			}
+
+			///////////////////
+			// Clear content //
+			///////////////////
+			if (rtn == 2) {
+				setValue(null);
+			}
+		} else {
+
+			///////////////////////////
+			// Browsing file content //
+			///////////////////////////
+			browseBytea();
+		}
+	}
+
+	private void browseBytea() {
+		if (typeColumn_ == null
+				|| typeColumn_.getValue().equals("")
+				|| typeColumn_.getValue().equals("null")) {
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage10"));
+		} else {
+		    try {
+		    	XFByteArray byteArray = (XFByteArray)value_;
+		    	byte[] base64ByteArray = (byte[])byteArray.getInternalValue();
+				byte[] binaryByteArray = Base64.decodeBase64(base64ByteArray);
+				File binaryFile = session_.createTempFile("BYTEA", "." + typeColumn_.getValue());
+				FileOutputStream outputStream = new FileOutputStream(binaryFile);
+				outputStream.write(binaryByteArray);
+				outputStream.close();	
+				session_.getDesktop().browse(binaryFile.toURI());
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage11") + e.getMessage());
+			}
+		}
+	}
+}
+
 class XFTextField extends JTextField implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private String basicType_ = "";
@@ -3511,7 +4338,8 @@ class XFTextField extends JTextField implements XFEditableField {
 				text = text.replace("-", "/");
 				this.setText(text);
 			}
-			if (basicType_.equals("STRING")) {
+			if (basicType_.equals("STRING")
+					|| basicType_.equals("BYTEA")) {
 				text = text.trim();
 				this.setText(text);
 			}

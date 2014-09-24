@@ -126,6 +126,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	private int headersWidth = 0;
 	private XF110_Filter firstEditableFilter = null;
 	private HashMap<String, CompiledScript> compiledScriptMap = new HashMap<String, CompiledScript>();
+	private HashMap<String, Object> variantMap = new HashMap<String, Object>();
 	
 	public XF110(Session session, int instanceArrayIndex) {
 		super(session, "", true);
@@ -308,11 +309,12 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
 			processLog.delete(0, processLog.length());
+			variantMap.clear();
 			messageList.clear();
 			jPanelBottom.remove(jProgressBar);
 			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 			isListingInNormalOrder = true;
-			
+
 			///////////////////////////////////////////
 			// Setup specifications for the function //
 			///////////////////////////////////////////
@@ -353,8 +355,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				this.setLocation(screenRect.x, screenRect.y);
 			} else {
 				if (functionElement_.getAttribute("Size").equals("AUTO")) {
-					headersWidth = headersWidth + 70;
-					filtersWidth = filtersWidth + 140;
 					int maxWidth = 0;
 					if (headersWidth >= filtersWidth) {
 						maxWidth = headersWidth;
@@ -534,6 +534,17 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 
+		////////////////////////////////////////////////////////////
+		// Add BYTEA-type-field for BYTEA field as HIDDEN columns //
+		////////////////////////////////////////////////////////////
+		for (int i = 0; i < columnList.size(); i++) {
+			if (columnList.get(i).getBasicType().equals("BYTEA") && !columnList.get(i).getByteaTypeFieldID().equals("")) {
+				if (!existsInColumnList(primaryTable_.getTableID(), "", columnList.get(i).getByteaTypeFieldID())) {
+					columnList.add(new XF110_Column(primaryTable_.getTableID(), "", columnList.get(i).getByteaTypeFieldID(), this));
+				}
+			}
+		}
+
 		/////////////////////////
 		// Setup Filter fields //
 		/////////////////////////
@@ -597,6 +608,10 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		} else {
 			jSplitPaneCenter.add(jScrollPaneTable, JSplitPane.TOP);
 		}
+		if (functionElement_.getAttribute("Size").equals("AUTO")) {
+			headersWidth = headersWidth + 70;
+			filtersWidth = filtersWidth + 140;
+		}
 
 		////////////////////////////////
 		// Setup Panel Configurations //
@@ -654,11 +669,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			scriptBindings.put(columnList.get(i).getFieldIDInScript(), columnList.get(i));
 		}
 
-//		//////////////////////////////////////////////
-//		// Setup function-keys and function-buttons //
-//		//////////////////////////////////////////////
-//		setupFunctionKeysAndButtons();
-
 		//////////////////////////////
 		// Construct SubList Dialog //
 		//////////////////////////////
@@ -668,7 +678,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		} else {
 			subList.getCheckBoxToExecuteBatchFunction().setSelected(true);
 		}
-		
 	}
 
 	public boolean isAvailable() {
@@ -916,6 +925,9 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					if (toBeSelected) {
 						for (int i = 0; i < columnList.size(); i++) {
 							columnList.get(i).setReadyToValidate(true);
+							if (columnList.get(i).getBasicType().equals("BYTEA")) {
+								columnList.get(i).setupByteaType(columnList);
+							}
 						}
 						if (isTheRowToBeSelected()) {
 
@@ -2173,6 +2185,18 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		return processLog;
 	}
 
+	public Object getVariant(String variantID) {
+		if (variantMap.containsKey(variantID)) {
+			return variantMap.get(variantID);
+		} else {
+			return "";
+		}
+	}
+
+	public void setVariant(String variantID, Object value) {
+		variantMap.put(variantID, value);
+	}
+
 	class TableHeadersRenderer extends JPanel implements TableCellRenderer {   
 		private static final long serialVersionUID = 1L;
 		private JPanel westPanel = new JPanel();
@@ -2519,6 +2543,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			numberCell.setText(rowObject.getRowNumberString());
 			checkBox.setSelected(rowObject.isSelected());
 			for (int i = 0; i < cellList.size(); i++) {
+				cellList.get(i).setEnabled(columnList.get(i).isEnabled());
 				if (columnList.get(i).getValueType().equals("IMAGE")
 						|| columnList.get(i).getValueType().equals("FLAG")) {
 					cellList.get(i).setIcon((Icon)rowObject.getCellObjectList().get(i).getExternalValue());
@@ -4286,11 +4311,13 @@ class XF110_Column extends XFColumnScriptable {
 	private String fieldRemarks = "";
 	private String fieldCaption = "";
 	private String fieldOptions = "";
+	private String byteaTypeFieldID = "";
 	private ArrayList<String> fieldOptionList;
 	private int dataSize = 5;
 	private int decimalSize = 0;
 	private int fieldWidth = 50;
 	private int columnIndex = -1;
+	private boolean isEnabled = true;
 	private boolean isVisibleOnPanel = true;
 	private boolean isVirtualField = false;
 	private boolean isRangeKeyFieldValid = false;
@@ -4343,6 +4370,7 @@ class XF110_Column extends XFColumnScriptable {
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
 		}
+		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 		if (!tableElement.getAttribute("RangeKey").equals("")) {
@@ -4417,12 +4445,17 @@ class XF110_Column extends XFColumnScriptable {
 									if (basicType.equals("DATE")) {
 										fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
 									} else {
-										if (dataTypeOptionList.contains("IMAGE")) {
-											valueType = "IMAGE";
-											fieldWidth = 60;
-											fieldRows = 2;
+										if (basicType.equals("BYTEA")) {
+											valueType = "BYTEA";
+											fieldWidth = 100;
 										} else {
-											fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
+											if (dataTypeOptionList.contains("IMAGE")) {
+												valueType = "IMAGE";
+												fieldWidth = 60;
+												fieldRows = 2;
+											} else {
+												fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
+											}
 										}
 									}
 								}
@@ -4478,6 +4511,7 @@ class XF110_Column extends XFColumnScriptable {
 		} else {
 			fieldCaption = workElement.getAttribute("Name");
 		}
+		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 		if (!tableElement.getAttribute("RangeKey").equals("")) {
@@ -4540,6 +4574,10 @@ class XF110_Column extends XFColumnScriptable {
 
 	public String getBasicType(){
 		return XFUtility.getBasicTypeOf(dataType);
+	}
+
+	public String getByteaTypeFieldID(){
+		return byteaTypeFieldID;
 	}
 
 	public ArrayList<String> getTypeOptionList() {
@@ -4678,6 +4716,9 @@ class XF110_Column extends XFColumnScriptable {
 												value = XFUtility.ICON_CHECK_0D;
 											}
 										}
+										if (valueType.equals("BYTEA")) {
+											value = ((XFByteArray)value_).getExternalValue();
+										}
 									}
 								}
 							}
@@ -4741,31 +4782,36 @@ class XF110_Column extends XFColumnScriptable {
 					value_ = XFUtility.calculateExpireValue(this.getTableElement(), operator, dialog_.getSession(), dialog_.getProcessLog());
 				}
 			} else {
-				value = operator.getValueOf(this.getFieldID());
-				isFoundInResultSet = true;
-				if (basicType.equals("INTEGER")) {
-					if (value == null || value.equals("")) {
-						value_ = "";
-					} else {
-						String wrkStr = value.toString();
-						int pos = wrkStr.indexOf(".");
-						if (pos >= 0) {
-							wrkStr = wrkStr.substring(0, pos);
-						}
-						value_ = Long.parseLong(wrkStr);
-					}
+				if (basicType.equals("BYTEA")) {
+					isFoundInResultSet = true; //BYTEA field is not contained intentionally in result set //
+					value_ = new XFByteArray(null);
 				} else {
-					if (basicType.equals("FLOAT")) {
+					value = operator.getValueOf(this.getFieldID());
+					isFoundInResultSet = true;
+					if (basicType.equals("INTEGER")) {
 						if (value == null || value.equals("")) {
 							value_ = "";
 						} else {
-							value_ = Double.parseDouble(value.toString());
+							String wrkStr = value.toString();
+							int pos = wrkStr.indexOf(".");
+							if (pos >= 0) {
+								wrkStr = wrkStr.substring(0, pos);
+							}
+							value_ = Long.parseLong(wrkStr);
 						}
 					} else {
-						if (value == null) {
-							value_ = "";
+						if (basicType.equals("FLOAT")) {
+							if (value == null || value.equals("")) {
+								value_ = "";
+							} else {
+								value_ = Double.parseDouble(value.toString());
+							}
 						} else {
-							value_ = value.toString().trim();
+							if (value == null) {
+								value_ = "";
+							} else {
+								value_ = value.toString().trim();
+							}
 						}
 					}
 				}
@@ -4780,6 +4826,16 @@ class XF110_Column extends XFColumnScriptable {
 
 	public void initialize() {
 		value_ = XFUtility.getNullValueOfBasicType(this.getBasicType());
+	}
+	
+	public void setupByteaType(ArrayList<XF110_Column> columnList) {
+		for (int i = 0; i < columnList.size(); i++) {
+			if (columnList.get(i).getFieldID().equals(byteaTypeFieldID)) {
+				//((XFByteArray)value_).setType(columnList.get(i).getValue().toString());
+				((XFByteArray)value_).setTypeColumn((XFColumnScriptable)columnList.get(i));
+				break;
+			}
+		}
 	}
 
 	public void setValue(Object value) {
@@ -4799,6 +4855,14 @@ class XF110_Column extends XFColumnScriptable {
 
 	public boolean isValueChanged() {
 		return !this.getValue().equals(this.getOldValue());
+	}
+
+	public boolean isEnabled() {
+		return isEnabled;
+	}
+
+	public void setEnabled(boolean isEnabled) {
+		this.isEnabled = isEnabled;
 	}
 
 	public boolean isEditable() {
@@ -4972,7 +5036,8 @@ class XF110_PrimaryTable extends Object {
 				buf.append("select * from (select ");
 				for (int i = 0; i < dialog_.getColumnList().size(); i++) {
 					if (dialog_.getColumnList().get(i).getTableID().equals(tableID)
-							&& !dialog_.getColumnList().get(i).isVirtualField()) {
+							&& !dialog_.getColumnList().get(i).isVirtualField()
+							&& !dialog_.getColumnList().get(i).getBasicType().equals("BYTEA")) {
 						if (count > 0) {
 							buf.append(",");
 						}
@@ -5112,7 +5177,8 @@ class XF110_PrimaryTable extends Object {
 		buf.append("select ");
 		for (int i = 0; i < dialog_.getColumnList().size(); i++) {
 			if (dialog_.getColumnList().get(i).getTableID().equals(tableID)
-					&& !dialog_.getColumnList().get(i).isVirtualField()) {
+					&& !dialog_.getColumnList().get(i).isVirtualField()
+					&& !dialog_.getColumnList().get(i).getBasicType().equals("BYTEA")) {
 				if (count > 0) {
 					buf.append(",");
 				}

@@ -110,6 +110,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	private JButton jButtonStop = new JButton();
 	private JButton jButtonIconify = new JButton();
 	private final int FONT_SIZE = 14;
+	private HashMap<String, Object> variantMap = new HashMap<String, Object>();
 	
 	public XF000(Session session, int instanceArrayIndex) {
 		super(session, "", true);
@@ -272,6 +273,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
 			processLog.delete(0, processLog.length());
+			variantMap.clear();
 			scriptEngine = session_.getScriptEngineManager().getEngineByName("js");
 			engineScriptBindings = scriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
 			timer = null;
@@ -551,6 +553,18 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	
 	public StringBuffer getProcessLog() {
 		return processLog;
+	}
+
+	public Object getVariant(String variantID) {
+		if (variantMap.containsKey(variantID)) {
+			return variantMap.get(variantID);
+		} else {
+			return "";
+		}
+	}
+
+	public void setVariant(String variantID, Object value) {
+		variantMap.put(variantID, value);
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {

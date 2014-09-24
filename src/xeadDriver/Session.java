@@ -33,6 +33,7 @@ package xeadDriver;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
@@ -76,6 +77,7 @@ import org.apache.http.util.EntityUtils;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
+import javax.imageio.ImageIO;
 import javax.mail.*;
 import javax.mail.internet.*;
 
@@ -143,6 +145,7 @@ public class Session extends JFrame {
 	private ArrayList<String> loadingChekerIDList = new ArrayList<String>();
 	private ArrayList<String> loadingFunctionIDList = new ArrayList<String>();
 	private XFCalendar xfCalendar = null;
+	public JFileChooser jFileChooser = new JFileChooser();
 
 	private JLabel jLabelUser = new JLabel();
 	private JLabel jLabelSession = new JLabel();
@@ -202,6 +205,18 @@ public class Session extends JFrame {
 		String loginPassword = "";
 		application = app;
 
+		////////////////////////
+		// Java Version Check //
+		////////////////////////
+		String version = System.getProperty("java.version");
+		if (!version.startsWith("1.6.") && !version.startsWith("1.7.")) {
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("JavaVersionError1") + version + XFUtility.RESOURCE.getString("JavaVersionError2"));
+			System.exit(0);
+		}
+
+		///////////////////////////////////////////
+		// Check the parameters to setup session //
+		///////////////////////////////////////////
 		try {
 			if (args.length >= 1) {
 				fileName =  args[0];
@@ -604,6 +619,8 @@ public class Session extends JFrame {
 		jLabelUser.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
 		jLabelSession.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
 
+		screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
 		jEditorPaneNews.setBorder(BorderFactory.createEtchedBorder());
 		jEditorPaneNews.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
 		jEditorPaneNews.setEditable(false);
@@ -616,12 +633,15 @@ public class Session extends JFrame {
 		boolean isValidURL = false;
 		if (!welcomePageURL.equals("")) {
 			try {
-				jEditorPaneNews.setPage(welcomePageURL);
+				final URLConnection connection = new URL(welcomePageURL).openConnection();
+			    connection.connect();
 				isValidURL = true;
 			} catch (Exception ex) {
 			}
 		}
-		if (!isValidURL) {
+		if (isValidURL) {
+			jEditorPaneNews.setPage(welcomePageURL);
+		} else{
 			String defaultImageFileName = "";
 			if (currentFolder.equals("")) {
 				defaultImageFileName = "WelcomePageDefaultImage.jpg";
@@ -630,9 +650,35 @@ public class Session extends JFrame {
 			}
 			File imageFile = new File(defaultImageFileName);
 			if (imageFile.exists()) {
-				imageIcon = new ImageIcon(defaultImageFileName);
-				JLabel labelImage = new JLabel("", imageIcon, JLabel.CENTER);
-				jScrollPaneNews.getViewport().add(labelImage);
+				BufferedImage image = ImageIO.read(imageFile);
+				if (image.getWidth() > Math.round(screenSize.width * 0.8)) {
+					imageIcon = new ImageIcon(image);
+					JLabel labelImage = new JLabel("", imageIcon, JLabel.CENTER);
+					jScrollPaneNews.getViewport().add(labelImage);
+				} else {
+					BufferedImage normalLightImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+					Color c;
+					int rgb, a, r, g, b;
+					for(int y=0; y < image.getHeight(); y++) {
+						for(int x=0; x < image.getWidth(); x++) {
+							rgb = image.getRGB(x, y);
+							c = new Color(rgb, true);
+							a = c.getAlpha();
+							r = (c.getRed()   + 255) / 2;
+							g = (c.getGreen()   + 255) / 2;
+							b = (c.getBlue()   + 255) / 2;
+							normalLightImage.setRGB(x, y, new Color(r, g, b, a).getRGB());
+						}
+					}
+					int adjustedWidth = Math.round(screenSize.width * 0.98f);
+					int adjustedHeight = Math.round(image.getHeight() * adjustedWidth / image.getWidth());
+					BufferedImage extendedLightImage = new BufferedImage(adjustedWidth, adjustedHeight, BufferedImage.TYPE_INT_ARGB);
+					extendedLightImage.getGraphics().drawImage(normalLightImage, 0, 0, adjustedWidth, adjustedHeight, this);
+					extendedLightImage.getGraphics().drawImage(image, (adjustedWidth-image.getWidth())/2, 0, image.getWidth(), image.getHeight(), this);
+					imageIcon = new ImageIcon(extendedLightImage);
+					JLabel jLabelImage = new JLabel("", imageIcon, JLabel.CENTER);
+					jScrollPaneNews.getViewport().add(jLabelImage);
+				}
 			} else {
 				if (welcomePageURL.equals("")) {
 					jEditorPaneNews.setText(XFUtility.RESOURCE.getString("SessionError10"));
@@ -713,7 +759,6 @@ public class Session extends JFrame {
 		this.setTitle(systemName + " " + systemVersion);
 		imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
 		this.setIconImage(imageTitle);
-		screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		int shorterWidth1 = Math.round(screenSize.width * (float)0.9);
 		int shorterHeight1 = Math.round(shorterWidth1 / 3 * 2);
 		int shorterHeight2 = Math.round(screenSize.height * (float)0.9);

@@ -166,6 +166,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private KeyStroke keyStrokeToUpdate = null;
 	private HashMap<String, Object> headerFieldValueMap = new HashMap<String, Object>();
 	private HashMap<String, Object> headerFieldOldValueMap = new HashMap<String, Object>();
+	private HashMap<String, Object> variantMap = new HashMap<String, Object>();
 	private Thread threadToSetupReferChecker = null;
 	private int biggestWidth = 0;
 	private int biggestHeight = 0;
@@ -345,6 +346,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
 			processLog.delete(0, processLog.length());
+			variantMap.clear();
 			messageList.clear();
 			keyInputDialog = null;
 			anyRecordsDeleted = false;
@@ -668,6 +670,16 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 		}
+		//////////////////////////////////////////////////////////////////
+		// Add BYTEA-type-field for BYTEA field as HIDDEN header fields //
+		//////////////////////////////////////////////////////////////////
+		for (int i = 0; i < headerFieldList.size(); i++) {
+			if (headerFieldList.get(i).getBasicType().equals("BYTEA") && !headerFieldList.get(i).getByteaTypeFieldID().equals("")) {
+				if (!containsHeaderField(headerTable.getTableID(), "", headerFieldList.get(i).getByteaTypeFieldID())) {
+					headerFieldList.add(new XF310_HeaderField(headerTable.getTableID(), "", headerFieldList.get(i).getByteaTypeFieldID(), this));
+				}
+			}
+		}
 		
 		//////////////////////////////////////////////////////////////////////////////
 		// Analyze header refer tables and add their fields as HIDDEN header fields //
@@ -842,7 +854,18 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 		}
-		
+
+		////////////////////////////////////////////////////////////
+		// Add BYTEA-type-field for BYTEA field as HIDDEN columns //
+		////////////////////////////////////////////////////////////
+		for (int j = 0; j < detailColumnList.size(); j++) {
+			if (detailColumnList.get(j).getBasicType().equals("BYTEA") && !detailColumnList.get(j).getByteaTypeFieldID().equals("")) {
+				if (!containsDetailField(detailTable.getTableID(), "", detailColumnList.get(j).getByteaTypeFieldID())) {
+					detailColumnList.add(new XF310_DetailColumn(detailTable.getTableID(), "", detailColumnList.get(j).getByteaTypeFieldID(), this));
+				}
+			}
+		}
+
 		////////////////////////////////////////
 		// Analyze detail refer tables and    //
 		// add their fields as HIDDEN columns //
@@ -1075,6 +1098,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < headerFieldList.size(); i++) {
 				if (headerFieldList.get(i).getTableID().equals(headerTable.getTableID())) {
 					headerFieldOldValueMap.put(headerFieldList.get(i).getFieldID(), headerFieldList.get(i).getInternalValue());
+				}
+				if (headerFieldList.get(i).getBasicType().equals("BYTEA")) {
+					headerFieldList.get(i).setupByteaTypeField(headerFieldList);
 				}
 			}
 
@@ -1348,6 +1374,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				columnEditableMap = new HashMap<String, Boolean>();
 				for (int i = 0; i < detailColumnList.size(); i++) {
 					columnEditableMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).isEditable());
+					if (detailColumnList.get(i).getBasicType().equals("BYTEA")) {
+						detailColumnList.get(i).setupByteaTypeField(detailColumnList);
+					}
 				}
 
 				if (detailTable.hasOrderByAsItsOwnFields()) {
@@ -1427,6 +1456,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < headerFieldList.size(); i++) {
 				if (headerFieldList.get(i).isFieldOnPrimaryTable()) {
 					if (headerFieldList.get(i).isNullError()) {
+						JOptionPane.showMessageDialog(null, headerFieldList.get(i).getFieldID());
 						countOfErrors++;
 					}
 				}
@@ -2304,6 +2334,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			rowObject.setValuesToDetailColumns();
 			numberCell.setText(rowObject.getRowNumberString());
 			for (int i = 0; i < cellList.size(); i++) {
+				cellList.get(i).setEnabled(detailColumnList.get(i).isEnabled());
 				cellList.get(i).setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 				if (detailColumnList.get(i).getValueType().equals("IMAGE")
 						|| detailColumnList.get(i).getValueType().equals("FLAG")) {
@@ -2385,6 +2416,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			multiLinesPanel.removeAll();
 			for (int i = 0; i < headersRenderer_.getColumnHeaderList().size(); i++) {
 				cell = detailColumnList.get(i).getColumnEditor();
+				cell.setEnabled(detailColumnList.get(i).isEnabled());
 				cell.setHorizontalAlignment(headersRenderer_.getColumnHeaderList().get(i).getHorizontalAlignment());
 				cell.setBounds(headersRenderer_.getColumnHeaderList().get(i).getBounds());
 				cell.setBorder(new HeaderBorder());
@@ -2431,6 +2463,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					cellList.get(i).setColorOfError();
 				} else {
 					cellList.get(i).setColorOfNormal(row);
+				}
+				if (!detailColumnList.get(i).getByteaTypeFieldID().equals("")) {
+					for (int j = 0; j < detailColumnList.size(); j++) {
+						if (detailColumnList.get(j).getFieldID().equals(detailColumnList.get(i).getByteaTypeFieldID())) {
+							((XF110_SubListCellEditorWithByteaColumn)cellList.get(i)).setTypeColumn((XFColumnScriptable)detailColumnList.get(j));
+							break;
+						}
+					}
 				}
 			}
 			
@@ -3616,6 +3656,18 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		return processLog;
 	}
 
+	public Object getVariant(String variantID) {
+		if (variantMap.containsKey(variantID)) {
+			return variantMap.get(variantID);
+		} else {
+			return "";
+		}
+	}
+
+	public void setVariant(String variantID, Object value) {
+		variantMap.put(variantID, value);
+	}
+
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
 		XFTableOperator operator = null;
 		try {
@@ -3832,6 +3884,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 	private int decimalSize = 0;
 	private String fieldOptions = "";
 	private ArrayList<String> fieldOptionList;
+	private String byteaTypeFieldID = "";
 	private int fieldRows = 1;
 	private JPanel jPanelField = new JPanel();
 	private JLabel jLabelField = new JLabel();
@@ -3844,6 +3897,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 	private boolean isNullable = true;
 	private boolean isFieldOnPrimaryTable = false;
 	private boolean isVisibleOnPanel = true;
+	private boolean isEnabled = true;
 	private boolean isEditable = true;
 	private boolean isHorizontal = false;
 	private boolean isVirtualField = false;
@@ -3918,6 +3972,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 		if (workElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
 		}
+		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 		if (!tableElement.getAttribute("RangeKey").equals("")) {
@@ -4022,9 +4077,14 @@ class XF310_HeaderField extends XFFieldScriptable {
 													component.setLocation(5, 0);
 													component.setEditable(false);
 												} else {
-													component = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
-													component.setLocation(5, 0);
-													component.setEditable(false);
+													if (this.getBasicType().equals("BYTEA")) {
+														component = new XFByteaField(byteaTypeFieldID, fieldOptions, dialog_.getSession());
+														component.setLocation(5, 0);
+													} else {
+														component = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
+														component.setLocation(5, 0);
+														component.setEditable(false);
+													}
 												}
 											}
 										}
@@ -4077,7 +4137,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 		if (dataTypeOptionList.contains("ZIPADRS")) {
 			jButtonToRefferZipNo = new JButton();
 			jButtonToRefferZipNo.setText("<");
-			jButtonToRefferZipNo.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+			jButtonToRefferZipNo.setFont(new java.awt.Font("SansSerif", 0, 9));
 			jButtonToRefferZipNo.setPreferredSize(new Dimension(37, this.getPreferredSize().height));
 			jButtonToRefferZipNo.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -4195,6 +4255,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 		if (workElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
 		}
+		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 		if (!tableElement.getAttribute("RangeKey").equals("")) {
@@ -4249,6 +4310,10 @@ class XF310_HeaderField extends XFFieldScriptable {
 		return fieldID_;
 	}
 
+	public String getByteaTypeFieldID(){
+		return byteaTypeFieldID;
+	}
+
 	public String getDataSourceName(){
 		return tableAlias_ + "." + fieldID_;
 	}
@@ -4263,6 +4328,16 @@ class XF310_HeaderField extends XFFieldScriptable {
 
 	public boolean isVisibleOnPanel(){
 		return isVisibleOnPanel;
+	}
+
+	public boolean isEnabled() {
+		return isEnabled;
+	}
+
+	public void setEnabled(boolean isEnabled) {
+		this.isEnabled = isEnabled;
+		component.setEnabled(isEnabled);
+		jLabelField.setEnabled(isEnabled);
 	}
 
 	public boolean isEditable(){
@@ -4355,26 +4430,34 @@ class XF310_HeaderField extends XFFieldScriptable {
 		String basicType = this.getBasicType();
 		boolean isNullError = false;
 		if (basicType.equals("INTEGER")) {
-			long value = Long.parseLong((String)component.getInternalValue());
 			if (!this.isNullable) {
+				long value = Long.parseLong((String)component.getInternalValue());
 				if (value == 0) {
 					isNullError = true;
 				}
 			}
 		}
 		if (basicType.equals("FLOAT")) {
-			double value = Double.parseDouble((String)component.getInternalValue());
 			if (!this.isNullable) {
+				double value = Double.parseDouble((String)component.getInternalValue());
 				if (value == 0) {
 					isNullError = true;
 				}
 			}
 		}
 		if (basicType.equals("DATE")) {
-			String strDate = (String)component.getInternalValue();
 			if (!this.isNullable) {
+				String strDate = (String)component.getInternalValue();
 				if (strDate == null || strDate.equals("")) {
 					isNullError = true;
+				}
+			}
+		}
+		if (basicType.equals("BYTEA")) {
+			if (!this.isNullable) {
+				Object value = component.getInternalValue();
+				if (value == null || value.toString().equals("")) {
+					isError = true;
 				}
 			}
 		}
@@ -4433,7 +4516,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 								component.setValue(value.toString().trim());
 							}
 						}
-						if (basicType.equals("DATE")) {
+						if (basicType.equals("DATE") || basicType.equals("BYTEA")) {
 							component.setValue(value);
 						}
 					}
@@ -4452,7 +4535,11 @@ class XF310_HeaderField extends XFFieldScriptable {
 
 	public Object getInternalValue(){
 		Object returnObj = null;
-		returnObj = (String)component.getInternalValue();
+		if (this.getBasicType().equals("BYTEA")) {
+			returnObj = component.getInternalValue();
+		} else {
+			returnObj = (String)component.getInternalValue();
+		}
 		return returnObj;
 	}
 
@@ -4476,6 +4563,15 @@ class XF310_HeaderField extends XFFieldScriptable {
 			}
 		}
 		return returnObj;
+	}
+	
+	public void setupByteaTypeField(ArrayList<XF310_HeaderField> fieldList) {
+		for (int i = 0; i < fieldList.size(); i++) {
+			if (fieldList.get(i).getFieldID().equals(byteaTypeFieldID)) {
+				((XFByteaField)component).setTypeField((XFFieldScriptable)fieldList.get(i));
+				break;
+			}
+		}
 	}
 	
 	public boolean isValueChanged() {
@@ -4513,10 +4609,14 @@ class XF310_HeaderField extends XFFieldScriptable {
 			if (this.getBasicType().equals("FLOAT")) {
 				returnObj = Double.parseDouble((String)component.getInternalValue());
 			} else {
-				if (component.getInternalValue() == null) {
-					returnObj = "";
+				if (this.getBasicType().equals("BYTEA")) {
+					returnObj = component.getInternalValue();
 				} else {
-					returnObj = (String)component.getInternalValue();
+					if (component.getInternalValue() == null) {
+						returnObj = "";
+					} else {
+						returnObj = (String)component.getInternalValue();
+					}
 				}
 			}
 		}
@@ -4617,7 +4717,6 @@ class XF310_CellEditorWithTextField extends XFTextField implements XFTableColumn
 class XF310_CellEditorWithImageField extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
 	private JLabel jLabel = new JLabel();
-	//private JButton jButton = new JButton(XFUtility.RESOURCE.getString("Edit"));
 	private JButton jButton = new JButton();
 	private XF310 dialog_ = null;
 	private String imageFileName_ = "";
@@ -4704,6 +4803,41 @@ class XF310_CellEditorWithDateField extends XFDateField implements XFTableColumn
 		dialog_ = dialog;
 		this.setInternalBorder(null);
 		this.setOpaque(true);
+		this.addFocusListener(new java.awt.event.FocusAdapter() {
+			public void focusGained(FocusEvent e) {
+				dialog_.getCellsEditor().updateActiveColumnIndex();
+			}
+		});
+	}
+
+	public void setHorizontalAlignment(int alignment) {
+	}
+	
+	public void setColorOfError() {
+		this.setBackground(XFUtility.ERROR_COLOR);
+	}
+	
+	public void setColorOfNormal(int row) {
+		if (this.isEditable()) {
+			if (row%2==0) {
+				this.setBackground(SystemColor.text);
+			} else {
+				this.setBackground(XFUtility.ODD_ROW_COLOR);
+			}
+		} else {
+			this.setBackground(SystemColor.control);
+		}
+	}
+}            
+
+class XF310_CellEditorWithByteaColumn extends XFByteaColumn implements XFTableColumnEditor {
+	private static final long serialVersionUID = 1L;
+	private XF310 dialog_ = null;
+
+	public XF310_CellEditorWithByteaColumn(String typeFieldID, String fieldOptions, XF310 dialog) {
+		super(typeFieldID, fieldOptions, dialog.getSession());
+		dialog_ = dialog;
+		this.setFocusable(true);
 		this.addFocusListener(new java.awt.event.FocusAdapter() {
 			public void focusGained(FocusEvent e) {
 				dialog_.getCellsEditor().updateActiveColumnIndex();
@@ -5370,7 +5504,7 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 			}
 		}
 
-		jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+		jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBox.setFocusable(false);
 		jComboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
@@ -6008,6 +6142,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 	private ArrayList<String> fieldOptionList;
 	private String fieldOptions = "";
 	private String fieldCaption = "";
+	private String byteaTypeFieldID = "";
 	private int fieldWidth = 50;
 	private int columnIndex = -1;
 	private boolean isKey = false;
@@ -6016,6 +6151,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 	private boolean isFieldOnDetailTable = false;
 	private boolean isVisibleOnPanel = true;
 	private boolean isVirtualField = false;
+	private boolean isEnabled = true;
 	private boolean isEditable = true;
 	private boolean isNonEditableField = false;
 	private boolean isRangeKeyFieldValid = false;
@@ -6096,6 +6232,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 				isNullable = false;
 			}
 		}
+		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "AUTO_NUMBER");
 		if (!wrkStr.equals("")) {
 			numberingID = wrkStr;
@@ -6254,8 +6391,14 @@ class XF310_DetailColumn extends XFColumnScriptable {
 															editor = new XF310_CellEditorWithLongTextEditor(fieldCaption, dataTypeOptionList, dialog);
 
 														} else {
-															fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
-															editor = new XF310_CellEditorWithTextField(this, dialog_);
+															if (this.getBasicType().equals("BYTEA")) {
+																valueType = "BYTEA";
+																fieldWidth = 100;
+																editor = new XF310_CellEditorWithByteaColumn(byteaTypeFieldID, fieldOptions, dialog_);
+															} else {
+																fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
+																editor = new XF310_CellEditorWithTextField(this, dialog_);
+															}
 														}
 													}
 												}
@@ -6340,6 +6483,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 		if (workElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
 		}
+		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 		if (!tableElement.getAttribute("RangeKey").equals("")) {
@@ -6395,6 +6539,13 @@ class XF310_DetailColumn extends XFColumnScriptable {
 				}
 			}
 		}
+		if (basicType.equals("BYTEA")) {
+			if (!this.isNullable) {
+				if (object == null || ((XFByteArray)object).getInternalValue() == null) {
+					isError = true;
+				}
+			}
+		}
 		if (basicType.equals("DATE")) {
 			if ((object == null || object.equals("")) && !this.isNullable) {
 				isNullError = true;
@@ -6443,6 +6594,10 @@ class XF310_DetailColumn extends XFColumnScriptable {
 
 	public boolean isError() {
 		return isError;
+	}
+
+	public String getByteaTypeFieldID(){
+		return byteaTypeFieldID;
 	}
 
 	public boolean isVisibleOnPanel(){
@@ -6588,6 +6743,9 @@ class XF310_DetailColumn extends XFColumnScriptable {
 									value = XFUtility.ICON_CHECK_0D;
 								}
 							}
+							if (valueType.equals("BYTEA")) {
+								value = ((XFByteArray)value_).getExternalValue();
+							}
 						}
 					}
 				}
@@ -6683,29 +6841,33 @@ class XF310_DetailColumn extends XFColumnScriptable {
 				}
 			} else {
 				Object value = operator.getValueOf(this.getFieldID()); 
-				if (basicType.equals("INTEGER")) {
-					if (value == null || value.equals("")) {
-						value_ = "";
-					} else {
-						String wrkStr = value.toString();
-						int pos = wrkStr.indexOf(".");
-						if (pos >= 0) {
-							wrkStr = wrkStr.substring(0, pos);
-						}
-						value_ = Long.parseLong(wrkStr);
-					}
+				if (basicType.equals("BYTEA")) {
+					value_ = new XFByteArray(value);
 				} else {
-					if (basicType.equals("FLOAT")) {
+					if (basicType.equals("INTEGER")) {
 						if (value == null || value.equals("")) {
 							value_ = "";
 						} else {
-							value_ = Double.parseDouble(value.toString());
+							String wrkStr = value.toString();
+							int pos = wrkStr.indexOf(".");
+							if (pos >= 0) {
+								wrkStr = wrkStr.substring(0, pos);
+							}
+							value_ = Long.parseLong(wrkStr);
 						}
 					} else {
-						if (value == null) {
-							value_ = "";
+						if (basicType.equals("FLOAT")) {
+							if (value == null || value.equals("")) {
+								value_ = "";
+							} else {
+								value_ = Double.parseDouble(value.toString());
+							}
 						} else {
-							value_ = value.toString().trim();
+							if (value == null) {
+								value_ = "";
+							} else {
+								value_ = value.toString().trim();
+							}
 						}
 					}
 				}
@@ -6723,9 +6885,24 @@ class XF310_DetailColumn extends XFColumnScriptable {
 			isEditable = true;
 		}
 	}
+	
+	public void setupByteaTypeField(ArrayList<XF310_DetailColumn> columnList) {
+		if (!byteaTypeFieldID.equals("")) {
+			for (int i = 0; i < columnList.size(); i++) {
+				if (columnList.get(i).getFieldID().equals(byteaTypeFieldID)) {
+					((XFByteArray)value_).setTypeColumn((XFColumnScriptable)columnList.get(i));
+					break;
+				}
+			}
+		}
+	}
 
 	public void setValue(Object value){
-		value_ = XFUtility.getValueAccordingToBasicType(this.getBasicType(), value);
+		if (this.getBasicType().equals("BYTEA")) {
+			value_ = value;
+		} else {
+			value_ = XFUtility.getValueAccordingToBasicType(this.getBasicType(), value);
+		}
 	}
 
 	public Object getValue() {
@@ -6749,7 +6926,19 @@ class XF310_DetailColumn extends XFColumnScriptable {
 	}
 	
 	public boolean isValueChanged() {
-		return !this.getValue().equals(this.getOldValue());
+		if (valueType.equals("BYTEA")) {
+			return !((XFByteArray)value_).getInternalValue().equals(((XFByteArray)oldValue_).getInternalValue());
+		} else {
+			return !this.getValue().equals(this.getOldValue());
+		}
+	}
+
+	public boolean isEnabled() {
+		return isEnabled;
+	}
+
+	public void setEnabled(boolean isEnabled) {
+		this.isEnabled = isEnabled;
 	}
 
 	public boolean isEditable() {

@@ -50,4 +50,6 @@ public interface XFScriptable {
 	public XFTableOperator createTableOperator(String sqlText);
 	public Object getFieldObjectByID(String tableID, String fieldID);
 	public boolean isAvailable();
+	public Object getVariant(String variantID);
+	public void setVariant(String variantID, Object value);
 }

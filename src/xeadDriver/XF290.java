@@ -35,6 +35,7 @@ import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
+
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,7 +46,9 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+
 import org.w3c.dom.*;
+
 import com.lowagie.text.*;
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.*;
@@ -71,6 +74,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	private ByteArrayOutputStream exceptionLog;
 	private PrintStream exceptionStream;
 	private String exceptionHeader = "";
+	private HashMap<String, Object> variantMap = new HashMap<String, Object>();
 
 	public XF290(Session session, int instanceArrayIndex) {
 		super();
@@ -114,6 +118,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
 			processLog.delete(0, processLog.length());
+			variantMap.clear();
 			
 			///////////////////////////////////////////
 			// Setup specifications for the function //
@@ -248,6 +253,17 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 							}
 						}
 					}
+				}
+			}
+		}
+
+		///////////////////////////////////////////////////////////
+		// Add BYTEA-type-field for BYTEA field as HIDDEN fields //
+		///////////////////////////////////////////////////////////
+		for (int i = 0; i < fieldList.size(); i++) {
+			if (fieldList.get(i).getBasicType().equals("BYTEA") && !fieldList.get(i).getByteaTypeFieldID().equals("")) {
+				if (!existsInFieldList(primaryTable_.getTableID(), "", fieldList.get(i).getByteaTypeFieldID())) {
+					fieldList.add(new XF290_Field(primaryTable_.getTableID(), "", fieldList.get(i).getByteaTypeFieldID(), this));
 				}
 			}
 		}
@@ -623,6 +639,11 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 					}
 				}
 				fetchReferTableRecords("AR", "");
+				for (int i = 0; i < fieldList.size(); i++) {
+					if (fieldList.get(i).getBasicType().equals("BYTEA")) {
+						fieldList.get(i).setupByteaTypeField(fieldList);
+					}
+				}
 			} else {
 				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionError30"));
 				returnMap_.put("RETURN_CODE", "01");
@@ -699,6 +720,18 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	
 	public StringBuffer getProcessLog() {
 		return processLog;
+	}
+
+	public Object getVariant(String variantID) {
+		if (variantMap.containsKey(variantID)) {
+			return variantMap.get(variantID);
+		} else {
+			return "";
+		}
+	}
+
+	public void setVariant(String variantID, Object value) {
+		variantMap.put(variantID, value);
 	}
 
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
@@ -841,6 +874,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		for (int i = 0; i < fieldList.size(); i++) {
 			if (fieldList.get(i).getDataSourceName().equals(wrkStr)) {
 				if (fieldList.get(i).isKubunField()
+				  || fieldList.get(i).getBasicType().equals("BYTEA")
 				  || fieldList.get(i).getDataTypeOptionList().contains("MSEQ")
 				  || fieldList.get(i).getDataTypeOptionList().contains("YMONTH")
 				  || fieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
@@ -914,6 +948,7 @@ class XF290_Field extends XFColumnScriptable {
 	private ArrayList<String> dataTypeOptionList;
 	private XFTextField xFTextField = null;
 	private XFEditableField component = null;
+	private String byteaTypeFieldID = "";
 	private boolean isNullable = true;
 	private boolean isKey = false;
 	private boolean isFieldOnPrimaryTable = false;
@@ -991,6 +1026,7 @@ class XF290_Field extends XFColumnScriptable {
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
 		}
+		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 		//
 		String wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 		if (!wrkStr.equals("")) {
@@ -1023,6 +1059,10 @@ class XF290_Field extends XFColumnScriptable {
 		xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, "", dialog_.getSession().systemFont);
 		xFTextField.setLocation(5, 0);
 		component = xFTextField;
+	}
+
+	public String getByteaTypeFieldID(){
+		return byteaTypeFieldID;
 	}
 
 	public String getDataSourceName(){
@@ -1130,7 +1170,9 @@ class XF290_Field extends XFColumnScriptable {
 					}
 				}
 				//
-				if (basicType.equals("STRING") || basicType.equals("TIME") || basicType.equals("DATETIME")) {
+				if (basicType.equals("STRING")
+						|| basicType.equals("TIME")
+						|| basicType.equals("DATETIME")) {
 					Object value = operator.getValueOf(this.getFieldID());
 					if (value == null) {
 						component.setValue("");
@@ -1143,6 +1185,10 @@ class XF290_Field extends XFColumnScriptable {
 					component.setValue(operator.getValueOf(this.getFieldID()));
 				}
 				//
+				if (basicType.equals("BYTEA")) {
+					component.setValue("<null>"); //BYTEA-field is not on SELECT-SQL//
+				}
+				//
 				component.setOldValue(component.getInternalValue());
 			}
 		} catch (Exception e) {
@@ -1150,9 +1196,18 @@ class XF290_Field extends XFColumnScriptable {
 			dialog_.setErrorAndCloseFunction();
 		}
 	}
+	
+	public void setupByteaTypeField(ArrayList<XF290_Field> fieldList) {
+		for (int i = 0; i < fieldList.size(); i++) {
+			if (fieldList.get(i).getFieldID().equals(byteaTypeFieldID)) {
+				this.setValue("<" + fieldList.get(i).getValue() + ">");
+				break;
+			}
+		}
+	}
 
-	public void setValue(Object object){
-		XFUtility.setValueToEditableField(this.getBasicType(), object, component);
+	public void setValue(Object value){
+		XFUtility.setValueToEditableField(this.getBasicType(), value, component);
 	}
 
 	public Object getNullValue(){
@@ -1163,7 +1218,10 @@ class XF290_Field extends XFColumnScriptable {
 		Object returnObj = null;
 		String basicType = this.getBasicType();
 		//
-		if (basicType.equals("INTEGER") || basicType.equals("FLOAT") || basicType.equals("STRING")) {
+		if (basicType.equals("INTEGER")
+				|| basicType.equals("FLOAT")
+				|| basicType.equals("STRING")
+				|| basicType.equals("BYTEA")) {
 			String value = (String)component.getInternalValue();
 			if (value == null) {
 				value = "";
@@ -1457,9 +1515,11 @@ class XF290_PrimaryTable extends Object {
 		tableID = functionElement_.getAttribute("PrimaryTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
 		activeWhere = tableElement.getAttribute("ActiveWhere");
-		updateCounterID = tableElement.getAttribute("UpdateCounter");
-		if (updateCounterID.equals("")) {
-			updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
+		if (!tableElement.getAttribute("UpdateCounter").toUpperCase().equals("*NONE")) {
+			updateCounterID = tableElement.getAttribute("UpdateCounter");
+			if (updateCounterID.equals("")) {
+				updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
+			}
 		}
 		//
 		String wrkStr1;
@@ -1510,7 +1570,8 @@ class XF290_PrimaryTable extends Object {
 		boolean firstField = true;
 		for (int i = 0; i < dialog_.getFieldList().size(); i++) {
 			if (dialog_.getFieldList().get(i).isFieldOnPrimaryTable()
-			&& !dialog_.getFieldList().get(i).isVirtualField()) {
+					&& !dialog_.getFieldList().get(i).isVirtualField()
+					&& !dialog_.getFieldList().get(i).getBasicType().equals("BYTEA")) {
 				if (!firstField) {
 					buf.append(",");
 				}
@@ -1518,8 +1579,10 @@ class XF290_PrimaryTable extends Object {
 				firstField = false;
 			}
 		}
-		buf.append(",");
-		buf.append(updateCounterID);
+		if (!updateCounterID.equals("")) {
+			buf.append(",");
+			buf.append(updateCounterID);
+		}
 		//
 		buf.append(" from ");
 		buf.append(tableID);

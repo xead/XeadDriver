@@ -2906,6 +2906,20 @@ class XF200_Field extends XFFieldScriptable {
 		this.isEditable = editable;
 	}
 	
+	public void setValueList(String[] valueList) {
+		if (component instanceof XFTextField) {
+			((XFTextField)component).setValueList(valueList);
+		}
+	}
+	
+	public String[] getValueList() {
+		String[] valueList = null;
+		if (component instanceof XFTextField) {
+			valueList = ((XFTextField)component).getValueList();
+		}
+		return valueList;
+	}
+	
 	public void initEditable() {
 		isEditable = isEditableInitial;
 	}

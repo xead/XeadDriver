@@ -4114,7 +4114,430 @@ class XFByteaColumn extends JPanel implements XFEditableField {
 	}
 }
 
-class XFTextField extends JTextField implements XFEditableField {
+//class XFTextField extends JTextField implements XFEditableField {
+//	private static final long serialVersionUID = 1L;
+//	private String basicType_ = "";
+//	private int digits_ = 5;
+//	private int decimal_ = 0;
+//	private int rows_ = 1;
+//	private ArrayList<String> dataTypeOptionList;
+//	private String fieldOptions_;
+//	private String autoNumberKey = "";
+//	private String oldValue = "";
+//
+//	public XFTextField(String basicType, int digits, int decimal, String dataTypeOptions, String fieldOptions, String fontName) {
+//		super();
+//
+//		basicType_ = basicType;
+//
+//		////////////////////////////
+//		// digits of VARCHAR is 0 //
+//		////////////////////////////
+//		if (digits == 0) {
+//			digits_ = 10;
+//		} else {
+//			digits_ = digits;
+//		}
+//		decimal_ = decimal;
+//		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
+//		fieldOptions_ = fieldOptions;
+//
+//		if (basicType_.equals("INTEGER")) {
+//			this.setHorizontalAlignment(SwingConstants.RIGHT);
+//			this.setText(this.getFormattedNumber("0"));
+//		} else {
+//			if (basicType_.equals("FLOAT")) {
+//				this.setHorizontalAlignment(SwingConstants.RIGHT);
+//				String wrkStr = "";
+//				if (decimal_ == 0) {
+//					wrkStr = "0";
+//				}
+//				if (decimal_ == 1) {
+//					wrkStr = "0.0";
+//				}
+//				if (decimal_ == 2) {
+//					wrkStr = "0.00";
+//				}
+//				if (decimal_ == 3) {
+//					wrkStr = "0.000";
+//				}
+//				if (decimal_ == 4) {
+//					wrkStr = "0.0000";
+//				}
+//				if (decimal_ == 5) {
+//					wrkStr = "0.00000";
+//				}
+//				if (decimal_ == 6) {
+//					wrkStr = "0.000000";
+//				}
+//				this.setText(this.getFormattedNumber(wrkStr));
+//			} else {
+//				this.setHorizontalAlignment(SwingConstants.LEFT);
+//			}
+//		}
+//		this.addFocusListener(new ComponentFocusListener());
+//		this.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
+//		this.setDocument(new LimitedDocument(this));
+//		this.addKeyListener(new KeyAdapter() {
+//			public void keyPressed(KeyEvent e) {
+//				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+//					if (basicType_.equals("STRING") && !autoNumberKey.equals("")) {
+//						fillZero();
+//					}
+//				}
+//			} 
+//		});
+//
+//		int fieldWidth, fieldHeight;
+//		if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
+//			fieldWidth = digits_ * XFUtility.FONT_SIZE + 10;
+//		} else {
+//			if (basicType_.equals("INTEGER") || basicType_.equals("FLOAT")) {
+//				fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
+//			} else {
+//				if (basicType_.equals("DATETIME")) {
+//					fieldWidth = 24 * (XFUtility.FONT_SIZE/2 + 2);
+//				} else {
+//					fieldWidth = digits_ * (XFUtility.FONT_SIZE/2 + 2) + 10;
+//				}
+//			}
+//		}
+//		if (fieldWidth > 800) {
+//			fieldWidth = 800;
+//		}
+//		fieldHeight = XFUtility.FIELD_UNIT_HEIGHT;
+//
+//		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
+//		if (!wrkStr.equals("")) {
+//			fieldWidth = Integer.parseInt(wrkStr);
+//		}
+//		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "AUTO_NUMBER");
+//		if (!wrkStr.equals("")) {
+//			autoNumberKey = wrkStr;
+//		}
+//
+//		this.setSize(new Dimension(fieldWidth, fieldHeight));
+//	}
+//
+//	public boolean isComponentFocusable() {
+//		return this.isFocusable();
+//	}
+//	
+//	public void setWidth(int width) {
+//		this.setSize(width, this.getHeight());
+//	}
+//	
+//	public void setEditable(boolean editable) {
+//		super.setEditable(editable);
+//		super.setFocusable(editable);
+//	}
+//
+//	public String getStringNumber(String text) {
+//		String numberString = XFUtility.getStringNumber(text);
+//		if (numberString.equals("")) {
+//			if (basicType_.equals("INTEGER")) {
+//				numberString = "0";
+//			}
+//			if (basicType_.equals("FLOAT")) {
+//				if (decimal_ == 0) {
+//					numberString = "0";
+//				}
+//				if (decimal_ == 1) {
+//					numberString = "0.0";
+//				}
+//				if (decimal_ == 2) {
+//					numberString = "0.00";
+//				}
+//				if (decimal_ == 3) {
+//					numberString = "0.000";
+//				}
+//				if (decimal_ == 4) {
+//					numberString = "0.0000";
+//				}
+//				if (decimal_ == 5) {
+//					numberString = "0.00000";
+//				}
+//				if (decimal_ == 6) {
+//					numberString = "0.000000";
+//				}
+//			}
+//		} else {
+//			if (dataTypeOptionList.contains("ZIPNO")) {
+//				numberString = numberString.replace("-", "");
+//				int workLength = 7 - numberString.length();
+//				for (int i = 0; i < workLength; i++) {
+//					numberString = numberString + "0";
+//				}
+//				numberString = numberString.substring(0, 3) + "-" + numberString.substring(3, 7); 
+//			}
+//		}
+//		return numberString;
+//	}
+//
+//	public Object getInternalValue() {
+//		String text = "";
+//		if (basicType_.equals("INTEGER")
+//			|| basicType_.equals("FLOAT")
+//			|| dataTypeOptionList.contains("DIAL")
+//			|| dataTypeOptionList.contains("ZIPNO")) {
+//			if (this.getText().equals("*AUTO")) {
+//				text = this.getText();
+//			} else {
+//				text = this.getStringNumber(this.getText());
+//			}
+//		} else {
+//			text = this.getText();
+//		}
+//		return text;
+//	}
+//	
+//	public void setOldValue(Object obj) {
+//		oldValue = obj.toString();
+//	}
+//
+//	public Object getOldValue() {
+//		String text = "";
+//		if (basicType_.equals("INTEGER")
+//			|| basicType_.equals("FLOAT")
+//			|| dataTypeOptionList.contains("DIAL")
+//			|| dataTypeOptionList.contains("ZIPNO")) {
+//			text = this.getStringNumber(oldValue);
+//		} else {
+//			text = oldValue;
+//		}
+//		return text;
+//	}
+//
+//	public Object getExternalValue() {
+//		return this.getInternalValue();
+//	}
+//	
+//	public void setValue(Object obj) {
+//		String text = null;
+//		if (obj != null) {
+//			text = obj.toString();
+//		}
+//		if (text != null) {
+//			if (basicType_.equals("INTEGER")) {
+//				if (text.equals("*AUTO")) {
+//					this.setText(text);
+//				} else {
+//					this.setText(getFormattedNumber(text));
+//				}
+//			}
+//			if (basicType_.equals("FLOAT")) {
+//				this.setText(getFormattedNumber(text));
+//			}
+//			if (basicType_.equals("DATE")) {
+//				this.setText(text);
+//			}
+//			if (basicType_.equals("TIME")) {
+//				this.setText(text);
+//			}
+//			if (basicType_.equals("DATETIME")) {
+//				text = text.replace("-", "/");
+//				this.setText(text);
+//			}
+//			if (basicType_.equals("STRING")
+//					|| basicType_.equals("BYTEA")) {
+//				text = text.trim();
+//				this.setText(text);
+//			}
+//		}
+//	}
+//	
+//	public String getFormattedNumber(String text) {
+//		String value = "0";
+//		if (text != null) {
+//			if (basicType_.equals("INTEGER")) {
+//				value = XFUtility.getFormattedIntegerValue(getStringNumber(text), dataTypeOptionList, digits_);
+//			}
+//			if (basicType_.equals("FLOAT")) {
+//				value = XFUtility.getFormattedFloatValue(getStringNumber(text), decimal_);
+//			}
+//		}
+//		return value;
+//	}
+//	
+//	public int getRows() {
+//		return rows_;
+//	}
+//	
+//	private void fillZero() {
+//		int stringDigitFrom = -1;
+//		int numberDigitFrom = 0;
+//		if (getText().length() < digits_ && !getText().equals("")) {
+//			for( int i = 0; i < getText().length() ; i++) {
+//				try {
+//					Integer.parseInt(getText().substring(i, i+1));
+//					numberDigitFrom = i;
+//					break;
+//				} catch(NumberFormatException e) {
+//					stringDigitFrom = i;
+//				}
+//			}
+//			StringBuffer sb = new StringBuffer();
+//			if (stringDigitFrom > -1 && numberDigitFrom > stringDigitFrom) {
+//				sb.append(getText().substring(stringDigitFrom, numberDigitFrom));
+//			}
+//			int zeroLen = digits_ - getText().length();
+//			for( int i = 0; i < zeroLen ; i++) {
+//				sb.append("0");
+//			}
+//			sb.append(getText().substring(numberDigitFrom, getText().length()));
+//			setText(sb.toString());
+//		}
+//	}
+//
+//	class ComponentFocusListener implements FocusListener{
+//		public void focusLost(FocusEvent event){
+//			if (basicType_.equals("INTEGER")) {
+//				if (!getText().equals("*AUTO")) {
+//					setText(getFormattedNumber(getText()));
+//				}
+//			}
+//			if (basicType_.equals("FLOAT")) {
+//				setText(getFormattedNumber(getText()));
+//			}
+//			if (getInputContext() != null) {
+//				getInputContext().setCompositionEnabled(false);
+//			}
+//			if (basicType_.equals("STRING") && !autoNumberKey.equals("")) {
+//				fillZero();
+//			}
+//		}
+//		public void focusGained(FocusEvent event){
+//			selectAll();
+//			Character.Subset[] subsets  = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
+//			String lang = Locale.getDefault().getLanguage();
+//			if (basicType_.equals("STRING")) {
+//				if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
+//					if (lang.equals("ja")) {
+//						subsets = new Character.Subset[] {java.awt.im.InputSubset.KANJI};
+//					}
+//					if (lang.equals("ko")) {
+//						subsets = new Character.Subset[] {java.awt.im.InputSubset.HANJA};
+//					}
+//					if (lang.equals("zh")) {
+//						subsets = new Character.Subset[] {java.awt.im.InputSubset.TRADITIONAL_HANZI};
+//					}
+//					getInputContext().setCharacterSubsets(subsets);
+//					getInputContext().setCompositionEnabled(true);
+//				} else {
+//					if (dataTypeOptionList.contains("KATAKANA") && lang.equals("ja")) {
+//						subsets = new Character.Subset[] {java.awt.im.InputSubset.HALFWIDTH_KATAKANA};
+//						getInputContext().setCharacterSubsets(subsets);
+//						getInputContext().setCompositionEnabled(true);
+//					} else {
+//						InputContext ic = getInputContext();
+//						if (ic != null) {
+//							ic.setCharacterSubsets(subsets);
+//							ic.setCompositionEnabled(false);
+//						}
+//					}
+//				}
+//			} else {
+//				InputContext ic = getInputContext();
+//				if (ic != null) {
+//					ic.setCharacterSubsets(subsets);
+//					ic.setCompositionEnabled(false);
+//				}
+//			}
+//		}
+//	}
+//
+//	class LimitedDocument extends PlainDocument {
+//		private static final long serialVersionUID = 1L;
+//		XFTextField adaptee;
+//		LimitedDocument(XFTextField adaptee) {
+//		  this.adaptee = adaptee;
+//		}
+//		public void insertString(int offset, String str, AttributeSet attr) {
+//			try {
+//				int integerSizeOfField = adaptee.digits_ - adaptee.decimal_;
+//
+//				if (adaptee.decimal_ > 0 && str.length() == 1) {
+//					if (adaptee.isEditable()
+//							&& (basicType_.equals("INTEGER") || basicType_.equals("FLOAT"))
+//							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
+//							&& str.contains("-")) {
+//						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError") + ": " + str);
+//					} else {
+//						String wrkStr0 = super.getText(0, super.getLength());
+//						wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
+//						String wrkStr1 = wrkStr0.replace(".", "");
+//						wrkStr1 = wrkStr1.replace(",", "");
+//						wrkStr1 = wrkStr1.replace("-", "");
+//						if (wrkStr1.length() > adaptee.digits_) {
+//							wrkStr1 = wrkStr1.substring(0, integerSizeOfField) + "." + wrkStr1.substring(integerSizeOfField, wrkStr1.length() - 1);
+//							super.replace(0, super.getLength(), wrkStr1, attr);
+//						} else {
+//							if (basicType_.equals("INTEGER") && str.contains(".")) {
+//								JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("NumberFormatError"));
+//							} else {
+//								int posOfDecimal = wrkStr0.indexOf(".");
+//								if (posOfDecimal == -1) {
+//									if (wrkStr1.length() > integerSizeOfField) {
+//										wrkStr1 = wrkStr1.substring(0, integerSizeOfField) + "." + wrkStr1.substring(integerSizeOfField, wrkStr1.length());
+//										super.replace(0, super.getLength(), wrkStr1, attr);
+//									} else {
+//										super.insertString( offset, str, attr );
+//									}
+//								} else {
+//									int decimalLengthOfInputData = wrkStr0.length() - posOfDecimal - 1;
+//									if (decimalLengthOfInputData <= adaptee.decimal_) {
+//										super.insertString( offset, str, attr );
+//									}
+//								}
+//							}
+//						}
+//					}
+//				} else {
+//					if (adaptee.isEditable()
+//							&& (basicType_.equals("INTEGER") || basicType_.equals("FLOAT"))
+//							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
+//							&& str.contains("-")) {
+//						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError") + ": " + str);
+//					} else {
+//						if (basicType_.equals("INTEGER")) {
+//							if (str.contains(".")) {
+//								JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("NumberFormatError"));
+//							} else {
+//								String wrkStr0 = super.getText(0, super.getLength());
+//								wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
+//								String wrkStr1 = wrkStr0.replace(".", "");
+//								wrkStr1 = wrkStr1.replace(",", "");
+//								wrkStr1 = wrkStr1.replace("-", "");
+//								if (wrkStr1.length() <= adaptee.digits_ || wrkStr1.equals("*AUTO")) {
+//									super.insertString(offset, str, attr );
+//								}
+//							}
+//						} else {
+//							if (basicType_.equals("FLOAT")) {
+//								String wrkStr0 = super.getText(0, super.getLength());
+//								wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
+//								String wrkStr1 = wrkStr0.replace(".", "");
+//								wrkStr1 = wrkStr1.replace(",", "");
+//								wrkStr1 = wrkStr1.replace("-", "");
+//								if (wrkStr1.length() <= adaptee.digits_) {
+//									super.insertString( offset, str, attr );
+//								}
+//							} else {
+//								if (offset < adaptee.digits_ && super.getLength() < adaptee.digits_) {
+//									super.insertString( offset, str, attr );
+//								}
+//							}
+//						}
+//					}
+//				}
+//			} catch (BadLocationException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//	}
+//}
+
+class XFTextField extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private String basicType_ = "";
 	private int digits_ = 5;
@@ -4124,6 +4547,10 @@ class XFTextField extends JTextField implements XFEditableField {
 	private String fieldOptions_;
 	private String autoNumberKey = "";
 	private String oldValue = "";
+	private JTextField jTextField = new JTextField();
+	private JComboBox jComboBox = null;
+	private String[] valueList_ = null;
+	private boolean itemSelectionControled = true;
 
 	public XFTextField(String basicType, int digits, int decimal, String dataTypeOptions, String fieldOptions, String fontName) {
 		super();
@@ -4143,11 +4570,11 @@ class XFTextField extends JTextField implements XFEditableField {
 		fieldOptions_ = fieldOptions;
 
 		if (basicType_.equals("INTEGER")) {
-			this.setHorizontalAlignment(SwingConstants.RIGHT);
-			this.setText(this.getFormattedNumber("0"));
+			jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+			jTextField.setText(this.getFormattedNumber("0"));
 		} else {
 			if (basicType_.equals("FLOAT")) {
-				this.setHorizontalAlignment(SwingConstants.RIGHT);
+				jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
 				String wrkStr = "";
 				if (decimal_ == 0) {
 					wrkStr = "0";
@@ -4170,15 +4597,15 @@ class XFTextField extends JTextField implements XFEditableField {
 				if (decimal_ == 6) {
 					wrkStr = "0.000000";
 				}
-				this.setText(this.getFormattedNumber(wrkStr));
+				jTextField.setText(this.getFormattedNumber(wrkStr));
 			} else {
-				this.setHorizontalAlignment(SwingConstants.LEFT);
+				jTextField.setHorizontalAlignment(SwingConstants.LEFT);
 			}
 		}
-		this.addFocusListener(new ComponentFocusListener());
-		this.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
-		this.setDocument(new LimitedDocument(this));
-		this.addKeyListener(new KeyAdapter() {
+		jTextField.addFocusListener(new ComponentFocusListener());
+		jTextField.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
+		jTextField.setDocument(new LimitedDocument(this));
+		jTextField.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					if (basicType_.equals("STRING") && !autoNumberKey.equals("")) {
@@ -4217,10 +4644,76 @@ class XFTextField extends JTextField implements XFEditableField {
 		}
 
 		this.setSize(new Dimension(fieldWidth, fieldHeight));
+		this.setLayout(new BorderLayout());
+		this.add(jTextField, BorderLayout.CENTER);
 	}
 
 	public boolean isComponentFocusable() {
-		return this.isFocusable();
+		return jTextField.isFocusable();
+	}
+
+	public boolean isEditable() {
+		return jTextField.isEditable();
+	}
+	
+	public String[] getValueList() {
+		return valueList_;
+	}
+	
+	public void setValueList(String[] valueList) {
+		if (!java.util.Arrays.equals(valueList, valueList_)) {
+			valueList_ = valueList;
+
+			if (valueList_ == null) {
+				if (jComboBox != null) {
+					this.remove(jComboBox);
+				}
+				this.add(jTextField);
+				jComboBox = null;
+
+			} else {
+				itemSelectionControled = true;
+				jComboBox = new JComboBox();
+				jComboBox.setFont(jTextField.getFont());
+				ListCellRenderer renderer = new DefaultListCellRenderer();
+				((JLabel)renderer).setHorizontalAlignment(jTextField.getHorizontalAlignment());
+				jComboBox.setRenderer(renderer);
+				jComboBox.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						if (!itemSelectionControled || jTextField.getText().equals("")){
+							jTextField.setText((String)jComboBox.getSelectedItem());
+						}
+					} 
+				});
+//				StringTokenizer workTokenizer = new StringTokenizer(valueList_, ";");
+//				while (workTokenizer.hasMoreTokens()) {
+//					jComboBox.addItem(workTokenizer.nextToken().trim());
+//				}
+				for (int i = 0; i < valueList_.length; i++) {
+					jComboBox.addItem(valueList_[i]);
+				}
+				int index = -1;
+				for (int i = 0; i < jComboBox.getItemCount(); i++) {
+					if (jComboBox.getItemAt(i).toString().equals(jTextField.getText())) {
+						index = i;
+						break;
+					}
+				}
+				if (index > -1) {
+					jComboBox.setSelectedIndex(index);
+				}
+				itemSelectionControled = false;
+				this.remove(jTextField);
+				this.add(jComboBox);
+			}
+		}
+	}
+	
+	public void setHorizontalAlignment(int alignment) {
+		jTextField.setHorizontalAlignment(alignment);
+		if (jComboBox != null) {
+			((JLabel)jComboBox.getRenderer()).setHorizontalAlignment(alignment);
+		}
 	}
 	
 	public void setWidth(int width) {
@@ -4228,8 +4721,17 @@ class XFTextField extends JTextField implements XFEditableField {
 	}
 	
 	public void setEditable(boolean editable) {
-		super.setEditable(editable);
-		super.setFocusable(editable);
+		jTextField.setEditable(editable);
+		jTextField.setFocusable(editable);
+		if (jComboBox != null) {
+			if (editable) {
+				this.remove(jTextField);
+				this.add(jComboBox);
+			} else {
+				this.remove(jComboBox);
+				this.add(jTextField);
+			}
+		}
 	}
 
 	public String getStringNumber(String text) {
@@ -4280,13 +4782,13 @@ class XFTextField extends JTextField implements XFEditableField {
 			|| basicType_.equals("FLOAT")
 			|| dataTypeOptionList.contains("DIAL")
 			|| dataTypeOptionList.contains("ZIPNO")) {
-			if (this.getText().equals("*AUTO")) {
-				text = this.getText();
+			if (jTextField.getText().equals("*AUTO")) {
+				text = jTextField.getText();
 			} else {
-				text = this.getStringNumber(this.getText());
+				text = this.getStringNumber(jTextField.getText());
 			}
 		} else {
-			text = this.getText();
+			text = jTextField.getText();
 		}
 		return text;
 	}
@@ -4294,7 +4796,7 @@ class XFTextField extends JTextField implements XFEditableField {
 	public void setOldValue(Object obj) {
 		oldValue = obj.toString();
 	}
-
+	
 	public Object getOldValue() {
 		String text = "";
 		if (basicType_.equals("INTEGER")
@@ -4308,6 +4810,14 @@ class XFTextField extends JTextField implements XFEditableField {
 		return text;
 	}
 
+	public String getText() {
+		return jTextField.getText();
+	}
+
+	public void setText(String text) {
+		jTextField.setText(text);
+	}
+	
 	public Object getExternalValue() {
 		return this.getInternalValue();
 	}
@@ -4320,28 +4830,28 @@ class XFTextField extends JTextField implements XFEditableField {
 		if (text != null) {
 			if (basicType_.equals("INTEGER")) {
 				if (text.equals("*AUTO")) {
-					this.setText(text);
+					jTextField.setText(text);
 				} else {
-					this.setText(getFormattedNumber(text));
+					jTextField.setText(getFormattedNumber(text));
 				}
 			}
 			if (basicType_.equals("FLOAT")) {
-				this.setText(getFormattedNumber(text));
+				jTextField.setText(getFormattedNumber(text));
 			}
 			if (basicType_.equals("DATE")) {
-				this.setText(text);
+				jTextField.setText(text);
 			}
 			if (basicType_.equals("TIME")) {
-				this.setText(text);
+				jTextField.setText(text);
 			}
 			if (basicType_.equals("DATETIME")) {
 				text = text.replace("-", "/");
-				this.setText(text);
+				jTextField.setText(text);
 			}
 			if (basicType_.equals("STRING")
 					|| basicType_.equals("BYTEA")) {
 				text = text.trim();
-				this.setText(text);
+				jTextField.setText(text);
 			}
 		}
 	}
@@ -4366,10 +4876,10 @@ class XFTextField extends JTextField implements XFEditableField {
 	private void fillZero() {
 		int stringDigitFrom = -1;
 		int numberDigitFrom = 0;
-		if (getText().length() < digits_ && !getText().equals("")) {
-			for( int i = 0; i < getText().length() ; i++) {
+		if (jTextField.getText().length() < digits_ && !jTextField.getText().equals("")) {
+			for( int i = 0; i < jTextField.getText().length() ; i++) {
 				try {
-					Integer.parseInt(getText().substring(i, i+1));
+					Integer.parseInt(jTextField.getText().substring(i, i+1));
 					numberDigitFrom = i;
 					break;
 				} catch(NumberFormatException e) {
@@ -4378,26 +4888,26 @@ class XFTextField extends JTextField implements XFEditableField {
 			}
 			StringBuffer sb = new StringBuffer();
 			if (stringDigitFrom > -1 && numberDigitFrom > stringDigitFrom) {
-				sb.append(getText().substring(stringDigitFrom, numberDigitFrom));
+				sb.append(jTextField.getText().substring(stringDigitFrom, numberDigitFrom));
 			}
-			int zeroLen = digits_ - getText().length();
+			int zeroLen = digits_ - jTextField.getText().length();
 			for( int i = 0; i < zeroLen ; i++) {
 				sb.append("0");
 			}
-			sb.append(getText().substring(numberDigitFrom, getText().length()));
-			setText(sb.toString());
+			sb.append(jTextField.getText().substring(numberDigitFrom, jTextField.getText().length()));
+			jTextField.setText(sb.toString());
 		}
 	}
 
 	class ComponentFocusListener implements FocusListener{
 		public void focusLost(FocusEvent event){
 			if (basicType_.equals("INTEGER")) {
-				if (!getText().equals("*AUTO")) {
-					setText(getFormattedNumber(getText()));
+				if (!jTextField.getText().equals("*AUTO")) {
+					jTextField.setText(getFormattedNumber(jTextField.getText()));
 				}
 			}
 			if (basicType_.equals("FLOAT")) {
-				setText(getFormattedNumber(getText()));
+				jTextField.setText(getFormattedNumber(jTextField.getText()));
 			}
 			if (getInputContext() != null) {
 				getInputContext().setCompositionEnabled(false);
@@ -4407,7 +4917,7 @@ class XFTextField extends JTextField implements XFEditableField {
 			}
 		}
 		public void focusGained(FocusEvent event){
-			selectAll();
+			jTextField.selectAll();
 			Character.Subset[] subsets  = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
 			String lang = Locale.getDefault().getLanguage();
 			if (basicType_.equals("STRING")) {

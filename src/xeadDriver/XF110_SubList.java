@@ -1168,6 +1168,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		HashMap<String, Object> keyValueMap;
 		HashMap<String, Object> columnValueMap;
 		HashMap<String, Object> columnOldValueMap;
+		HashMap<String, String[]> columnValueListMap;
 		HashMap<String, Boolean> columnEditableMap;
 		XFTableOperator operator;
 
@@ -1217,15 +1218,17 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						detailTable.runScript("BU", "AR()", columnValueMap, null); /* Detail Table Script to be run BEFORE UPDATE */
 
 						columnEditableMap = new HashMap<String, Boolean>();
+						columnValueListMap = new HashMap<String, String[]>();
 						for (int i = 0; i < detailColumnList.size(); i++) {
 							columnEditableMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).isEditable());
+							columnValueListMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getValueList());
 							if (detailColumnList.get(i).getBasicType().equals("BYTEA")) {
 								detailColumnList.get(i).setupByteaTypeField(detailColumnList);
 							}
 						}
 						
 						Object[] cell = new Object[1];
-						cell[0] = new XF110_SubListDetailRowNumber(countOfRows + 1, keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, this);
+						cell[0] = new XF110_SubListDetailRowNumber(countOfRows + 1, keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, columnValueListMap, this);
 						tableModelMain.addRow(cell);
 
 						countOfRows++;
@@ -1948,6 +1951,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				} else {
 					cellList.get(i).setColorOfNormal(row);
 				}
+    			if (cellList.get(i) instanceof XF110_SubListCellEditorWithTextField) {
+    				((XF110_SubListCellEditorWithTextField)cellList.get(i)).setValueList(detailColumnList.get(i).getValueList());
+    			}
 				if (!detailColumnList.get(i).getByteaTypeFieldID().equals("")) {
 					for (int j = 0; j < detailColumnList.size(); j++) {
 						if (detailColumnList.get(j).getFieldID().equals(detailColumnList.get(i).getByteaTypeFieldID())) {
@@ -4156,6 +4162,20 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 	public boolean isEditable() {
 		return isEditable;
 	}
+	
+	public void setValueList(String[] valueList) {
+		if (component instanceof XFTextField) {
+			((XFTextField)component).setValueList(valueList);
+		}
+	}
+	
+	public String[] getValueList() {
+		String[] valueList = null;
+		if (component instanceof XFTextField) {
+			valueList = ((XFTextField)component).getValueList();
+		}
+		return valueList;
+	}
 
 	public boolean isComponentFocusable() {
 		return component.isEditable();
@@ -4486,6 +4506,7 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 		int minimumYear = currentYear - 10;
 		int maximumYear = currentYear + 10;
 
+		jComboBoxYear.setEditable(false);
 		jComboBoxYear.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBoxYear.setBounds(new Rectangle(0, 0, 70, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		jComboBoxYear.addItem("");
@@ -4502,6 +4523,7 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 			}
 		});
+		jComboBoxMonth.setEditable(false);
 		jComboBoxMonth.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBoxMonth.setBounds(new Rectangle(70, 0, 50, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		jComboBoxMonth.addItem("");
@@ -4559,7 +4581,7 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 			this.add(jComboBoxYear);
 			this.add(jComboBoxMonth);
 		} else {
-			jLabel.setText(this.getExternalValue().toString());
+			//jLabel.setText(this.getExternalValue().toString());
 			this.add(jLabel);
 		}
 	}
@@ -4602,6 +4624,7 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 						break;
 					}
 				}
+				jLabel.setText(XFUtility.getUserExpressionOfYearMonth(value, dialog_.getSession().getDateFormat()));
 			}
 		}
 	}
@@ -4770,7 +4793,7 @@ class XF110_SubListCellEditorWithFYearBox extends JPanel implements XFTableColum
 		if (isEditable) {
 			this.add(jComboBoxYear, BorderLayout.CENTER);
 		} else {
-			jLabel.setText(this.getExternalValue().toString());
+			//jLabel.setText(this.getExternalValue().toString());
 			this.add(jLabel, BorderLayout.CENTER);
 		}
 	}
@@ -4805,6 +4828,7 @@ class XF110_SubListCellEditorWithFYearBox extends JPanel implements XFTableColum
 				}
 			}
 		}
+		jLabel.setText(this.getExternalValue().toString());
 	}
 
 	public void setBackground(Color color) {
@@ -5430,15 +5454,17 @@ class XF110_SubListDetailRowNumber extends Object {
 	private HashMap<String, Object> columnValueMapWithDSName_;
 	private HashMap<String, Object> columnOldValueMapWithDSName_;
 	private HashMap<String, Boolean> columnEditableMapWithDSName_;
+	private HashMap<String, String[]> columnValueListMapWithDSName_;
 	private ArrayList<Integer> errorCellIndexList = new ArrayList<Integer>();
 	private XF110_SubList dialog_ = null;
 
-	public XF110_SubListDetailRowNumber(int num, HashMap<String, Object> keyMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, HashMap<String, Boolean> columnEditableMap, XF110_SubList dialog) {
+	public XF110_SubListDetailRowNumber(int num, HashMap<String, Object> keyMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, HashMap<String, Boolean> columnEditableMap, HashMap<String, String[]> columnValueListMap, XF110_SubList dialog) {
 		number_ = num;
 		keyValueMap_ = keyMap;
 		columnValueMapWithDSName_ = columnValueMap;
 		columnOldValueMapWithDSName_ = columnOldValueMap;
 		columnEditableMapWithDSName_ = columnEditableMap;
+		columnValueListMapWithDSName_ = columnValueListMap;
 		dialog_ = dialog;
 	}
 
@@ -5478,11 +5504,28 @@ class XF110_SubListDetailRowNumber extends Object {
 		return oldValueMapWithFieldID;
 	}
 	
+	public HashMap<String, String[]> getColumnValueListMap() {
+		return columnValueListMapWithDSName_;
+	}
+	
+	public HashMap<String, String[]> getColumnValueListMapWithFieldID() {
+		HashMap<String, String[]> valueListMapWithFieldID = new HashMap<String, String[]>();
+		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+			if (dialog_.getDetailColumnList().get(i).getTableAlias().equals(dialog_.getDetailTable().getTableID())) {
+				if (columnValueListMapWithDSName_.containsKey(dialog_.getDetailColumnList().get(i).getDataSourceName())) {
+					valueListMapWithFieldID.put(dialog_.getDetailColumnList().get(i).getFieldID(), columnValueListMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
+				}
+			}
+		}
+		return valueListMapWithFieldID;
+	}
+	
 	public void setValuesToDetailColumns() {
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			dialog_.getDetailColumnList().get(i).setValue(columnValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 			dialog_.getDetailColumnList().get(i).setOldValue(columnOldValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 			dialog_.getDetailColumnList().get(i).setEditable(columnEditableMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
+			dialog_.getDetailColumnList().get(i).setValueList(columnValueListMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 		}
 	}
 
@@ -5515,6 +5558,7 @@ class XF110_SubListDetailRowNumber extends Object {
 					countOfErrors++;
 				}
 			}
+			columnValueListMapWithDSName_.put(dialog_.getDetailColumnList().get(i).getDataSourceName(), dialog_.getDetailColumnList().get(i).getValueList());
 		}
 
 		/////////////////////////
@@ -5620,6 +5664,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 	private ArrayList<String> additionalHiddenFieldList = new ArrayList<String>();
 	private Object value_ = null;
 	private Object oldValue_ = null;
+	private String[] valueList_ = null;
 	private Color foreground = Color.black;
 	private XFTableColumnEditor editor = null;
 	private boolean isError = false;
@@ -6311,6 +6356,14 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 				}
 			}
 		}
+	}
+	
+	public void setValueList(String[] valueList) {
+		valueList_ = valueList;
+	}
+	
+	public String[] getValueList() {
+		return valueList_;
 	}
 
 	public void setValue(Object value){

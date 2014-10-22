@@ -69,4 +69,9 @@ public class XFColumnScriptable {
 	}
 	public void setError(String message) {
 	}
+	public void setValueList(String[] valueList) {
+	}
+	public String[] getValueList() {
+		return new String[0];
+	}
 }

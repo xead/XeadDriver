@@ -43,8 +43,14 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M4";
-	public static final String VERSION  = "1.2.4";
+	public static final String FULL_VERSION  = "V1.R2.M5";
+	public static final String VERSION  = "1.2.5";
+	//1.2.5
+	//・テーブルスクリプト中のデータソースオブジェクトにvalueListのプロパティを追加した
+	//・XF310の行追加ルーチンにBYTEA型向けの設定ロジックが抜けていた問題を修正した
+	//・XF310の行高の設定ミスを修正した
+	//・XF110の更新リストの年月項目、および年項目に関する設定ミスを修正した
+	//
 	//1.2.4
 	//・起動時にJavaのバージョンをチェックするようにした
 	//・XF300の明細タブを無効化するためのパラメータを設けた

@@ -1317,6 +1317,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 	void selectDetailRecordsAndSetupTableRows() {
 		HashMap<String, Object> keyValueMap, columnValueMap, columnOldValueMap;
+		HashMap<String, String[]> columnValueListMap;
 		HashMap<String, Boolean> columnEditableMap;
 		ArrayList<Object> orderByValueList;
 		String workStr;
@@ -1372,8 +1373,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				fetchDetailReferRecords("AR,BU", false, "", columnValueMap, columnOldValueMap);
 
 				columnEditableMap = new HashMap<String, Boolean>();
+				columnValueListMap = new HashMap<String, String[]>();
 				for (int i = 0; i < detailColumnList.size(); i++) {
 					columnEditableMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).isEditable());
+					columnValueListMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getValueList());
 					if (detailColumnList.get(i).getBasicType().equals("BYTEA")) {
 						detailColumnList.get(i).setupByteaTypeField(detailColumnList);
 					}
@@ -1381,7 +1384,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 				if (detailTable.hasOrderByAsItsOwnFields()) {
 					Object[] cell = new Object[1];
-					cell[0] = new XF310_DetailRowNumber(countOfRows + 1, "CURRENT", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, this);
+					cell[0] = new XF310_DetailRowNumber(countOfRows + 1, "CURRENT", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, columnValueListMap, this);
 					tableModelMain.addRow(cell);
 				} else {
 					orderByValueList = new ArrayList<Object>();
@@ -1395,7 +1398,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							}
 						}
 					}
-					tableRowList.add(new WorkingRow(keyValueMap, columnValueMap, columnOldValueMap, orderByValueList, columnEditableMap));
+					tableRowList.add(new WorkingRow(keyValueMap, columnValueMap, columnOldValueMap, orderByValueList, columnEditableMap, columnValueListMap));
 				}
 
 				countOfRows++;
@@ -1413,7 +1416,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				Arrays.sort(workingRowArray, new WorkingRowComparator());
 				for (int i = 0; i < workingRowArray.length; i++) {
 					Object[] cell = new Object[1];
-					cell[0] = new XF310_DetailRowNumber(i + 1, "CURRENT", workingRowArray[i].getKeyValueMap(), workingRowArray[i].getColumnValueMap(), workingRowArray[i].getColumnOldValueMap(), workingRowArray[i].getColumnEditableMap(), this);
+					cell[0] = new XF310_DetailRowNumber(i + 1, "CURRENT", workingRowArray[i].getKeyValueMap(), workingRowArray[i].getColumnValueMap(), workingRowArray[i].getColumnOldValueMap(), workingRowArray[i].getColumnEditableMap(), workingRowArray[i].getColumnValueListMap(), this);
 					tableModelMain.addRow(cell);
 				}
 			}
@@ -1934,9 +1937,13 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		// Setup columnEditableMap(DataSourceName, boolean) //
 		//////////////////////////////////////////////////////
 		HashMap<String, Boolean> columnEditableMap = new HashMap<String, Boolean>();
+		HashMap<String, String[]> columnValueListMap = new HashMap<String, String[]>();
 		for (int i = 0; i < detailColumnList.size(); i++) {
 			columnEditableMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).isEditable());
-
+			columnValueListMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getValueList());
+			if (detailColumnList.get(i).getBasicType().equals("BYTEA")) {
+				detailColumnList.get(i).setupByteaTypeField(detailColumnList);
+			}
 			columnValueMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getInternalValue());
 			if (detailColumnList.get(i).isKey()) {
 				keyValueMap.put(detailColumnList.get(i).getFieldID(), detailColumnList.get(i).getInternalValue());
@@ -1965,7 +1972,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			countOfAdded = 1;
 			Object[] cell = new Object[1];
 			//cell[0] = new XF310_DetailRowNumber(tableModelMain.getRowCount() + 1, "NEW", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, this);
-			XF310_DetailRowNumber blankRow = new XF310_DetailRowNumber(tableModelMain.getRowCount() + 1, "NEW", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, this);
+			XF310_DetailRowNumber blankRow = new XF310_DetailRowNumber(tableModelMain.getRowCount() + 1, "NEW", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, columnValueListMap, this);
 			blankRow.setJustAdded(false);
 			cell[0] = blankRow;
 			tableModelMain.addRow(cell);
@@ -2221,7 +2228,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					header.setOpaque(true);
 
 					width = detailColumnList.get(i).getWidth();
-					height = XFUtility.ROW_UNIT_HEIGHT * detailColumnList.get(i).getRows();
+					height = XFUtility.ROW_UNIT_HEIGHT_EDITABLE * detailColumnList.get(i).getRows();
 					if (i > 0) {
 						fromX = headerList.get(i-1).getBounds().x + headerList.get(i-1).getBounds().width;
 						fromY = headerList.get(i-1).getBounds().y + headerList.get(i-1).getBounds().height;
@@ -2464,6 +2471,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					cellList.get(i).setColorOfNormal(row);
 				}
+    			if (cellList.get(i) instanceof XF310_CellEditorWithTextField) {
+    				((XF310_CellEditorWithTextField)cellList.get(i)).setValueList(detailColumnList.get(i).getValueList());
+    			}
 				if (!detailColumnList.get(i).getByteaTypeFieldID().equals("")) {
 					for (int j = 0; j < detailColumnList.size(); j++) {
 						if (detailColumnList.get(j).getFieldID().equals(detailColumnList.get(i).getByteaTypeFieldID())) {
@@ -2639,13 +2649,15 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		private HashMap<String, Object> columnValueMap_ = new HashMap<String, Object>();
 		private HashMap<String, Object> columnOldValueMap_ = new HashMap<String, Object>();
 		private HashMap<String, Boolean> columnEditableMap_ = new HashMap<String, Boolean>();
+		private HashMap<String, String[]> columnValueListMap_ = new HashMap<String, String[]>();
 		private ArrayList<Object> orderByValueList_ = new ArrayList<Object>();
-		public WorkingRow(HashMap<String, Object> keyValueMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, ArrayList<Object> orderByValueList, HashMap<String, Boolean> columnEditableMap) {
+		public WorkingRow(HashMap<String, Object> keyValueMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, ArrayList<Object> orderByValueList, HashMap<String, Boolean> columnEditableMap, HashMap<String, String[]> columnValueListMap) {
 			keyValueMap_ = keyValueMap;
 			columnValueMap_ = columnValueMap;
 			columnOldValueMap_ = columnOldValueMap;
 			orderByValueList_ = orderByValueList;
 			columnEditableMap_ = columnEditableMap;
+			columnValueListMap_ = columnValueListMap;
 		}
 		public HashMap<String, Object> getKeyValueMap() {
 			return keyValueMap_;
@@ -2658,6 +2670,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		public HashMap<String, Boolean> getColumnEditableMap() {
 			return columnEditableMap_;
+		}
+		public HashMap<String, String[]> getColumnValueListMap() {
+			return columnValueListMap_;
 		}
 		public ArrayList<Object> getOrderByValueList() {
 			return orderByValueList_;
@@ -4369,6 +4384,20 @@ class XF310_HeaderField extends XFFieldScriptable {
 			}
 		}
 	}
+	
+	public void setValueList(String[] valueList) {
+		if (component instanceof XFTextField) {
+			((XFTextField)component).setValueList(valueList);
+		}
+	}
+	
+	public String[] getValueList() {
+		String[] valueList = null;
+		if (component instanceof XFTextField) {
+			valueList = ((XFTextField)component).getValueList();
+		}
+		return valueList;
+	}
 
 	public boolean isHorizontal(){
 		return isHorizontal;
@@ -4682,9 +4711,9 @@ class XF310_CellEditorWithTextField extends XFTextField implements XFTableColumn
 		dialog_ = dialog;
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.setOpaque(true);
-		if (detailColumn.getDataTypeOptions().contains("KANJI")) {
+		//if (detailColumn.getDataTypeOptions().contains("KANJI")) {
 			this.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-		}
+		//}
 		if (detailColumn.getBasicType().equals("INTEGER") || detailColumn.getBasicType().equals("FLOAT")) {
 			this.setHorizontalAlignment(SwingConstants.RIGHT);
 		} else {
@@ -4982,7 +5011,7 @@ class XF310_CellEditorWithYMonthBox extends JPanel implements XFTableColumnEdito
 
 		jComboBoxYear.setEditable(false);
 		jComboBoxYear.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-		jComboBoxYear.setBounds(new Rectangle(0, 0, 70, XFUtility.ROW_UNIT_HEIGHT));
+		jComboBoxYear.setBounds(new Rectangle(0, 0, 70, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		jComboBoxYear.addItem("");
 		for (int i = minimumYear; i <= maximumYear; i++) {
 			jComboBoxYear.addItem(String.valueOf(i));
@@ -4999,7 +5028,7 @@ class XF310_CellEditorWithYMonthBox extends JPanel implements XFTableColumnEdito
 		});
 		jComboBoxMonth.setEditable(false);
 		jComboBoxMonth.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-		jComboBoxMonth.setBounds(new Rectangle(70, 0, 50, XFUtility.ROW_UNIT_HEIGHT));
+		jComboBoxMonth.setBounds(new Rectangle(70, 0, 50, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		jComboBoxMonth.addItem("");
 		jComboBoxMonth.addItem("01");
 		jComboBoxMonth.addItem("02");
@@ -5024,9 +5053,9 @@ class XF310_CellEditorWithYMonthBox extends JPanel implements XFTableColumnEdito
 		});
 		jLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jLabel.setBackground(SystemColor.control);
-		jLabel.setBounds(new Rectangle(0, 0, 120, XFUtility.ROW_UNIT_HEIGHT));
+		jLabel.setBounds(new Rectangle(0, 0, 120, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 
-		this.setSize(new Dimension(85, XFUtility.ROW_UNIT_HEIGHT));
+		this.setSize(new Dimension(85, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.addFocusListener(new java.awt.event.FocusAdapter() {
 			public void focusGained(FocusEvent e) {
@@ -5910,11 +5939,12 @@ class XF310_DetailRowNumber extends Object {
 	private HashMap<String, Object> columnValueMapWithDSName_;
 	private HashMap<String, Object> columnOldValueMapWithDSName_;
 	private HashMap<String, Boolean> columnEditableMapWithDSName_;
+	private HashMap<String, String[]> columnValueListMapWithDSName_;
 	private ArrayList<Integer> errorCellIndexList = new ArrayList<Integer>();
 	private boolean isJustAdded = false;
 	private XF310 dialog_ = null;
 
-	public XF310_DetailRowNumber(int num, String recordType, HashMap<String, Object> keyValueMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, HashMap<String, Boolean> columnEditableMap, XF310 dialog) {
+	public XF310_DetailRowNumber(int num, String recordType, HashMap<String, Object> keyValueMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, HashMap<String, Boolean> columnEditableMap, HashMap<String, String[]> columnValueListMap, XF310 dialog) {
 		number_ = num;
 		keyValueMap_ = keyValueMap;
 		recordType_ = recordType;
@@ -5924,6 +5954,7 @@ class XF310_DetailRowNumber extends Object {
 		columnValueMapWithDSName_ = columnValueMap;
 		columnOldValueMapWithDSName_ = columnOldValueMap;
 		columnEditableMapWithDSName_ = columnEditableMap;
+		columnValueListMapWithDSName_ = columnValueListMap;
 		dialog_ = dialog;
 	}
 
@@ -5967,6 +5998,22 @@ class XF310_DetailRowNumber extends Object {
 		return oldValueMapWithFieldID;
 	}
 	
+	public HashMap<String, String[]> getColumnValueListMap() {
+		return columnValueListMapWithDSName_;
+	}
+	
+	public HashMap<String, String[]> getColumnValueListMapWithFieldID() {
+		HashMap<String, String[]> valueListMapWithFieldID = new HashMap<String, String[]>();
+		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+			if (dialog_.getDetailColumnList().get(i).getTableAlias().equals(dialog_.getDetailTable().getTableID())) {
+				if (columnValueListMapWithDSName_.containsKey(dialog_.getDetailColumnList().get(i).getDataSourceName())) {
+					valueListMapWithFieldID.put(dialog_.getDetailColumnList().get(i).getFieldID(), columnValueListMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
+				}
+			}
+		}
+		return valueListMapWithFieldID;
+	}
+	
 	public void setRecordType(String type) {
 		recordType_ = type;
 	}
@@ -5976,6 +6023,7 @@ class XF310_DetailRowNumber extends Object {
 			dialog_.getDetailColumnList().get(i).setValue(columnValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 			dialog_.getDetailColumnList().get(i).setOldValue(columnOldValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 			dialog_.getDetailColumnList().get(i).setEditable(columnEditableMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
+			dialog_.getDetailColumnList().get(i).setValueList(columnValueListMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 		}
 	}
 	
@@ -6019,6 +6067,7 @@ class XF310_DetailRowNumber extends Object {
 					countOfErrors++;
 				}
 			}
+			columnValueListMapWithDSName_.put(dialog_.getDetailColumnList().get(i).getDataSourceName(), dialog_.getDetailColumnList().get(i).getValueList());
 		}
 
 		////////////////////////
@@ -6163,6 +6212,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 	private ArrayList<String> additionalHiddenFieldList = new ArrayList<String>();
 	private Object value_ = null;
 	private Object oldValue_ = null;
+	private String[] valueList_ = null;
 	private Color foreground = Color.black;
 	private XFTableColumnEditor editor = null;
 	private boolean isError = false;
@@ -6733,7 +6783,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 							}
 							if (valueType.equals("IMAGE")) {
 								String fileName = dialog_.getSession().getImageFileFolder() + value_.toString().trim();
-								int iconHeight = fieldRows * XFUtility.ROW_UNIT_HEIGHT;
+								int iconHeight = fieldRows * XFUtility.ROW_UNIT_HEIGHT_EDITABLE;
 								value = XFUtility.createSmallIcon(fileName, fieldWidth, iconHeight);
 							}
 							if (valueType.equals("FLAG")) {
@@ -6895,6 +6945,14 @@ class XF310_DetailColumn extends XFColumnScriptable {
 				}
 			}
 		}
+	}
+	
+	public void setValueList(String[] valueList) {
+		valueList_ = valueList;
+	}
+	
+	public String[] getValueList() {
+		return valueList_;
 	}
 
 	public void setValue(Object value){

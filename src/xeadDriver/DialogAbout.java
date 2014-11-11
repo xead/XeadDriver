@@ -43,8 +43,12 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M5";
-	public static final String VERSION  = "1.2.5";
+	public static final String FULL_VERSION  = "V1.R2.M6";
+	public static final String VERSION  = "1.2.6";
+	//1.2.6
+	//・XF200,XF310のフィールドにプロンプタが設定されている場合、交換フィールドを非表示フィールドとして組み込んだ
+	//・見出しテーブルと明細テーブルが同一である場合、XF300の明細機能起動時のパラメータを明細行固有のキーマップのみにした
+	//
 	//1.2.5
 	//・テーブルスクリプト中のデータソースオブジェクトにvalueListのプロパティを追加した
 	//・XF310の行追加ルーチンにBYTEA型向けの設定ロジックが抜けていた問題を修正した

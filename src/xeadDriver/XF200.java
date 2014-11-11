@@ -635,9 +635,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		jPanelFields.setPreferredSize(new Dimension(biggestWidth + 30, biggestHeightOfMainPanel + 10));
 
-		////////////////////////////////////////////////
-		// Add prompt-field-to-get-to as HIDDEN field //
-		////////////////////////////////////////////////
+		///////////////////////////////////////////////
+		// Add prompt-exchange-field as HIDDEN field //
+		///////////////////////////////////////////////
 		for (int i = 0; i < fieldList.size(); i++) {
 			for (int j = 0; j < fieldList.get(i).getAdditionalHiddenFieldList().size(); j++) {
 				workTokenizer = new StringTokenizer(fieldList.get(i).getAdditionalHiddenFieldList().get(j), "." );
@@ -2500,6 +2500,13 @@ class XF200_Field extends XFFieldScriptable {
 				}
 				component = new XF200_PromptCallField(functionFieldElement_, wrkStr, isEditableInEditMode, dialog_);
 				component.setLocation(5, 0);
+				wrkStr = XFUtility.getOptionValueWithKeyword(wrkStr, "PROMPT_CALL_TO_PUT");
+				if (!wrkStr.equals("")) {
+					workTokenizer = new StringTokenizer(wrkStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						additionalHiddenFieldList.add(workTokenizer.nextToken());
+					}
+				}
 				wrkStr = XFUtility.getOptionValueWithKeyword(wrkStr, "PROMPT_CALL_TO_GET_TO");
 				if (!wrkStr.equals("")) {
 					workTokenizer = new StringTokenizer(wrkStr, ";" );

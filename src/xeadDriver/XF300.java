@@ -3207,7 +3207,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						returnMap_.putAll(keyMap);
 						closeFunction();
 					} else {
-						keyMap.putAll(parmMap_);
+						if (!detailTableArray[jTabbedPane.getSelectedIndex()].getTableID().equals(headerTable_.getTableID())) {
+							keyMap.putAll(parmMap_);
+						}
 						try {
 							HashMap<String, Object> returnMap = session_.executeFunction(detailFunctionIDArray[jTabbedPane.getSelectedIndex()], keyMap);
 							if (returnMap.get("RETURN_CODE").equals("10")

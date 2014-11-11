@@ -619,6 +619,21 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				dimOfPriviousField = new Dimension(dim.width, dim.height);
 			}
 		}
+
+		///////////////////////////////////////////////
+		// Add prompt-exchange-field as HIDDEN field //
+		///////////////////////////////////////////////
+		for (int i = 0; i < headerFieldList.size(); i++) {
+			for (int j = 0; j < headerFieldList.get(i).getAdditionalHiddenFieldList().size(); j++) {
+				workTokenizer = new StringTokenizer(headerFieldList.get(i).getAdditionalHiddenFieldList().get(j), "." );
+				workAlias = workTokenizer.nextToken();
+				workTableID = getTableIDOfTableAlias(workAlias);
+				workFieldID = workTokenizer.nextToken();
+				if (!containsHeaderField(workTableID, workAlias, workFieldID)) {
+					headerFieldList.add(new XF310_HeaderField(workTableID, workAlias, workFieldID, this));
+				}
+			}
+		}
 		
 		////////////////////////////////////////////
 		// Add header table keys as HIDDEN fields //
@@ -3922,6 +3937,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 	private boolean isError = false;
 	private String errorMessage = "";
 	private int positionMargin = 0;
+	private ArrayList<String> additionalHiddenFieldList = new ArrayList<String>();
 	private Color foreground = Color.black;
 	private XF310 dialog_;
 
@@ -4044,6 +4060,20 @@ class XF310_HeaderField extends XFFieldScriptable {
 				isEditable = true;
 				component = new XF310_HeaderPromptCall(functionFieldElement_, wrkStr, dialog_);
 				component.setLocation(5, 0);
+				wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");
+				if (!wrkStr.equals("")) {
+					workTokenizer = new StringTokenizer(wrkStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						additionalHiddenFieldList.add(workTokenizer.nextToken());
+					}
+				}
+				wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_GET_TO");
+				if (!wrkStr.equals("")) {
+					workTokenizer = new StringTokenizer(wrkStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						additionalHiddenFieldList.add(workTokenizer.nextToken());
+					}
+				}
 			} else {
 				if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN").equals("") || !XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES").equals("")) {
 					if (this.isFieldOnPrimaryTable) {
@@ -4299,6 +4329,10 @@ class XF310_HeaderField extends XFFieldScriptable {
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
 		}
+	}
+	
+	public ArrayList<String> getAdditionalHiddenFieldList() {
+		return additionalHiddenFieldList;
 	}
 
 	public XFEditableField getComponent() {
@@ -6352,6 +6386,13 @@ class XF310_DetailColumn extends XFColumnScriptable {
 						fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
 					}
 					editor = new XF310_CellEditorWithPromptCall(functionColumnElement_, wrkStr, dialog_);
+					wrkStr = XFUtility.getOptionValueWithKeyword(wrkStr, "PROMPT_CALL_TO_PUT");
+					if (!wrkStr.equals("")) {
+						workTokenizer = new StringTokenizer(wrkStr, ";" );
+						while (workTokenizer.hasMoreTokens()) {
+							additionalHiddenFieldList.add(workTokenizer.nextToken());
+						}
+					}
 					wrkStr = XFUtility.getOptionValueWithKeyword(wrkStr, "PROMPT_CALL_TO_GET_TO");
 					if (!wrkStr.equals("")) {
 						workTokenizer = new StringTokenizer(wrkStr, ";" );

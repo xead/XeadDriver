@@ -490,20 +490,20 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			fetchHeaderRecord(false);
 			if (!isToBeCanceled) {
 
-				////////////////////////////
-				// Set Detail Tab Enabled //
-				////////////////////////////
-				for (int i = 0; i < detailTabSortingList.getSize(); i++) {
-					jTabbedPane.setEnabledAt(i, true);
-				}
-				if (parmMap_.get("DISABLED_TAB_LIST") != null) {
-					String wrkStr = parmMap_.get("DISABLED_TAB_LIST").toString();
-					StringTokenizer tokenizer = new StringTokenizer(wrkStr, ",");
-					while (tokenizer.hasMoreTokens()) {
-						wrkStr = tokenizer.nextToken();
-						jTabbedPane.setEnabledAt(Integer.parseInt(wrkStr), false);
-					}
-				}
+//				////////////////////////////
+//				// Set Detail Tab Enabled //
+//				////////////////////////////
+//				for (int i = 0; i < detailTabSortingList.getSize(); i++) {
+//					jTabbedPane.setEnabledAt(i, true);
+//				}
+//				if (parmMap_.get("DISABLED_TAB_LIST") != null) {
+//					String wrkStr = parmMap_.get("DISABLED_TAB_LIST").toString();
+//					StringTokenizer tokenizer = new StringTokenizer(wrkStr, ",");
+//					while (tokenizer.hasMoreTokens()) {
+//						wrkStr = tokenizer.nextToken();
+//						jTabbedPane.setEnabledAt(Integer.parseInt(wrkStr), false);
+//					}
+//				}
 
 				/////////////////////////////////////////////////
 				// Select Detail Tab Records and Setup JTables //
@@ -1224,6 +1224,21 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < headerFieldList.size(); i++) {
 				if (headerFieldList.get(i).getBasicType().equals("BYTEA")) {
 					headerFieldList.get(i).setupByteaTypeField(headerFieldList);
+				}
+			}
+
+			////////////////////////////
+			// Set Detail Tab Enabled //
+			////////////////////////////
+			for (int i = 0; i < detailTabSortingList.getSize(); i++) {
+				jTabbedPane.setEnabledAt(i, true);
+			}
+			if (parmMap_.get("DISABLED_TAB_LIST") != null) {
+				String wrkStr = parmMap_.get("DISABLED_TAB_LIST").toString();
+				StringTokenizer tokenizer = new StringTokenizer(wrkStr, ",");
+				while (tokenizer.hasMoreTokens()) {
+					wrkStr = tokenizer.nextToken();
+					jTabbedPane.setEnabledAt(Integer.parseInt(wrkStr), false);
 				}
 			}
 
@@ -5159,6 +5174,8 @@ class XF300_Filter extends JPanel {
 
 		if (fieldOptionList.contains("NON_EDITABLE")) {
 			this.setEditable(false);
+		} else {
+			this.setEditable(true);
 		}
 		if (fieldOptionList.contains("HIDDEN")) {
 			isHidden = true;
@@ -6944,7 +6961,11 @@ class XF300_StructureTable extends Object {
 	}
 	
 	public String getName() {
-		return tableElement_.getAttribute("Name");
+		if (functionElement_.getAttribute("StructureViewTitle").equals("")) {
+			return tableElement_.getAttribute("Name");
+		} else {
+			return functionElement_.getAttribute("StructureViewTitle");
+		}
 	}
 	
 	public String getSelectSQL(HashMap<String, Object> parmMap){

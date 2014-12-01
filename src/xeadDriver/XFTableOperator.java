@@ -628,6 +628,7 @@ public class XFTableOperator {
 					}
 					httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
 					//
+					//JOptionPane.showMessageDialog(null, this.getSqlText()+":"+isAutoCommit_);
 					try {
 						httpClient = new DefaultHttpClient();
 						HttpResponse response = httpClient.execute(httpPost);

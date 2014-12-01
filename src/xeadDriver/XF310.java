@@ -430,14 +430,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 
-			///////////////////////////////
-			// Setup Add-Row-List Dialog //
-			///////////////////////////////
-			if (functionElement_.getAttribute("AddRowListTable").equals("")) {
-				addRowListDialog = null;
-			} else {
-				addRowListDialog = new XF310_AddRowList(this);
-			}
+//			///////////////////////////////
+//			// Setup Add-Row-List Dialog //
+//			///////////////////////////////
+//			if (functionElement_.getAttribute("AddRowListTable").equals("")) {
+//				addRowListDialog = null;
+//			} else {
+//				addRowListDialog = new XF310_AddRowList(this);
+//			}
 
 			initialMsg = functionElement_.getAttribute("InitialMsg");
 			jPanelBottom.remove(jProgressBar);
@@ -451,6 +451,15 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			// Setup Function Keys and Buttons //
 			/////////////////////////////////////
 			setupFunctionKeysAndButtons();
+
+			///////////////////////////////
+			// Setup Add-Row-List Dialog //
+			///////////////////////////////
+			if (functionElement_.getAttribute("AddRowListTable").equals("")) {
+				addRowListDialog = null;
+			} else {
+				addRowListDialog = new XF310_AddRowList(this);
+			}
 
 			/////////////////////////
 			// Fetch Header Record //
@@ -521,6 +530,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		if (!this.isToBeCanceled) {
 			if (addRowListDialog == null
 					|| (addRowListDialog != null && !addRowListDialog.isInvalid())) {
+				if (jTableMain.getRowCount() == 0) {
+					addRow();
+				}
 				this.setVisible(true);
 			}
 		}
@@ -1787,72 +1799,74 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 	
 	void addRow() {
-		try {
-			threadToSetupReferChecker.join();
+		if (!addRowListTitle.equals("")) {
+			try {
+				threadToSetupReferChecker.join();
 
-			////////////////////////////////
-			//Get latest detail row number//
-			////////////////////////////////
-			if (!detailTable.getDetailRowNoID().equals("")) {
-				detailRowNoLastValue = 0;
-				for (int i = 0; i < jTableMain.getRowCount(); i++) {
-					XF310_DetailRowNumber tableRowNumber = (XF310_DetailRowNumber)tableModelMain.getValueAt(i, 0);
-					long rowNoValue = (Long)tableRowNumber.getKeyValueMap().get(detailTable.getDetailRowNoID());
-					if (rowNoValue > detailRowNoLastValue) {
-						detailRowNoLastValue = rowNoValue;
-					}
-				}
-			}
-
-			if (addRowListDialog == null) {
-				int countOfAdded = setupNewRowAndAddToJTable(null);
-				if (countOfAdded > 0) {
-					checkErrorsToUpdate(true, false);
-					messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
-					messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-				} else {
-					messageList.add(XFUtility.RESOURCE.getString("FunctionMessage60"));
-				}
-			} else {
-				ArrayList<XF310_AddRowListNumber> addRowListNumberList = addRowListDialog.getDefaultRow();
-				if (addRowListNumberList == null) {
-					int result = addRowListDialog.requestSelection();
-					if (result == 0) {
-						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage33"));
-					}
-					if (result == 1) {
-						addRowListNumberList = addRowListDialog.getSelectionList();
-					}
-					if (result == 2) {
-						setupNewRowAndAddToJTable(null);
-						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-					}
-					if (result == 3) {
-						closeFunction(); // closing because of internal error //
+				////////////////////////////////
+				//Get latest detail row number//
+				////////////////////////////////
+				if (!detailTable.getDetailRowNoID().equals("")) {
+					detailRowNoLastValue = 0;
+					for (int i = 0; i < jTableMain.getRowCount(); i++) {
+						XF310_DetailRowNumber tableRowNumber = (XF310_DetailRowNumber)tableModelMain.getValueAt(i, 0);
+						long rowNoValue = (Long)tableRowNumber.getKeyValueMap().get(detailTable.getDetailRowNoID());
+						if (rowNoValue > detailRowNoLastValue) {
+							detailRowNoLastValue = rowNoValue;
+						}
 					}
 				}
 
-				if (addRowListNumberList != null) {
-					int countOfAdded = 0;
-					for (int i = 0; i < addRowListNumberList.size(); i++) {
-						countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i));
-					}
-					int countOfNotAdded = addRowListNumberList.size() - countOfAdded;
-					if (countOfNotAdded > 0) {
-						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage34") + countOfNotAdded + XFUtility.RESOURCE.getString("FunctionMessage35"));
-					}
-					checkErrorsToUpdate(true, false);
-					messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
+				if (addRowListDialog == null) {
+					int countOfAdded = setupNewRowAndAddToJTable(null);
 					if (countOfAdded > 0) {
+						checkErrorsToUpdate(true, false);
+						messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
 						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+					} else {
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage60"));
+					}
+				} else {
+					ArrayList<XF310_AddRowListNumber> addRowListNumberList = addRowListDialog.getDefaultRow();
+					if (addRowListNumberList == null) {
+						int result = addRowListDialog.requestSelection();
+						if (result == 0) {
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage33"));
+						}
+						if (result == 1) {
+							addRowListNumberList = addRowListDialog.getSelectionList();
+						}
+						if (result == 2) {
+							setupNewRowAndAddToJTable(null);
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+						}
+						if (result == 3) {
+							closeFunction(); // closing because of internal error //
+						}
+					}
+
+					if (addRowListNumberList != null) {
+						int countOfAdded = 0;
+						for (int i = 0; i < addRowListNumberList.size(); i++) {
+							countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i));
+						}
+						int countOfNotAdded = addRowListNumberList.size() - countOfAdded;
+						if (countOfNotAdded > 0) {
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage34") + countOfNotAdded + XFUtility.RESOURCE.getString("FunctionMessage35"));
+						}
+						checkErrorsToUpdate(true, false);
+						messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
+						if (countOfAdded > 0) {
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+						}
 					}
 				}
-			}
 
-		} catch (Exception e) {
-			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError5") + "\n" + e.getMessage());
-			e.printStackTrace(exceptionStream);
-			setErrorAndCloseFunction();
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError5") + "\n" + e.getMessage());
+				e.printStackTrace(exceptionStream);
+				setErrorAndCloseFunction();
+			}
 		}
 	}
 	
@@ -4745,9 +4759,6 @@ class XF310_CellEditorWithTextField extends XFTextField implements XFTableColumn
 		dialog_ = dialog;
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.setOpaque(true);
-		//if (detailColumn.getDataTypeOptions().contains("KANJI")) {
-			this.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-		//}
 		if (detailColumn.getBasicType().equals("INTEGER") || detailColumn.getBasicType().equals("FLOAT")) {
 			this.setHorizontalAlignment(SwingConstants.RIGHT);
 		} else {
@@ -4934,6 +4945,7 @@ class XF310_CellEditorWithLongTextEditor extends JPanel implements XFTableColumn
 	private JButton jButton = new JButton();
 	private String fieldCaption_ = "";
 	private ArrayList<String> dataTypeOptionList_ = null;
+	private String textData = "";
     private XF310 dialog_;
 
 	public XF310_CellEditorWithLongTextEditor(String fieldCaption, ArrayList<String> dataTypeOptionList, XF310 dialog){
@@ -4953,8 +4965,8 @@ class XF310_CellEditorWithLongTextEditor extends JPanel implements XFTableColumn
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String edittedText = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, jTextField.getText());
-				jTextField.setText(edittedText);
+				textData = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, textData);
+				jTextField.setText(textData);
 			}
 		});
 		jButton.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -4995,18 +5007,20 @@ class XF310_CellEditorWithLongTextEditor extends JPanel implements XFTableColumn
 	}
 
 	public Object getInternalValue() {
-		return jTextField.getText();
+		return textData;
 	}
 
 	public Object getExternalValue() {
-		return jTextField.getText();
+		return textData;
 	}
 	
 	public void setValue(Object obj) {
 		if (obj == null) {
+			textData = "";
 			jTextField.setText("");
 		} else {
-			jTextField.setText(obj.toString());
+			textData = obj.toString();
+			jTextField.setText(textData);
 		}
 	}
 	

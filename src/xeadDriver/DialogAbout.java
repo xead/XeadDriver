@@ -43,8 +43,16 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M6";
-	public static final String VERSION  = "1.2.6";
+	public static final String FULL_VERSION  = "V1.R2.M7";
+	public static final String VERSION  = "1.2.7";
+	//1.2.7
+	//・ツリービューでの見出しレコード切替に対応するために、XF300のタブ無効化ルーチンの位置を変更した
+	//・XF300の構成ツリー用のタイトルに対応した
+	//・XF310の開始時に明細行がゼロ件であれば、追加行操作を暗黙的に起動するようにした
+	//・漢字入力フィールドの変換モードを示す下線が見えなくなっていた問題を修正した
+	//・セッションのテーブル操作オブジェクトを使うと、セッション終了時にコミットされないトランザクションが残る問題を修正した
+	//・XF100の「指定機能の起動」でパラメータをNULLではなく、受け取ったパラメータをそのまま渡すようにした
+	//
 	//1.2.6
 	//・XF200,XF310のフィールドにプロンプタが設定されている場合、交換フィールドを非表示フィールドとして組み込んだ
 	//・見出しテーブルと明細テーブルが同一である場合、XF300の明細機能起動時のパラメータを明細行固有のキーマップのみにした

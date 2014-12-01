@@ -127,7 +127,7 @@ public class XFUtility {
 	public static final int FIELD_VERTICAL_MARGIN = 5;
 	public static final int DEFAULT_LABEL_WIDTH = 150;
 	public static final int ROW_UNIT_HEIGHT = 25;
-	public static final int ROW_UNIT_HEIGHT_EDITABLE = 27;
+	public static final int ROW_UNIT_HEIGHT_EDITABLE = 29;
 	public static final int SEQUENCE_WIDTH = 45;
 	public static final int FONT_SIZE = 18;
 	
@@ -4540,6 +4540,7 @@ class XFByteaColumn extends JPanel implements XFEditableField {
 class XFTextField extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private String basicType_ = "";
+	private String fontName_ = "";
 	private int digits_ = 5;
 	private int decimal_ = 0;
 	private int rows_ = 1;
@@ -4556,6 +4557,7 @@ class XFTextField extends JPanel implements XFEditableField {
 		super();
 
 		basicType_ = basicType;
+		fontName_ = fontName;
 
 		////////////////////////////
 		// digits of VARCHAR is 0 //
@@ -4603,7 +4605,7 @@ class XFTextField extends JPanel implements XFEditableField {
 			}
 		}
 		jTextField.addFocusListener(new ComponentFocusListener());
-		jTextField.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
+		jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE));
 		jTextField.setDocument(new LimitedDocument(this));
 		jTextField.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
@@ -4723,7 +4725,14 @@ class XFTextField extends JPanel implements XFEditableField {
 	public void setEditable(boolean editable) {
 		jTextField.setEditable(editable);
 		jTextField.setFocusable(editable);
-		if (jComboBox != null) {
+		if (jComboBox == null) {
+			//if (editable && dataTypeOptionList.contains("KANJI")) {
+			if (editable) {
+				jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE - 2));
+			} else {
+				jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE));
+			}
+		} else {
 			if (editable) {
 				this.remove(jTextField);
 				this.add(jComboBox);

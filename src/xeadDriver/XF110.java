@@ -2917,6 +2917,8 @@ class XF110_Filter extends JPanel {
 
 		if (fieldOptionList.contains("NON_EDITABLE")) {
 			this.setEditable(false);
+		} else {
+			this.setEditable(true);
 		}
 		if (fieldOptionList.contains("HIDDEN")) {
 			isHidden = true;

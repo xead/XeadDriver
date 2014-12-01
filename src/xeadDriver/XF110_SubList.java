@@ -4397,6 +4397,7 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 	private JButton jButton = new JButton();
 	private String fieldCaption_ = "";
 	private ArrayList<String> dataTypeOptionList_ = null;
+	private String textData = "";
     private XF110_SubList dialog_;
 
 	public XF110_SubListCellEditorWithLongTextEditor(String fieldCaption, ArrayList<String> dataTypeOptionList, XF110_SubList dialog){
@@ -4416,8 +4417,8 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String edittedText = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, jTextField.getText());
-				jTextField.setText(edittedText);
+				textData = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, textData);
+				jTextField.setText(textData);
 			}
 		});
 		jButton.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -4458,18 +4459,20 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 	}
 
 	public Object getInternalValue() {
-		return jTextField.getText();
+		return textData;
 	}
 
 	public Object getExternalValue() {
-		return jTextField.getText();
+		return textData;
 	}
 	
 	public void setValue(Object obj) {
 		if (obj == null) {
+			textData = "";
 			jTextField.setText("");
 		} else {
-			jTextField.setText(obj.toString());
+			textData = obj.toString();
+			jTextField.setText(textData);
 		}
 	}
 	

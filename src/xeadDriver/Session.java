@@ -2994,14 +2994,14 @@ public class Session extends JFrame {
 	public XFTableOperator createTableOperator(String oparation, String tableID) {
 		XFTableOperator operator = null;
 		try {
-			operator = new XFTableOperator(this, null, oparation, tableID);
+			operator = new XFTableOperator(this, null, oparation, tableID, true);
 		} catch (Exception e) {
 		}
 		return operator;
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
-		return new XFTableOperator(this, null, sqlText);
+		return new XFTableOperator(this, null, sqlText, true);
 	}
 
 	org.w3c.dom.Document getDomDocument() {

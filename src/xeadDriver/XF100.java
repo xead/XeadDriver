@@ -1151,7 +1151,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					String functionID = action.substring(pos1+5, pos2);
 					if (!functionID.equals("")) {
 						try {
-							HashMap<String, Object> returnMap = session_.executeFunction(functionID, null);
+							HashMap<String, Object> returnMap = session_.executeFunction(functionID, parmMap_);
 							if (returnMap.get("RETURN_CODE").equals("10")
 									|| returnMap.get("RETURN_CODE").equals("20")
 									|| returnMap.get("RETURN_CODE").equals("30")) {
@@ -2814,6 +2814,8 @@ class XF100_Filter extends JPanel {
 
 		if (fieldOptionList.contains("NON_EDITABLE")) {
 			this.setEditable(false);
+		} else {
+			this.setEditable(true);
 		}
 		if (fieldOptionList.contains("HIDDEN")) {
 			isHidden = true;

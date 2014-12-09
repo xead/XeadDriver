@@ -1486,7 +1486,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < headerFieldList.size(); i++) {
 				if (headerFieldList.get(i).isFieldOnPrimaryTable()) {
 					if (headerFieldList.get(i).isNullError()) {
-						JOptionPane.showMessageDialog(null, headerFieldList.get(i).getFieldID());
 						countOfErrors++;
 					}
 				}
@@ -4947,6 +4946,7 @@ class XF310_CellEditorWithLongTextEditor extends JPanel implements XFTableColumn
 	private ArrayList<String> dataTypeOptionList_ = null;
 	private String textData = "";
     private XF310 dialog_;
+    private boolean isEditable_ = true;
 
 	public XF310_CellEditorWithLongTextEditor(String fieldCaption, ArrayList<String> dataTypeOptionList, XF310 dialog){
 		super();
@@ -4965,7 +4965,7 @@ class XF310_CellEditorWithLongTextEditor extends JPanel implements XFTableColumn
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				textData = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, textData);
+				textData = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, textData, isEditable_);
 				jTextField.setText(textData);
 			}
 		});
@@ -4999,11 +4999,11 @@ class XF310_CellEditorWithLongTextEditor extends JPanel implements XFTableColumn
 	}
 	
 	public void setEditable(boolean isEditable) {
-		jButton.setEnabled(isEditable);
+		isEditable_ = isEditable;
 	}
 	
 	public boolean isEditable() {
-		return jButton.isEnabled();
+		return isEditable_;
 	}
 
 	public Object getInternalValue() {
@@ -5029,7 +5029,7 @@ class XF310_CellEditorWithLongTextEditor extends JPanel implements XFTableColumn
 	}
 	
 	public void setColorOfNormal(int row) {
-		if (jButton.isEnabled()) {
+		if (isEditable_) {
 			if (row%2==0) {
 				jTextField.setBackground(SystemColor.text);
 			} else {
@@ -6872,7 +6872,11 @@ class XF310_DetailColumn extends XFColumnScriptable {
 	}
 
 	public Object getNullValue(){
-		return XFUtility.getNullValueOfBasicType(this.getBasicType());
+		if (valueType == "FLAG") {
+			return ((XF310_CellEditorWithCheckBox)editor).getFalseValue(); 
+		} else {
+			return XFUtility.getNullValueOfBasicType(this.getBasicType());
+		}
 	}
 
 	public boolean isAutoNumberField(){
@@ -6986,6 +6990,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 
 	public void initValue() {
 		value_ = this.getNullValue();
+		valueList_ = null;
 		if (!isNonEditableField) {
 			isEditable = true;
 		}

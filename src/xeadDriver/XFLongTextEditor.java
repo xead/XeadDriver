@@ -97,11 +97,12 @@ public class XFLongTextEditor extends JDialog {
 		this.pack();
 	}
 
-	public String request(String functionTitle, String fieldCaption, ArrayList<String> dataTypeOptionList, String text) {
+	public String request(String functionTitle, String fieldCaption, ArrayList<String> dataTypeOptionList, String text, boolean isEditable) {
 		this.setTitle(functionTitle + " - " +  fieldCaption);
 		dataTypeOptionList_ = dataTypeOptionList;
 		jTextArea.setText(text);
 		jTextArea.setCaretPosition(0);
+		jTextArea.setEditable(isEditable);
 		undoManager.discardAllEdits();
 		super.setVisible(true);
 		return jTextArea.getText();

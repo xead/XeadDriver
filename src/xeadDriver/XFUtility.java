@@ -84,9 +84,12 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -4645,6 +4648,14 @@ class XFTextField extends JPanel implements XFEditableField {
 			autoNumberKey = wrkStr;
 		}
 
+		this.addFocusListener(new FocusAdapter() {
+			public void focusGained(FocusEvent event) {
+				jTextField.requestFocus();
+				if (jComboBox != null) {
+					jComboBox.requestFocus();
+				}
+			} 
+		});
 		this.setSize(new Dimension(fieldWidth, fieldHeight));
 		this.setLayout(new BorderLayout());
 		this.add(jTextField, BorderLayout.CENTER);
@@ -4662,11 +4673,20 @@ class XFTextField extends JPanel implements XFEditableField {
 		return valueList_;
 	}
 	
+	public void setBackground(Color color) {
+		if (jComboBox == null) {
+			if (jTextField != null) {
+				jTextField.setBackground(color);
+			}
+		} else {
+			jComboBox.setBackground(color);
+		}
+	}
+	
 	public void setValueList(String[] valueList) {
 		if (!java.util.Arrays.equals(valueList, valueList_)) {
 			valueList_ = valueList;
-
-			if (valueList_ == null) {
+			if (valueList_ == null || valueList_.length == 0) {
 				if (jComboBox != null) {
 					this.remove(jComboBox);
 				}
@@ -4687,10 +4707,10 @@ class XFTextField extends JPanel implements XFEditableField {
 						}
 					} 
 				});
-//				StringTokenizer workTokenizer = new StringTokenizer(valueList_, ";");
-//				while (workTokenizer.hasMoreTokens()) {
-//					jComboBox.addItem(workTokenizer.nextToken().trim());
-//				}
+				InputMap inputMap  = jComboBox.getInputMap(JComboBox.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+				ActionMap actionMap = jComboBox.getActionMap();
+				inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "CHECK");
+				actionMap.put("CHECK", null);
 				for (int i = 0; i < valueList_.length; i++) {
 					jComboBox.addItem(valueList_[i]);
 				}
@@ -4726,13 +4746,13 @@ class XFTextField extends JPanel implements XFEditableField {
 		jTextField.setEditable(editable);
 		jTextField.setFocusable(editable);
 		if (jComboBox == null) {
-			//if (editable && dataTypeOptionList.contains("KANJI")) {
 			if (editable) {
 				jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE - 2));
 			} else {
 				jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE));
 			}
 		} else {
+			jComboBox.setFocusable(editable);
 			if (editable) {
 				this.remove(jTextField);
 				this.add(jComboBox);

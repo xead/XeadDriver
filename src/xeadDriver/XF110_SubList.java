@@ -4399,6 +4399,7 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 	private ArrayList<String> dataTypeOptionList_ = null;
 	private String textData = "";
     private XF110_SubList dialog_;
+    private boolean isEditable_ = true;
 
 	public XF110_SubListCellEditorWithLongTextEditor(String fieldCaption, ArrayList<String> dataTypeOptionList, XF110_SubList dialog){
 		super();
@@ -4417,7 +4418,7 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				textData = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, textData);
+				textData = dialog_.getSession().getLongTextEditor().request(dialog_.getTitle(), fieldCaption_, dataTypeOptionList_, textData, isEditable_);
 				jTextField.setText(textData);
 			}
 		});
@@ -4451,11 +4452,11 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 	}
 	
 	public void setEditable(boolean isEditable) {
-		jButton.setEnabled(isEditable);
+		isEditable_ = isEditable;
 	}
 	
 	public boolean isEditable() {
-		return jButton.isEnabled();
+		return isEditable_;
 	}
 
 	public Object getInternalValue() {
@@ -4481,7 +4482,7 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 	}
 	
 	public void setColorOfNormal(int row) {
-		if (jButton.isEnabled()) {
+		if (isEditable_) {
 			if (row%2==0) {
 				jTextField.setBackground(SystemColor.text);
 			} else {
@@ -6345,6 +6346,7 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 
 	public void initValue() {
 		value_ = this.getNullValue();
+		valueList_ = null;
 		if (!isNonEditableField) {
 			isEditable = true;
 		}

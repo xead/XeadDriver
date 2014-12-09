@@ -43,8 +43,14 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M7";
-	public static final String VERSION  = "1.2.7";
+	public static final String FULL_VERSION  = "V1.R2.M8";
+	public static final String VERSION  = "1.2.8";
+	//1.2.8
+	//・編集モードでのvarchar表示コンポーネントの動きを改善した
+	//・XF110,310の明細行上でのValueList設定に関するバグを修正した
+	//・ValueListの対応にともなうテキストフィールドでのエラー色とフォーカス設定のバグを修正した
+	//・追加モードにおいてフラグフィールドにfalse値を初期設定するようにした
+	//
 	//1.2.7
 	//・ツリービューでの見出しレコード切替に対応するために、XF300のタブ無効化ルーチンの位置を変更した
 	//・XF300の構成ツリー用のタイトルに対応した

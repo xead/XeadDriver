@@ -3058,7 +3058,11 @@ class XF200_Field extends XFFieldScriptable {
 	}
 
 	public Object getNullValue(){
-		return XFUtility.getNullValueOfBasicType(this.getBasicType());
+		if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN").equals("")) {
+			return ((XFCheckBox)component).getFalseValue(); 
+		} else {
+			return XFUtility.getNullValueOfBasicType(this.getBasicType());
+		}
 	}
 
 	public boolean isNull(){

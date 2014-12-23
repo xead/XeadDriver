@@ -224,6 +224,7 @@ public class XFUtility {
 				bf.append("-");
 			}
 			returnValue = bf.toString();
+
 		} else {
 			if (dataTypeOptionList.contains("ZERO_SUPPRESS")) {
 				StringBuffer bf = new StringBuffer();
@@ -236,15 +237,37 @@ public class XFUtility {
 				}
 				returnValue = bf.toString();
 			} else {
-				StringBuffer bf = new StringBuffer();
-				if (value.startsWith("-")) {
-					bf.append("-");
+				if (dataTypeOptionList.contains("HH_MM")) {
+					String hourStr = "00";
+					String minuiteStr = "00";
+					int wrkInt = Integer.parseInt(wrkValue);
+					int hour = wrkInt / 100;
+					if (hour > 9) {
+						hourStr = Integer.toString(hour);
+					} else {
+						hourStr = "0" + Integer.toString(hour);
+					}
+					if (wrkValue.length() == 1) {
+						minuiteStr = "0" + wrkValue;
+					}
+					if (wrkValue.length() == 2) {
+						minuiteStr = wrkValue;
+					}
+					if (wrkValue.length() >= 3) {
+						minuiteStr = wrkValue.substring(wrkValue.length()-2, wrkValue.length());
+					}
+					returnValue = hourStr + ":" + minuiteStr;
+				} else {
+					StringBuffer bf = new StringBuffer();
+					if (value.startsWith("-")) {
+						bf.append("-");
+					}
+					bf.append(XFUtility.INTEGER_FORMAT.format(Long.parseLong(wrkValue)));
+					if (value.endsWith("-")) {
+						bf.append("-");
+					}
+					returnValue = bf.toString();
 				}
-				bf.append(XFUtility.INTEGER_FORMAT.format(Long.parseLong(wrkValue)));
-				if (value.endsWith("-")) {
-					bf.append("-");
-				}
-				returnValue = bf.toString();
 			}
 		}
 
@@ -1795,10 +1818,12 @@ public class XFUtility {
 		if (decimalSize > 0) {
 			length = length + 1;
 		}
-		if (dataTypeOptionList.contains("ACCEPT_MINUS")) {
+		if (dataTypeOptionList.contains("ACCEPT_MINUS") || dataTypeOptionList.contains("HH_MM")) {
 			length = length + 1;
 		}
-		if (!dataTypeOptionList.contains("NO_EDIT") && !dataTypeOptionList.contains("ZERO_SUPPRESS")) {
+		if (!dataTypeOptionList.contains("NO_EDIT")
+				&& !dataTypeOptionList.contains("ZERO_SUPPRESS")
+				&& !dataTypeOptionList.contains("HH_MM")) {
 			int intSize = dataSize - decimalSize;
 			while (intSize > 3) {
 				length = length + 1;
@@ -2557,8 +2582,12 @@ class XFHashMap extends Object {
 	private ArrayList<String> keyFieldList = new ArrayList<String>();
 	private ArrayList<Object> keyValueList = new ArrayList<Object>();
 	public void addValue(String fieldID, Object value) {
-		keyFieldList.add(fieldID);
-		keyValueList.add(value);
+		if (keyFieldList.contains(fieldID)) {
+			keyValueList.add(keyFieldList.indexOf(fieldID), value);
+		} else {
+			keyFieldList.add(fieldID);
+			keyValueList.add(value);
+		}
 	}
 	public Object getValue(String fieldID) {
 		int index = keyFieldList.indexOf(fieldID);
@@ -5007,6 +5036,7 @@ class XFTextField extends JPanel implements XFEditableField {
 						String wrkStr1 = wrkStr0.replace(".", "");
 						wrkStr1 = wrkStr1.replace(",", "");
 						wrkStr1 = wrkStr1.replace("-", "");
+						wrkStr1 = wrkStr1.replace(":", "");
 						if (wrkStr1.length() > adaptee.digits_) {
 							wrkStr1 = wrkStr1.substring(0, integerSizeOfField) + "." + wrkStr1.substring(integerSizeOfField, wrkStr1.length() - 1);
 							super.replace(0, super.getLength(), wrkStr1, attr);
@@ -5047,6 +5077,7 @@ class XFTextField extends JPanel implements XFEditableField {
 								String wrkStr1 = wrkStr0.replace(".", "");
 								wrkStr1 = wrkStr1.replace(",", "");
 								wrkStr1 = wrkStr1.replace("-", "");
+								wrkStr1 = wrkStr1.replace(":", "");
 								if (wrkStr1.length() <= adaptee.digits_ || wrkStr1.equals("*AUTO")) {
 									super.insertString(offset, str, attr );
 								}

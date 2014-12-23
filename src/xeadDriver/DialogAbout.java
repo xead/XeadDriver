@@ -43,8 +43,14 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M8";
-	public static final String VERSION  = "1.2.8";
+	public static final String FULL_VERSION  = "V1.R2.M9";
+	public static final String VERSION  = "1.2.9";
+	//1.2.9
+	//・XF310の行追加ダイアログでのボタン記述のフォントサイズをボタンサイズに応じて可変にした
+	//・整数フィールド向けに「時刻(HH:MM)」の編集タイプを設けた
+	//・XF310とXF110の明細行上、およびXF200,XF110の見出し域でのリストコンポーネントの動作に関するバグを修正した
+	//・XF100,XF110,XF300の検索条件が日付の場合、レコード上の対応項目がnullのときにエラーになるバグを修正した
+	//
 	//1.2.8
 	//・編集モードでのvarchar表示コンポーネントの動きを改善した
 	//・XF110,310の明細行上でのValueList設定に関するバグを修正した

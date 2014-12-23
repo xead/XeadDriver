@@ -1494,206 +1494,6 @@ class XF290_Phrase extends Object {
 	}
 }
 
-class XF290_PrimaryTable extends Object {
-	private org.w3c.dom.Element tableElement = null;
-	private org.w3c.dom.Element functionElement_ = null;
-	private String tableID = "";
-	private String activeWhere = "";
-	private ArrayList<String> keyFieldList = new ArrayList<String>();
-	private ArrayList<String> orderByFieldList = new ArrayList<String>();
-	private ArrayList<XFScript> scriptList = new ArrayList<XFScript>();
-	private XF290 dialog_;
-	private StringTokenizer workTokenizer;
-	private String updateCounterID = "";
-
-	public XF290_PrimaryTable(org.w3c.dom.Element functionElement, XF290 dialog){
-		super();
-		//
-		functionElement_ = functionElement;
-		dialog_ = dialog;
-		//
-		tableID = functionElement_.getAttribute("PrimaryTable");
-		tableElement = dialog_.getSession().getTableElement(tableID);
-		activeWhere = tableElement.getAttribute("ActiveWhere");
-		if (!tableElement.getAttribute("UpdateCounter").toUpperCase().equals("*NONE")) {
-			updateCounterID = tableElement.getAttribute("UpdateCounter");
-			if (updateCounterID.equals("")) {
-				updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
-			}
-		}
-		//
-		String wrkStr1;
-		org.w3c.dom.Element workElement;
-		//
-		if (functionElement_.getAttribute("KeyFields").equals("")) {
-			NodeList nodeList = tableElement.getElementsByTagName("Key");
-			for (int i = 0; i < nodeList.getLength(); i++) {
-				workElement = (org.w3c.dom.Element)nodeList.item(i);
-				if (workElement.getAttribute("Type").equals("PK")) {
-					workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
-					while (workTokenizer.hasMoreTokens()) {
-						wrkStr1 = workTokenizer.nextToken();
-						keyFieldList.add(wrkStr1);
-					}
-				}
-			}
-		} else {
-			workTokenizer = new StringTokenizer(functionElement_.getAttribute("KeyFields"), ";" );
-			while (workTokenizer.hasMoreTokens()) {
-				keyFieldList.add(workTokenizer.nextToken());
-			}
-		}
-		//
-		workTokenizer = new StringTokenizer(functionElement_.getAttribute("OrderBy"), ";" );
-		while (workTokenizer.hasMoreTokens()) {
-			orderByFieldList.add(workTokenizer.nextToken());
-		}
-		//
-		org.w3c.dom.Element element;
-		NodeList workList = tableElement.getElementsByTagName("Script");
-		SortableDomElementListModel sortList = XFUtility.getSortedListModel(workList, "Order");
-		for (int i = 0; i < sortList.size(); i++) {
-	        element = (org.w3c.dom.Element)sortList.getElementAt(i);
-	        scriptList.add(new XFScript(tableID, element, dialog_.getSession().getTableNodeList()));
-		}
-	}
-	
-	public String getName() {
-		return tableElement.getAttribute("Name");
-	}
-	
-	public String getSQLToSelect(){
-		StringBuffer buf = new StringBuffer();
-		//
-		buf.append("select ");
-		//
-		boolean firstField = true;
-		for (int i = 0; i < dialog_.getFieldList().size(); i++) {
-			if (dialog_.getFieldList().get(i).isFieldOnPrimaryTable()
-					&& !dialog_.getFieldList().get(i).isVirtualField()
-					&& !dialog_.getFieldList().get(i).getBasicType().equals("BYTEA")) {
-				if (!firstField) {
-					buf.append(",");
-				}
-				buf.append(dialog_.getFieldList().get(i).getFieldID());
-				firstField = false;
-			}
-		}
-		if (!updateCounterID.equals("")) {
-			buf.append(",");
-			buf.append(updateCounterID);
-		}
-		//
-		buf.append(" from ");
-		buf.append(tableID);
-		//
-		if (orderByFieldList.size() > 0) {
-			buf.append(" order by ");
-			for (int i = 0; i < orderByFieldList.size(); i++) {
-				if (i > 0) {
-					buf.append(",");
-				}
-				buf.append(orderByFieldList.get(i));
-			}
-		}
-		//
-		buf.append(" where ") ;
-		//
-		int orderOfFieldInKey = 0;
-		for (int i = 0; i < dialog_.getFieldList().size(); i++) {
-			if (dialog_.getFieldList().get(i).isKey()) {
-				if (orderOfFieldInKey > 0) {
-					buf.append(" and ") ;
-				}
-				buf.append(dialog_.getFieldList().get(i).getFieldID()) ;
-				buf.append("=") ;
-				if (XFUtility.isLiteralRequiredBasicType(dialog_.getFieldList().get(i).getBasicType())) {
-					buf.append("'") ;
-					buf.append(dialog_.getFieldList().get(i).getInternalValue()) ;
-					buf.append("'") ;
-				} else {
-					buf.append(dialog_.getFieldList().get(i).getInternalValue()) ;
-				}
-				orderOfFieldInKey++;
-			}
-		}
-		//
-		if (!activeWhere.equals("")) {
-			buf.append(" and (");
-			buf.append(activeWhere);
-			buf.append(") ");
-		}
-		//
-		return buf.toString();
-	}
-	
-	public String getTableID(){
-		return tableID;
-	}
-	
-	public org.w3c.dom.Element getTableElement(){
-		return tableElement;
-	}
-	
-	public ArrayList<String> getKeyFieldList(){
-		return keyFieldList;
-	}
-	
-	public ArrayList<XFScript> getScriptList(){
-		return scriptList;
-	}
-	
-	public boolean isValidDataSource(String tableID, String tableAlias, String fieldID) {
-		boolean isValid = false;
-		XF290_ReferTable referTable;
-		org.w3c.dom.Element workElement;
-		//
-		if (this.getTableID().equals(tableID) && this.getTableID().equals(tableAlias)) {
-			NodeList nodeList = tableElement.getElementsByTagName("Field");
-			for (int i = 0; i < nodeList.getLength(); i++) {
-				workElement = (org.w3c.dom.Element)nodeList.item(i);
-				if (workElement.getAttribute("ID").equals(fieldID)) {
-					isValid = true;
-					break;
-				}
-			}
-		} else {
-			for (int i = 0; i < dialog_.getReferTableList().size(); i++) {
-				referTable = dialog_.getReferTableList().get(i);
-				if (referTable.getTableID().equals(tableID) && referTable.getTableAlias().equals(tableAlias)) {
-					for (int j = 0; j < referTable.getFieldIDList().size(); j++) {
-						if (referTable.getFieldIDList().get(j).equals(fieldID)) {
-							isValid = true;
-							break;
-						}
-					}
-				}
-				if (isValid) {
-					break;
-				}
-			}
-		}
-		//
-		return isValid;
-	}
-
-	public void runScript(String event1, String event2) throws ScriptException {
-		XFScript script;
-		ArrayList<XFScript> validScriptList = new ArrayList<XFScript>();
-		//
-		for (int i = 0; i < scriptList.size(); i++) {
-			script = scriptList.get(i);
-			if (script.isToBeRunAtEvent(event1, event2)) {
-				validScriptList.add(script);
-			}
-		}
-		//
-		for (int i = 0; i < validScriptList.size(); i++) {
-			dialog_.evalScript(validScriptList.get(i).getName(), validScriptList.get(i).getScriptText());
-		}
-	}
-}
-
 class XF290_ReferTable extends Object {
 	private org.w3c.dom.Element referElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
@@ -2030,5 +1830,205 @@ class XF290_ReferTable extends Object {
 		}
 		//
 		return returnValue;
+	}
+}
+
+class XF290_PrimaryTable extends Object {
+	private org.w3c.dom.Element tableElement = null;
+	private org.w3c.dom.Element functionElement_ = null;
+	private String tableID = "";
+	private String activeWhere = "";
+	private ArrayList<String> keyFieldList = new ArrayList<String>();
+	private ArrayList<String> orderByFieldList = new ArrayList<String>();
+	private ArrayList<XFScript> scriptList = new ArrayList<XFScript>();
+	private XF290 dialog_;
+	private StringTokenizer workTokenizer;
+	private String updateCounterID = "";
+
+	public XF290_PrimaryTable(org.w3c.dom.Element functionElement, XF290 dialog){
+		super();
+		//
+		functionElement_ = functionElement;
+		dialog_ = dialog;
+		//
+		tableID = functionElement_.getAttribute("PrimaryTable");
+		tableElement = dialog_.getSession().getTableElement(tableID);
+		activeWhere = tableElement.getAttribute("ActiveWhere");
+		if (!tableElement.getAttribute("UpdateCounter").toUpperCase().equals("*NONE")) {
+			updateCounterID = tableElement.getAttribute("UpdateCounter");
+			if (updateCounterID.equals("")) {
+				updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
+			}
+		}
+		//
+		String wrkStr1;
+		org.w3c.dom.Element workElement;
+		//
+		if (functionElement_.getAttribute("KeyFields").equals("")) {
+			NodeList nodeList = tableElement.getElementsByTagName("Key");
+			for (int i = 0; i < nodeList.getLength(); i++) {
+				workElement = (org.w3c.dom.Element)nodeList.item(i);
+				if (workElement.getAttribute("Type").equals("PK")) {
+					workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						wrkStr1 = workTokenizer.nextToken();
+						keyFieldList.add(wrkStr1);
+					}
+				}
+			}
+		} else {
+			workTokenizer = new StringTokenizer(functionElement_.getAttribute("KeyFields"), ";" );
+			while (workTokenizer.hasMoreTokens()) {
+				keyFieldList.add(workTokenizer.nextToken());
+			}
+		}
+		//
+		workTokenizer = new StringTokenizer(functionElement_.getAttribute("OrderBy"), ";" );
+		while (workTokenizer.hasMoreTokens()) {
+			orderByFieldList.add(workTokenizer.nextToken());
+		}
+		//
+		org.w3c.dom.Element element;
+		NodeList workList = tableElement.getElementsByTagName("Script");
+		SortableDomElementListModel sortList = XFUtility.getSortedListModel(workList, "Order");
+		for (int i = 0; i < sortList.size(); i++) {
+	        element = (org.w3c.dom.Element)sortList.getElementAt(i);
+	        scriptList.add(new XFScript(tableID, element, dialog_.getSession().getTableNodeList()));
+		}
+	}
+	
+	public String getName() {
+		return tableElement.getAttribute("Name");
+	}
+	
+	public String getSQLToSelect(){
+		StringBuffer buf = new StringBuffer();
+		//
+		buf.append("select ");
+		//
+		boolean firstField = true;
+		for (int i = 0; i < dialog_.getFieldList().size(); i++) {
+			if (dialog_.getFieldList().get(i).isFieldOnPrimaryTable()
+					&& !dialog_.getFieldList().get(i).isVirtualField()
+					&& !dialog_.getFieldList().get(i).getBasicType().equals("BYTEA")) {
+				if (!firstField) {
+					buf.append(",");
+				}
+				buf.append(dialog_.getFieldList().get(i).getFieldID());
+				firstField = false;
+			}
+		}
+		if (!updateCounterID.equals("")) {
+			buf.append(",");
+			buf.append(updateCounterID);
+		}
+		//
+		buf.append(" from ");
+		buf.append(tableID);
+		//
+		if (orderByFieldList.size() > 0) {
+			buf.append(" order by ");
+			for (int i = 0; i < orderByFieldList.size(); i++) {
+				if (i > 0) {
+					buf.append(",");
+				}
+				buf.append(orderByFieldList.get(i));
+			}
+		}
+		//
+		buf.append(" where ") ;
+		//
+		int orderOfFieldInKey = 0;
+		for (int i = 0; i < dialog_.getFieldList().size(); i++) {
+			if (dialog_.getFieldList().get(i).isKey()) {
+				if (orderOfFieldInKey > 0) {
+					buf.append(" and ") ;
+				}
+				buf.append(dialog_.getFieldList().get(i).getFieldID()) ;
+				buf.append("=") ;
+				if (XFUtility.isLiteralRequiredBasicType(dialog_.getFieldList().get(i).getBasicType())) {
+					buf.append("'") ;
+					buf.append(dialog_.getFieldList().get(i).getInternalValue()) ;
+					buf.append("'") ;
+				} else {
+					buf.append(dialog_.getFieldList().get(i).getInternalValue()) ;
+				}
+				orderOfFieldInKey++;
+			}
+		}
+		//
+		if (!activeWhere.equals("")) {
+			buf.append(" and (");
+			buf.append(activeWhere);
+			buf.append(") ");
+		}
+		//
+		return buf.toString();
+	}
+	
+	public String getTableID(){
+		return tableID;
+	}
+	
+	public org.w3c.dom.Element getTableElement(){
+		return tableElement;
+	}
+	
+	public ArrayList<String> getKeyFieldList(){
+		return keyFieldList;
+	}
+	
+	public ArrayList<XFScript> getScriptList(){
+		return scriptList;
+	}
+	
+	public boolean isValidDataSource(String tableID, String tableAlias, String fieldID) {
+		boolean isValid = false;
+		XF290_ReferTable referTable;
+		org.w3c.dom.Element workElement;
+		//
+		if (this.getTableID().equals(tableID) && this.getTableID().equals(tableAlias)) {
+			NodeList nodeList = tableElement.getElementsByTagName("Field");
+			for (int i = 0; i < nodeList.getLength(); i++) {
+				workElement = (org.w3c.dom.Element)nodeList.item(i);
+				if (workElement.getAttribute("ID").equals(fieldID)) {
+					isValid = true;
+					break;
+				}
+			}
+		} else {
+			for (int i = 0; i < dialog_.getReferTableList().size(); i++) {
+				referTable = dialog_.getReferTableList().get(i);
+				if (referTable.getTableID().equals(tableID) && referTable.getTableAlias().equals(tableAlias)) {
+					for (int j = 0; j < referTable.getFieldIDList().size(); j++) {
+						if (referTable.getFieldIDList().get(j).equals(fieldID)) {
+							isValid = true;
+							break;
+						}
+					}
+				}
+				if (isValid) {
+					break;
+				}
+			}
+		}
+		//
+		return isValid;
+	}
+
+	public void runScript(String event1, String event2) throws ScriptException {
+		XFScript script;
+		ArrayList<XFScript> validScriptList = new ArrayList<XFScript>();
+		//
+		for (int i = 0; i < scriptList.size(); i++) {
+			script = scriptList.get(i);
+			if (script.isToBeRunAtEvent(event1, event2)) {
+				validScriptList.add(script);
+			}
+		}
+		//
+		for (int i = 0; i < validScriptList.size(); i++) {
+			dialog_.evalScript(validScriptList.get(i).getName(), validScriptList.get(i).getScriptText());
+		}
 	}
 }

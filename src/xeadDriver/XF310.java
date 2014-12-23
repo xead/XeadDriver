@@ -2493,7 +2493,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			for (int i = 0; i < cellList.size(); i++) {
 				cellList.get(i).setEditable(detailColumnList.get(i).isEditable());
 				cellList.get(i).setFocusable(detailColumnList.get(i).isEditable());
-				cellList.get(i).setValue(detailColumnList.get(i).getInternalValue());
 				if (activeRowObject.getErrorCellIndexList().contains(i)) {
 					cellList.get(i).setColorOfError();
 				} else {
@@ -2501,6 +2500,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
     			if (cellList.get(i) instanceof XF310_CellEditorWithTextField) {
     				((XF310_CellEditorWithTextField)cellList.get(i)).setValueList(detailColumnList.get(i).getValueList());
+    			}
+    			if (cellList.get(i) instanceof XF310_CellEditorWithComboBox) {
+    				((XF310_CellEditorWithComboBox)cellList.get(i)).setupRecordList();
     			}
 				if (!detailColumnList.get(i).getByteaTypeFieldID().equals("")) {
 					for (int j = 0; j < detailColumnList.size(); j++) {
@@ -2510,6 +2512,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						}
 					}
 				}
+				cellList.get(i).setValue(detailColumnList.get(i).getInternalValue());
 			}
 			
 			return jPanel;
@@ -5525,6 +5528,7 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 	private ArrayList<String> keyFieldList = new ArrayList<String>();
 	private XF310_DetailReferTable referTable_ = null;
 	private XF310 dialog_;
+	private int indexOfColumn = -1;
 
 	public XF310_CellEditorWithComboBox(String dataSourceName, String dataTypeOptions, XF310 dialog, XF310_DetailReferTable referTable, boolean isNullable) {
 		super();
@@ -5581,13 +5585,41 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 			}
 		}
 
+		indexOfColumn = dialog_.getDetailColumnList().size();
 		jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBox.setFocusable(false);
+		jComboBox.addKeyListener(new java.awt.event.KeyAdapter() {
+			public void keyPressed(KeyEvent e)  {
+			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						jComboBox.showPopup();
+					}
+				}
+				if (e.getKeyCode() == KeyEvent.VK_ENTER && !jComboBox.isPopupVisible()) {
+					requestFocus();
+					dispatchEvent(e);
+				}
+			}
+		});
 		jComboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
-				dialog_.getCellsEditor().updateRowObject();
+				XFHashMap keyValueMap = tableKeyValuesList.get(jComboBox.getSelectedIndex());
+				for (int i = 0; i < keyValueMap.size(); i++) {
+					dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(keyValueMap.getKeyIDByIndex(i), keyValueMap.getValueByIndex(i));
+				}
+				dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(tableAlias+"."+fieldID, jComboBox.getItemAt(jComboBox.getSelectedIndex()));
+				XF310_CellEditorWithComboBox comboBoxEditor;
+				for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+					if (i > indexOfColumn) {
+						if (dialog_.getDetailColumnList().get(i).getColumnEditor() instanceof XF310_CellEditorWithComboBox) {
+							comboBoxEditor = (XF310_CellEditorWithComboBox)dialog_.getDetailColumnList().get(i).getColumnEditor();
+							comboBoxEditor.setupRecordList();
+						}
+					}
+				}
+//				dialog_.getCellsEditor().updateRowObject();
 			}
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 				setupRecordList();
@@ -5596,11 +5628,6 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 		jLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jLabel.setBackground(SystemColor.control);
 
-		this.addFocusListener(new java.awt.event.FocusAdapter() {
-			public void focusGained(FocusEvent e) {
-				dialog_.getCellsEditor().updateActiveColumnIndex();
-			}
-		});
 		this.setLayout(new BorderLayout());
 		this.add(jComboBox, BorderLayout.CENTER);
 	}
@@ -5627,6 +5654,8 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
 			try {
 				setCursor(new Cursor(Cursor.WAIT_CURSOR));
+
+				dialog_.getCellsEditor().getActiveRowObject().setValuesToDetailColumns();
 
 				String selectedItemValue = "";
 				if (jComboBox.getSelectedIndex() >= 0) {

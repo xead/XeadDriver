@@ -3281,17 +3281,17 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 	private XF200_ReferTable referTable_ = null;
 	private XF200 dialog_;
 	private String oldValue = "";
+	private int indexOfColumn = -1;
 
 	public XF200_ComboBox(String dataSourceName, String dataTypeOptions, XF200 dialog, XF200_ReferTable chainTable, boolean isNullable){
-		//
 		super();
-		//
+
 		StringTokenizer workTokenizer;
 		org.w3c.dom.Element workElement;
 		int fieldWidth = 0;
 		String wrk = "";
 		String strWrk;
-		//
+
 		dataTypeOptions_ = dataTypeOptions;
 		workTokenizer = new StringTokenizer(dataSourceName, "." );
 		tableAlias = workTokenizer.nextToken();
@@ -3302,7 +3302,8 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 		}
 		fieldID =workTokenizer.nextToken();
 		dialog_ = dialog;
-		//
+
+		indexOfColumn = dialog_.getFieldList().size();
 		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
@@ -3321,32 +3322,41 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				}
 			}
 		});
-		jComboBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
-					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
-				}
-			}
-		});
+//		jComboBox.addActionListener(new ActionListener() {
+//			public void actionPerformed(ActionEvent event) {
+//				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
+//					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
+//				}
+//			}
+//		});
 		jComboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
+				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
+					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
+				}
+				XF200_ComboBox comboBoxField;
+				for (int i = 0; i < dialog_.getFieldList().size(); i++) {
+					if (i > indexOfColumn) {
+						if (dialog_.getFieldList().get(i).getComponent() instanceof XF200_ComboBox) {
+							comboBoxField = (XF200_ComboBox)dialog_.getFieldList().get(i).getComponent();
+							comboBoxField.setupRecordList();
+						}
+					}
+				}
 			}
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 				setupRecordList();
 			}
 		});
-		//
+
 		strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "VALUES");
 		if (!strWrk.equals("")) {
-			//
 			listType = "VALUES_LIST";
-			//
 			if (isNullable) {
 				jComboBox.addItem("");
 			}
-			//
 			workTokenizer = new StringTokenizer(strWrk, ";" );
 			while (workTokenizer.hasMoreTokens()) {
 				wrk = workTokenizer.nextToken();
@@ -3404,7 +3414,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				}
 			}
 		}
-		//
+
 		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(jComboBox, BorderLayout.CENTER);
@@ -3412,15 +3422,15 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 
 	public void setupRecordList() {
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
-			//
+
 			String selectedItemValue = "";
 			if (jComboBox.getSelectedIndex() >= 0) {
 				selectedItemValue = jComboBox.getItemAt(jComboBox.getSelectedIndex()).toString();
 			}
-			//
+
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
-			//
+
 			boolean blankItemRequired = false;
 			XFHashMap blankKeyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
@@ -3444,7 +3454,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				tableKeyValuesList.add(blankKeyValues);
 				jComboBox.addItem("");
 			}
-			//
+
 			try {
 				XFHashMap keyValues;
 				XFTableOperator operator = dialog_.createTableOperator(referTable_.getSelectSQL(true));
@@ -3462,7 +3472,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				e.printStackTrace(dialog_.getExceptionStream());
 				dialog_.setErrorAndCloseFunction();
 			}
-			//
+
 			jComboBox.setSelectedItem(selectedItemValue);
 		}
 	}
@@ -3491,7 +3501,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 
 	public Object getInternalValue() {
 		String value = "";
-		//
 		if (jComboBox.getSelectedIndex() >= 0) {
 			if (listType.equals("VALUES_LIST")) {
 				value = jComboBox.getItemAt(jComboBox.getSelectedIndex()).toString();
@@ -3503,7 +3512,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				value = jComboBox.getItemAt(jComboBox.getSelectedIndex()).toString();
 			}
 		}
-		//
 		return value;
 	}
 
@@ -3557,7 +3565,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			setupRecordList();
 			if (jComboBox.getItemCount() > 0) {
 				if (value == null || value.equals("")) {
-					//jComboBox.setSelectedIndex(0);
 				} else {
 					for (int i = 0; i < jComboBox.getItemCount(); i++) {
 						if (jComboBox.getItemAt(i).toString().equals(value)) {

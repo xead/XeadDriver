@@ -1945,7 +1945,6 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			for (int i = 0; i < cellList.size(); i++) {
 				cellList.get(i).setEditable(detailColumnList.get(i).isEditable());
 				cellList.get(i).setFocusable(detailColumnList.get(i).isEditable());
-				cellList.get(i).setValue(detailColumnList.get(i).getInternalValue());
 				if (activeRowObject.getErrorCellIndexList().contains(i)) {
 					cellList.get(i).setColorOfError();
 				} else {
@@ -1953,6 +1952,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
     			if (cellList.get(i) instanceof XF110_SubListCellEditorWithTextField) {
     				((XF110_SubListCellEditorWithTextField)cellList.get(i)).setValueList(detailColumnList.get(i).getValueList());
+    			}
+    			if (cellList.get(i) instanceof XF110_SubListCellEditorWithComboBox) {
+    				((XF110_SubListCellEditorWithComboBox)cellList.get(i)).setupRecordList();
     			}
 				if (!detailColumnList.get(i).getByteaTypeFieldID().equals("")) {
 					for (int j = 0; j < detailColumnList.size(); j++) {
@@ -1962,6 +1964,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 					}
 				}
+				cellList.get(i).setValue(detailColumnList.get(i).getInternalValue());
 			}
 
 			return jPanel;
@@ -5008,6 +5011,7 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 	private ArrayList<String> keyFieldList = new ArrayList<String>();
 	private XF110_SubListDetailReferTable referTable_ = null;
 	private XF110_SubList dialog_;
+	private int indexOfColumn = -1;
 
 	public XF110_SubListCellEditorWithComboBox(String dataSourceName, String dataTypeOptions, XF110_SubList dialog, XF110_SubListDetailReferTable referTable, boolean isNullable) {
 		super();
@@ -5064,13 +5068,41 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 			}
 		}
 
+		indexOfColumn = dialog_.getDetailColumnList().size();
 		jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBox.setFocusable(false);
+		jComboBox.addKeyListener(new java.awt.event.KeyAdapter() {
+			public void keyPressed(KeyEvent e)  {
+			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						jComboBox.showPopup();
+					}
+				}
+				if (e.getKeyCode() == KeyEvent.VK_ENTER && !jComboBox.isPopupVisible()) {
+					requestFocus();
+					dispatchEvent(e);
+				}
+			}
+		});
 		jComboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
-				dialog_.getCellsEditor().updateRowObject();
+				XFHashMap keyValueMap = tableKeyValuesList.get(jComboBox.getSelectedIndex());
+				for (int i = 0; i < keyValueMap.size(); i++) {
+					dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(keyValueMap.getKeyIDByIndex(i), keyValueMap.getValueByIndex(i));
+				}
+				dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(tableAlias+"."+fieldID, jComboBox.getItemAt(jComboBox.getSelectedIndex()));
+				XF110_SubListCellEditorWithComboBox comboBoxEditor;
+				for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+					if (i > indexOfColumn) {
+						if (dialog_.getDetailColumnList().get(i).getColumnEditor() instanceof XF110_SubListCellEditorWithComboBox) {
+							comboBoxEditor = (XF110_SubListCellEditorWithComboBox)dialog_.getDetailColumnList().get(i).getColumnEditor();
+							comboBoxEditor.setupRecordList();
+						}
+					}
+				}
+				//dialog_.getCellsEditor().updateRowObject();
 			}
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 				setupRecordList();
@@ -5079,11 +5111,11 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 		jLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jLabel.setBackground(SystemColor.control);
 
-		this.addFocusListener(new java.awt.event.FocusAdapter() {
-			public void focusGained(FocusEvent e) {
-				dialog_.getCellsEditor().updateActiveColumnIndex();
-			}
-		});
+//		this.addFocusListener(new java.awt.event.FocusAdapter() {
+//			public void focusGained(FocusEvent e) {
+//				dialog_.getCellsEditor().updateActiveColumnIndex();
+//			}
+//		});
 		this.setLayout(new BorderLayout());
 		this.add(jComboBox, BorderLayout.CENTER);
 	}
@@ -5110,6 +5142,8 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 		if (referTable_ != null && listType.equals("RECORDS_LIST")) {
 			try {
 				setCursor(new Cursor(Cursor.WAIT_CURSOR));
+
+				dialog_.getCellsEditor().getActiveRowObject().setValuesToDetailColumns();
 
 				String selectedItemValue = "";
 				if (jComboBox.getSelectedIndex() >= 0) {
@@ -5230,7 +5264,8 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 	}
 	
 	public void setColorOfError() {
-		this.setBackground(XFUtility.ERROR_COLOR);
+		jComboBox.setBackground(XFUtility.ERROR_COLOR);
+		//this.setBackground(XFUtility.ERROR_COLOR);
 	}
 	
 	public void setColorOfNormal(int row) {
@@ -7977,6 +8012,7 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 	private XF110_SubListBatchReferTable referTable_ = null;
 	private XF110_SubList dialog_;
 	private String oldValue = "";
+	private int indexOfColumn = -1;
 	
 	public XF110_SubListBatchComboBox(String dataSourceName, String dataTypeOptions, XF110_SubList dialog, XF110_SubListBatchReferTable chainTable, boolean isNullable){
 		super();
@@ -7997,6 +8033,7 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 		fieldID =workTokenizer.nextToken();
 		dialog_ = dialog;
 
+		indexOfColumn = dialog_.getBatchFieldList().size();
 		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
@@ -8015,17 +8052,29 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 				}
 			}
 		});
-		jComboBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
-					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
-				}
-			}
-		});
+//		jComboBox.addActionListener(new ActionListener() {
+//			public void actionPerformed(ActionEvent event) {
+//				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
+//					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
+//				}
+//			}
+//		});
 		jComboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
+				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
+					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
+				}
+				XF110_SubListBatchComboBox comboBoxField;
+				for (int i = 0; i < dialog_.getBatchFieldList().size(); i++) {
+					if (i > indexOfColumn) {
+						if (dialog_.getBatchFieldList().get(i).getComponent() instanceof XF200_ComboBox) {
+							comboBoxField = (XF110_SubListBatchComboBox)dialog_.getBatchFieldList().get(i).getComponent();
+							comboBoxField.setupRecordList();
+						}
+					}
+				}
 			}
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 				setupRecordList();
@@ -8218,9 +8267,9 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
-		//if (jComboBox.getItemCount() > 0) {
-		//	jComboBox.setSelectedIndex(0);
-		//}
+		if (jComboBox.getItemCount() > 0) {
+			jComboBox.setSelectedIndex(0);
+		}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {

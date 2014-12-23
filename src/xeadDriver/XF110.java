@@ -3399,37 +3399,38 @@ class XF110_Filter extends JPanel {
 								stringResultValue = columnField.getInternalValue().toString().trim();
 								stringResultValue = XFUtility.getStringNumber(stringResultValue).replace("-", "");
 							} 
-							doubleResultValue = Double.parseDouble(stringResultValue);
-							stringFilterValue = XFUtility.getStringNumber(stringFilterValue).replace("-", "");
-							if (!stringFilterValue.equals("")) {
-								doubleFilterValue = Double.parseDouble(stringFilterValue);
-							}
-							if (operandType.equals("EQ")) {
-								if (doubleResultValue == doubleFilterValue) {
-									validated = true;
+							if (!stringResultValue.equals("")) {
+								doubleResultValue = Double.parseDouble(stringResultValue);
+								stringFilterValue = XFUtility.getStringNumber(stringFilterValue).replace("-", "");
+								if (!stringFilterValue.equals("")) {
+									doubleFilterValue = Double.parseDouble(stringFilterValue);
+								}
+								if (operandType.equals("EQ")) {
+									if (doubleResultValue == doubleFilterValue) {
+										validated = true;
+									}
+								}
+								if (operandType.equals("GE")) {
+									if (doubleResultValue >= doubleFilterValue) {
+										validated = true;
+									}
+								}
+								if (operandType.equals("GT")) {
+									if (doubleResultValue > doubleFilterValue) {
+										validated = true;
+									}
+								}
+								if (operandType.equals("LE")) {
+									if (doubleResultValue <= doubleFilterValue) {
+										validated = true;
+									}
+								}
+								if (operandType.equals("LT")) {
+									if (doubleResultValue < doubleFilterValue) {
+										validated = true;
+									}
 								}
 							}
-							if (operandType.equals("GE")) {
-								if (doubleResultValue >= doubleFilterValue) {
-									validated = true;
-								}
-							}
-							if (operandType.equals("GT")) {
-								if (doubleResultValue > doubleFilterValue) {
-									validated = true;
-								}
-							}
-							if (operandType.equals("LE")) {
-								if (doubleResultValue <= doubleFilterValue) {
-									validated = true;
-								}
-							}
-							if (operandType.equals("LT")) {
-								if (doubleResultValue < doubleFilterValue) {
-									validated = true;
-								}
-							}
-
 						}
 					}
 

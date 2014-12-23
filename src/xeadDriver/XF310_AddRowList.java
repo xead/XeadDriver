@@ -130,6 +130,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	
 	public XF310_AddRowList(XF310 dialog) {
 		super(dialog, "", true);
+		org.w3c.dom.Element workElement;
+
 		dialog_ = dialog;
 		jPanelMain.setLayout(new BorderLayout());
 		jPanelTop.setLayout(new BorderLayout());
@@ -281,8 +283,21 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			actionButtonArray[i] = new ButtonAction(jButtonArray[i]);
 			jPanelButtons.add(jPanelButtonArray[i]);
 		}
+		//setupFunctionKeysAndButtons();
+		NodeList buttonList = dialog_.getFunctionElement().getElementsByTagName("AddRowListButton");
+		for (int i = 0; i < buttonList.getLength(); i++) {
+			workElement = (org.w3c.dom.Element)buttonList.item(i);
+			if (workElement.getAttribute("Action").equals("ADD_SELECTED")) {
+				addSelectedActionName = workElement.getAttribute("Caption");
+			}
+			if (workElement.getAttribute("Action").equals("ADD_BLANK")) {
+				isWithoutButtonToAddBlank = false;
+			}
+			if (workElement.getAttribute("Action").contains("CALL(")) {
+				isWithoutButtonToCallFunction = false;
+			}
+		}
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		setupFunctionKeysAndButtons();
 
 		StringTokenizer workTokenizer;
 		int posX = 0;
@@ -385,7 +400,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		/////////////////////////////////////////////////////////////
 		// Analyze fields in script and add them as HIDDEN columns //
 		/////////////////////////////////////////////////////////////
-		org.w3c.dom.Element workElement;
 		for (int j = 0; j < addRowListTable.getScriptList().size(); j++) {
 			if	(addRowListTable.getScriptList().get(j).isToBeRunAtEvent("BR", "")
 				|| addRowListTable.getScriptList().get(j).isToBeRunAtEvent("AR", "")) {
@@ -478,6 +492,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		posY = ((screenRect.height - height) / 2) + screenRect.y;
 		this.setLocation(posX, posY);
 		this.pack();
+		setupFunctionKeysAndButtons();
 	}
 	
 	public int requestSelection() {
@@ -778,20 +793,19 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			element = (org.w3c.dom.Element)buttonList.item(i);
 			workIndex = Integer.parseInt(element.getAttribute("Position"));
 			actionDefinitionArray[workIndex] = element.getAttribute("Action");
-			XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", dialog_.getPreferredSize().width / 7);
+			XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 7);
 			jButtonArray[workIndex].setVisible(true);
 			inputMap.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
 			actionMap.put("actionButton" + workIndex, actionButtonArray[workIndex]);
-
-			if (element.getAttribute("Action").equals("ADD_SELECTED")) {
-				addSelectedActionName = element.getAttribute("Caption");
-			}
-			if (element.getAttribute("Action").equals("ADD_BLANK")) {
-				isWithoutButtonToAddBlank = false;
-			}
-			if (element.getAttribute("Action").contains("CALL(")) {
-				isWithoutButtonToCallFunction = false;
-			}
+//			if (element.getAttribute("Action").equals("ADD_SELECTED")) {
+//				addSelectedActionName = element.getAttribute("Caption");
+//			}
+//			if (element.getAttribute("Action").equals("ADD_BLANK")) {
+//				isWithoutButtonToAddBlank = false;
+//			}
+//			if (element.getAttribute("Action").contains("CALL(")) {
+//				isWithoutButtonToCallFunction = false;
+//			}
 		}
 	}
 	

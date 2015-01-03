@@ -34,8 +34,8 @@ package xeadDriver;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -43,6 +43,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -76,6 +77,8 @@ public class XFCheckListDialog extends JDialog {
     private XFCheckListDialog_keyAdapter keyListener = new XFCheckListDialog_keyAdapter();
     private XFCheckListDialog_mouseAdapter mouseListener = new XFCheckListDialog_mouseAdapter();
     private Session session_;
+	private GridLayout gridLayoutButtons = new GridLayout();
+    private int width_ = 300;
 
     public XFCheckListDialog(Session session) {
 		super();
@@ -97,19 +100,18 @@ public class XFCheckListDialog extends JDialog {
 		jScrollPane.getViewport().add(jList, null);
 		jPanelMain.add(jScrollPane, BorderLayout.CENTER);
 
-		jPanelButtons.setBorder(BorderFactory.createEtchedBorder());
-		jPanelButtons.setPreferredSize(new Dimension(300, 43));
-		jButtonOK.setBounds(new Rectangle(160, 8, 100, 27));
-		jButtonOK.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
-		jButtonOK.setText("OK");
-		jButtonOK.addActionListener(new XFCheckListDialog_jButtonOK_actionAdapter(this));
-		jButtonCancel.setBounds(new Rectangle(30, 8, 100, 27));
+		jPanelButtons.setBorder(null);
 		jButtonCancel.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonCancel.setText(XFUtility.RESOURCE.getString("Cancel"));
 		jButtonCancel.addActionListener(new XFCheckListDialog_jButtonCancel_actionAdapter(this));
-		jPanelButtons.setLayout(null);
-		jPanelButtons.add(jButtonOK);
+		jButtonOK.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jButtonOK.setText("OK");
+		jButtonOK.addActionListener(new XFCheckListDialog_jButtonOK_actionAdapter(this));
+		gridLayoutButtons.setColumns(2);
+		gridLayoutButtons.setRows(1);
+		jPanelButtons.setLayout(gridLayoutButtons);
 		jPanelButtons.add(jButtonCancel);
+		jPanelButtons.add(jButtonOK);
 
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		this.getContentPane().add(jPanelButtons,  BorderLayout.SOUTH);
@@ -144,12 +146,11 @@ public class XFCheckListDialog extends JDialog {
 		jList.setSelectedIndex(0);
 		jList.requestFocus();
 
-    	int width = 300;
     	int height = keyList.size() * XFUtility.ROW_UNIT_HEIGHT + 70;
     	if (height > 400) {
     		height = 400;
     	}
-		dlgSize = new Dimension(width, height + 30);
+		dlgSize = new Dimension(width_, height + 30);
    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
 		this.setPreferredSize(dlgSize);
     	this.setTitle(title);
@@ -157,6 +158,10 @@ public class XFCheckListDialog extends JDialog {
     	this.setVisible(true);
 
     	return reply;
+    }
+    
+    public void setWidth(int width) {
+    	width_ = width;
     }
 
     protected void processWindowEvent(WindowEvent e) {
@@ -250,6 +255,16 @@ public class XFCheckListDialog extends JDialog {
     
     public String getListSelected() {
     	return checkedKeyList;
+    }
+    
+    public boolean isSelected(String key) {
+		StringTokenizer workTokenizer = new StringTokenizer(checkedKeyList, ";" );
+		while (workTokenizer.hasMoreTokens()) {
+			if (workTokenizer.nextToken().equals(key)) {
+				return true;
+			}
+		}
+    	return false;
     }
 }
 

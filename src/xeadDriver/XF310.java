@@ -1312,6 +1312,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			actionDefinitionArray[i] = "";
 		}
 
+		addRowListTitle = "";
 		int workIndex;
 		org.w3c.dom.Element element;
 		NodeList buttonList = functionElement_.getElementsByTagName("Button");

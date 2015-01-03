@@ -1126,7 +1126,78 @@ public class Session extends JFrame {
 		return message;
 	}
 
+	public String formatTime(int timeFrom) {
+		if (timeFrom > 9999) {
+			JOptionPane.showMessageDialog(null, "Invalid time value.");
+			return null;
+		} else {
+			return formatTime(Integer.toString(timeFrom));
+		}
+	}
+
+	public String formatTime(String timeFrom) {
+		if (timeFrom.contains(":")) {
+			return timeFrom;
+		} else {
+			if (timeFrom.length() > 4) {
+				JOptionPane.showMessageDialog(null, "Invalid time value.");
+				return null;
+			} else {
+				String wrkStr = "00:00";
+				if (timeFrom.length() == 1) {
+					wrkStr = "00:" + "0"+ timeFrom;
+				}
+				if (timeFrom.length() == 2) {
+					wrkStr = "00:" + timeFrom;
+				}
+				if (timeFrom.length() == 3) {
+					wrkStr = "0" + timeFrom.substring(0, 1) + ":" + timeFrom.substring(1, 3);
+				}
+				if (timeFrom.length() == 4) {
+					wrkStr = timeFrom.substring(0, 2) + ":" + timeFrom.substring(2, 4);
+				}
+				return wrkStr;
+			}
+		}
+	}
+
+	public String getOffsetTime(int timeFrom, int minutes) {
+		if (timeFrom > 9999) {
+			JOptionPane.showMessageDialog(null, "Invalid time format.");
+			return null;
+		} else {
+			String strTimeFrom = Integer.toString(timeFrom);
+			if (strTimeFrom.length() == 1) {
+				strTimeFrom = "00:" + "0"+ strTimeFrom;
+			}
+			if (strTimeFrom.length() == 2) {
+				strTimeFrom = "00:" + strTimeFrom;
+			}
+			if (strTimeFrom.length() == 3) {
+				strTimeFrom = "0" + strTimeFrom.substring(0, 1) + ":" + strTimeFrom.substring(1, 3);
+			}
+			if (strTimeFrom.length() == 4) {
+				strTimeFrom = strTimeFrom.substring(0, 2) + ":" + strTimeFrom.substring(2, 4);
+			}
+			return getOffsetTime(strTimeFrom, minutes);
+		}
+	}
+
 	private String getOffsetTime(String hhmmFrom, int minutes) {
+		if (!hhmmFrom.contains(":")) {
+			if (hhmmFrom.length() == 1) {
+				hhmmFrom = "00:" + "0"+ hhmmFrom;
+			}
+			if (hhmmFrom.length() == 2) {
+				hhmmFrom = "00:" + hhmmFrom;
+			}
+			if (hhmmFrom.length() == 3) {
+				hhmmFrom = "0" + hhmmFrom.substring(0, 1) + ":" + hhmmFrom.substring(1, 3);
+			}
+			if (hhmmFrom.length() == 4) {
+				hhmmFrom = hhmmFrom.substring(0, 2) + ":" + hhmmFrom.substring(2, 4);
+			}
+		}
 		double days = 0;
 		double hh = Double.parseDouble(hhmmFrom.substring(0,2));
 		double mm = Double.parseDouble(hhmmFrom.substring(3,5)) + minutes;
@@ -1171,7 +1242,59 @@ public class Session extends JFrame {
 		return strDays + ":" + strHH + ":" + strMM;//-days:hh:mm//
 	}
 
+	public String getOffsetDateTime(String dateFrom, int timeFrom, int minutes) {
+		return getOffsetDateTime(dateFrom, timeFrom, minutes, 0, "00");
+	}
+
+	public String getOffsetDateTime(String dateFrom, int timeFrom, int minutes, int countType) {
+		return getOffsetDateTime(dateFrom, timeFrom, minutes, countType, "00");
+	}
+	
+	public String getOffsetDateTime(String dateFrom, int timeFrom, int minutes, int countType, String kbCalendar) {
+		if (timeFrom > 9999) {
+			JOptionPane.showMessageDialog(null, "Invalid time format.");
+			return null;
+		} else {
+			String strTimeFrom = Integer.toString(timeFrom);
+			if (strTimeFrom.length() == 1) {
+				strTimeFrom = "00:" + "0"+ strTimeFrom;
+			}
+			if (strTimeFrom.length() == 2) {
+				strTimeFrom = "00:" + strTimeFrom;
+			}
+			if (strTimeFrom.length() == 3) {
+				strTimeFrom = "0" + strTimeFrom.substring(0, 1) + ":" + strTimeFrom.substring(1, 3);
+			}
+			if (strTimeFrom.length() == 4) {
+				strTimeFrom = strTimeFrom.substring(0, 2) + ":" + strTimeFrom.substring(2, 4);
+			}
+			return getOffsetDateTime(dateFrom, strTimeFrom, minutes, countType, kbCalendar);
+		}
+	}
+
 	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes, int countType) {
+		return getOffsetDateTime(dateFrom, timeFrom, minutes, countType, "00");
+	}
+
+	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes) {
+		return getOffsetDateTime(dateFrom, timeFrom, minutes, 0, "00");
+	}
+
+	public String getOffsetDateTime(String dateFrom, String timeFrom, int minutes, int countType, String kbCalendar) {
+		if (!timeFrom.contains(":")) {
+			if (timeFrom.length() == 1) {
+				timeFrom = "00:" + "0"+ timeFrom;
+			}
+			if (timeFrom.length() == 2) {
+				timeFrom = "00:" + timeFrom;
+			}
+			if (timeFrom.length() == 3) {
+				timeFrom = "0" + timeFrom.substring(0, 1) + ":" + timeFrom.substring(1, 3);
+			}
+			if (timeFrom.length() == 4) {
+				timeFrom = timeFrom.substring(0, 2) + ":" + timeFrom.substring(2, 4);
+			}
+		}
 		String dateTime = "";
 		String daysHhMm = getOffsetTime(timeFrom, minutes); //timeFrom format is hh:mm//
 		StringTokenizer workTokenizer = new StringTokenizer(daysHhMm, ":" );//-days:hh:mm//
@@ -1398,6 +1521,41 @@ public class Session extends JFrame {
 		} catch (Exception e) {
 		}
 		return result;
+	}
+
+	public Object getMinutesBetweenTimes(int timeFrom, int timeThru) {
+		if (timeFrom > 9999 || timeThru > 9999) {
+			JOptionPane.showMessageDialog(null, "Invalid time format.");
+			return null;
+		} else {
+			String strTimeFrom = Integer.toString(timeFrom);
+			if (strTimeFrom.length() == 1) {
+				strTimeFrom = "00:" + "0"+ strTimeFrom;
+			}
+			if (strTimeFrom.length() == 2) {
+				strTimeFrom = "00:" + strTimeFrom;
+			}
+			if (strTimeFrom.length() == 3) {
+				strTimeFrom = "0" + strTimeFrom.substring(0, 1) + ":" + strTimeFrom.substring(1, 3);
+			}
+			if (strTimeFrom.length() == 4) {
+				strTimeFrom = strTimeFrom.substring(0, 2) + ":" + strTimeFrom.substring(2, 4);
+			}
+			String strTimeThru = Integer.toString(timeThru);
+			if (strTimeThru.length() == 1) {
+				strTimeThru = "00:" + "0"+ strTimeThru;
+			}
+			if (strTimeThru.length() == 2) {
+				strTimeThru = "00:" + strTimeThru;
+			}
+			if (strTimeThru.length() == 3) {
+				strTimeThru = "0" + strTimeThru.substring(0, 1) + ":" + strTimeThru.substring(1, 3);
+			}
+			if (strTimeThru.length() == 4) {
+				strTimeThru = strTimeThru.substring(0, 2) + ":" + strTimeThru.substring(2, 4);
+			}
+			return getMinutesBetweenTimes(strTimeFrom, strTimeThru);
+		}
 	}
 
 	public Object getMinutesBetweenTimes(String timeFrom, String timeThru) {

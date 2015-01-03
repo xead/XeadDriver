@@ -1698,6 +1698,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 									selectDetailRecordsAndSetupTableRows(i, false);
 								}
 							}
+							if (!functionElement_.getAttribute("StructureTable").equals("")) {
+								setupTreeNodes();
+							}
 							returnMap_.put("RETURN_CODE", returnMap.get("RETURN_CODE"));
 						}
 					}

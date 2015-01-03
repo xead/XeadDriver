@@ -8052,13 +8052,13 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 				}
 			}
 		});
-//		jComboBox.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent event) {
-//				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
-//					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
-//				}
-//			}
-//		});
+		jComboBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
+					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
+				}
+			}
+		});
 		jComboBox.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}

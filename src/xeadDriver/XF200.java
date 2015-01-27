@@ -134,6 +134,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private Action[] actionButtonArray = new Action[7];
 	private int buttonIndexForF6, buttonIndexForF8;
 	private String functionKeyToEdit = "";
+	private String actionTextToDelete = "";
 	private JButton buttonToEdit = null;
 	private JButton buttonToCopy = null;
 	private JButton buttonToDelete = null;
@@ -1009,6 +1010,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		actionMap.put("FOCUS_TAB", focusTabAction);
 		//
 		functionKeyToEdit = "";
+		actionTextToDelete = "";
 		buttonToEdit = null;
 		buttonToCopy = null;
 		buttonToDelete = null;
@@ -1052,6 +1054,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					}
 					if (element.getAttribute("Action").equals("DELETE")) {
 						buttonToDelete = jButtonArray[workIndex];
+						actionTextToDelete = element.getAttribute("Caption");
 					}
 					//
 					if (panelMode_.equals("ADD") && element.getAttribute("Action").equals("EDIT")) {
@@ -1698,24 +1701,21 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	
 	void doButtonActionDelete() {
 		Object[] bts = {XFUtility.RESOURCE.getString("Yes"), XFUtility.RESOURCE.getString("No")} ;
-		int reply = JOptionPane.showOptionDialog(jPanelMain, XFUtility.RESOURCE.getString("FunctionMessage27") + dataName + XFUtility.RESOURCE.getString("FunctionMessage28"), XFUtility.RESOURCE.getString("CheckToDelete"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+		int reply = JOptionPane.showOptionDialog(jPanelMain, XFUtility.RESOURCE.getString("FunctionMessage27") + actionTextToDelete + XFUtility.RESOURCE.getString("FunctionMessage28"), XFUtility.RESOURCE.getString("CheckToDelete"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
 		if (reply == 0) {
 			try {
 				setCursor(new Cursor(Cursor.WAIT_CURSOR));
-				//
+
 				resetFieldError();
-				//
+
 				int countOfErrors = checkDeleteErrors();
 				if (countOfErrors == 0) {
-//					if (primaryTable_.getUpdateCounterID().equals("")) {
-//						throw new Exception(XFUtility.RESOURCE.getString("FunctionError51"));
-//					}
-					//
+
 					XFTableOperator operator = createTableOperator(primaryTable_.getSQLToDelete());
 					int recordCount = operator.execute();
 					if (recordCount == 1) {
 						primaryTable_.runScript("AD", "");
-						//
+
 						if (this.isToBeCanceled) {
 							this.rollback();
 						} else {
@@ -1729,7 +1729,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						this.rollback();
 						setErrorAndCloseFunction();
 					}
-					//
+
 					closeFunction();
 				}
 			} catch(ScriptException e) {
@@ -2609,10 +2609,10 @@ class XF200_Field extends XFFieldScriptable {
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
 			jLabelFieldComment = new JLabel();
-			jLabelFieldComment.setText(" " + wrkStr);
+			jLabelFieldComment.setText(wrkStr);
 			jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
+			//jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 6, this.getPreferredSize().height));
 		}
@@ -3056,6 +3056,31 @@ class XF200_Field extends XFFieldScriptable {
 			}
 		}
 	}
+	
+	public boolean isControledByFieldOtherThan(XFEditableField component) {
+		boolean result = false;
+		for (int i = 0; i < dialog_.getFieldList().size(); i++) {
+			if (dialog_.getFieldList().get(i).getComponent() == component) {
+				break;
+			} else {
+				if (dialog_.getFieldList().get(i).getComponent() instanceof XF200_ComboBox) {
+					XF200_ComboBox comboBox = (XF200_ComboBox)dialog_.getFieldList().get(i).getComponent();
+					if (comboBox.getKeyFieldList().contains(dataSourceName)) {
+						result = true;
+						break;
+					}
+				}
+				if (dialog_.getFieldList().get(i).getComponent() instanceof XF200_PromptCallField) {
+					XF200_PromptCallField promptField = (XF200_PromptCallField)dialog_.getFieldList().get(i).getComponent();
+					if (promptField.getControlFieldList().contains(dataSourceName)) {
+						result = true;
+						break;
+					}
+				}
+			}
+		}
+		return result;
+	}
 
 	public Object getNullValue(){
 		if (!XFUtility.getOptionValueWithKeyword(dataTypeOptions, "BOOLEAN").equals("")) {
@@ -3281,7 +3306,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 	private XF200_ReferTable referTable_ = null;
 	private XF200 dialog_;
 	private String oldValue = "";
-	private int indexOfColumn = -1;
+	private int indexOfField = -1;
 
 	public XF200_ComboBox(String dataSourceName, String dataTypeOptions, XF200 dialog, XF200_ReferTable chainTable, boolean isNullable){
 		super();
@@ -3303,7 +3328,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 		fieldID =workTokenizer.nextToken();
 		dialog_ = dialog;
 
-		indexOfColumn = dialog_.getFieldList().size();
+		indexOfField = dialog_.getFieldList().size();
 		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
@@ -3335,13 +3360,13 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
 				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
 					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
-				}
-				XF200_ComboBox comboBoxField;
-				for (int i = 0; i < dialog_.getFieldList().size(); i++) {
-					if (i > indexOfColumn) {
-						if (dialog_.getFieldList().get(i).getComponent() instanceof XF200_ComboBox) {
-							comboBoxField = (XF200_ComboBox)dialog_.getFieldList().get(i).getComponent();
-							comboBoxField.setupRecordList();
+					XF200_ComboBox comboBoxField;
+					for (int i = 0; i < dialog_.getFieldList().size(); i++) {
+						if (i > indexOfField) {
+							if (dialog_.getFieldList().get(i).getComponent() instanceof XF200_ComboBox) {
+								comboBoxField = (XF200_ComboBox)dialog_.getFieldList().get(i).getComponent();
+								comboBoxField.setupRecordList();
+							}
 						}
 					}
 				}
@@ -3438,8 +3463,8 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
 						if (dialog_.getFieldList().get(j).isNullable()) {
 							blankItemRequired = true;
-							//blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
-							if (dialog_.getFieldList().get(j).isVisibleOnPanel()) {
+							if (dialog_.getFieldList().get(j).isVisibleOnPanel()
+								|| dialog_.getFieldList().get(j).isControledByFieldOtherThan(this)) {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
 							} else {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getNullValue());
@@ -3475,6 +3500,10 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 
 			jComboBox.setSelectedItem(selectedItemValue);
 		}
+	}
+	
+	public ArrayList<String> getKeyFieldList() {
+		return keyFieldList;
 	}
 
 	public void setFollowingField(XFEditableField field) {
@@ -3542,9 +3571,9 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
-		if (jComboBox.getItemCount() > 0) {
-			jComboBox.setSelectedIndex(0);
-		}
+//		if (jComboBox.getItemCount() > 0) {
+//			jComboBox.setSelectedIndex(0);
+//		}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -3837,6 +3866,10 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		this.setSize(new Dimension(xFTextField.getWidth() + 27, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(xFTextField, BorderLayout.CENTER);
+	}
+	
+	public ArrayList<String> getControlFieldList() {
+		return fieldsToGetToList_;
 	}
 
 	public void setEditable(boolean editable) {
@@ -4582,9 +4615,9 @@ class XF200_ReferTable extends Object {
 		org.w3c.dom.Element workElement;
 		int count;
 		StringBuffer buf = new StringBuffer();
-		//
+
 		buf.append("select ");
-		//
+
 		count = 0;
 		for (int i = 0; i < fieldIDList.size(); i++) {
 			workElement = dialog_.getSession().getFieldElement(tableID, fieldIDList.get(i));
@@ -4608,17 +4641,17 @@ class XF200_ReferTable extends Object {
 				buf.append(",");
 			}
 			buf.append(rangeKeyFieldValid);
-			//
+
 			workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
 			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
 				buf.append(",");
 				buf.append(rangeKeyFieldExpire);
 			}
 		}
-		//
+
 		buf.append(" from ");
 		buf.append(tableID);
-		//
+
 		StringTokenizer workTokenizer;
 		String keyFieldID, keyFieldTableID;
 		count = 0;
@@ -4628,7 +4661,7 @@ class XF200_ReferTable extends Object {
 				rangeKeyFieldSearch = withKeyFieldIDList.get(i);
 			} else {
 				if (isToGetRecordsForComboBox) {
-					//
+
 					// Value of the field which has either of these conditions should be within WHERE to SELECT records: //
 					// 1. The with-key-field is not edit-able //
 					// 2. The with-key-field is part of PK of the primary table //
@@ -4637,7 +4670,7 @@ class XF200_ReferTable extends Object {
 					for (int j = 0; j < dialog_.getFieldList().size(); j++) {
 						if (withKeyFieldIDList.get(i).equals(dialog_.getFieldList().get(j).getDataSourceName())) {
 							isToBeWithValue = false;
-							if (!dialog_.getFieldList().get(j).isEditable()) {
+							if (dialog_.getFieldList().get(j).isVisibleOnPanel() && !dialog_.getFieldList().get(j).isEditable()) {
 								isToBeWithValue = true;
 							} else {
 								workTokenizer = new StringTokenizer(withKeyFieldIDList.get(i), "." );
@@ -4691,7 +4724,7 @@ class XF200_ReferTable extends Object {
 				}
 			}
 		}
-		//
+
 		if (!activeWhere.equals("")) {
 			if (count == 0) {
 				buf.append(" where ");
@@ -4700,7 +4733,7 @@ class XF200_ReferTable extends Object {
 			}
 			buf.append(activeWhere);
 		}
-		//
+
 		if (this.rangeKeyType != 0) {
 			buf.append(" order by ");
 			buf.append(rangeKeyFieldValid);

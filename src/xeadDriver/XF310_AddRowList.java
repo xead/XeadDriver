@@ -554,11 +554,13 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		int workIndex;
 		referOperatorList.clear();
 
+		addRowListTable.runScript("BR", "", null); /* Script to be run BEFORE READ */
+
 		XFTableOperator operator = dialog_.createTableOperator(addRowListTable.getSQLToSelect());
 		while (operator.next()) {
 			if (addRowListTable.isRecordToBeSelected(operator)) {
 
-				addRowListTable.runScript("BR", "", null); /* Script to be run BEFORE READ */
+//				addRowListTable.runScript("BR", "", null); /* Script to be run BEFORE READ */
 
 				for (int i = 0; i < addRowListColumnList.size(); i++) {
 					addRowListColumnList.get(i).initialize();

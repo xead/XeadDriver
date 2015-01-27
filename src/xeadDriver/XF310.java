@@ -1359,6 +1359,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			jScrollPaneTable.updateUI();
 			int countOfRows = 0;
 
+			////////////////////////////////////////////
+			// Run Detail-table-script for BeforeRead //
+			////////////////////////////////////////////
+			detailTable.runScript("BR", "", null, null);
+
 			/////////////////////////////////
 			// Select Detail-table records //
 			/////////////////////////////////
@@ -1368,11 +1373,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				for (int i = 0; i < detailColumnList.size(); i++) {
 					detailColumnList.get(i).initValue();
 				}
-
-				////////////////////////////////////////////
-				// Run Detail-table-script for BeforeRead //
-				////////////////////////////////////////////
-				detailTable.runScript("BR", "", null, null);
+//
+//				////////////////////////////////////////////
+//				// Run Detail-table-script for BeforeRead //
+//				////////////////////////////////////////////
+//				detailTable.runScript("BR", "", null, null);
 				
 				for (int i = 0; i < detailColumnList.size(); i++) {
 					if (detailColumnList.get(i).getTableID().equals(detailTable.getTableID())) {
@@ -4047,14 +4052,6 @@ class XF310_HeaderField extends XFFieldScriptable {
 		} else {
 			jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
 			XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
-//			jLabelField.setPreferredSize(new Dimension(120, XFUtility.FIELD_UNIT_HEIGHT));
-//			if (metrics.stringWidth(fieldCaption) > 120) {
-//				jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
-//				metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-//				if (metrics.stringWidth(fieldCaption) > 120) {
-//					jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
-//				}
-//			}
 		}
 
 		if (fieldOptionList.contains("PROMPT_LIST")) {
@@ -4188,10 +4185,10 @@ class XF310_HeaderField extends XFFieldScriptable {
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
-			jLabelFieldComment.setText(" " + wrkStr);
+			jLabelFieldComment.setText(wrkStr);
 			jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
-			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
+			//jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 6, this.getPreferredSize().height));
 		}
@@ -4652,6 +4649,31 @@ class XF310_HeaderField extends XFFieldScriptable {
 				break;
 			}
 		}
+	}
+	
+	public boolean isControledByFieldOtherThan(XFEditableField component) {
+		boolean result = false;
+		for (int i = 0; i < dialog_.getHeaderFieldList().size(); i++) {
+			if (dialog_.getHeaderFieldList().get(i).getComponent() == component) {
+				break;
+			} else {
+				if (dialog_.getHeaderFieldList().get(i).getComponent() instanceof XF310_HeaderComboBox) {
+					XF310_HeaderComboBox comboBox = (XF310_HeaderComboBox)dialog_.getHeaderFieldList().get(i).getComponent();
+					if (comboBox.getKeyFieldList().contains(tableAlias_+"."+fieldID_)) {
+						result = true;
+						break;
+					}
+				}
+				if (dialog_.getHeaderFieldList().get(i).getComponent() instanceof XF310_HeaderPromptCall) {
+					XF310_HeaderPromptCall promptField = (XF310_HeaderPromptCall)dialog_.getHeaderFieldList().get(i).getComponent();
+					if (promptField.getControlFieldList().contains(tableAlias_+"."+fieldID_)) {
+						result = true;
+						break;
+					}
+				}
+			}
+		}
+		return result;
 	}
 	
 	public boolean isValueChanged() {
@@ -7614,7 +7636,7 @@ class XF310_HeaderReferTable extends Object {
 					for (int j = 0; j < dialog_.getHeaderFieldList().size(); j++) {
 						if (withKeyFieldIDList.get(i).equals(dialog_.getHeaderFieldList().get(j).getDataSourceName())) {
 							isToBeWithValue = false;
-							if (!dialog_.getHeaderFieldList().get(j).isEditable()) {
+							if (dialog_.getHeaderFieldList().get(j).isVisibleOnPanel() && !dialog_.getHeaderFieldList().get(j).isEditable()) {
 								isToBeWithValue = true;
 							} else {
 								workTokenizer = new StringTokenizer(withKeyFieldIDList.get(i), "." );
@@ -8904,6 +8926,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	private XF310_HeaderReferTable referTable_ = null;
 	private XF310 dialog_;
 	private String oldValue = "";
+	private int indexOfField = -1;
 	
 	public XF310_HeaderComboBox(String dataSourceName, String dataTypeOptions, XF310 dialog, XF310_HeaderReferTable chainTable, boolean isNullable){
 		super();
@@ -8924,6 +8947,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 		fieldID =workTokenizer.nextToken();
 		dialog_ = dialog;
 
+		indexOfField = dialog_.getHeaderFieldList().size();
 		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
@@ -8944,9 +8968,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 		});
 		jComboBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				if (referTable_ != null
-						&& isEditable
-						&& jComboBox.getSelectedIndex() > -1) {
+				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() > -1) {
 					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
 				}
 			}
@@ -8955,6 +8977,18 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
+				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
+					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
+					XF310_HeaderComboBox comboBoxField;
+					for (int i = 0; i < dialog_.getHeaderFieldList().size(); i++) {
+						if (i > indexOfField) {
+							if (dialog_.getHeaderFieldList().get(i).getComponent() instanceof XF310_HeaderComboBox) {
+								comboBoxField = (XF310_HeaderComboBox)dialog_.getHeaderFieldList().get(i).getComponent();
+								comboBoxField.setupRecordList();
+							}
+						}
+					}
+				}
 			}
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 				setupRecordList();
@@ -9047,7 +9081,8 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getHeaderFieldList().get(j).getTableAlias() + "." + dialog_.getHeaderFieldList().get(j).getFieldID())) {
 						if (dialog_.getHeaderFieldList().get(j).isNullable()) {
 							blankItemRequired = true;
-							if (dialog_.getHeaderFieldList().get(j).isVisibleOnPanel()) {
+							if (dialog_.getHeaderFieldList().get(j).isVisibleOnPanel()
+								|| dialog_.getHeaderFieldList().get(j).isControledByFieldOtherThan(this)) {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getHeaderFieldList().get(j).getValue());
 							} else {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getHeaderFieldList().get(j).getNullValue());
@@ -9085,6 +9120,10 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 				jComboBox.setSelectedItem(selectedItemValue);
 			}
 		}
+	}
+	
+	public ArrayList<String> getKeyFieldList() {
+		return keyFieldList;
 	}
 	
 	public void setFollowingField(XFEditableField field) {
@@ -9448,6 +9487,10 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 		this.setLayout(new BorderLayout());
 		this.add(xFTextField, BorderLayout.CENTER);
 		this.add(jButton, BorderLayout.EAST);
+	}
+	
+	public ArrayList<String> getControlFieldList() {
+		return fieldsToGetToList_;
 	}
 
 	public void setEditable(boolean editable) {

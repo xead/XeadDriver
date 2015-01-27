@@ -43,8 +43,15 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M10";
-	public static final String VERSION  = "1.2.10";
+	public static final String FULL_VERSION  = "V1.R2.M11";
+	public static final String VERSION  = "1.2.11";
+	//1.2.11
+	//・XF200でレコードが削除されたときの確認メッセージに削除ボタンのキャプションを組み込むようにした
+	//・XF200,XF110,XF310の見出し域でのリストコンポーネントの動作に関するバグを修正した
+	//・XF100,XF110,XF300,XF310,XF390について、明細テーブルの「読込前スクリプト」を読取開始前に１度だけ実行するようにした
+	//・フィールドの「コメント」について表示様式を微調整した
+	//・XF390について、複数の明細テーブルを扱えるようにした
+	//
 	//1.2.10
 	//・sessionにformatTime(...)の関数を追加するとともに、日時計算関数を改善した
 	//・CheckListDialogの使い勝手を改善した

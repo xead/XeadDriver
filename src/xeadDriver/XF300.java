@@ -1394,6 +1394,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			clearTableRows(index);
 			referOperatorList.clear();
 
+			detailTableArray[index].runScript(index, "BR", ""); /* Script to be run BEFORE READ */
+
 			int countOfRows = 0;
 			detailTableOp = createTableOperator(detailTableArray[index].getSelectSQL());
 			while (detailTableOp.next()) {
@@ -1403,7 +1405,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					detailColumnListArray[index].get(i).initialize();
 				}
 
-				detailTableArray[index].runScript(index, "BR", ""); /* Script to be run BEFORE READ */
+//				detailTableArray[index].runScript(index, "BR", ""); /* Script to be run BEFORE READ */
 
 				for (int i = 0; i < detailColumnListArray[index].size(); i++) {
 					if (detailColumnListArray[index].get(i).getTableID().equals(detailTableArray[index].getTableID())) {
@@ -3857,10 +3859,10 @@ class XF300_HeaderField extends XFFieldScriptable {
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
-			jLabelFieldComment.setText(" " + wrkStr);
+			jLabelFieldComment.setText(wrkStr);
 			jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
+			//jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 5, this.getPreferredSize().height));
 			this.add(jLabelFieldComment, BorderLayout.EAST);

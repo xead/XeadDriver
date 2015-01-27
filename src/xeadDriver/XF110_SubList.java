@@ -1190,7 +1190,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						for (int i = 0; i < detailColumnList.size(); i++) {
 							detailColumnList.get(i).initValue();
 						}
-						detailTable.runScript("BR", "", null, null); /* Detail Table Script to be run BEFORE READ */
+						//detailTable.runScript("BR", "", null, null); /* Detail Table Script to be run BEFORE READ */
 						for (int i = 0; i < detailColumnList.size(); i++) {
 							if (detailColumnList.get(i).getTableID().equals(detailTable.getTableID())) {
 								detailColumnList.get(i).setValueOfResultSet(operator);
@@ -3663,10 +3663,10 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
-			jLabelFieldComment.setText(" " + wrkStr);
+			jLabelFieldComment.setText(wrkStr);
 			jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-			jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
+			//jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 6, this.getPreferredSize().height));
 		}
@@ -4098,6 +4098,31 @@ class XF110_SubListBatchField extends XFFieldScriptable {
 				break;
 			}
 		}
+	}
+	
+	public boolean isControledByFieldOtherThan(XFEditableField component) {
+		boolean result = false;
+		for (int i = 0; i < dialog_.getBatchFieldList().size(); i++) {
+			if (dialog_.getBatchFieldList().get(i).getComponent() == component) {
+				break;
+			} else {
+				if (dialog_.getBatchFieldList().get(i).getComponent() instanceof XF110_SubListBatchComboBox) {
+					XF110_SubListBatchComboBox comboBox = (XF110_SubListBatchComboBox)dialog_.getBatchFieldList().get(i).getComponent();
+					if (comboBox.getKeyFieldList().contains(tableAlias_+"."+fieldID_)) {
+						result = true;
+						break;
+					}
+				}
+				if (dialog_.getBatchFieldList().get(i).getComponent() instanceof XF110_SubListBatchPromptCall) {
+					XF110_SubListBatchPromptCall promptField = (XF110_SubListBatchPromptCall)dialog_.getBatchFieldList().get(i).getComponent();
+					if (promptField.getControlFieldList().contains(tableAlias_+"."+fieldID_)) {
+						result = true;
+						break;
+					}
+				}
+			}
+		}
+		return result;
 	}
 
 	public Object getInternalValue(){
@@ -6859,7 +6884,7 @@ class XF110_SubListBatchReferTable extends Object {
 					for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
 						if (withKeyFieldIDList.get(i).equals(dialog_.getBatchFieldList().get(j).getDataSourceName())) {
 							isToBeWithValue = false;
-							if (!dialog_.getBatchFieldList().get(j).isEditable()) {
+							if (dialog_.getBatchFieldList().get(j).isVisibleOnPanel() && !dialog_.getBatchFieldList().get(j).isEditable()) {
 								isToBeWithValue = true;
 							} else {
 								workTokenizer = new StringTokenizer(withKeyFieldIDList.get(i), "." );
@@ -8012,7 +8037,7 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 	private XF110_SubListBatchReferTable referTable_ = null;
 	private XF110_SubList dialog_;
 	private String oldValue = "";
-	private int indexOfColumn = -1;
+	private int indexOfField = -1;
 	
 	public XF110_SubListBatchComboBox(String dataSourceName, String dataTypeOptions, XF110_SubList dialog, XF110_SubListBatchReferTable chainTable, boolean isNullable){
 		super();
@@ -8033,7 +8058,7 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 		fieldID =workTokenizer.nextToken();
 		dialog_ = dialog;
 
-		indexOfColumn = dialog_.getBatchFieldList().size();
+		indexOfField = dialog_.getBatchFieldList().size();
 		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
@@ -8065,13 +8090,13 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
 				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
 					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
-				}
-				XF110_SubListBatchComboBox comboBoxField;
-				for (int i = 0; i < dialog_.getBatchFieldList().size(); i++) {
-					if (i > indexOfColumn) {
-						if (dialog_.getBatchFieldList().get(i).getComponent() instanceof XF200_ComboBox) {
-							comboBoxField = (XF110_SubListBatchComboBox)dialog_.getBatchFieldList().get(i).getComponent();
-							comboBoxField.setupRecordList();
+					XF110_SubListBatchComboBox comboBoxField;
+					for (int i = 0; i < dialog_.getBatchFieldList().size(); i++) {
+						if (i > indexOfField) {
+							if (dialog_.getBatchFieldList().get(i).getComponent() instanceof XF110_SubListBatchComboBox) {
+								comboBoxField = (XF110_SubListBatchComboBox)dialog_.getBatchFieldList().get(i).getComponent();
+								comboBoxField.setupRecordList();
+							}
 						}
 					}
 				}
@@ -8166,7 +8191,8 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
 						if (dialog_.getBatchFieldList().get(j).isNullable()) {
 							blankItemRequired = true;
-							if (dialog_.getBatchFieldList().get(j).isVisibleOnPanel()) {
+							if (dialog_.getBatchFieldList().get(j).isVisibleOnPanel()
+								|| dialog_.getBatchFieldList().get(j).isControledByFieldOtherThan(this)) {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
 							} else {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getNullValue());
@@ -8204,6 +8230,10 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 
 			jComboBox.setSelectedItem(selectedItemValue);
 		}
+	}
+	
+	public ArrayList<String> getKeyFieldList() {
+		return keyFieldList;
 	}
 	
 	public void setFollowingField(XFEditableField field) {
@@ -8267,9 +8297,9 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 	public void setValue(Object obj) {
 		String value = (String)obj;
 		value = value.trim();
-		if (jComboBox.getItemCount() > 0) {
-			jComboBox.setSelectedIndex(0);
-		}
+//		if (jComboBox.getItemCount() > 0) {
+//			jComboBox.setSelectedIndex(0);
+//		}
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
 				if (jComboBox.getItemAt(i).toString().equals(value)) {
@@ -8570,25 +8600,12 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 		this.add(jButton, BorderLayout.EAST);
 	}
 	
-//	public boolean hasEditControlledKey() {
-//		boolean anyOfKeysAreEditControlled = false;
-//		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
-//			for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
-//				if (fieldsToGetToList_.get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
-//					if (!dialog_.getBatchFieldList().get(j).isEditable() && dialog_.getBatchTable().getTableID().equals(dialog_.getBatchFieldList().get(j).getTableAlias())) {
-//						anyOfKeysAreEditControlled = true;
-//						break;
-//					}
-//				}
-//			}
-//		}
-//		return anyOfKeysAreEditControlled;
-//	}
+	public ArrayList<String> getControlFieldList() {
+		return fieldsToGetToList_;
+	}
 
 	public void setEditable(boolean editable) {
 		isEditable = editable;
-		//xFTextField.setEditable(isEditable);
-		//xFTextField.setFocusable(isEditable);
 		jButton.setEnabled(isEditable);
 	}
 	
@@ -8598,7 +8615,6 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 	}
 
 	public Object getInternalValue() {
-		//return xFTextField.getText();
 		String text = "";
 		String basicType = XFUtility.getBasicTypeOf(dataType);
 		if (basicType.equals("INTEGER")

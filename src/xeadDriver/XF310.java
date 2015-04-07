@@ -152,6 +152,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	};
 	private JPanel[] jPanelButtonArray = new JPanel[7];
 	private JButton[] jButtonArray = new JButton[7];
+	private String[] jButtonNumberArray = new String[7];
 	private Action[] actionButtonArray = new Action[7];
 	private String[] actionDefinitionArray = new String[7];
 	private ScriptEngine scriptEngine;
@@ -299,6 +300,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			jButtonArray[i].setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 			jButtonArray[i].setFocusable(false);
 			jButtonArray[i].addActionListener(new XF310_FunctionButton_actionAdapter(this));
+			jButtonNumberArray[i] = "";
 			jPanelButtonArray[i] = new JPanel();
 			jPanelButtonArray[i].setLayout(new BorderLayout());
 			jPanelButtonArray[i].add(jButtonArray[i], BorderLayout.CENTER);
@@ -1131,6 +1133,23 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 
+			ArrayList<String> disabledButtonNumberList = new ArrayList<String>();
+			if (parmMap_.get("DISABLED_BUTTON_LIST") != null) {
+				String wrkStr = parmMap_.get("DISABLED_BUTTON_LIST").toString();
+				StringTokenizer tokenizer = new StringTokenizer(wrkStr, ",");
+				while (tokenizer.hasMoreTokens()) {
+					wrkStr = tokenizer.nextToken();
+					disabledButtonNumberList.add(wrkStr);
+				}
+			}
+			for (int i = 0; i < 7; i++) {
+				if (disabledButtonNumberList.contains(jButtonNumberArray[i])) {
+					jButtonArray[i].setEnabled(false);
+				} else {
+					jButtonArray[i].setEnabled(true);
+				}
+			}
+
 		} catch(ScriptException e) {
 			cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch (Exception e) {
@@ -1309,6 +1328,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		for (int i = 0; i < 7; i++) {
 			jButtonArray[i].setText("");
 			jButtonArray[i].setVisible(false);
+			jButtonNumberArray[i] = "";
 			actionDefinitionArray[i] = "";
 		}
 
@@ -1319,6 +1339,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		for (int i = 0; i < buttonList.getLength(); i++) {
 			element = (org.w3c.dom.Element)buttonList.item(i);
 			workIndex = Integer.parseInt(element.getAttribute("Position"));
+			jButtonNumberArray[workIndex] = element.getAttribute("Number");
 			actionDefinitionArray[workIndex] = element.getAttribute("Action");
 			XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", jPanelButtons.getSize().width / 8);
 			jButtonArray[workIndex].setVisible(true);
@@ -2497,8 +2518,13 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			numberCell.setForeground(table.getSelectionForeground());
 
 			for (int i = 0; i < cellList.size(); i++) {
-				cellList.get(i).setEditable(detailColumnList.get(i).isEditable());
-				cellList.get(i).setFocusable(detailColumnList.get(i).isEditable());
+				if (detailColumnList.get(i).isNoUpdate()) {
+					cellList.get(i).setEditable(false);
+					cellList.get(i).setFocusable(false);
+				} else {
+					cellList.get(i).setEditable(detailColumnList.get(i).isEditable());
+					cellList.get(i).setFocusable(detailColumnList.get(i).isEditable());
+				}
 				if (activeRowObject.getErrorCellIndexList().contains(i)) {
 					cellList.get(i).setColorOfError();
 				} else {
@@ -2509,6 +2535,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
     			}
     			if (cellList.get(i) instanceof XF310_CellEditorWithComboBox) {
     				((XF310_CellEditorWithComboBox)cellList.get(i)).setupRecordList();
+    			}
+    			if (cellList.get(i) instanceof XF310_CellEditorWithPromptCall) {
+    				((XF310_CellEditorWithPromptCall)cellList.get(i)).setEditableAccordingToRecordType(activeRowObject.getRecordType());
     			}
 				if (!detailColumnList.get(i).getByteaTypeFieldID().equals("")) {
 					for (int j = 0; j < detailColumnList.size(); j++) {
@@ -2573,6 +2602,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						if (firstEditableHeaderField == null) {
 							column = 0;
 							row = 0;
+							if (row == fromRowIndex && column == fromColumnIndex) {
+								break;
+							}
 						} else {
 							stopCellEditing();
 							jScrollPaneTable.transferFocus();
@@ -2608,6 +2640,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						if (firstEditableHeaderField == null) {
 							column = cellList.size() - 1;
 							row = jTableMain.getRowCount() - 1;
+							if (row == fromRowIndex && column == fromColumnIndex) {
+								break;
+							}
 						} else {
 							stopCellEditing();
 							jScrollPaneTable.transferFocusBackward();
@@ -3947,6 +3982,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 	private JButton jButtonToRefferZipNo = null;
 	private boolean isKey = false;
 	private boolean isNullable = true;
+	private boolean isNoUpdate = false;
 	private boolean isFieldOnPrimaryTable = false;
 	private boolean isVisibleOnPanel = true;
 	private boolean isEnabled = true;
@@ -3976,8 +4012,7 @@ class XF310_HeaderField extends XFFieldScriptable {
 		tableID_ = dialog.getTableIDOfTableAlias(tableAlias_);
 		fieldID_ =workTokenizer.nextToken();
 
-		if (tableID_.equals(dialog_.getHeaderTable().getTableID())
-				&& tableID_.equals(tableAlias_)) {
+		if (tableID_.equals(dialog_.getHeaderTable().getTableID()) && tableID_.equals(tableAlias_)) {
 			isFieldOnPrimaryTable = true;
 			ArrayList<String> keyFieldList = dialog_.getHeaderTable().getKeyFieldIDList();
 			for (int i = 0; i < keyFieldList.size(); i++) {
@@ -4024,6 +4059,10 @@ class XF310_HeaderField extends XFFieldScriptable {
 		}
 		if (workElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
+		}
+		if (workElement.getAttribute("NoUpdate").equals("T")) {
+			isNoUpdate = true;
+			isEditable = false;
 		}
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
@@ -4188,7 +4227,6 @@ class XF310_HeaderField extends XFFieldScriptable {
 			jLabelFieldComment.setText(wrkStr);
 			jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
-			//jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 6, this.getPreferredSize().height));
 		}
@@ -4290,9 +4328,12 @@ class XF310_HeaderField extends XFFieldScriptable {
 			for (int i = 0; i < keyFieldList.size(); i++) {
 				if (keyFieldList.get(i).equals(fieldID_)) {
 					isKey = true;
+					isEditable = false;
 					break;
 				}
 			}
+		} else {
+			isEditable = false;
 		}
 
 		org.w3c.dom.Element workElement = dialog.getSession().getFieldElement(tableID_, fieldID_);
@@ -4313,6 +4354,10 @@ class XF310_HeaderField extends XFFieldScriptable {
 		}
 		if (workElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
+		}
+		if (workElement.getAttribute("NoUpdate").equals("T")) {
+			isNoUpdate = true;
+			isEditable = false;
 		}
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
@@ -4420,16 +4465,25 @@ class XF310_HeaderField extends XFFieldScriptable {
 	}
 
 	public void setEditable(boolean editable){
-		isEditable = editable;
-		component.setEditable(editable);
-		if (jButtonToRefferZipNo != null) {
-			if (isEditable) {
-				jPanelFieldComment.add(jButtonToRefferZipNo, BorderLayout.WEST);
-				jPanelFieldComment.repaint();
-			} else {
-				jPanelFieldComment.remove(jButtonToRefferZipNo);
-				jPanelFieldComment.repaint();
+		//if (this.isKey || this.isNoUpdate) {
+		if (this.isNoUpdate) {
+			component.setEditable(false);
+		} else {
+			component.setEditable(editable);
+		}
+		if (component.isEditable()) {
+			isEditable = true;
+			if (jButtonToRefferZipNo != null) {
+				if (isEditable) {
+					jPanelFieldComment.add(jButtonToRefferZipNo, BorderLayout.WEST);
+					jPanelFieldComment.repaint();
+				} else {
+					jPanelFieldComment.remove(jButtonToRefferZipNo);
+					jPanelFieldComment.repaint();
+				}
 			}
+		} else {
+			isEditable = false;
 		}
 	}
 	
@@ -5907,7 +5961,9 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 					HashMap<String, Object> columnValueMap = dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap();
 					for (int i = 0; i < fieldsToPutList_.size(); i++) {
 						value = columnValueMap.get(fieldsToPutList_.get(i));
-						if (value != null) {
+						if (value == null) {
+							JOptionPane.showMessageDialog(null, "Unable to send the value of field " + fieldsToPutList_.get(i));
+						} else {
 							parmValueMap.put(fieldsToPutToList_.get(i), value);
 						}
 					}
@@ -5925,7 +5981,9 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
-							if (value != null) {
+							if (value == null) {
+								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+							} else {
 								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}
@@ -5982,6 +6040,26 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 	
 	public void setEditable(boolean isEditable) {
 		jButton.setEnabled(isEditable);
+	}
+
+	public void setEditableAccordingToRecordType(String type) {
+		boolean isEditable = true;
+		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
+			for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
+				if (dialog_.getDetailColumnList().get(j).isFieldOnDetailTable()
+						&& dialog_.getDetailColumnList().get(j).getDataSourceName().equals(fieldsToGetToList_.get(i))) {
+					if (type.equals("CURRENT")
+							&& (dialog_.getDetailColumnList().get(j).isKey() || dialog_.getDetailColumnList().get(j).isNoUpdate())) {
+						isEditable = false;
+						break;
+					}
+				}
+			}
+			if (!isEditable) {
+				break;
+			}
+		}
+		this.setEditable(isEditable);
 	}
 	
 	public boolean isEditable() {
@@ -6302,6 +6380,7 @@ class XF310_DetailColumn extends XFColumnScriptable {
 	private boolean isVirtualField = false;
 	private boolean isEnabled = true;
 	private boolean isEditable = true;
+	private boolean isNoUpdate = false;
 	private boolean isNonEditableField = false;
 	private boolean isRangeKeyFieldValid = false;
 	private boolean isRangeKeyFieldExpire = false;
@@ -6381,6 +6460,9 @@ class XF310_DetailColumn extends XFColumnScriptable {
 			if (!fieldOptionList.contains("PROMPT_LIST")) {
 				isNullable = false;
 			}
+		}
+		if (workElement.getAttribute("NoUpdate").equals("T")) {
+			isNoUpdate = true;
 		}
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "AUTO_NUMBER");
@@ -6639,6 +6721,9 @@ class XF310_DetailColumn extends XFColumnScriptable {
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (workElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
+		}
+		if (workElement.getAttribute("NoUpdate").equals("T")) {
+			isNoUpdate = true;
 		}
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
@@ -7113,6 +7198,10 @@ class XF310_DetailColumn extends XFColumnScriptable {
 
 	public boolean isEditable() {
 		return isEditable;
+	}
+
+	public boolean isNoUpdate() {
+		return isNoUpdate;
 	}
 
 	public boolean isNonEditableField() {
@@ -9228,8 +9317,6 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	}
 	
 	public void setWidth(int width) {
-		//jComboBox.setSize(width, jComboBox.getHeight());
-		//jTextField.setSize(width - 17, jTextField.getHeight());
 		this.setSize(new Dimension(width, XFUtility.FIELD_UNIT_HEIGHT));
 	}
 
@@ -9446,7 +9533,9 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 					HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
 					for (int i = 0; i < fieldsToPutList_.size(); i++) {
 						value = dialog_.getValueOfHeaderFieldByName(fieldsToPutList_.get(i));
-						if (value != null) {
+						if (value == null) {
+							JOptionPane.showMessageDialog(null, "Unable to send the value of field " + fieldsToPutList_.get(i));
+						} else {
 							fieldValuesMap.put(fieldsToPutToList_.get(i), value);
 						}
 					}
@@ -9455,7 +9544,9 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
-							if (value != null) {
+							if (value == null) {
+								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+							} else {
 								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}
@@ -9496,7 +9587,30 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 	public void setEditable(boolean editable) {
 		isEditable = editable;
 		jButton.setEnabled(isEditable);
+//		if (editable && !isEditControled()) {
+//			isEditable = true;
+//			jButton.setEnabled(true);
+//		} else {
+//			isEditable = false;
+//			jButton.setEnabled(false);
+//		}
 	}
+
+//	private boolean isEditControled() {
+//		boolean reply = false;
+//		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
+//			for (int j = 0; j < dialog_.getHeaderFieldList().size(); j++) {
+//				if (dialog_.getHeaderFieldList().get(j).isFieldOnPrimaryTable()
+//				  && dialog_.getHeaderFieldList().get(j).getDataSourceName().equals(fieldsToGetToList_.get(i))) {
+//				  if (!dialog_.getHeaderFieldList().get(j).isEditable()) {
+//					reply = true;
+//					break;
+//				  }
+//				}
+//			}
+//		}
+//		return reply;
+//	}
 	
 	public void setToolTipText(String text) {
 		jButton.setToolTipText(text);

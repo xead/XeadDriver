@@ -128,7 +128,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "FunctionError48", "」が指定されていません。" },
 		{ "FunctionError49", "会計日として処理可能な範囲からはずれています。" },
 		{ "FunctionError50", "＊読取専用ＤＢに対して追加要求がなされたため、処理はキャンセルされました。" },
-		//{ "FunctionError51", "＊読取専用テーブルに対して更新操作できません。処理はキャンセルされました。" },
+		//{ "FunctionError51", "＊対象データを特定できません。処理はキャンセルされます。" },
 		{ "FunctionError52", "＊行追加リストに表示カラムが指定されていません。処理はキャンセルされます。" },
 		{ "FunctionError53", "指定値にもとづく" },
 		{ "FunctionMessage1", "＊絞込み条件を指定して検索ボタン(Ctrl+L)を押してください。" },

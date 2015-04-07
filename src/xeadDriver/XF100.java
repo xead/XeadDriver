@@ -4054,13 +4054,14 @@ class XF100_PromptCallField extends JPanel implements XFEditableField {
 								dialog_.getFilterList().get(i).setValue(value);
 							}
 						}
-						if (!xFTextField.getText().equals("")) {
+						if (xFTextField.getText().equals("")) {
+							listValue = "";
+						} else {
 							xFTextField.setFocusable(true);
 							if (xFTextField.getText().contains(";")) {
 								listValue = xFTextField.getText();
 								xFTextField.setText("*LIST");
 							} else {
-								//listValue = "";
 								if (kubunValueList == null) {
 									listValue = "";
 								} else {
@@ -4071,7 +4072,6 @@ class XF100_PromptCallField extends JPanel implements XFEditableField {
 						}
 					}
 				} catch (Exception ex) {
-					JOptionPane.showMessageDialog(null, ex.getMessage());
 				}
 			}
 		});
@@ -4108,7 +4108,6 @@ class XF100_PromptCallField extends JPanel implements XFEditableField {
 
 	public Object getInternalValue() {
 		String text = "";
-		//if (xFTextField.getText().equals("*LIST")) {
 		if (xFTextField.getText().equals("*LIST") || kubunValueList != null) {
 			text = listValue;
 		} else {
@@ -4143,8 +4142,10 @@ class XF100_PromptCallField extends JPanel implements XFEditableField {
 	
 	public void setValue(Object obj) {
 		if (obj == null) {
+			listValue = "";
 			xFTextField.setText("");
 		} else {
+			listValue = obj.toString();
 			xFTextField.setText(obj.toString());
 		}
 	}

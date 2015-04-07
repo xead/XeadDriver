@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -184,7 +184,8 @@ public class Session extends JFrame {
 	private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 	private Bindings globalScriptBindings = null;
 	private ScriptEngine scriptEngine = null;
-	private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
+	//private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
+	private static final String ZIP_URL = "http://zip.cgis.biz/xml/zip.php?";
 	private DOMParser domParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
@@ -3003,25 +3004,47 @@ public class Session extends JFrame {
 
 	public String getAddressFromZipNo(String zipNo) {
 		String value = "";
+		String zipNo_ = zipNo.replace("-", "");
 		HttpResponse response = null;
 		InputStream inputStream = null;
 		HttpClient httpClient = new DefaultHttpClient();
 		try {
-			httpGet.setURI(new URI(ZIP_URL + "zipcode=" + zipNo + "&format=xml"));
+			//httpGet.setURI(new URI(ZIP_URL + "zipcode=" + zipNo + "&format=xml"));
+			httpGet.setURI(new URI(ZIP_URL + "zn=" + zipNo_));
 			response = httpClient.execute(httpGet);  
 			if (response.getStatusLine().getStatusCode() < 400){
 				inputStream = response.getEntity().getContent();
 				domParser.parse(new InputSource(inputStream));
 				responseDoc = domParser.getDocument();
-				org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("groovewebservice").item(0);
-				if (rootNode.getElementsByTagName("address").getLength() == 0) {
+//				org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("groovewebservice").item(0);
+//				if (rootNode.getElementsByTagName("address").getLength() == 0) {
+//					JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage54") + "\n" + zipNo);
+//				} else {
+//					org.w3c.dom.Element addressNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("address").item(0);
+//					org.w3c.dom.Element prefectureNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("prefecture").item(0);
+//					org.w3c.dom.Element cityNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("city").item(0);
+//					org.w3c.dom.Element townNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("town").item(0);
+//					value = prefectureNode.getTextContent() + cityNode.getTextContent() + townNode.getTextContent();
+//				}
+				org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("ZIP_result").item(0);
+				if (rootNode.getElementsByTagName("value").getLength() == 0) {
 					JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage54") + "\n" + zipNo);
 				} else {
-					org.w3c.dom.Element addressNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("address").item(0);
-					org.w3c.dom.Element prefectureNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("prefecture").item(0);
-					org.w3c.dom.Element cityNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("city").item(0);
-					org.w3c.dom.Element townNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("town").item(0);
-					value = prefectureNode.getTextContent() + cityNode.getTextContent() + townNode.getTextContent();
+					org.w3c.dom.Element stateNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("value").item(4);
+					org.w3c.dom.Element cityNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("value").item(5);
+					org.w3c.dom.Element addressNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("value").item(6);
+					org.w3c.dom.Element companyNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("value").item(7);
+					String state = stateNode.getAttribute("state");
+					String city = cityNode.getAttribute("city");
+					String address = addressNode.getAttribute("address");
+					if (address.equals("none")) {
+						address = "";
+					}
+					String company = companyNode.getAttribute("company");
+					if (company.equals("none")) {
+						company = "";
+					}
+					value = state + city + address + company;
 				}
 			}  
 		} catch (Exception ex) {

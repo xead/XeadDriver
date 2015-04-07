@@ -608,7 +608,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				}
 				jCheckBoxToExecuteBatchFunction.setBounds(posX, posY + 1, metrics.stringWidth(jCheckBoxToExecuteBatchFunction.getText()) + 35, 20);
 				jPanelBatchFields.add(jCheckBoxToExecuteBatchFunction);
-				dim = jCheckBoxToExecuteBatchFunction.getPreferredSize();
+				//dim = jCheckBoxToExecuteBatchFunction.getPreferredSize();
+				dim = new Dimension(jCheckBoxToExecuteBatchFunction.getBounds().width, jCheckBoxToExecuteBatchFunction.getBounds().height);
+				//JOptionPane.showMessageDialog(null, (posX + dim.width)+", "+ biggestWidth);
 				if (posX + dim.width > biggestWidth) {
 					biggestWidth = posX + dim.width;
 				}
@@ -763,8 +765,14 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			////////////////////////////////
 			// Setup panel configurations //
 			////////////////////////////////
-	        this.setPreferredSize(new Dimension(dialog_.getPreferredSize().width, dialog_.getPreferredSize().height));
-			this.setLocation(dialog_.getLocation().x, dialog_.getLocation().y);
+			if (batchFieldList.size() > 0 && (jPanelBatchFields.getPreferredSize().width + 40) > dialog_.getPreferredSize().width) {
+				this.setPreferredSize(new Dimension(jPanelBatchFields.getPreferredSize().width + 40, dialog_.getPreferredSize().height));
+				int posX = ((session_.getMenuRectangle().width - (jPanelBatchFields.getPreferredSize().width + 40)) / 2) + session_.getMenuRectangle().x;
+				this.setLocation(posX, dialog_.getLocation().y);
+			} else {
+				this.setPreferredSize(new Dimension(dialog_.getPreferredSize().width, dialog_.getPreferredSize().height));
+				this.setLocation(dialog_.getLocation().x, dialog_.getLocation().y);
+			}
 			messageList.clear();
 			if (initialMsg.equals("")) {
 				jTextAreaMessages.setText(XFUtility.RESOURCE.getString("FunctionMessage7") + buttonUpdateCaption + XFUtility.RESOURCE.getString("FunctionMessage8"));
@@ -5397,7 +5405,9 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 					HashMap<String, Object> columnValueMap = dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap();
 					for (int i = 0; i < fieldsToPutList_.size(); i++) {
 						value = columnValueMap.get(fieldsToPutList_.get(i));
-						if (value != null) {
+						if (value == null) {
+							JOptionPane.showMessageDialog(null, "Unable to send the value of field " + fieldsToPutList_.get(i));
+						} else {
 							parmValueMap.put(fieldsToPutToList_.get(i), value);
 						}
 					}
@@ -5406,7 +5416,9 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
-							if (value != null) {
+							if (value == null) {
+								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+							} else {
 								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}
@@ -5793,6 +5805,9 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 				isNullable = false;
 			}
 		}
+		if (workElement.getAttribute("NoUpdate").equals("T")) {
+			isNonEditableField = true;
+		}
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
@@ -6013,6 +6028,9 @@ class XF110_SubListDetailColumn extends XFColumnScriptable {
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (workElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
+		}
+		if (workElement.getAttribute("NoUpdate").equals("T")) {
+			isNonEditableField = true;
 		}
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
@@ -8556,7 +8574,9 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 					HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
 					for (int i = 0; i < fieldsToPutList_.size(); i++) {
 						value = dialog_.getValueOfBatchFieldByName(fieldsToPutList_.get(i));
-						if (value != null) {
+						if (value == null) {
+							JOptionPane.showMessageDialog(null, "Unable to send the value of field " + fieldsToPutList_.get(i));
+						} else {
 							fieldValuesMap.put(fieldsToPutToList_.get(i), value);
 						}
 					}
@@ -8566,7 +8586,9 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
-							if (value != null) {
+							if (value == null) {
+								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+							} else {
 								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}

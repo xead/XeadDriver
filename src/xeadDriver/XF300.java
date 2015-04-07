@@ -150,6 +150,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private JScrollPane jScrollPaneMessages = new JScrollPane();
 	private JTextArea jTextAreaMessages = new JTextArea();
 	private JButton[] jButtonArray = new JButton[7];
+	private ArrayList<String> disabledButtonNumberList = new ArrayList<String>(); 
 	private Color selectionColorWithFocus = new Color(49,106,197);
 	private Color selectionColorWithoutFocus = new Color(213,213,213);
 	private SortableDomElementListModel detailTabSortingList;
@@ -489,21 +490,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			/////////////////////////
 			fetchHeaderRecord(false);
 			if (!isToBeCanceled) {
-
-//				////////////////////////////
-//				// Set Detail Tab Enabled //
-//				////////////////////////////
-//				for (int i = 0; i < detailTabSortingList.getSize(); i++) {
-//					jTabbedPane.setEnabledAt(i, true);
-//				}
-//				if (parmMap_.get("DISABLED_TAB_LIST") != null) {
-//					String wrkStr = parmMap_.get("DISABLED_TAB_LIST").toString();
-//					StringTokenizer tokenizer = new StringTokenizer(wrkStr, ",");
-//					while (tokenizer.hasMoreTokens()) {
-//						wrkStr = tokenizer.nextToken();
-//						jTabbedPane.setEnabledAt(Integer.parseInt(wrkStr), false);
-//					}
-//				}
 
 				/////////////////////////////////////////////////
 				// Select Detail Tab Records and Setup JTables //
@@ -1240,6 +1226,21 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					wrkStr = tokenizer.nextToken();
 					jTabbedPane.setEnabledAt(Integer.parseInt(wrkStr), false);
 				}
+				parmMap_.remove("DISABLED_TAB_LIST");
+			}
+
+			/////////////////////////////////
+			// Set Function Button Enabled //
+			/////////////////////////////////
+			disabledButtonNumberList.clear();
+			if (parmMap_.get("DISABLED_BUTTON_LIST") != null) {
+				String wrkStr = parmMap_.get("DISABLED_BUTTON_LIST").toString();
+				StringTokenizer tokenizer = new StringTokenizer(wrkStr, ",");
+				while (tokenizer.hasMoreTokens()) {
+					wrkStr = tokenizer.nextToken();
+					disabledButtonNumberList.add(wrkStr);
+				}
+				parmMap_.remove("DISABLED_BUTTON_LIST");
 			}
 
 		} catch(ScriptException e) {
@@ -1357,6 +1358,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			actionDefinitionArray[workIndex] = element.getAttribute("Action");
 			XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8);
 			jButtonArray[workIndex].setVisible(true);
+			jButtonArray[workIndex].setEnabled(true);
+			if (disabledButtonNumberList.contains(element.getAttribute("Number"))) {
+				jButtonArray[workIndex].setEnabled(false);
+			}
 			inputMap.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
 			actionMap.put("actionButton" + workIndex, actionButtonArray[workIndex]);
 			if (element.getAttribute("Number").equals("6")) {

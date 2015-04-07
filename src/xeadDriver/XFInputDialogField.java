@@ -50,6 +50,7 @@ public class XFInputDialogField extends JPanel {
 		super();
 		parmID_ = parmID;
     	if (!inputType.equals("ALPHA")
+    			&& !inputType.equals("ZEROFILL")
     			&& !inputType.equals("KANJI")
     			&& !inputType.equals("NUMERIC")
     			&& !inputType.equals("DATE")
@@ -76,6 +77,7 @@ public class XFInputDialogField extends JPanel {
 //			}
 //		}
 		if (inputType_.equals("ALPHA")
+				|| inputType_.equals("ZEROFILL")
 				|| inputType_.equals("KANJI")
 				|| inputType_.equals("NUMERIC")) {
 			JTextField field = new JTextField();
@@ -189,6 +191,7 @@ public class XFInputDialogField extends JPanel {
 		   value = "";
 	   }
 	   if (inputType_.equals("ALPHA")
+			   || inputType_.equals("ZEROFILL")
 			   || inputType_.equals("KANJI")
 			   || inputType_.equals("NUMERIC")) {
 		   if (inputType_.equals("ALPHA") || inputType_.equals("KANJI")) {
@@ -266,6 +269,14 @@ public class XFInputDialogField extends JPanel {
 		if (inputType_.equals("ALPHA") || inputType_.equals("KANJI")) {
 			return ((JTextField)component).getText();
 		}
+		if (inputType_.equals("ZEROFILL")) {
+			String wrkStr = ((JTextField)component).getText();
+			int fillZeroLength = size_ - wrkStr.length();
+			for (int i=0; i < fillZeroLength; i++ ) {
+				wrkStr = "0" + wrkStr;
+			}
+			return wrkStr;
+		}
 		if (inputType_.equals("NUMERIC")) {
 			if (decimal_ == 0) {
 				return Integer.parseInt(getStringNumber(((JTextField)component).getText()));
@@ -313,7 +324,7 @@ public class XFInputDialogField extends JPanel {
    }
    
    public void setPrompter(String functionID, String sendFrom, String sendTo, String receiveFrom, String receiveTo) {
-		if (inputType_.equals("ALPHA") || inputType_.equals("NUMERIC")) {
+		if (inputType_.equals("ALPHA") || inputType_.equals("ZEROFILL") || inputType_.equals("NUMERIC")) {
 			//
 			functionID_ = functionID;
 			//

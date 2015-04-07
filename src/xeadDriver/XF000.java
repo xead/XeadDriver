@@ -37,6 +37,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -126,28 +127,28 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelTimer.setLayout(null);
 		jPanelTimer.setFocusable(false);
 		jPanelTimer.setBorder(BorderFactory.createEtchedBorder());
-		jPanelTimer.setPreferredSize(new Dimension(10, 64));
-		jLabelTime.setFont(new java.awt.Font("SansSerif", 0, 12));
+		jPanelTimer.setPreferredSize(new Dimension(10, 75));
+		jLabelTime.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jLabelTime.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelTime.setHorizontalTextPosition(SwingConstants.LEADING);
 		jLabelTime.setText(XFUtility.RESOURCE.getString("TimerTime"));
-		jLabelTime.setBounds(new Rectangle(10, 37, 80, 15));
-		jTextFieldTime.setFont(new java.awt.Font("SansSerif", 0, 12));
-		jTextFieldTime.setBounds(new Rectangle(100, 34, 540, 22));
-		jLabelCondition.setFont(new java.awt.Font("SansSerif", 0, 12));
+		jLabelTime.setBounds(new Rectangle(10, 42, 100, 20));
+		jTextFieldTime.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jTextFieldTime.setBounds(new Rectangle(115, 40, 540, 25));
+		jLabelCondition.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jLabelCondition.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelCondition.setHorizontalTextPosition(SwingConstants.LEADING);
 		jLabelCondition.setText(XFUtility.RESOURCE.getString("TimerCondition"));
-		jLabelCondition.setBounds(new Rectangle(10, 11, 80, 15));
-		jCheckBoxRepeat.setFont(new java.awt.Font("SansSerif", 0, 12));
+		jLabelCondition.setBounds(new Rectangle(10, 11, 100, 20));
+		jCheckBoxRepeat.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jCheckBoxRepeat.setText(XFUtility.RESOURCE.getString("TimerRepeat"));
-		jCheckBoxRepeat.setBounds(new Rectangle(255, 11, 150, 15));
-		jCheckBoxRunOffDay.setFont(new java.awt.Font("SansSerif", 0, 12));
+		jCheckBoxRepeat.setBounds(new Rectangle(295, 11, 180, 20));
+		jCheckBoxRunOffDay.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jCheckBoxRunOffDay.setText(XFUtility.RESOURCE.getString("TimerRunOffDay"));
-		jCheckBoxRunOffDay.setBounds(new Rectangle(410, 11, 150, 15));
-		jCheckBoxRunNow.setFont(new java.awt.Font("SansSerif", 0, 12));
+		jCheckBoxRunOffDay.setBounds(new Rectangle(485, 11, 180, 20));
+		jCheckBoxRunNow.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jCheckBoxRunNow.setText(XFUtility.RESOURCE.getString("TimerRunNow"));
-		jCheckBoxRunNow.setBounds(new Rectangle(100, 11, 150, 15));
+		jCheckBoxRunNow.setBounds(new Rectangle(115, 11, 180, 20));
 		jCheckBoxRunNow.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				setRunNow();
@@ -161,7 +162,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelTimer.add(jCheckBoxRunNow);
 		jTextAreaMessages.setEditable(false);
 		jTextAreaMessages.setBorder(BorderFactory.createEtchedBorder());
-		jTextAreaMessages.setFont(new java.awt.Font("SansSerif", 0, FONT_SIZE));
+		jTextAreaMessages.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextAreaMessages.setFocusable(false);
 		jTextAreaMessages.setLineWrap(true);
 		jTextAreaMessages.setWrapStyleWord(true);
@@ -172,11 +173,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setLayout(new BorderLayout());
 		jPanelBottom.setBorder(null);
-		jLabelFunctionID.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE-2));
+		jLabelFunctionID.setFont(new java.awt.Font(session_.systemFont, 0, FONT_SIZE-2));
 		jLabelFunctionID.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelFunctionID.setForeground(Color.gray);
 		jLabelFunctionID.setFocusable(false);
-		jLabelSessionID.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE-2));
+		jLabelSessionID.setFont(new java.awt.Font(session_.systemFont, 0, FONT_SIZE-2));
 		jLabelSessionID.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelSessionID.setForeground(Color.gray);
 		jLabelSessionID.setFocusable(false);
@@ -197,9 +198,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelTop.add(jScrollPaneMessages, BorderLayout.CENTER);
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		jPanelBottom.add(jPanelButtons, BorderLayout.CENTER);
-		jButtonExit.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jButtonExit.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonExit.setText(XFUtility.RESOURCE.getString("ExitButton"));
-		jButtonExit.setBounds(new Rectangle(5, 2, 100, 32));
+		jButtonExit.setBounds(new Rectangle(5, 2, 120, 32));
 		jButtonExit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (timer != null) {
@@ -208,17 +209,17 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				closeFunction();
 			}
 		});
-		jButtonStart.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jButtonStart.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonStart.setText(XFUtility.RESOURCE.getString("TimerStart"));
-		jButtonStart.setBounds(new Rectangle(150, 2, 100, 32));
+		jButtonStart.setBounds(new Rectangle(160, 2, 120, 32));
 		jButtonStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				startTimer();
 			}
 		});
-		jButtonStop.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jButtonStop.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonStop.setText(XFUtility.RESOURCE.getString("TimerStop"));
-		jButtonStop.setBounds(new Rectangle(295, 2, 100, 32));
+		jButtonStop.setBounds(new Rectangle(315, 2, 120, 32));
 		jButtonStop.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (timer != null) {
@@ -226,9 +227,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 		});
-		jButtonIconify.setFont(new java.awt.Font("Dialog", 0, FONT_SIZE));
+		jButtonIconify.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonIconify.setText(XFUtility.RESOURCE.getString("Iconify"));
-		jButtonIconify.setBounds(new Rectangle(440, 2, 100, 32));
+		jButtonIconify.setBounds(new Rectangle(470, 2, 120, 32));
 		jButtonIconify.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				session_.setExtendedState(JFrame.ICONIFIED | session_.getExtendedState());
@@ -334,8 +335,8 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		if (!functionElement_.getAttribute("TimerOption").equals("")) {
 			this.setTitle(functionElement_.getAttribute("Name"));
 			this.setSize(new Dimension(scrSize.width, scrSize.height));
-			int width = 665;
-			int height = 428;
+			int width = 700;
+			int height = 450;
 			this.setPreferredSize(new Dimension(width, height));
 			int posX = (scrSize.width - width) / 2;
 			int posY = (scrSize.height - height) / 2;
@@ -478,7 +479,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	public void cancelWithMessage(String message) {
 		if (!message.equals("")) {
 			JOptionPane.showMessageDialog(null, message);
-			//returnMap_.put("RETURN_MESSAGE", message);
 		}
 		errorHasOccured = true;
 	}
@@ -603,10 +603,32 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		engineScriptBindings.put("instance", (XFScriptable)this);
 		String scriptText = XFUtility.substringLinesWithTokenOfEOL(functionElement_.getAttribute("Script"), "\n");
 		if (!scriptText.equals("")) {
+
 			StringBuffer bf = new StringBuffer();
 			bf.append(scriptText);
 			bf.append(session_.getScriptFunctions());
 			scriptEngine.eval(bf.toString());
+
+			if (returnMap_.get("RETURN_CODE").equals("99")) {
+				errorHasOccured = true;
+				if (this.isVisible()) {
+					if (returnMap_.get("RETURN_MESSAGE") != null && !returnMap_.get("RETURN_MESSAGE").equals("")) {
+						jTextAreaMessages.setText(getNewMessage(returnMap_.get("RETURN_MESSAGE").toString(), ""));
+						returnMap_.remove("RETURN_MESSAGE");
+					} else {
+						jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage51"), "") + "\n");
+					}
+				}
+			} else {
+				if (this.isVisible()) {
+					if (returnMap_.get("RETURN_MESSAGE") != null && !returnMap_.get("RETURN_MESSAGE").equals("")) {
+						jTextAreaMessages.setText(getNewMessage(returnMap_.get("RETURN_MESSAGE").toString(), ""));
+						returnMap_.remove("RETURN_MESSAGE");
+					} else {
+						jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage48"), "") + "\n");
+					}
+				}
+			}
 		}
 	}
 
@@ -616,11 +638,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage47"), ""));
 			runScript();
 			jButtonStart.setEnabled(false);
-			if (errorHasOccured) {
-				jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage51"), "") + "\n");
-			} else {
-				jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage48"), "") + "\n");
-			}
 		} catch(ScriptException e) {
 			cancelWithScriptException(e, "");
 		} catch (Exception e) {
@@ -1001,38 +1018,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 
 		return targetDateTime;
 	}
-
-//	private Calendar getNextDateTimeToRun() {
-//		int diff;
-//		String wrkStr;
-//		Calendar date = null;
-//		java.util.Date wrkDate;
-//		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-//		if (jCheckBoxRepeat.isSelected() || !alreadyRun) {
-//			Calendar currentDateTime = Calendar.getInstance();
-//			Calendar targetDateTime = Calendar.getInstance();
-//			//targetDateTime.set(Calendar.HOUR_OF_DAY, (Integer)jSpinnerHour.getValue());
-//			//targetDateTime.set(Calendar.MINUTE, (Integer)jSpinnerMinuite.getValue());
-//			targetDateTime.set(Calendar.SECOND, 0);
-//			targetDateTime.set(Calendar.MILLISECOND, 0);
-//			diff = targetDateTime.compareTo(currentDateTime);
-//			if (diff <= 0) {
-//				targetDateTime.add(Calendar.DAY_OF_MONTH, 1);
-//			}
-//			if (!jCheckBoxRunOffDay.isSelected()) {
-//				wrkDate = targetDateTime.getTime();
-//				wrkStr = df.format(wrkDate);
-//				while (session_.isOffDate(wrkStr)) {
-//					targetDateTime.add(Calendar.DAY_OF_MONTH, 1);
-//					wrkDate = targetDateTime.getTime();
-//					wrkStr = df.format(wrkDate);
-//				}
-//			}
-//			date = targetDateTime;
-//			alreadyRun = true;
-//		}
-//		return date;
-//	}
 	
 	class TimerTaskScript extends TimerTask {
 		public void run() {
@@ -1041,11 +1026,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage47"), ""));
 				runScript();
 				jButtonStart.setEnabled(false);
-				if (errorHasOccured) {
-					jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage51"), "") + "\n");
-				} else {
-					jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage48"), "") + "\n");
-				}
+//				if (errorHasOccured) {
+//					jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage51"), "") + "\n");
+//				} else {
+//					jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage48"), "") + "\n");
+//				}
 				if (jCheckBoxRepeat.isSelected()) {
 					startTimer();
 				} else {

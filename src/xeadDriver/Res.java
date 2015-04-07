@@ -128,7 +128,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "FunctionError48", "' is missing." },
 		{ "FunctionError49", "The value is out of valid range of account date." },
 		{ "FunctionError50", "* Inserting is not permitted to the read-only DB." },
-		//{ "FunctionError51", "* Function canceled as the main table is read-only." },
+		//{ "FunctionError51", "* Function canceled as target record is not existing." },
 		{ "FunctionError52", "* Function canceled as no columns are specified on Add-Row-List." },
 		{ "FunctionError53", "" },
 		{ "FunctionMessage1", "* Set criteria and push the button(or key Ctrl+L) to list data. Rows are listed in order of " },

@@ -444,16 +444,12 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		// Setup the primary table and refer tables //
 		//////////////////////////////////////////////
 		primaryTable_ = new XF110_PrimaryTable(functionElement_, this);
-		//if (primaryTable_.getUpdateCounterID().equals("")) {
-		//	throw new Exception(XFUtility.RESOURCE.getString("FunctionError51"));
-		//} else {
-			referTableList.clear();
-			referElementList = primaryTable_.getTableElement().getElementsByTagName("Refer");
-			sortingList = XFUtility.getSortedListModel(referElementList, "Order");
-			for (int i = 0; i < sortingList.getSize(); i++) {
-				referTableList.add(new XF110_ReferTable((org.w3c.dom.Element)sortingList.getElementAt(i), this));
-			}
-		//}
+		referTableList.clear();
+		referElementList = primaryTable_.getTableElement().getElementsByTagName("Refer");
+		sortingList = XFUtility.getSortedListModel(referElementList, "Order");
+		for (int i = 0; i < sortingList.getSize(); i++) {
+			referTableList.add(new XF110_ReferTable((org.w3c.dom.Element)sortingList.getElementAt(i), this));
+		}
 		compiledScriptMap.clear();
 
 		//////////////////////////////
@@ -2019,7 +2015,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 
-		if (e.getKeyCode() == KeyEvent.VK_ENTER && tableModelMain.getRowCount() > 0) {
+		if ((e.getKeyCode() == KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_SPACE)
+				&& tableModelMain.getRowCount() > 0) {
 			processRow();
 		}
 
@@ -4138,7 +4135,9 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 								dialog_.getFilterList().get(i).setValue(value);
 							}
 						}
-						if (!xFTextField.getText().equals("")) {
+						if (xFTextField.getText().equals("")) {
+							listValue = "";
+						} else {
 							xFTextField.setFocusable(true);
 							if (xFTextField.getText().contains(";")) {
 								listValue = xFTextField.getText();
@@ -4154,7 +4153,6 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 						}
 					}
 				} catch (Exception ex) {
-					JOptionPane.showMessageDialog(null, ex.getMessage());
 				}
 			}
 		});
@@ -4225,8 +4223,10 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 
 	public void setValue(Object obj) {
 		if (obj == null) {
+			listValue = "";
 			xFTextField.setText("");
 		} else {
+			listValue = obj.toString();
 			xFTextField.setText(obj.toString());
 		}
 	}

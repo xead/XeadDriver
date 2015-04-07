@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -43,8 +43,22 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M11";
-	public static final String VERSION  = "1.2.11";
+	public static final String FULL_VERSION  = "V1.R2.M12";
+	public static final String VERSION  = "1.2.12";
+	//1.2.12
+	//・XF110のバッチプログラム実行確認用のチェックボックスの配置に関するダイアログサイズ設定のロジックを改善した
+	//・XF110の選択リストでスペースキーでも選択できるようにした
+	//・XF310で編集可能項目が存在しない場合、起動直後にループするバグを修正した
+	//・更新系機能のプロンプト関数の実行時に不明な交換フィールドがあった場合、警告メッセージを出すようにした
+	//・XF200,XF300,XF310が、DISABLED_BUTTON_LISTのパラメータを受け取れるようにした
+	//・「更新不可」のフィールドの値を更新系パネル機能で更新できないようにした
+	//・XF000のコンソールのレイアウトや終了メッセージの処理ロジックを改善した
+	//・XF100,XF110のフィルター条件の区分選択用関数とのやり取りに関するバグを修正した
+	//・XF200のプロンプトリストフィールドにおいて、追加時に初期化されない場合があるバグを修正した
+	//・sessionのinputDialogでZEROFILLタイプの項目を使えるようにした
+	//・XF200のBOOLEANタイプのフィールドの初期化ルーチンのバグを修正
+	//・利用していた郵便番号検索WEBサービスの終了にともなって別のサービスに差し替えた
+	//
 	//1.2.11
 	//・XF200でレコードが削除されたときの確認メッセージに削除ボタンのキャプションを組み込むようにした
 	//・XF200,XF110,XF310の見出し域でのリストコンポーネントの動作に関するバグを修正した

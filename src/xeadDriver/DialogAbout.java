@@ -43,8 +43,15 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M12";
-	public static final String VERSION  = "1.2.12";
+	public static final String FULL_VERSION  = "V1.R2.M14";
+	public static final String VERSION  = "1.2.14";
+	//1.2.14
+	//・Java1.8に対応するために、sort処理をcomparatorからcomparableベースに修正した
+	//
+	//1.2.13
+	//・XF110,XF310の明細上のリストボックスの内容を表示するとフリーズすることがある問題を修正した
+	//・プロンプタ関数としてXF100,XF300を起動して、行を選ばずに終了したときに不要なメッセージが表示される問題を修正した
+	//
 	//1.2.12
 	//・XF110のバッチプログラム実行確認用のチェックボックスの配置に関するダイアログサイズ設定のロジックを改善した
 	//・XF110の選択リストでスペースキーでも選択できるようにした

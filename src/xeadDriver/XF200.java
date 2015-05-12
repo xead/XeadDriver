@@ -3887,7 +3887,8 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 					}
 
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
-					if (!returnMap.get("RETURN_CODE").equals("99")) {
+					//if (!returnMap.get("RETURN_CODE").equals("99")) {
+					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));

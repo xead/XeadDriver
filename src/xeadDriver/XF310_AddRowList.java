@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -617,7 +617,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 
 		if (!addRowListTable.isOrderByInSelectSQL()) {
 			WorkingRow[] workingRowArray = tableRowList.toArray(new WorkingRow[0]);
-			Arrays.sort(workingRowArray, new WorkingRowComparator());
+			//Arrays.sort(workingRowArray, new WorkingRowComparator());
+			Arrays.sort(workingRowArray);
 			for (int i = 0; i < workingRowArray.length; i++) {
 				Object[] cell = new Object[1];
 				cell[0] = new XF310_AddRowListNumber(i + 1, workingRowArray[i].getColumnMap(), workingRowArray[i].getReturnFieldMap(), workingRowArray[i].getCellObjectList());
@@ -663,7 +664,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		}
 
 		WorkingRow[] workingRowArray = tableRowList.toArray(new WorkingRow[0]);
-		Arrays.sort(workingRowArray, new WorkingRowComparator());
+		//Arrays.sort(workingRowArray, new WorkingRowComparator());
+		Arrays.sort(workingRowArray);
 		for (int i = 0; i < workingRowArray.length; i++) {
 			Object[] cell = new Object[1];
 			cell[0] = new XF310_AddRowListNumber(i + 1, workingRowArray[i].getColumnMap(), workingRowArray[i].getReturnFieldMap(), workingRowArray[i].getCellObjectList());
@@ -1074,7 +1076,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		}
 	}
 
-	class WorkingRow extends Object {
+	class WorkingRow extends Object implements Comparable {
 		private HashMap<String, Object> columnMap_;
 		private HashMap<String, Object> returnFieldMap_;
 		private ArrayList<Object> orderByValueList_;
@@ -1102,19 +1104,17 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		public ArrayList<String> getOrderByFieldTypeList() {
 			return orderByFieldTypeList_;
 		}
-	}
-
-	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
-		public int compare(WorkingRow row1, WorkingRow row2){
+		public int compareTo(Object other) {
+			WorkingRow otherRow = (WorkingRow)other;
 			int compareResult = 0;
 			double doubleNumber1, doubleNumber2;
 			String wrkStr;
-			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
-				if (row1.getOrderByFieldTypeList().get(i).equals("INTEGER")
-						|| row1.getOrderByFieldTypeList().get(i).equals("FLOAT")) {
-					wrkStr = XFUtility.getStringNumber(row1.getOrderByValueList().get(i).toString());
+			for (int i = 0; i < this.getOrderByValueList().size(); i++) {
+				if (this.getOrderByFieldTypeList().get(i).equals("INTEGER")
+						|| this.getOrderByFieldTypeList().get(i).equals("FLOAT")) {
+					wrkStr = XFUtility.getStringNumber(this.getOrderByValueList().get(i).toString());
 					doubleNumber1 = Double.parseDouble(wrkStr);
-					wrkStr = XFUtility.getStringNumber(row2.getOrderByValueList().get(i).toString());
+					wrkStr = XFUtility.getStringNumber(otherRow.getOrderByValueList().get(i).toString());
 					doubleNumber2 = Double.parseDouble(wrkStr);
 					compareResult = 0;
 					if (doubleNumber1 > doubleNumber2) {
@@ -1124,7 +1124,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 						compareResult = -1;
 					}
 				} else {
-					compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
+					compareResult = this.getOrderByValueList().get(i).toString().compareTo(otherRow.getOrderByValueList().get(i).toString());
 				}
 				if (addRowListTable.getOrderByFieldIDList().get(i).contains("(D)")) {
 					compareResult = compareResult * -1;
@@ -1134,8 +1134,41 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 				}
 			}
 			return compareResult;
-		}
+        }
 	}
+
+//	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
+//		public int compare(WorkingRow row1, WorkingRow row2){
+//			int compareResult = 0;
+//			double doubleNumber1, doubleNumber2;
+//			String wrkStr;
+//			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
+//				if (row1.getOrderByFieldTypeList().get(i).equals("INTEGER")
+//						|| row1.getOrderByFieldTypeList().get(i).equals("FLOAT")) {
+//					wrkStr = XFUtility.getStringNumber(row1.getOrderByValueList().get(i).toString());
+//					doubleNumber1 = Double.parseDouble(wrkStr);
+//					wrkStr = XFUtility.getStringNumber(row2.getOrderByValueList().get(i).toString());
+//					doubleNumber2 = Double.parseDouble(wrkStr);
+//					compareResult = 0;
+//					if (doubleNumber1 > doubleNumber2) {
+//						compareResult = 1;
+//					}
+//					if (doubleNumber1 < doubleNumber2) {
+//						compareResult = -1;
+//					}
+//				} else {
+//					compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
+//				}
+//				if (addRowListTable.getOrderByFieldIDList().get(i).contains("(D)")) {
+//					compareResult = compareResult * -1;
+//				}
+//				if (compareResult != 0) {
+//					break;
+//				}
+//			}
+//			return compareResult;
+//		}
+//	}
 
 	class TableHeadersRenderer extends JPanel implements TableCellRenderer {   
 		private static final long serialVersionUID = 1L;

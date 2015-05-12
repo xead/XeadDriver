@@ -203,7 +203,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "ImplosionAsRoot", "ルートとして逆展開" },
 		{ "InputImageFileName", "画像ファイル名を入力してください" },
 		{ "JavaVersionError1", "Javaのバージョンが " },
-		{ "JavaVersionError2", " であるためにXEAD Editorを起動できません。\n規定のバージョンは1.6.*～1.7.*です。" },
+		{ "JavaVersionError2", " であるためにXEAD Editorを起動できません。\n規定のバージョンは1.7～1.8です。" },
 		{ "LineNumber1", "(" },
 		{ "LineNumber2", "行目)：" },
 		{ "LogIn", "ログイン" },

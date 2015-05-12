@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -1467,7 +1467,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 			if (!detailTable.hasOrderByAsItsOwnFields()) {
 				WorkingRow[] workingRowArray = tableRowList.toArray(new WorkingRow[0]);
-				Arrays.sort(workingRowArray, new WorkingRowComparator());
+				//Arrays.sort(workingRowArray, new WorkingRowComparator());
+				Arrays.sort(workingRowArray);
 				for (int i = 0; i < workingRowArray.length; i++) {
 					Object[] cell = new Object[1];
 					cell[0] = new XF310_DetailRowNumber(i + 1, "CURRENT", workingRowArray[i].getKeyValueMap(), workingRowArray[i].getColumnValueMap(), workingRowArray[i].getColumnOldValueMap(), workingRowArray[i].getColumnEditableMap(), workingRowArray[i].getColumnValueListMap(), this);
@@ -2716,7 +2717,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	    }
 	}
 
-	class WorkingRow extends Object {
+	class WorkingRow extends Object implements Comparable {
 		private HashMap<String, Object> keyValueMap_ = new HashMap<String, Object>();
 		private HashMap<String, Object> columnValueMap_ = new HashMap<String, Object>();
 		private HashMap<String, Object> columnOldValueMap_ = new HashMap<String, Object>();
@@ -2749,13 +2750,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		public ArrayList<Object> getOrderByValueList() {
 			return orderByValueList_;
 		}
-	}
-
-	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
-		public int compare(WorkingRow row1, WorkingRow row2){
+		public int compareTo(Object other) {
+			WorkingRow otherRow = (WorkingRow)other;
 			int compareResult = 0;
-			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
-				compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
+			for (int i = 0; i < this.getOrderByValueList().size(); i++) {
+				compareResult = this.getOrderByValueList().get(i).toString().compareTo(otherRow.getOrderByValueList().get(i).toString());
 				if (detailTable.getOrderByFieldIDList().get(i).contains("(D)")) {
 					compareResult = compareResult * -1;
 				}
@@ -2764,8 +2763,24 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 			return compareResult;
-		}
+        }
 	}
+
+//	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
+//		public int compare(WorkingRow row1, WorkingRow row2){
+//			int compareResult = 0;
+//			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
+//				compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
+//				if (detailTable.getOrderByFieldIDList().get(i).contains("(D)")) {
+//					compareResult = compareResult * -1;
+//				}
+//				if (compareResult != 0) {
+//					break;
+//				}
+//			}
+//			return compareResult;
+//		}
+//	}
 
 //	private URI getExcellBookURI() {
 //		File xlsFile = null;
@@ -5682,21 +5697,25 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
-				XFHashMap keyValueMap = tableKeyValuesList.get(jComboBox.getSelectedIndex());
-				for (int i = 0; i < keyValueMap.size(); i++) {
-					dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(keyValueMap.getKeyIDByIndex(i), keyValueMap.getValueByIndex(i));
-				}
-				dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(tableAlias+"."+fieldID, jComboBox.getItemAt(jComboBox.getSelectedIndex()));
-				XF310_CellEditorWithComboBox comboBoxEditor;
-				for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
-					if (i > indexOfColumn) {
-						if (dialog_.getDetailColumnList().get(i).getColumnEditor() instanceof XF310_CellEditorWithComboBox) {
-							comboBoxEditor = (XF310_CellEditorWithComboBox)dialog_.getDetailColumnList().get(i).getColumnEditor();
-							comboBoxEditor.setupRecordList();
+				if (referTable_ != null && listType.equals("RECORDS_LIST")) {
+					if (tableKeyValuesList.size() > 0) {
+						XFHashMap keyValueMap = tableKeyValuesList.get(jComboBox.getSelectedIndex());
+						for (int i = 0; i < keyValueMap.size(); i++) {
+							dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(keyValueMap.getKeyIDByIndex(i), keyValueMap.getValueByIndex(i));
 						}
+						dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(tableAlias+"."+fieldID, jComboBox.getItemAt(jComboBox.getSelectedIndex()));
+						XF310_CellEditorWithComboBox comboBoxEditor;
+						for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+							if (i > indexOfColumn) {
+								if (dialog_.getDetailColumnList().get(i).getColumnEditor() instanceof XF310_CellEditorWithComboBox) {
+									comboBoxEditor = (XF310_CellEditorWithComboBox)dialog_.getDetailColumnList().get(i).getColumnEditor();
+									comboBoxEditor.setupRecordList();
+								}
+							}
+						}
+						//dialog_.getCellsEditor().updateRowObject();
 					}
 				}
-//				dialog_.getCellsEditor().updateRowObject();
 			}
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 				setupRecordList();
@@ -5977,7 +5996,8 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 					}
 
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, parmValueMap);
-					if (!returnMap.get("RETURN_CODE").equals("99")) {
+					//if (!returnMap.get("RETURN_CODE").equals("99")) {
+					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
@@ -9540,7 +9560,8 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 						}
 					}
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
-					if (!returnMap.get("RETURN_CODE").equals("99")) {
+					//if (!returnMap.get("RETURN_CODE").equals("99")) {
+					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));

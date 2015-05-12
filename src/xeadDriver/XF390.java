@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -62,7 +62,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	private HashMap<String, Object> parmMap_ = null;
 	private HashMap<String, Object> returnMap_ = new HashMap<String, Object>();
 	private XF390_HeaderTable headerTable_ = null;
-	//private XF390_DetailTable detailTable_ = null;
 	private String[] captionArray = new String[10];
 	private int[] captionFontSizeArray = new int[10];
 	private String[] captionFontStyleArray = new String[10];
@@ -82,7 +81,6 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	private ArrayList<XF390_HeaderField> headerFieldList = new ArrayList<XF390_HeaderField>();
 	@SuppressWarnings("unchecked")
 	private XF390_DetailTable[] detailTableArray = new XF390_DetailTable[10];
-	//private ArrayList<XF390_DetailColumn>[] detailColumnList = new ArrayList<XF390_DetailColumn>()[10];
 	@SuppressWarnings("unchecked")
 	private ArrayList<XF390_DetailColumn>[] detailColumnListArray = new ArrayList[10];
 	@SuppressWarnings("unchecked")
@@ -955,7 +953,8 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 
 			if (!detailTableArray[index].hasOrderByAsItsOwnFields()) {
 				WorkingRow[] workingRowArray = workingRowList.toArray(new WorkingRow[0]);
-				Arrays.sort(workingRowArray, new WorkingRowComparator());
+				//Arrays.sort(workingRowArray, new WorkingRowComparator());
+				Arrays.sort(workingRowArray);
 				for (int i = 0; i < workingRowArray.length; i++) {
 
 					if (tableRowNoWidthArray[index] > 0) {
@@ -1600,7 +1599,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		return color;
 	}
 	
-	class WorkingRow extends Object {
+	class WorkingRow extends Object implements Comparable {
 		private ArrayList<String> columnValueList_ = new ArrayList<String>();
 		private ArrayList<String> orderByValueList_ = new ArrayList<String>();
 		private ArrayList<String> orderByDirectionList_ = new ArrayList<String>();
@@ -1624,17 +1623,12 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		public ArrayList<String> getOrderByDirectionList() {
 			return orderByDirectionList_;
 		}
-	}
-		
-	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
-		public int compare(WorkingRow row1, WorkingRow row2){
+		public int compareTo(Object other) {
+			WorkingRow otherRow = (WorkingRow)other;
 			int compareResult = 0;
-			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
-				compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
-				//if (detailTable_.getOrderByFieldIDList().get(i).contains("(D)")) {
-				//	 compareResult = compareResult * -1;
-				//}
-				if (row1.getOrderByValueList().get(i).equals("D")) {
+			for (int i = 0; i < this.getOrderByValueList().size(); i++) {
+				compareResult = this.getOrderByValueList().get(i).toString().compareTo(otherRow.getOrderByValueList().get(i).toString());
+				if (this.getOrderByValueList().get(i).equals("D")) {
 					compareResult = compareResult * -1;
 				}
 				if (compareResult != 0) {
@@ -1642,8 +1636,27 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				}
 			}
 			return compareResult;
-		}
+        }
 	}
+		
+//	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
+//		public int compare(WorkingRow row1, WorkingRow row2){
+//			int compareResult = 0;
+//			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
+//				compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
+//				//if (detailTable_.getOrderByFieldIDList().get(i).contains("(D)")) {
+//				//	 compareResult = compareResult * -1;
+//				//}
+//				if (row1.getOrderByValueList().get(i).equals("D")) {
+//					compareResult = compareResult * -1;
+//				}
+//				if (compareResult != 0) {
+//					break;
+//				}
+//			}
+//			return compareResult;
+//		}
+//	}
 }
 
 class XF390_HeaderField extends XFColumnScriptable {

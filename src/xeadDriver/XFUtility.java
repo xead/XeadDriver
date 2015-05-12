@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -68,6 +68,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -6375,23 +6376,23 @@ class TableCellReadOnly extends Object {
 	}
 }
 
-class ElementComparator implements java.util.Comparator<org.w3c.dom.Element> {
-	private String attName_ = "";
-	public ElementComparator (String attName) {
-		super();
-		attName_ = attName;
-	}
-    public int compare(org.w3c.dom.Element element1, org.w3c.dom.Element element2 ) {
-      String value1, value2;
-      value1 = element1.getAttribute(attName_);
-      value2 = element2.getAttribute(attName_);
-      int compareResult = value1.compareTo(value2);
-      if (compareResult == 0) {
-          compareResult = 1;
-      }
-      return(compareResult);
-    }
-}
+//class ElementComparator implements java.util.Comparator<org.w3c.dom.Element> {
+//	private String attName_ = "";
+//	public ElementComparator (String attName) {
+//		super();
+//		attName_ = attName;
+//	}
+//    public int compare(org.w3c.dom.Element element1, org.w3c.dom.Element element2 ) {
+//      String value1, value2;
+//      value1 = element1.getAttribute(attName_);
+//      value2 = element2.getAttribute(attName_);
+//      int compareResult = value1.compareTo(value2);
+//      if (compareResult == 0) {
+//          compareResult = 1;
+//      }
+//      return(compareResult);
+//    }
+//}
 
 class SortableDomElementListModel extends DefaultListModel {
 	private static final long serialVersionUID = 1L;
@@ -6400,20 +6401,58 @@ class SortableDomElementListModel extends DefaultListModel {
 		super();
 		attName_ = attName;
 	}
+	public void addElement(Object object) {
+		XeadElement element = new XeadElement((org.w3c.dom.Element)object, attName_);
+		super.addElement(element);
+	}
     public void sortElements() {
-      TreeSet<org.w3c.dom.Element> treeSet = new TreeSet<org.w3c.dom.Element>(new ElementComparator(attName_));
-      int elementCount = this.getSize();
-      org.w3c.dom.Element domElement;
-      for (int i = 0; i < elementCount; i++) {
-        domElement = (org.w3c.dom.Element)this.getElementAt(i);
-        treeSet.add(domElement);
-      }
-      this.removeAllElements();
-      Iterator<org.w3c.dom.Element> it = treeSet.iterator();
-      while( it.hasNext() ){
-        domElement = (org.w3c.dom.Element)it.next();
-        this.addElement(domElement);
-      }
+//      TreeSet<org.w3c.dom.Element> treeSet = new TreeSet<org.w3c.dom.Element>(new ElementComparator(attName_));
+//      int elementCount = this.getSize();
+//      org.w3c.dom.Element domElement;
+//      for (int i = 0; i < elementCount; i++) {
+//        domElement = (org.w3c.dom.Element)this.getElementAt(i);
+//        treeSet.add(domElement);
+//      }
+//      this.removeAllElements();
+//      Iterator<org.w3c.dom.Element> it = treeSet.iterator();
+//      while( it.hasNext() ){
+//        domElement = (org.w3c.dom.Element)it.next();
+//        this.addElement(domElement);
+//      }
+		ArrayList<XeadElement> list = new ArrayList<XeadElement>();
+		for (int i = 0; i < this.getSize(); i++) {
+			list.add((XeadElement)super.getElementAt(i));
+		}
+		this.removeAllElements();
+		Collections.sort(list);
+		Iterator<XeadElement> it = list.iterator();
+		while(it.hasNext()){
+			super.addElement(it.next());
+		}
+    }
+	public Object getElementAt(int index) {
+		XeadElement element = (XeadElement)super.getElementAt(index);
+		return element.getElement();
+	}
+}
+
+/**
+ * Class of Comparable Element
+ */
+class XeadElement implements Comparable {
+	private org.w3c.dom.Element domNode_;
+	private String attName_ = "";
+	public XeadElement(org.w3c.dom.Element node, String attName) {
+		super();
+		domNode_ = node;
+		attName_ = attName;
+	}
+	public org.w3c.dom.Element getElement() {
+		return domNode_;
+	}
+    public int compareTo(Object other) {
+        XeadElement otherNode = (XeadElement)other;
+        return domNode_.getAttribute(attName_).compareTo(otherNode.getElement().getAttribute(attName_));
     }
 }
 

@@ -210,7 +210,7 @@ public class Session extends JFrame {
 		// Java Version Check //
 		////////////////////////
 		String version = System.getProperty("java.version");
-		if (!version.startsWith("1.6.") && !version.startsWith("1.7.")) {
+		if (!version.startsWith("1.7.") && !version.startsWith("1.8.")) {
 			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("JavaVersionError1") + version + XFUtility.RESOURCE.getString("JavaVersionError2"));
 			System.exit(0);
 		}

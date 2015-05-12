@@ -203,7 +203,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "ImplosionAsRoot", "Implosion as root" },
 		{ "InputImageFileName", "Input Image File Name" },
 		{ "JavaVersionError1", "Launching XEAD Editor failed as Java version is " },
-		{ "JavaVersionError2", ". Required version is 1.6.* or 1.7.*." },
+		{ "JavaVersionError2", ". Required version is 1.7 - 1.8" },
 		{ "LineNumber1", "(Line " },
 		{ "LineNumber2", ") : " },
 		{ "LogIn", "Log in" },

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -1314,7 +1314,8 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 						}
 						XF110_SubListDetailRowNumber[] rowNumberArray = rowNumberList.toArray(new XF110_SubListDetailRowNumber[0]);
 						if (batchWithKeyList.size() > 0) {
-							Arrays.sort(rowNumberArray, new RowNumberComparator());
+							//Arrays.sort(rowNumberArray, new RowNumberComparator());
+							Arrays.sort(rowNumberArray);
 						}
 						for (int i = 0; i < rowNumberArray.length; i++) {
 
@@ -2192,20 +2193,20 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 //			return compareResult;
 //		}
 //	}
-
-	class RowNumberComparator implements java.util.Comparator<XF110_SubListDetailRowNumber>{
-		public int compare(XF110_SubListDetailRowNumber rowNumber1, XF110_SubListDetailRowNumber rowNumber2){
-			int compareResult = 0;
-			for (int i = 0; i < batchWithKeyList.size(); i++) {
-				compareResult = rowNumber1.getColumnValueMap().get(batchWithKeyList.get(i)).toString().compareTo(rowNumber2.getColumnValueMap().get(batchWithKeyList.get(i)).toString());
-				if (compareResult != 0) {
-					break;
-				}
-			}
-			return compareResult;
-		}
-	}
-
+//
+//	class RowNumberComparator implements java.util.Comparator<XF110_SubListDetailRowNumber>{
+//		public int compare(XF110_SubListDetailRowNumber rowNumber1, XF110_SubListDetailRowNumber rowNumber2){
+//			int compareResult = 0;
+//			for (int i = 0; i < batchWithKeyList.size(); i++) {
+//				compareResult = rowNumber1.getColumnValueMap().get(batchWithKeyList.get(i)).toString().compareTo(rowNumber2.getColumnValueMap().get(batchWithKeyList.get(i)).toString());
+//				if (compareResult != 0) {
+//					break;
+//				}
+//			}
+//			return compareResult;
+//		}
+//	}
+//
 //	private URI getExcellBookURI() {
 //		File xlsFile = null;
 //		String xlsFileName = "";
@@ -5121,21 +5122,23 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
 			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
-				XFHashMap keyValueMap = tableKeyValuesList.get(jComboBox.getSelectedIndex());
-				for (int i = 0; i < keyValueMap.size(); i++) {
-					dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(keyValueMap.getKeyIDByIndex(i), keyValueMap.getValueByIndex(i));
-				}
-				dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(tableAlias+"."+fieldID, jComboBox.getItemAt(jComboBox.getSelectedIndex()));
-				XF110_SubListCellEditorWithComboBox comboBoxEditor;
-				for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
-					if (i > indexOfColumn) {
-						if (dialog_.getDetailColumnList().get(i).getColumnEditor() instanceof XF110_SubListCellEditorWithComboBox) {
-							comboBoxEditor = (XF110_SubListCellEditorWithComboBox)dialog_.getDetailColumnList().get(i).getColumnEditor();
-							comboBoxEditor.setupRecordList();
+				if (referTable_ != null && listType.equals("RECORDS_LIST")) {
+					XFHashMap keyValueMap = tableKeyValuesList.get(jComboBox.getSelectedIndex());
+					for (int i = 0; i < keyValueMap.size(); i++) {
+						dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(keyValueMap.getKeyIDByIndex(i), keyValueMap.getValueByIndex(i));
+					}
+					dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap().put(tableAlias+"."+fieldID, jComboBox.getItemAt(jComboBox.getSelectedIndex()));
+					XF110_SubListCellEditorWithComboBox comboBoxEditor;
+					for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
+						if (i > indexOfColumn) {
+							if (dialog_.getDetailColumnList().get(i).getColumnEditor() instanceof XF110_SubListCellEditorWithComboBox) {
+								comboBoxEditor = (XF110_SubListCellEditorWithComboBox)dialog_.getDetailColumnList().get(i).getColumnEditor();
+								comboBoxEditor.setupRecordList();
+							}
 						}
 					}
+					//dialog_.getCellsEditor().updateRowObject();
 				}
-				//dialog_.getCellsEditor().updateRowObject();
 			}
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 				setupRecordList();
@@ -5412,7 +5415,8 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 						}
 					}
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, parmValueMap);
-					if (!returnMap.get("RETURN_CODE").equals("99")) {
+					//if (!returnMap.get("RETURN_CODE").equals("99")) {
+					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
@@ -5524,7 +5528,7 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 	}
 }
 	
-class XF110_SubListDetailRowNumber extends Object {
+class XF110_SubListDetailRowNumber extends Object implements Comparable {
 	private int number_;
 	private HashMap<String, Object> keyValueMap_;
 	private HashMap<String, Object> columnValueMapWithDSName_;
@@ -5544,6 +5548,18 @@ class XF110_SubListDetailRowNumber extends Object {
 		dialog_ = dialog;
 	}
 
+	public int compareTo(Object other) {
+		XF110_SubListDetailRowNumber otherRowNumber = (XF110_SubListDetailRowNumber)other;
+		int compareResult = 0;
+		for (int i = 0; i < dialog_.getBatchWithKeyList().size(); i++) {
+			compareResult = this.getColumnValueMap().get(dialog_.getBatchWithKeyList().get(i)).toString().compareTo(otherRowNumber.getColumnValueMap().get(dialog_.getBatchWithKeyList().get(i)).toString());
+			if (compareResult != 0) {
+				break;
+			}
+		}
+		return compareResult;
+	}
+		
 	public HashMap<String, Object> getKeyValueMap() {
 		return keyValueMap_;
 	}
@@ -8582,7 +8598,8 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 					}
 
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
-					if (!returnMap.get("RETURN_CODE").equals("99")) {
+					//if (!returnMap.get("RETURN_CODE").equals("99")) {
+					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));

@@ -1,10 +1,10 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
- * This file is part of XEAD Driver.
+ * This file is part of X-TEA Driver.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -139,14 +139,14 @@ public class Res extends java.util.ListResourceBundle {
 		{ "FunctionMessage6", "' to continue. " },
 		{ "FunctionMessage7", "* Modify field values as neccessary and push '" },
 		{ "FunctionMessage8", "' to update. Enter-key is to check errors without updating." },
-		{ "FunctionMessage9", "* Ready to update without errors." },
+		{ "FunctionMessage9", "* Ready to process without errors. Push the button to update." },
 		{ "FunctionMessage10", "Detail Inquiry of " },
 		{ "FunctionMessage11", "" },
 		{ "FunctionMessage12", "* Check data and push buttons for following actions." },
 		{ "FunctionMessage13", "Adding New " },
 		{ "FunctionMessage14", "" },
 		{ "FunctionMessage15", "* Edit values and push the button to update table." },
-		{ "FunctionMessage16", "* Data was validated to be added." },
+		{ "FunctionMessage16", "* Ready to process without errors. Push the button to add." },
 		{ "FunctionMessage17", "New " },
 		{ "FunctionMessage18", " was added successfully. Continue to add?" },
 		{ "FunctionMessage19", "* Edit values and push the button to add data." },
@@ -202,7 +202,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "Implosion", "Implosion" },
 		{ "ImplosionAsRoot", "Implosion as root" },
 		{ "InputImageFileName", "Input Image File Name" },
-		{ "JavaVersionError1", "Launching XEAD Editor failed as Java version is " },
+		{ "JavaVersionError1", "Launching failed as Java version is " },
 		{ "JavaVersionError2", ". Required version is 1.7 - 1.8" },
 		{ "LineNumber1", "(Line " },
 		{ "LineNumber2", ") : " },
@@ -259,7 +259,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "SessionError7", "'.\n" },
 		{ "SessionError8", "Warnings : Print font '" },
 		{ "SessionError9", "' is invalid. Default PDF font(Times-Roman) will be used instead." },
-		{ "SessionError10", "You can specify URL of 'Wellcome Page' for this menu using XEAD Editor. Note that the page must be a simple HTML site without CSS nor scripts." },
+		{ "SessionError10", "You can specify URL of 'Wellcome Page' for this menu using X-TEA Editor. Note that the page must be a simple HTML site without CSS nor scripts." },
 		{ "SessionError11", "It failed to open the page '" },
 		{ "SessionError12", "'." },
 		{ "SessionError13", "It failed to get a new number as the numbering key '" },
@@ -274,7 +274,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "SessionError22", "' does not exist." },
 		{ "SessionMessage1", "* Use Arrow-Keys to select the menu option and enter to execute. Use F12 to change log-in password." },
 		{ "SessionMessage2", "* Use Arrow-Keys to select the menu option and enter to execute. Use F1 to browse manuals, F12 to change log-in password." },
-		{ "SplashMessage0", "Launching XEAD Driver..." },
+		{ "SplashMessage0", "Launching X-TEA Driver..." },
 		{ "SplashMessage1", "Parsing system definitions..." },
 		{ "SplashMessage2", "Loading user menus..." },
 		{ "SplashMessage3", "Loading cross-checkers..." },

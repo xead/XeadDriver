@@ -4,7 +4,7 @@ package xeadDriver;
  * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
- * This file is part of XEAD Driver.
+ * This file is part of X-TEA Driver.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -203,7 +203,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "ImplosionAsRoot", "ルートとして逆展開" },
 		{ "InputImageFileName", "画像ファイル名を入力してください" },
 		{ "JavaVersionError1", "Javaのバージョンが " },
-		{ "JavaVersionError2", " であるためにXEAD Editorを起動できません。\n規定のバージョンは1.7～1.8です。" },
+		{ "JavaVersionError2", " であるために起動できません。\n規定のバージョンは1.7～1.8です。" },
 		{ "LineNumber1", "(" },
 		{ "LineNumber2", "行目)：" },
 		{ "LogIn", "ログイン" },
@@ -259,7 +259,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "SessionError7", " に接続できませんでした。\n" },
 		{ "SessionError8", "印刷用フォント " },
 		{ "SessionError9", " の指定が正しくありません。デフォルトのPDFフォント(Times-Roman)が代入されました。" },
-		{ "SessionError10", "XEAD Editorを用いて、社内連絡用ページ等のＵＲＬを指定してください。ただし、スタイルシートやスクリプトを用いた高度なページは扱えません" },
+		{ "SessionError10", "X-TEA Editorを用いて、社内連絡用ページ等のＵＲＬを指定してください。ただし、スタイルシートやスクリプトを用いた高度なページは扱えません" },
 		{ "SessionError11", "指定されたページ " },
 		{ "SessionError12", " を開けません。" },
 		{ "SessionError13", "指定されている採番キーの値 " },
@@ -274,7 +274,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "SessionError22", " が存在しません。処理は取り消されます。" },
 		{ "SessionMessage1", "＊矢印キーで機能ボタンを選択し、Enterしてください。Ｆ１２でログイン・パスワードを変更できます。" },
 		{ "SessionMessage2", "＊矢印キーで機能ボタンを選択し、Enterしてください。Ｆ１で業務マニュアルが表示され、Ｆ１２でログイン・パスワードを変更できます。" },
-		{ "SplashMessage0", "XEAD Driverを起動中..." },
+		{ "SplashMessage0", "X-TEA Driverを起動中..." },
 		{ "SplashMessage1", "システム定義を分析中..." },
 		{ "SplashMessage2", "メニューをロード中..." },
 		{ "SplashMessage3", "クロスチェッカーをロード中... " },

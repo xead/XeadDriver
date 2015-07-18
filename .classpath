@@ -27,5 +27,10 @@
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/poi-ooxml-3.10-FINAL-20140208.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/dom4j-1.6.1.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/xmlbeans-2.3.0.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/h2-1.4.187.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/commons-lang-2.6.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/hsqldb.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/jackcess-2.1.0.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/ucanaccess-2.0.9.5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

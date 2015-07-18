@@ -224,16 +224,17 @@ public class XFTableOperator {
     				if (basicType.equals("DATETIME") && value.equals("CURRENT_TIMESTAMP")) {
     					fieldValueList_.add(value);
     				} else {
-    					if (XFUtility.isLiteralRequiredBasicType(basicType)) {
-    						if (value.toString().contains("''")) {
-    							fieldValueList_.add("'" + value.toString() + "'");
-    						} else {
-    							String strValue = value.toString().replaceAll("'","''");
-    							fieldValueList_.add("'" + strValue + "'");
-    						}
-    					} else {
-    						fieldValueList_.add(value);
-    					}
+//    					if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+//    						if (value.toString().contains("''")) {
+//    							fieldValueList_.add("'" + value.toString() + "'");
+//    						} else {
+//    							String strValue = value.toString().replaceAll("'","''");
+//    							fieldValueList_.add("'" + strValue + "'");
+//    						}
+//    					} else {
+//    						fieldValueList_.add(value);
+//    					}
+    					fieldValueList_.add(XFUtility.getTableOperationValue(basicType, value, dbName));
     				}
     			}
     		}
@@ -367,11 +368,12 @@ public class XFTableOperator {
     				}
     			} else {
     				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
-    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);
-    				} else {
-    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + value + " " + postfix);
-    				}
+//    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+//    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);
+//    				} else {
+//    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + value + " " + postfix);
+//    				}
+					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
     			}
     		}
 		}

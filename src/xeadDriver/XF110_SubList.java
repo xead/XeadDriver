@@ -1914,7 +1914,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				cell = detailColumnList.get(i).getColumnEditor();
 				cell.setEnabled(detailColumnList.get(i).isEnabled());
 				cell.setHorizontalAlignment(headersRenderer_.getColumnHeaderList().get(i).getHorizontalAlignment());
-				cell.setBounds(headersRenderer_.getColumnHeaderList().get(i).getBounds());
+				//cell.setBounds(headersRenderer_.getColumnHeaderList().get(i).getBounds());
 				cell.setBorder(new HeaderBorder());
 				cellList.add(cell);
 				multiLinesPanel.add((Component)cell);
@@ -1952,6 +1952,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			numberCell.setForeground(table.getSelectionForeground());
 
 			for (int i = 0; i < cellList.size(); i++) {
+				cellList.get(i).setBounds(headersRenderer_.getColumnHeaderList().get(i).getBounds());
 				cellList.get(i).setEditable(detailColumnList.get(i).isEditable());
 				cellList.get(i).setFocusable(detailColumnList.get(i).isEditable());
 				if (activeRowObject.getErrorCellIndexList().contains(i)) {
@@ -6519,15 +6520,23 @@ class XF110_SubListBatchTable extends Object {
 	private ArrayList<String> uniqueKeyList = new ArrayList<String>();
 	private XF110_SubList dialog_;
 	private StringTokenizer workTokenizer;
+	private String dbName = "";
 
 	public XF110_SubListBatchTable(org.w3c.dom.Element functionElement, XF110_SubList dialog){
 		super();
 		dialog_ = dialog;
 		tableID = functionElement.getAttribute("BatchTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
+
+		String dbID = tableElement.getAttribute("DB");
+		if (dbID.equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(dbID);
+		}
+
 		String workString;
 		org.w3c.dom.Element workElement;
-
 		NodeList nodeList = tableElement.getElementsByTagName("Key");
 		for (int i = 0; i < nodeList.getLength(); i++) {
 			workElement = (org.w3c.dom.Element)nodeList.item(i);
@@ -6602,7 +6611,7 @@ class XF110_SubListBatchTable extends Object {
 				if (!firstField) {
 					statementBuf.append(", ") ;
 				}
-				statementBuf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(i).getBasicType(), dialog_.getBatchFieldList().get(i).getInternalValue())) ;
+				statementBuf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(i).getBasicType(), dialog_.getBatchFieldList().get(i).getInternalValue(), dbName)) ;
 				if (dialog_.getBatchFieldList().get(i).isKey()) {
 					keyMap.addValue(dialog_.getBatchFieldList().get(i).getFieldID(), dialog_.getBatchFieldList().get(i).getInternalValue());
 				}
@@ -6654,7 +6663,7 @@ class XF110_SubListBatchTable extends Object {
 						}
 						statementBuf.append(dialog_.getBatchFieldList().get(j).getFieldID()) ;
 						statementBuf.append("=") ;
-						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue())) ;
+						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue(), dbName)) ;
 						firstField = false;
 					}
 				}
@@ -6789,6 +6798,7 @@ class XF110_SubListBatchReferTable extends Object {
 	private String rangeKeyFieldExpire = "";
 	private String rangeKeyFieldSearch = "";
 	private boolean rangeValidated;
+	private String dbName = "";
 
 	public XF110_SubListBatchReferTable(org.w3c.dom.Element referElement, XF110_SubList dialog){
 		super();
@@ -6797,6 +6807,13 @@ class XF110_SubListBatchReferTable extends Object {
 
 		tableID = referElement_.getAttribute("ToTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
+
+		String dbID = tableElement.getAttribute("DB");
+		if (dbID.equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(dbID);
+		}
 
 		StringTokenizer workTokenizer;
 		String wrkStr = tableElement.getAttribute("RangeKey");
@@ -6948,7 +6965,7 @@ class XF110_SubListBatchReferTable extends Object {
 								}
 								buf.append(toKeyFieldIDList.get(i));
 								buf.append("=");
-								buf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue())) ;
+								buf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue(), dbName)) ;
 								count++;
 								break;
 							}
@@ -6964,13 +6981,14 @@ class XF110_SubListBatchReferTable extends Object {
 					buf.append("=");
 					for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
 						if (withKeyFieldIDList.get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
-							if (XFUtility.isLiteralRequiredBasicType(dialog_.getBatchFieldList().get(j).getBasicType())) {
-								buf.append("'") ;
-								buf.append(dialog_.getBatchFieldList().get(j).getInternalValue());
-								buf.append("'") ;
-							} else {
-								buf.append(dialog_.getBatchFieldList().get(j).getInternalValue());
-							}
+//							if (XFUtility.isLiteralRequiredBasicType(dialog_.getBatchFieldList().get(j).getBasicType())) {
+//								buf.append("'") ;
+//								buf.append(dialog_.getBatchFieldList().get(j).getInternalValue());
+//								buf.append("'") ;
+//							} else {
+//								buf.append(dialog_.getBatchFieldList().get(j).getInternalValue());
+//							}
+							buf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue(), dbName)) ;
 							break;
 						}
 					}
@@ -7209,6 +7227,7 @@ class XF110_SubListDetailTable extends Object {
 	private XF110_SubList dialog_;
 	private StringTokenizer workTokenizer1, workTokenizer2;
 	private String updateCounterID = "";
+	private String dbName = "";
 
 	public XF110_SubListDetailTable(org.w3c.dom.Element functionElement, XF110_SubList dialog){
 		super();
@@ -7217,6 +7236,14 @@ class XF110_SubListDetailTable extends Object {
 
 		tableID_ = functionElement_.getAttribute("PrimaryTable");
 		tableElement = dialog_.getSession().getTableElement(tableID_);
+
+		String dbID = tableElement.getAttribute("DB");
+		if (dbID.equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(dbID);
+		}
+
 		activeWhere = tableElement.getAttribute("ActiveWhere");
 		updateCounterID = tableElement.getAttribute("UpdateCounter");
 		if (updateCounterID.equals("")) {
@@ -7339,7 +7366,7 @@ class XF110_SubListDetailTable extends Object {
 					}
 					buf.append(keyFieldIDList.get(j)) ;
 					buf.append("=") ;
-					buf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(i).getBasicType(), rowNumber.getKeyMap().get(keyFieldIDList.get(j))));
+					buf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(i).getBasicType(), rowNumber.getKeyMap().get(keyFieldIDList.get(j)), dbName));
 					firstKey = false;
 				}
 			}
@@ -7380,7 +7407,7 @@ class XF110_SubListDetailTable extends Object {
 					}
 					statementBuf.append(dialog_.getDetailColumnList().get(i).getFieldID());
 					statementBuf.append("=");
-					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(i).getBasicType(), rowNumber.getColumnValueMap().get(dialog_.getDetailColumnList().get(i).getDataSourceName())));
+					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(i).getBasicType(), rowNumber.getColumnValueMap().get(dialog_.getDetailColumnList().get(i).getDataSourceName()), dbName));
 					firstField = false;
 				}
 			}
@@ -7394,7 +7421,7 @@ class XF110_SubListDetailTable extends Object {
 					}
 					statementBuf.append(batchTableWithKeyFieldIDList.get(i));
 					statementBuf.append("=");
-					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue()));
+					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getBatchFieldList().get(j).getBasicType(), dialog_.getBatchFieldList().get(j).getInternalValue(), dbName));
 					firstField = false;
 					for (int k = 0; k < dialog_.getDetailColumnList().size(); k++) {
 						if (dialog_.getDetailColumnList().get(k).getFieldID().equals(batchTableToKeyFieldIDList.get(i))) {
@@ -7430,7 +7457,7 @@ class XF110_SubListDetailTable extends Object {
 					}
 					statementBuf.append(keyFieldIDList.get(j)) ;
 					statementBuf.append("=") ;
-					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(i).getBasicType(), rowNumber.getKeyValueMap().get(keyFieldIDList.get(j))));
+					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(i).getBasicType(), rowNumber.getKeyValueMap().get(keyFieldIDList.get(j)), dbName));
 					firstKey = false;
 				}
 			}
@@ -7484,7 +7511,7 @@ class XF110_SubListDetailTable extends Object {
 						}
 						statementBuf.append(dialog_.getDetailColumnList().get(j).getFieldID()) ;
 						statementBuf.append("=") ;
-						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getColumnValueMap().get(dialog_.getDetailColumnList().get(j).getDataSourceName())));
+						statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getColumnValueMap().get(dialog_.getDetailColumnList().get(j).getDataSourceName()), dbName));
 						firstField = false;
 					}
 				}
@@ -7501,7 +7528,7 @@ class XF110_SubListDetailTable extends Object {
 					}
 					statementBuf.append(dialog_.getDetailColumnList().get(j).getFieldID()) ;
 					statementBuf.append("!=") ;
-					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID())));
+					statementBuf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), rowNumber.getKeyValueMap().get(dialog_.getDetailColumnList().get(j).getFieldID()), dbName));
 					firstField = false;
 				}
 			}
@@ -7633,6 +7660,7 @@ class XF110_SubListDetailReferTable extends Object {
 	private String rangeKeyFieldExpire = "";
 	private String rangeKeyFieldSearch = "";
 	private boolean rangeValidated;
+	private String dbName = "";
 
 	public XF110_SubListDetailReferTable(org.w3c.dom.Element referElement, XF110_SubList dialog){
 		super();
@@ -7641,6 +7669,13 @@ class XF110_SubListDetailReferTable extends Object {
 
 		tableID = referElement_.getAttribute("ToTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
+
+		String dbID = tableElement.getAttribute("DB");
+		if (dbID.equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(dbID);
+		}
 
 		StringTokenizer workTokenizer;
 		String wrkStr = tableElement.getAttribute("RangeKey");
@@ -7793,7 +7828,7 @@ class XF110_SubListDetailReferTable extends Object {
 								}
 								buf.append(toKeyFieldIDList.get(i));
 								buf.append("=");
-								buf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), dialog_.getDetailColumnList().get(j).getInternalValue())) ;
+								buf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), dialog_.getDetailColumnList().get(j).getInternalValue(), dbName));
 								count++;
 								break;
 							}
@@ -7809,15 +7844,19 @@ class XF110_SubListDetailReferTable extends Object {
 					buf.append("=");
 					for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
 						if (withKeyFieldIDList.get(i).equals(dialog_.getDetailColumnList().get(j).getDataSourceName())) {
-							if (XFUtility.isLiteralRequiredBasicType(dialog_.getDetailColumnList().get(j).getBasicType())) {
-								buf.append("'");
-								buf.append(dialog_.getDetailColumnList().get(j).getInternalValue());
-								buf.append("'");
-								if (!dialog_.getDetailColumnList().get(j).getInternalValue().equals("")) {
-									validWhereKeys = true;
-								}
-							} else {
-								buf.append(dialog_.getDetailColumnList().get(j).getInternalValue());
+//							if (XFUtility.isLiteralRequiredBasicType(dialog_.getDetailColumnList().get(j).getBasicType())) {
+//								buf.append("'");
+//								buf.append(dialog_.getDetailColumnList().get(j).getInternalValue());
+//								buf.append("'");
+//								if (!dialog_.getDetailColumnList().get(j).getInternalValue().equals("")) {
+//									validWhereKeys = true;
+//								}
+//							} else {
+//								buf.append(dialog_.getDetailColumnList().get(j).getInternalValue());
+//								validWhereKeys = true;
+//							}
+							buf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList().get(j).getBasicType(), dialog_.getDetailColumnList().get(j).getInternalValue(), dbName));
+							if (!dialog_.getDetailColumnList().get(j).getInternalValue().equals("")) {
 								validWhereKeys = true;
 							}
 							break;

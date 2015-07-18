@@ -160,12 +160,17 @@ public class XFUtility {
 	public static final DecimalFormat FLOAT_FORMAT4 = new DecimalFormat("#,##0.0000");
 	public static final DecimalFormat FLOAT_FORMAT5 = new DecimalFormat("#,##0.00000");
 	public static final DecimalFormat FLOAT_FORMAT6 = new DecimalFormat("#,##0.000000");
+	public static final DecimalFormat FLOAT_FORMAT7 = new DecimalFormat("#,##0.0000000");
+	public static final DecimalFormat FLOAT_FORMAT8 = new DecimalFormat("#,##0.00000000");
+	public static final DecimalFormat FLOAT_FORMAT9 = new DecimalFormat("#,##0.000000000");
 
 	private static final String DRIVER_DERBY = "org.apache.derby.jdbc.ClientDriver";
 	private static final String DRIVER_MYSQL = "com.mysql.jdbc.Driver";
 	private static final String DRIVER_POSTGRESQL = "org.postgresql.Driver";
 	private static final String DRIVER_ORACLE = "oracle.jdbc.driver.OracleDriver";
 	private static final String DRIVER_SQLSERVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+	private static final String DRIVER_H2 = "org.h2.Driver";
+	private static final String DRIVER_ACCESS = "net.ucanaccess.jdbc.UcanaccessDriver";
 	
 	static String getStringNumber(String text) {
 		char[] numberDigit = {'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
@@ -312,6 +317,15 @@ public class XFUtility {
 		}
 		if (decimalSize == 6) {
 			bf.append(XFUtility.FLOAT_FORMAT6.format(doubleWrk));
+		}
+		if (decimalSize == 7) {
+			bf.append(XFUtility.FLOAT_FORMAT7.format(doubleWrk));
+		}
+		if (decimalSize == 8) {
+			bf.append(XFUtility.FLOAT_FORMAT8.format(doubleWrk));
+		}
+		if (decimalSize == 9) {
+			bf.append(XFUtility.FLOAT_FORMAT9.format(doubleWrk));
 		}
 
 		if (value.endsWith("-")) {
@@ -637,6 +651,14 @@ public class XFUtility {
 			Class.forName(DRIVER_SQLSERVER);
 			return;
 		}
+		if (dbName.contains("h2:")) {
+			Class.forName(DRIVER_H2);
+			return;
+		}
+		if (dbName.contains("ucanaccess:")) {
+			Class.forName(DRIVER_ACCESS);
+			return;
+		}
 	}
 
 	static ArrayList<String> getOptionList(String options) {
@@ -843,7 +865,7 @@ public class XFUtility {
 		}
 	}
 	
-	static Object getTableOperationValue(String basicType, Object value){
+	static Object getTableOperationValue(String basicType, Object value, String dbName){
 		Object returnValue = null;
 		if (basicType.equals("INTEGER")) {
 			if (value == null || value.toString().equals("")) {
@@ -858,8 +880,14 @@ public class XFUtility {
 			returnValue = Double.parseDouble(value.toString());
 		}
 		if (basicType.equals("STRING")) {
-			String strValue = value.toString().replaceAll("'","''");
-			returnValue = "'" + strValue + "'";
+//			String strValue = value.toString().replaceAll("'","''");
+//			returnValue = "'" + strValue + "'";
+			if (value.toString().contains("''")) {
+				returnValue = "'" + value.toString() + "'";
+			} else {
+				String strValue = value.toString().replaceAll("'","''");
+				returnValue = "'" + strValue + "'";
+			}
 		}
 		if (basicType.equals("DATE")) {
 			if (value == null) {
@@ -869,7 +897,11 @@ public class XFUtility {
 				if (strDate == null || strDate.equals("")) {
 					returnValue = "NULL";
 				} else {
-					returnValue = "'" + strDate + "'";
+					if (dbName.contains("ucanaccess:")) {
+						returnValue = "#" + strDate + "#";
+					} else {
+						returnValue = "'" + strDate + "'";
+					}
 				}
 			}
 		}
@@ -882,7 +914,11 @@ public class XFUtility {
 					returnValue = timeDate;
 				} else {
 					timeDate = timeDate.replace("/", "-");
-					returnValue = "'" + timeDate + "'";
+					if (dbName.contains("ucanaccess:")) {
+						returnValue = "#" + timeDate + "#";
+					} else {
+						returnValue = "'" + timeDate + "'";
+					}
 				}
 			}
 		}
@@ -890,16 +926,10 @@ public class XFUtility {
 			if (value == null) {
 				returnValue = "''";
 			} else {
-//				if (value instanceof XFByteArray) {
-					XFByteArray xfByteArray = (XFByteArray)value;
-					byte[] byteArray = (byte[])xfByteArray.getInternalValue();
-					String stringByteArray = new String(byteArray);
-					returnValue = "'"+ stringByteArray + "'";
-//				} else {
-//					byte[] byteArray = (byte[])value;
-//					String stringByteArray = new String(byteArray);
-//					returnValue = "'"+ stringByteArray + "'";
-//				}
+				XFByteArray xfByteArray = (XFByteArray)value;
+				byte[] byteArray = (byte[])xfByteArray.getInternalValue();
+				String stringByteArray = new String(byteArray);
+				returnValue = "'"+ stringByteArray + "'";
 			}
 		}
 		return returnValue;
@@ -2353,7 +2383,6 @@ public class XFUtility {
 			} catch (NumberFormatException e) {
 				e.printStackTrace();
 			}
-
 			if (year > 0 && month > -1 && date > 0) {
 				cal.set(year, month, date);
 				utilDate = cal.getTime();
@@ -2915,7 +2944,7 @@ class XFImageField extends JPanel implements XFEditableField {
 		jTextField.setDocument(new LimitDocument());
 
 		jButton.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
-		jButton.setPreferredSize(new Dimension(80, XFUtility.FIELD_UNIT_HEIGHT));
+		jButton.setPreferredSize(new Dimension(100, XFUtility.FIELD_UNIT_HEIGHT));
 		jButton.setText(XFUtility.RESOURCE.getString("Refresh"));
 		jButton.addActionListener(new XFImageField_jButton_actionAdapter(this));
 		jButton.addKeyListener(new XFImageField_jButton_keyAdapter(this));

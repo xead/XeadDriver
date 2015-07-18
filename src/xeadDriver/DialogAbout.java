@@ -42,9 +42,18 @@ public class DialogAbout extends JDialog implements ActionListener {
 	/**
 	 * Application Information
 	 */
-	public static final String PRODUCT_NAME = "XEAD[zi:d] Driver";
-	public static final String FULL_VERSION  = "V1.R2.M14";
-	public static final String VERSION  = "1.2.14";
+	public static final String PRODUCT_NAME = "X-TEA Driver";
+	public static final String FULL_VERSION  = "V1.R2.M15";
+	public static final String VERSION  = "1.2.15";
+	public static final String FORMAT_VERSION  = "1.1";
+	public static final String COPYRIGHT = "Copyright 2015 DBC Ltd.";
+	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.2.15
+	//・XF110_SubListでのカラムサイズの変更にTableCellsEditorが追随しない問題を修正した
+	//・ツール名をX-TEA　Driverに変更した
+	//・H2 Database EngineとMS Accessに対応した
+	//・Float型小数桁の最大値を９に設定した
+	//
 	//1.2.14
 	//・Java1.8に対応するために、sort処理をcomparatorからcomparableベースに修正した
 	//
@@ -300,9 +309,6 @@ public class DialogAbout extends JDialog implements ActionListener {
 	//・XF110で検索条件をゼロ個にすると表示がおかしくなるバグを修正
 	//・XF110で見出し域のリストボックスについて、選択初期値が関連するバッチフィールドに反映されないバグを修正
 	//・XF100,110で年月型フィールドで検索条件を指定すると異常終了するバグを修正した
-	public static final String FORMAT_VERSION  = "1.1";
-	public static final String COPYRIGHT = "Copyright 2014 DBC,Ltd.";
-	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
 
 	/**
 	 * Components on dialog
@@ -384,7 +390,7 @@ public class DialogAbout extends JDialog implements ActionListener {
 		panel2.add(insetsPanel2, BorderLayout.CENTER);
 		panel2.add(insetsPanel3, BorderLayout.EAST);
 
-		this.setTitle("About XEAD Driver");
+		this.setTitle("About X-TEA Driver");
 		this.getContentPane().add(panel1, null);
 		this.setResizable(false);
 	}

@@ -533,11 +533,14 @@ public class Session extends JFrame {
 	}
 
 	public boolean setupConnectionToDatabase(boolean isToStartSession) {
+		String dbName = "";
+
 		try {
 			///////////////////////////////////////////////////////////////////////////////
 			// Setup committing connections.                                             //
 			// Note that default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
 			///////////////////////////////////////////////////////////////////////////////
+			dbName = databaseName;
 			XFUtility.loadDriverClass(databaseName);
 			connectionManualCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
 			connectionManualCommit.setAutoCommit(false);
@@ -547,21 +550,23 @@ public class Session extends JFrame {
 			////////////////////////////////////////////////////////
 			// Setup read-only connections for Sub-DB definitions //
 			////////////////////////////////////////////////////////
-			Connection subDBConnection;
+			Connection subDBConnection = null;
 			subDBConnectionList.clear();
 			for (int i = 0; i < subDBIDList.size(); i++) {
+				dbName = subDBNameList.get(i);
 				XFUtility.loadDriverClass(subDBNameList.get(i));
 				subDBConnection = DriverManager.getConnection(subDBNameList.get(i), subDBUserList.get(i), subDBPasswordList.get(i));
 				subDBConnection.setReadOnly(true);
 				subDBConnectionList.add(subDBConnection);
 			}
 			return true;
+
 		} catch (Exception e) {
 			if (isToStartSession) {
-				if (e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
+				if (e.getMessage() != null && e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
 					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
 				} else {
-					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + databaseName + XFUtility.RESOURCE.getString("SessionError7") + e.getMessage());
+					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + dbName + XFUtility.RESOURCE.getString("SessionError7") + "Message:" + e.getMessage());
 				}
 			}
 			return false;
@@ -758,7 +763,7 @@ public class Session extends JFrame {
 
 		this.enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		this.setTitle(systemName + " " + systemVersion);
-		imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title.png"));
+		imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title32.png"));
 		this.setIconImage(imageTitle);
 		int shorterWidth1 = Math.round(screenSize.width * (float)0.9);
 		int shorterHeight1 = Math.round(shorterWidth1 / 3 * 2);
@@ -2078,15 +2083,6 @@ public class Session extends JFrame {
 	protected void processWindowEvent(WindowEvent e) {
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
 			logout(e);
-//			Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
-//			int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
-//					systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
-//			if (rtn == 0) {
-//				super.processWindowEvent(e);
-//				this.closeSession(true);
-//				this.setVisible(false);
-//				System.exit(0);
-//			}
 		} else {
 			super.processWindowEvent(e);
 		}
@@ -2180,29 +2176,17 @@ public class Session extends JFrame {
 		} else {
 			bf.append(errorLog.replace("'", "\""));
 			logString = bf.toString();
-//			int totalLength = tableOperationLog.length() + errorLog.length();
-//			if (totalLength > 20000) {
-//				StringBuffer bf2 = new StringBuffer();
-//				int wrkInt = 20000 - tableOperationLog.length();
-//				if (wrkInt > 100) {
-//					bf2.append(errorLog.substring(0, wrkInt));
-//					bf2.append(" ...");
-//					errorLog = bf2.toString();
-//				} else {
-//					bf2.append(tableOperationLog.substring(0, 20000));
-//					bf2.append("\n");
-//					bf2.append(" ... Some of error log was discarded as it is too long.");
-//					tableOperationLog = bf2.toString();
-//				}
-//			}
-//			bf.append(tableOperationLog.replace("'", "\""));
-//			bf.append("\n");
-//			bf.append(errorLog.replace("'", "\""));
-//			logString = bf.toString();
 		}
 		
 		if (logString.length() > 3800) {
 			logString = logString.substring(0, 3800) + "...";
+		}
+
+		// Note that value of MS Access Date field is expressed like #2000-01-01#
+		if (databaseName.contains("ucanaccess:")) {
+			if (logString.contains("#")) {
+				logString = logString.replaceAll("#", "\"");
+			}
 		}
 
 		if (programStatus.equals("99")) {

@@ -5447,6 +5447,7 @@ class XF100_ReferTable extends Object {
 	private String rangeKeyFieldExpire = "";
 	private String rangeKeyFieldSearch = "";
 	private boolean rangeValidated;
+	private String dbName = "";
 	
 	public XF100_ReferTable(org.w3c.dom.Element referElement, XF100 dialog){
 		super();
@@ -5460,6 +5461,14 @@ class XF100_ReferTable extends Object {
 		dialog_ = dialog;
 		
 		tableElement = dialog_.getSession().getTableElement(tableID);
+
+		String dbID = tableElement.getAttribute("DB");
+		if (dbID.equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(dbID);
+		}
+
 		StringTokenizer workTokenizer;
 		String wrkStr = tableElement.getAttribute("RangeKey");
 		if (!wrkStr.equals("")) {
@@ -5575,15 +5584,19 @@ class XF100_ReferTable extends Object {
 				if (column == null) {
 					JOptionPane.showMessageDialog(null, withKeyFieldIDList.get(i) + XFUtility.RESOURCE.getString("FunctionError11"));
 				}
-				if (XFUtility.isLiteralRequiredBasicType(column.getBasicType())) {
-					buf.append("'");
-					buf.append(column.getInternalValue());
-					buf.append("'");
-					if (!column.getInternalValue().equals("")) {
-						validWhereKeys = true;
-					}
-				} else {
-					buf.append(column.getInternalValue());
+//				if (XFUtility.isLiteralRequiredBasicType(column.getBasicType())) {
+//					buf.append("'");
+//					buf.append(column.getInternalValue());
+//					buf.append("'");
+//					if (!column.getInternalValue().equals("")) {
+//						validWhereKeys = true;
+//					}
+//				} else {
+//					buf.append(column.getInternalValue());
+//					validWhereKeys = true;
+//				}
+				buf.append(XFUtility.getTableOperationValue(column.getBasicType(), column.getInternalValue(), dbName));
+				if (!column.getInternalValue().equals("")) {
 					validWhereKeys = true;
 				}
 				count++;

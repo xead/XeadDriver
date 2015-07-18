@@ -2216,13 +2216,14 @@ class XF390_HeaderTable extends Object {
 	private XF390 dialog_;
 	private StringTokenizer workTokenizer;
 	private String updateCounterID = "";
+	private String dbName = "";
 
 	public XF390_HeaderTable(org.w3c.dom.Element functionElement, XF390 dialog){
 		super();
-		//
+
 		functionElement_ = functionElement;
 		dialog_ = dialog;
-		//
+
 		tableID = functionElement_.getAttribute("HeaderTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
 		activeWhere = tableElement.getAttribute("ActiveWhere");
@@ -2232,10 +2233,16 @@ class XF390_HeaderTable extends Object {
 				updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
 			}
 		}
-		//
+
+		if (tableElement.getAttribute("DB").equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
+		}
+
 		String wrkStr1;
 		org.w3c.dom.Element workElement;
-		//
+
 		if (functionElement_.getAttribute("KeyFields").equals("")) {
 			NodeList nodeList = tableElement.getElementsByTagName("Key");
 			for (int i = 0; i < nodeList.getLength(); i++) {
@@ -2254,12 +2261,12 @@ class XF390_HeaderTable extends Object {
 				keyFieldList.add(workTokenizer.nextToken());
 			}
 		}
-		//
+
 		workTokenizer = new StringTokenizer(functionElement_.getAttribute("OrderBy"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			orderByFieldList.add(workTokenizer.nextToken());
 		}
-		//
+
 		org.w3c.dom.Element element;
 		NodeList workList = tableElement.getElementsByTagName("Script");
 		SortableDomElementListModel sortList = XFUtility.getSortedListModel(workList, "Order");
@@ -2318,13 +2325,15 @@ class XF390_HeaderTable extends Object {
 				}
 				buf.append(dialog_.getFieldList().get(i).getFieldID()) ;
 				buf.append("=") ;
-				if (XFUtility.isLiteralRequiredBasicType(dialog_.getFieldList().get(i).getBasicType())) {
-					buf.append("'") ;
-					buf.append(dialog_.getFieldList().get(i).getInternalValue()) ;
-					buf.append("'") ;
-				} else {
-					buf.append(dialog_.getFieldList().get(i).getInternalValue()) ;
-				}
+//				if (XFUtility.isLiteralRequiredBasicType(dialog_.getFieldList().get(i).getBasicType())) {
+//					buf.append("'") ;
+//					buf.append(dialog_.getFieldList().get(i).getInternalValue()) ;
+//					buf.append("'") ;
+//				} else {
+//					buf.append(dialog_.getFieldList().get(i).getInternalValue()) ;
+//				}
+				buf.append(XFUtility.getTableOperationValue(dialog_.getFieldList().get(i).getBasicType(),
+						dialog_.getFieldList().get(i).getInternalValue(), dbName)) ;
 				orderOfFieldInKey++;
 			}
 		}
@@ -2422,16 +2431,23 @@ class XF390_HeaderReferTable extends Object {
 	private String rangeKeyFieldExpire = "";
 	private String rangeKeyFieldSearch = "";
 	private boolean rangeValidated;
+	private String dbName = "";
 
 	public XF390_HeaderReferTable(org.w3c.dom.Element referElement, XF390 dialog){
 		super();
-		//
+
 		referElement_ = referElement;
 		dialog_ = dialog;
-		//
+
 		tableID = referElement_.getAttribute("ToTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
-		//
+
+		if (tableElement.getAttribute("DB").equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
+		}
+
 		StringTokenizer workTokenizer;
 		String wrkStr = tableElement.getAttribute("RangeKey");
 		if (!wrkStr.equals("")) {
@@ -2445,19 +2461,19 @@ class XF390_HeaderReferTable extends Object {
 				rangeKeyType = 2;
 			}
 		}
-		//
+
 		activeWhere = tableElement.getAttribute("ActiveWhere");
-		//
+
 		tableAlias = referElement_.getAttribute("TableAlias");
 		if (tableAlias.equals("")) {
 			tableAlias = tableID;
 		}
-		//
+
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			fieldIDList.add(workTokenizer.nextToken());
 		}
-		//
+
 		if (referElement_.getAttribute("ToKeyFields").equals("")) {
 			org.w3c.dom.Element workElement = dialog_.getSession().getTablePKElement(tableID);
 			workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
@@ -2470,12 +2486,12 @@ class XF390_HeaderReferTable extends Object {
 				toKeyFieldIDList.add(workTokenizer.nextToken());
 			}
 		}
-		//
+
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("WithKeyFields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			withKeyFieldIDList.add(workTokenizer.nextToken());
 		}
-		//
+
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("OrderBy"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			orderByFieldIDList.add(workTokenizer.nextToken());
@@ -2537,7 +2553,7 @@ class XF390_HeaderReferTable extends Object {
 				buf.append("=");
 				for (int j = 0; j < dialog_.getFieldList().size(); j++) {
 					if (withKeyFieldIDList.get(i).equals(dialog_.getFieldList().get(j).getDataSourceName())) {
-						buf.append(XFUtility.getTableOperationValue(dialog_.getFieldList().get(j).getBasicType(), dialog_.getFieldList().get(j).getInternalValue()));
+						buf.append(XFUtility.getTableOperationValue(dialog_.getFieldList().get(j).getBasicType(), dialog_.getFieldList().get(j).getInternalValue(), dbName));
 						break;
 					}
 				}
@@ -2718,6 +2734,7 @@ class XF390_DetailTable extends Object {
 	private boolean hasOrderByAsItsOwnFields = true;
 	private String updateCounterID = "";
 	private int index_;
+	private String dbName = "";
 
 	public XF390_DetailTable(org.w3c.dom.Element detailElement, int index, XF390 dialog){
 		super();
@@ -2734,6 +2751,12 @@ class XF390_DetailTable extends Object {
 			if (updateCounterID.equals("")) {
 				updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
 			}
+		}
+
+		if (tableElement.getAttribute("DB").equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
 		}
 
 		int pos1;
@@ -2872,13 +2895,14 @@ class XF390_DetailTable extends Object {
 			buf.append(keyFieldIDList.get(i)) ;
 			buf.append("=") ;
 			headerField = dialog_.getFieldObjectByID(dialog_.getHeaderTable().getTableID(), "", headerKeyFieldIDList.get(i));
-			if (XFUtility.isLiteralRequiredBasicType(headerField.getBasicType())) {
-				buf.append("'");
-				buf.append(headerField.getInternalValue());
-				buf.append("'");
-			} else {
-				buf.append(headerField.getInternalValue());
-			}
+//			if (XFUtility.isLiteralRequiredBasicType(headerField.getBasicType())) {
+//				buf.append("'");
+//				buf.append(headerField.getInternalValue());
+//				buf.append("'");
+//			} else {
+//				buf.append(headerField.getInternalValue());
+//			}
+			buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(), headerField.getInternalValue(), dbName)) ;
 		}
 		if (!activeWhere.equals("")) {
 			buf.append(" and (");
@@ -3609,17 +3633,24 @@ class XF390_DetailReferTable extends Object {
 	private String rangeKeyFieldSearch = "";
 	private int index_;
 	private boolean rangeValidated;
+	private String dbName = "";
 
 	public XF390_DetailReferTable(org.w3c.dom.Element referElement, int index, XF390 dialog){
 		super();
-		//
+
 		referElement_ = referElement;
 		index_ = index;
 		dialog_ = dialog;
-		//
+
 		tableID = referElement_.getAttribute("ToTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
-		//
+
+		if (tableElement.getAttribute("DB").equals("")) {
+			dbName = dialog_.getSession().getDatabaseName();
+		} else {
+			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
+		}
+
 		StringTokenizer workTokenizer;
 		String wrkStr = tableElement.getAttribute("RangeKey");
 		if (!wrkStr.equals("")) {
@@ -3633,19 +3664,19 @@ class XF390_DetailReferTable extends Object {
 				rangeKeyType = 2;
 			}
 		}
-		//
+
 		activeWhere = tableElement.getAttribute("ActiveWhere");
-		//
+
 		tableAlias = referElement_.getAttribute("TableAlias");
 		if (tableAlias.equals("")) {
 			tableAlias = tableID;
 		}
-		//
+
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			fieldIDList.add(workTokenizer.nextToken());
 		}
-		//
+
 		if (referElement_.getAttribute("ToKeyFields").equals("")) {
 			org.w3c.dom.Element workElement = dialog.getSession().getTablePKElement(tableID);
 			workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
@@ -3658,12 +3689,12 @@ class XF390_DetailReferTable extends Object {
 				toKeyFieldIDList.add(workTokenizer.nextToken());
 			}
 		}
-		//
+
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("WithKeyFields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			withKeyFieldIDList.add(workTokenizer.nextToken());
 		}
-		//
+
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("OrderBy"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			orderByFieldIDList.add(workTokenizer.nextToken());
@@ -3724,13 +3755,15 @@ class XF390_DetailReferTable extends Object {
 				buf.append("=");
 				for (int j = 0; j < dialog_.getDetailColumnList(index_).size(); j++) {
 					if (withKeyFieldIDList.get(i).equals(dialog_.getDetailColumnList(index_).get(j).getDataSourceName())) {
-						if (XFUtility.isLiteralRequiredBasicType(dialog_.getDetailColumnList(index_).get(j).getBasicType())) {
-							buf.append("'");
-							buf.append(dialog_.getDetailColumnList(index_).get(j).getInternalValue());
-							buf.append("'");
-						} else {
-							buf.append(dialog_.getDetailColumnList(index_).get(j).getInternalValue());
-						}
+//						if (XFUtility.isLiteralRequiredBasicType(dialog_.getDetailColumnList(index_).get(j).getBasicType())) {
+//							buf.append("'");
+//							buf.append(dialog_.getDetailColumnList(index_).get(j).getInternalValue());
+//							buf.append("'");
+//						} else {
+//							buf.append(dialog_.getDetailColumnList(index_).get(j).getInternalValue());
+//						}
+						buf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList(index_).get(j).getBasicType(),
+								dialog_.getDetailColumnList(index_).get(j).getInternalValue(), dbName)) ;
 						break;
 					}
 				}

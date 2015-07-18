@@ -284,7 +284,7 @@ class ReferChecker_SubjectTable extends Object {
 	private NodeList referNodeList;
 	private ScriptEngine scriptEngine_;
 	private Bindings scriptBindings_ = null;
-	//private String scriptNameRunning_ = "";
+	private String dbName_ = "";
 
 	public ReferChecker_SubjectTable(org.w3c.dom.Element subjectTableElement, org.w3c.dom.Element referElement, ReferChecker targetTableChecker) {
 		super();
@@ -295,6 +295,12 @@ class ReferChecker_SubjectTable extends Object {
 
 		subjectTableID = subjectTableElement_.getAttribute("ID");
 		subjectTableActiveWhere = subjectTableElement.getAttribute("ActiveWhere");
+		String dbID = subjectTableElement.getAttribute("DB");
+		if (dbID.equals("")) {
+			dbName_ = targetTableChecker_.getSession().getDatabaseName();
+		} else {
+			dbName_ = targetTableChecker_.getSession().getSubDBName(dbID);
+		}
 
 		scriptEngine_ = targetTableChecker_.getSession().getScriptEngineManager().getEngineByName("js");
 		scriptBindings_ = scriptEngine_.createBindings();
@@ -769,13 +775,14 @@ class ReferChecker_SubjectTable extends Object {
 				}
 				//
 				value = targetTableChecker_.getColumnValueMap().get(toKeyFieldIDList.get(i));
-				if (XFUtility.isLiteralRequiredBasicType(field.getBasicType())) {
-					buf.append("'");
-					buf.append(value.toString());
-					buf.append("'");
-				} else {
-					buf.append(value.toString());
-				}
+//				if (XFUtility.isLiteralRequiredBasicType(field.getBasicType())) {
+//					buf.append("'");
+//					buf.append(value.toString());
+//					buf.append("'");
+//				} else {
+//					buf.append(value.toString());
+//				}
+				buf.append(XFUtility.getTableOperationValue(field.getBasicType(), value, dbName_));
 			}
 		}
 		//

@@ -43,11 +43,20 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R2.M15";
-	public static final String VERSION  = "1.2.15";
+	public static final String FULL_VERSION  = "V1.R2.M16";
+	public static final String VERSION  = "1.2.16";
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String COPYRIGHT = "Copyright 2015 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.2.16
+	//・sessionのメソッドにgetFileName()を加えた
+	//・sessionのメソッドにgetSystemProperty(id)を加えた
+	//・一覧形式でのキャプション初期値をフィールド定義の「カラム名」にした
+	//・起動時のスプラッシュの形式を改善した
+	//・XF100,XF110で値リスト系のフィルター条件が効かなくなっていた問題を修正した
+	//・XF110でのバッチテーブルのキーマップが２回目の起動時にクリアされない問題を修正した
+	//・TableOperatorで数値フィールドにScript変数の数値をaddするとエラーになる問題を修正した
+	//
 	//1.2.15
 	//・XF110_SubListでのカラムサイズの変更にTableCellsEditorが追随しない問題を修正した
 	//・ツール名をX-TEA　Driverに変更した

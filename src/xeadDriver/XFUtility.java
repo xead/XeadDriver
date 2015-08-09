@@ -871,7 +871,10 @@ public class XFUtility {
 			if (value == null || value.toString().equals("")) {
 				value = 0;
 			}
-			returnValue = Long.parseLong(value.toString());
+			//returnValue = Long.parseLong(value.toString());
+			String strInt = value.toString();
+			strInt = strInt.replace(".0", ""); //step for value of variant defined in JavaScript// 
+			returnValue = Long.parseLong(strInt);
 		}
 		if (basicType.equals("FLOAT")) {
 			if (value == null || value.toString().equals("")) {

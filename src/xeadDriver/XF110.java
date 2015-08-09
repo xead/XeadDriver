@@ -3965,7 +3965,7 @@ class XF110_Filter extends JPanel {
 				}
 			}
 		}
-		if (componentType.equals("VALUES_LIST")) {
+		if (componentType.equals("VALUES_LIST") || componentType.equals("RECORDS_LIST")) {
 			if (jComboBox.getSelectedIndex() >= 0) {
 				wrkStr = (String)jComboBox.getSelectedItem();
 				if (!wrkStr.equals("")) {
@@ -4397,11 +4397,11 @@ class XF110_Column extends XFColumnScriptable {
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
-		if (workElement.getAttribute("Name").equals("")) {
-			fieldCaption = workElement.getAttribute("ID");
-		} else {
-			fieldCaption = fieldName;
-		}
+//		if (workElement.getAttribute("Name").equals("")) {
+//			fieldCaption = workElement.getAttribute("ID");
+//		} else {
+//			fieldCaption = fieldName;
+//		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
@@ -4426,7 +4426,17 @@ class XF110_Column extends XFColumnScriptable {
 		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
-		if (!wrkStr.equals("")) {
+		if (wrkStr.equals("")) {
+			if (workElement.getAttribute("ColumnName").equals("")) {
+				if (workElement.getAttribute("Name").equals("")) {
+					fieldCaption = workElement.getAttribute("ID");
+				} else {
+					fieldCaption = fieldName;
+				}
+			} else {
+				fieldCaption = workElement.getAttribute("ColumnName");
+			}
+		} else {
 			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		int captionWidth = metrics.stringWidth(fieldCaption) + 18;

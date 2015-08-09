@@ -857,8 +857,6 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					columnList.get(i).initialize();
 				}
 
-//				primaryTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
-
 				for (int i = 0; i < columnList.size(); i++) {
 					if (columnList.get(i).getTableID().equals(primaryTable_.getTableID())) {
 						readyToEvaluate = columnList.get(i).setValueOfResultSet(primaryTableOp);
@@ -3920,7 +3918,7 @@ class XF100_Filter extends JPanel {
 				}
 			}
 		}
-		if (componentType.equals("VALUES_LIST")) {
+		if (componentType.equals("VALUES_LIST") || componentType.equals("RECORDS_LIST")) {
 			if (jComboBox.getSelectedIndex() >= 0) {
 				wrkStr = (String)jComboBox.getSelectedItem();
 				if (!wrkStr.equals("")) {
@@ -4328,11 +4326,6 @@ class XF100_Column extends XFColumnScriptable {
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
-		if (workElement.getAttribute("Name").equals("")) {
-			fieldCaption = workElement.getAttribute("ID");
-		} else {
-			fieldCaption = fieldName;
-		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));
 		if (dataSize > 50) {
 			dataSize = 50;
@@ -4359,7 +4352,17 @@ class XF100_Column extends XFColumnScriptable {
 		JLabel jLabel = new JLabel();
 		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
-		if (!wrkStr.equals("")) {
+		if (wrkStr.equals("")) {
+			if (workElement.getAttribute("ColumnName").equals("")) {
+				if (workElement.getAttribute("Name").equals("")) {
+					fieldCaption = workElement.getAttribute("ID");
+				} else {
+					fieldCaption = fieldName;
+				}
+			} else {
+				fieldCaption = workElement.getAttribute("ColumnName");
+			}
+		} else {
 			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		int captionWidth = metrics.stringWidth(fieldCaption) + 18;

@@ -2102,13 +2102,18 @@ class XF310_AddRowListColumn extends XFColumnScriptable {
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
-		if (workElement.getAttribute("Name").equals("")) {
-			fieldCaption = workElement.getAttribute("ID");
-		} else {
-			fieldCaption = fieldName;
-		}
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
-		if (!wrkStr.equals("")) {
+		if (wrkStr.equals("")) {
+			if (workElement.getAttribute("ColumnName").equals("")) {
+				if (workElement.getAttribute("Name").equals("")) {
+					fieldCaption = workElement.getAttribute("ID");
+				} else {
+					fieldCaption = fieldName;
+				}
+			} else {
+				fieldCaption = workElement.getAttribute("ColumnName");
+			}
+		} else {
 			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
 		}
 		dataSize = Integer.parseInt(workElement.getAttribute("Size"));

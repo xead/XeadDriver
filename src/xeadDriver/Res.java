@@ -276,7 +276,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "SessionMessage2", "* Use Arrow-Keys to select the menu option and enter to execute. Use F1 to browse manuals, F12 to change log-in password." },
 		{ "SplashMessage0", "Launching X-TEA Driver..." },
 		{ "SplashMessage1", "Parsing system definitions..." },
-		{ "SplashMessage2", "Loading user menus..." },
+		{ "SplashMessage2", "Loading the session..." },
 		{ "SplashMessage3", "Loading cross-checkers..." },
 		{ "SplashMessage4", "Loading functions..." },
 		{ "TimerCondition", "Condition" },

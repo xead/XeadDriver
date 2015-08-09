@@ -98,6 +98,7 @@ public class Session extends JFrame {
 	private String databaseUser = "";
 	private String databasePassword = "";
 	private String appServerName = "";
+	private String fileName = "";
 	private String userID = "";
 	private String userName = "";
 	private String userEmployeeNo = "";
@@ -201,7 +202,7 @@ public class Session extends JFrame {
 	// Construct Online Session //
 	//////////////////////////////
 	public Session(String[] args, Application app) {
-		String fileName = "";
+		//String fileName = "";
 		String loginUser = "";
 		String loginPassword = "";
 		application = app;
@@ -787,9 +788,7 @@ public class Session extends JFrame {
 		this.getContentPane().add(jSplitPane1, BorderLayout.CENTER);
 		this.pack();
 		this.validate();
-		//if (screenSize.height < 1000) {
-			this.setExtendedState(JFrame.MAXIMIZED_BOTH);
-		//}
+		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
 		for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 20; j++) {
@@ -828,11 +827,16 @@ public class Session extends JFrame {
 		org.w3c.dom.Element element;
 		int wrkCount = 0;
 		if (loadingChekerIDList.size() > 0) {
+			application.setProgressMax(loadingChekerIDList.size());
+			application.setProgressValue(wrkCount);
+			application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3"));
 			for (int i = 0; i < tableList.getLength(); i++) {
 				element = (org.w3c.dom.Element)tableList.item(i);
 				if (loadingChekerIDList.contains(element.getAttribute("ID")) && !element.getAttribute("SkipReferCheck").equals("T")) {
 					wrkCount++;
-					application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3") + element.getAttribute("ID") + "("+ wrkCount + "/" + loadingChekerIDList.size() + ")");
+					//application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3") + element.getAttribute("ID") + "("+ wrkCount + "/" + loadingChekerIDList.size() + ")");
+					application.setProgressValue(wrkCount);
+			    	application.repaintProgress();
 
 					ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
 					referCheckerList.add(checker);
@@ -847,11 +851,16 @@ public class Session extends JFrame {
 		String functionType;
 		if (loadingFunctionIDList.size() > 0) {
 			wrkCount = 0;
+			application.setProgressMax(loadingFunctionIDList.size());
+			application.setProgressValue(wrkCount);
+			application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage4"));
 			for (int i = 0; i < functionList.getLength(); i++) {
 				element = (org.w3c.dom.Element)functionList.item(i);
 				if (loadingFunctionIDList.contains(element.getAttribute("ID"))) {
 					wrkCount++;
-					application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage4") + element.getAttribute("ID") + "("+ wrkCount + "/" + loadingFunctionIDList.size() + ")");
+					//application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage4") + element.getAttribute("ID") + "("+ wrkCount + "/" + loadingFunctionIDList.size() + ")");
+					application.setProgressValue(wrkCount);
+			    	application.repaintProgress();
 
 					functionType = element.getAttribute("Type");
 					if (functionType.equals("XF000")) {
@@ -3402,6 +3411,10 @@ public class Session extends JFrame {
 		return sessionStatus;
 	}
 
+	public String getFileName() {
+		return fileName;
+	}
+
 	public String getUserID() {
 		return userID;
 	}
@@ -3420,6 +3433,10 @@ public class Session extends JFrame {
 
 	public String getAttribute(String id) {
 		return attributeMap.get(id);
+	}
+
+	public String getSystemProperty(String id) {
+		return System.getProperty(id);
 	}
 
 	public void setAttribute(String id, String value) {

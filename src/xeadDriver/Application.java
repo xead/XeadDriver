@@ -32,34 +32,37 @@ package xeadDriver;
  */
 
 import java.awt.EventQueue;
+
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.JProgressBar;
 import javax.swing.JWindow;
-import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
 public class Application {
-	private JWindow splashScreen;
-	private JLabel  splashIcon;
-	private JLabel  splashLabel;
+	private JWindow splashScreen = new JWindow();
+	private JLabel splashIcon = new JLabel();
+	private JLabel splashText = new JLabel();
+	private JProgressBar splashProgressBar = new JProgressBar();
 
 	public Application(String[] args) {
 		ImageIcon image = new ImageIcon(xeadDriver.Application.class.getResource("splash.png"));
-		splashIcon = new JLabel(image);
+		splashIcon.setIcon(image);
 		splashIcon.setLayout(null);
-		splashLabel = new JLabel();
-		splashLabel.setFont(new java.awt.Font("Dialog", 0, 16));
-		//splashLabel.setForeground(Color.cyan);
-		splashLabel.setOpaque(false);
-		//splashLabel.setBounds(0, 89, 500, 18);
-		splashLabel.setBounds(240, 203, 250, 20);
-		splashLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		splashLabel.setText(XFUtility.RESOURCE.getString("SplashMessage0"));
-		splashIcon.add(splashLabel);
-		splashScreen = new JWindow();
+
+		splashProgressBar.setBounds(0, 291, 500, 9);
+		splashScreen.add(splashProgressBar);
+
+		splashText.setFont(new java.awt.Font("Dialog", 0, 16));
+		splashText.setOpaque(false);
+		splashText.setBounds(300, 205, 200, 20);
+		splashText.setText(XFUtility.RESOURCE.getString("SplashMessage0"));
+		splashScreen.add(splashText);
+
 		splashScreen.getContentPane().add(splashIcon);
 		splashScreen.pack();
 		splashScreen.setLocationRelativeTo(null);
+
 		EventQueue.invokeLater(new Runnable() {
 			@Override public void run() {
 				showSplash();
@@ -83,16 +86,28 @@ public class Application {
 	}
 	
 	public void setTextOnSplash(String text) {
-		if (splashLabel != null) {
-			splashLabel.setText(text);
-		}
+		splashText.setText(text);
+	}
+	
+	public void setProgressMax(int value) {
+		splashProgressBar.setMaximum(value);
+	}
+	
+	public void setProgressValue(int value) {
+		splashProgressBar.setValue(value);
+	}
+	
+	public void repaintProgress() {
+		splashProgressBar.paintImmediately(0,0,splashProgressBar.getWidth(),splashProgressBar.getHeight());
 	}
 
 	public void hideSplash() {
 		if (splashScreen != null) {
 			splashScreen.setVisible(false);
 			splashScreen = null;
-			splashLabel  = null;
+			splashText  = null;
+			splashIcon  = null;
+			splashProgressBar  = null;
 		}
 	}
 }

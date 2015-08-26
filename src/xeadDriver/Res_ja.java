@@ -238,7 +238,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "ReferCheckerMessage8", "」との間で不整合が生じるため、削除は許可されません。詳しくはセッションログを参照してください。" },
 		{ "ReferCheckerMessage9", "＊関連レコード(" },
 		{ "ReferCheckerMessage10", ")との間で不整合が生じるため、この更新は許可されません。" },
-		{ "Refresh", "再表示" },
+		//{ "Refresh", "再表示" },
 		{ "ReturnMessage00", "＊処理は正常に完了しました。" },
 		{ "ReturnMessage01", "＊処理は取り消されました。" },
 		{ "ReturnMessage10", "＊データは正常に登録されました。" },

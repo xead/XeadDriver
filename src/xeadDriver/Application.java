@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -55,7 +55,7 @@ public class Application {
 
 		splashText.setFont(new java.awt.Font("Dialog", 0, 16));
 		splashText.setOpaque(false);
-		splashText.setBounds(300, 205, 200, 20);
+		splashText.setBounds(280, 205, 220, 20);
 		splashText.setText(XFUtility.RESOURCE.getString("SplashMessage0"));
 		splashScreen.add(splashText);
 
@@ -86,7 +86,9 @@ public class Application {
 	}
 	
 	public void setTextOnSplash(String text) {
-		splashText.setText(text);
+		if (splashText != null) {
+			splashText.setText(text);
+		}
 	}
 	
 	public void setProgressMax(int value) {

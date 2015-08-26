@@ -238,7 +238,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "ReferCheckerMessage8", "' referring to this exists. Refer to session log." },
 		{ "ReferCheckerMessage9", "* Process is not permitted as inconsistency occurs with the record(" },
 		{ "ReferCheckerMessage10", ")." },
-		{ "Refresh", "Refresh" },
+		//{ "Refresh", "Refresh" },
 		{ "ReturnMessage00", "* Data is processed successfully." },
 		{ "ReturnMessage01", "* Processing is canceled." },
 		{ "ReturnMessage10", "* Data is registered successfully." },

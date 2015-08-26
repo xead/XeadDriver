@@ -7,7 +7,7 @@ Class-Path: ./xercesImpl.jar ./poi-3.10-FINAL-20140208.jar ./poi-ooxml-
  r ./commons-codec-1.4.jar ./commons-logging-1.1.1.jar ./httpclient-4.1
  .2.jar ./httpclient-cache-4.1.2.jar ./httpcore-4.1.2.jar ./httpmime-4.
  1.2.jar ./xteasrv.jar ./derby.jar ./derbyclient.jar ./mysql-connector-
- java-5.1.18-bin.jar ./postgresql-9.1-901.jdbc3.jar ./ojdbc6.jar ./sqlj
- dbc4.jar ./activation.jar ./mail.jar ./java-json.jar ./h2-1.4.187.jar 
- ./commons-lang-2.6.jar ./hsqldb.jar ./jackcess-2.1.0.jar ./ucanaccess-
- 2.0.9.5.jar
+ java-5.1.18-bin.jar ./postgresql-9.4-1201.jdbc41.jar ./ojdbc6.jar ./sq
+ ljdbc4.jar ./activation.jar ./mail.jar ./java-json.jar ./h2-1.4.187.ja
+ r ./commons-lang-2.6.jar ./hsqldb.jar ./jackcess-2.1.0.jar ./ucanacces
+ s-2.0.9.5.jar

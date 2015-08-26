@@ -150,6 +150,7 @@ public class XFUtility {
 	public static final ImageIcon ICON_CHECK_0R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0R.PNG")));
 	public static final ImageIcon ICON_CHECK_1R = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck1R.PNG")));
 	public static final ImageIcon ICON_NOT_AVAILABLE = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iNotAvailable.PNG")));
+	public static final ImageIcon ICON_REFRESH = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("refresh.PNG")));
 
 	public static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm:ss.SSS");
 	public static final DecimalFormat INTEGER_FORMAT = new DecimalFormat("#,##0");
@@ -2947,8 +2948,9 @@ class XFImageField extends JPanel implements XFEditableField {
 		jTextField.setDocument(new LimitDocument());
 
 		jButton.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
-		jButton.setPreferredSize(new Dimension(100, XFUtility.FIELD_UNIT_HEIGHT));
-		jButton.setText(XFUtility.RESOURCE.getString("Refresh"));
+		jButton.setPreferredSize(new Dimension(35, XFUtility.FIELD_UNIT_HEIGHT));
+		//jButton.setText(XFUtility.RESOURCE.getString("Refresh"));
+		jButton.setIcon(XFUtility.ICON_REFRESH);
 		jButton.addActionListener(new XFImageField_jButton_actionAdapter(this));
 		jButton.addKeyListener(new XFImageField_jButton_keyAdapter(this));
 		jPanelBottom.setPreferredSize(new Dimension(200, XFUtility.FIELD_UNIT_HEIGHT));
@@ -2967,7 +2969,8 @@ class XFImageField extends JPanel implements XFEditableField {
 		if (!wrkStr.equals("")) {
 			rows_ = Integer.parseInt(wrkStr);
 		}
-		fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT - FIELD_VERTICAL_MARGIN - 3;
+		//fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT - FIELD_VERTICAL_MARGIN - 3;
+		fieldHeight = rows_ * (XFUtility.FIELD_UNIT_HEIGHT + FIELD_VERTICAL_MARGIN) - FIELD_VERTICAL_MARGIN;
 
 		fieldWidth = DEFAULT_WIDTH;
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
@@ -3036,13 +3039,15 @@ class XFImageField extends JPanel implements XFEditableField {
 		} else {
 			if (fullName.startsWith("http://")) {
 				try{
-					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
+					//imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
+					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-30);
 				}catch(Exception e){
 				}
 			} else {
 				File imageFile = new File(fullName);
 				if (imageFile.exists()) {
-					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
+					//imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
+					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-30);
 				} else {
 					isExistingFile = false;
 				}
@@ -3065,10 +3070,12 @@ class XFImageField extends JPanel implements XFEditableField {
 				int wrkWidth = this.getWidth() - 50;
 				int wrkHeight = this.getHeight() - 50;
 				if (imageIcon.getIconWidth() > wrkWidth) {
-					wrkWidth = imageIcon.getIconWidth() + 10;
+					//wrkWidth = imageIcon.getIconWidth() + 10;
+					wrkWidth = imageIcon.getIconWidth();
 				}
 				if (imageIcon.getIconHeight() > wrkHeight) {
-					wrkHeight = imageIcon.getIconHeight() + 10;
+					//wrkHeight = imageIcon.getIconHeight() + 10;
+					wrkHeight = imageIcon.getIconHeight();
 				}
 	    		jLabelImage.setToolTipText("<html>" + imageFileName + "<br>" + XFUtility.RESOURCE.getString("ImageFileShown"));
 		        jLabelImage.setPreferredSize(new Dimension(wrkWidth, wrkHeight));

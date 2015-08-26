@@ -43,11 +43,17 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R2.M16";
-	public static final String VERSION  = "1.2.16";
+	public static final String FULL_VERSION  = "V1.R2.M17";
+	public static final String VERSION  = "1.2.17";
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String COPYRIGHT = "Copyright 2015 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.2.17
+	//・sessionにDB接続定義を得るためのプロパティを加えた
+	//・画像フィールドの高さ設定が指定行数に正確に従っていなかった問題を修正した
+	//・画像フィールドの再表示ボタンの幅を狭めてアイコンを設定した
+	//・PostgreSQL向けのJDBCドライバをアップグレードした
+	//
 	//1.2.16
 	//・sessionのメソッドにgetFileName()を加えた
 	//・sessionのメソッドにgetSystemProperty(id)を加えた

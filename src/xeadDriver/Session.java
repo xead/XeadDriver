@@ -2729,6 +2729,22 @@ public class Session extends JFrame {
 		return subDBNameList.get(subDBIDList.indexOf(id));
 	}
 
+	public int getSubDBListSize() {
+		return subDBNameList.size();
+	}
+
+	public String getSubDBName(int index) {
+		return subDBNameList.get(index);
+	}
+
+	public String getSubDBUser(int index) {
+		return subDBUserList.get(index);
+	}
+
+	public String getSubDBPassword(int index) {
+		return subDBPasswordList.get(index);
+	}
+
 	public Connection getConnectionManualCommit() {
 		return connectionManualCommit;
 	}
@@ -3328,6 +3344,10 @@ public class Session extends JFrame {
 
 	public String getDatabaseUser() {
 		return databaseUser;
+	}
+
+	public String getDatabasePassword() {
+		return databasePassword;
 	}
 
 	public void compressTable(String tableID) throws Exception {

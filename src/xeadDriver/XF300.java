@@ -3278,7 +3278,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 									|| returnMap.get("RETURN_CODE").equals("20")
 									|| returnMap.get("RETURN_CODE").equals("30")) {
 								fetchHeaderRecord(true);
-								selectDetailRecordsAndSetupTableRows(jTabbedPane.getSelectedIndex(), false);
+								for (int i = 0; i < detailTabSortingList.getSize(); i++) {
+									selectDetailRecordsAndSetupTableRows(i, false);
+								}
 								messageList.clear();
 							}
 							if (returnMap.get("RETURN_MESSAGE") == null) {
@@ -4253,6 +4255,7 @@ class XF300_HeaderField extends XFFieldScriptable {
 	}
 
 	public void setEditable(boolean editable){
+		component.setEditable(editable);
 	}
 
 	public boolean isEnabled() {
@@ -7402,6 +7405,7 @@ class XF300_DetailTable extends Object {
 		int count;
 		StringBuffer buf = new StringBuffer();
 		XF300_HeaderField headerField;
+		ArrayList<String> fieldIDList = new ArrayList<String>();
 		
 		////////////////////////////////
 		// Select-Fields-FROM section //
@@ -7414,17 +7418,20 @@ class XF300_DetailTable extends Object {
 					buf.append(", ");
 				}
 				buf.append(keyFieldIDList.get(i));
+				fieldIDList.add(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < dialog_.getDetailColumnList(tabIndex_).size(); i++) {
 			if (dialog_.getDetailColumnList(tabIndex_).get(i).getTableID().equals(tableID)
 					&& !dialog_.getDetailColumnList(tabIndex_).get(i).isVirtualField()
 					&& !dialog_.getDetailColumnList(tabIndex_).get(i).getBasicType().equals("BYTEA")) {
-				if (buf.indexOf(" " + dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID()) == -1) {
+				//if (buf.indexOf(" " + dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID()) == -1) {
+				if (!fieldIDList.contains(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID())) {
 					count++;
 					if (count > 0) {
 						buf.append(", ");
 					}
 					buf.append(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID());
+					fieldIDList.add(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID());
 				}
 			}
 		}
@@ -8108,7 +8115,8 @@ class XF300_KeyInputDialog extends JDialog {
 	protected void processWindowEvent(WindowEvent e) {
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
 			keyMap_.clear();
-			dialog_.closeFunction();
+			setVisible(false);
+			//dialog_.closeFunction();
 		}
 		super.processWindowEvent(e);
 	}

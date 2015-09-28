@@ -890,6 +890,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		try {
 			if (threadToSetupReferChecker != null) {
 				threadToSetupReferChecker.join();
+				if (referChecker != null && !referChecker.getErrorOfFieldInScript().equals("")) {
+					JOptionPane.showMessageDialog(null, referChecker.getErrorOfFieldInScript());
+					dialog_.getExceptionStream().append(referChecker.getErrorOfFieldInScript());
+					setErrorAndCloseFunction();
+				}
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -1440,6 +1445,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 
 			if (!isCheckOnly) {
 				threadToSetupReferChecker.join();
+				if (referChecker != null && !referChecker.getErrorOfFieldInScript().equals("")) {
+					JOptionPane.showMessageDialog(null, referChecker.getErrorOfFieldInScript());
+					dialog_.getExceptionStream().append(referChecker.getErrorOfFieldInScript());
+					setErrorAndCloseFunction();
+				}
 			}
 
 			uniqueKeyList = detailTable.getUniqueKeyList();
@@ -1571,6 +1581,12 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	void returnToMainList() {
 		try {
 			threadToSetupReferChecker.join();
+			if (referChecker != null && !referChecker.getErrorOfFieldInScript().equals("")) {
+				JOptionPane.showMessageDialog(null, referChecker.getErrorOfFieldInScript());
+				dialog_.getExceptionStream().append(referChecker.getErrorOfFieldInScript());
+				setErrorAndCloseFunction();
+				this.setVisible(false);
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -3106,11 +3122,11 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 					batchFieldList.get(i).requestFocus();
 					topErrorFieldNotFound = false;
 				}
-				if (batchFieldList.get(i).isVisibleOnPanel()) {
+				//if (batchFieldList.get(i).isVisibleOnPanel()) {
 					messageList.add(workRow, batchFieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + batchFieldList.get(i).getError());
-				} else {
-					messageList.add(workRow, batchFieldList.get(i).getError());
-				}
+				//} else {
+				//	messageList.add(workRow, batchFieldList.get(i).getError());
+				//}
 				workRow++;
 			}
 		}

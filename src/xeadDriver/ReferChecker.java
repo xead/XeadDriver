@@ -35,10 +35,13 @@ import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.swing.JOptionPane;
+
 import java.awt.Color;
+import java.awt.HeadlessException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+
 import org.w3c.dom.*;
 
 ////////////////////////////////////////////////////////////////////
@@ -174,6 +177,15 @@ public class ReferChecker extends Object {
 		return rangeKeyFieldExpire_;
 	}
 	
+	public String getErrorOfFieldInScript() {
+		for (int i = 0; i < subjectTableList_.size(); i++) {
+			if (!subjectTableList_.get(i).getErrorOfFieldInScript().equals("")) {
+				return subjectTableList_.get(i).getErrorOfFieldInScript();
+			}
+		}
+		return "";
+	}
+	
 	public ArrayList<String> getOperationErrors(String operation, HashMap<String, Object> columnValueMap,  HashMap<String, Object> columnOldValueMap) {
 		return getOperationErrors(operation, columnValueMap, columnOldValueMap, 0, "");
 	}
@@ -284,6 +296,7 @@ class ReferChecker_SubjectTable extends Object {
 	private NodeList referNodeList;
 	private ScriptEngine scriptEngine_;
 	private Bindings scriptBindings_ = null;
+	private String fieldValidationError = "";
 	private String dbName_ = "";
 
 	public ReferChecker_SubjectTable(org.w3c.dom.Element subjectTableElement, org.w3c.dom.Element referElement, ReferChecker targetTableChecker) {
@@ -322,7 +335,7 @@ class ReferChecker_SubjectTable extends Object {
 				break;
 			}
 		}
-		//
+
 		wrkStr = referElement_.getAttribute("ToKeyFields");
 		if (wrkStr.equals("")) {
 			for (int j = 0; j < targetTableChecker_.getPrimaryKeyFieldIDList().size(); j++) {
@@ -336,7 +349,7 @@ class ReferChecker_SubjectTable extends Object {
 				toKeyFieldIDList.add(wrkStr);
 			}
 		}
-		//
+
 		workTokenizer1 = new StringTokenizer(referElement_.getAttribute("WithKeyFields"), ";" );
 		while (workTokenizer1.hasMoreTokens()) {
 			wrkStr = workTokenizer1.nextToken();
@@ -349,13 +362,13 @@ class ReferChecker_SubjectTable extends Object {
 			wrkStr = workTokenizer1.nextToken();
 			referFieldIDList.add(wrkStr);
 		}
-		//
+
 		NodeList fieldNodeList = subjectTableElement_.getElementsByTagName("Field");
 		for (int i = 0; i < fieldNodeList.getLength(); i++) {
 			workElement = (org.w3c.dom.Element)fieldNodeList.item(i);
 			fieldList.add(new ReferChecker_Field(subjectTableID, "", workElement.getAttribute("ID"), this));
 		}
-		//
+
 		referNodeList = subjectTableElement_.getElementsByTagName("Refer");
 		SortableDomElementListModel sortableList = XFUtility.getSortedListModel(referNodeList, "Order");
 		for (int i = 0; i < sortableList.getSize(); i++) {
@@ -373,14 +386,16 @@ class ReferChecker_SubjectTable extends Object {
 				fieldList.add(new ReferChecker_Field(wrkTableID, wrkTableAlias, wrkFieldID, this));
 			}
 		}
-		//
+
 		NodeList workList = subjectTableElement_.getElementsByTagName("Script");
 		sortableList = XFUtility.getSortedListModel(workList, "Order");
 		for (int i = 0; i < sortableList.size(); i++) {
 			workElement = (org.w3c.dom.Element)sortableList.getElementAt(i);
-        	scriptList.add(new XFScript(subjectTableID, workElement, targetTableChecker_.getSession().getTableNodeList()));
+			if (!workElement.getAttribute("Hold").equals("T")) {
+				scriptList.add(new XFScript(subjectTableID, workElement, targetTableChecker_.getSession().getTableNodeList()));
+			}
 		}
-		//
+
 		// Analyze fields in scripts and add them as HIDDEN columns if necessary //
 		for (int i = 0; i < scriptList.size(); i++) {
 			if	(scriptList.get(i).isToBeRunAtEvent("BR", "") || scriptList.get(i).isToBeRunAtEvent("BU", "")) {
@@ -396,7 +411,7 @@ class ReferChecker_SubjectTable extends Object {
 								+ subjectTableID + XFUtility.RESOURCE.getString("FunctionError2")
 								+ scriptList.get(i).getName() + XFUtility.RESOURCE.getString("FunctionError3")
 								+ wrkTableID + "_" + wrkFieldID + XFUtility.RESOURCE.getString("FunctionError4");
-							JOptionPane.showMessageDialog(null, msg);
+							fieldValidationError = msg;
 						} else {
 							fieldList.add(new ReferChecker_Field(wrkTableID, wrkTableID, wrkFieldID, this));
 						}
@@ -405,7 +420,10 @@ class ReferChecker_SubjectTable extends Object {
 			}
 		}
 	}
-	
+
+	public String getErrorOfFieldInScript() {
+		return fieldValidationError;
+	}
 
 	public boolean containsField(String tableID, String tableAlias, String fieldID) {
 		boolean result = false;
@@ -905,18 +923,23 @@ class ReferChecker_SubjectTable extends Object {
 		}
 		//
 		if (validScriptList.size() > 0) {
-			for (int i = 0; i < validScriptList.size(); i++) {
-				//scriptNameRunning_ = validScriptList.get(i).getName();
-				targetTableChecker_.setScriptNameRunning(validScriptList.get(i).getName());
-				bf = new StringBuffer();
-				bf.append(validScriptList.get(i).getScriptText());
-				bf.append(targetTableChecker_.getSession().getScriptFunctions());
-				scriptEngine_.eval(bf.toString(), scriptBindings_);
-			}
-			for (int i = 0; i < fieldList.size(); i++) {
-				if (fieldList.get(i).isError()) {
-					countOfErrors++;
+			String scriptNameRunning = "";
+			try {
+				for (int i = 0; i < validScriptList.size(); i++) {
+					scriptNameRunning = validScriptList.get(i).getName();
+					targetTableChecker_.setScriptNameRunning(validScriptList.get(i).getName());
+					bf = new StringBuffer();
+					bf.append(validScriptList.get(i).getScriptText());
+					bf.append(targetTableChecker_.getSession().getScriptFunctions());
+					scriptEngine_.eval(bf.toString(), scriptBindings_);
 				}
+				for (int i = 0; i < fieldList.size(); i++) {
+					if (fieldList.get(i).isError()) {
+						countOfErrors++;
+					}
+				}
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, "ERROR IN SCRIPT("+ getName() + " " + scriptNameRunning + ")\n" +e.getMessage()); // TODO Ž©“®¶¬‚³‚ê‚½ catch ƒuƒƒbƒN
 			}
 		}
 		//

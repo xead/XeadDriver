@@ -432,15 +432,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 
-//			///////////////////////////////
-//			// Setup Add-Row-List Dialog //
-//			///////////////////////////////
-//			if (functionElement_.getAttribute("AddRowListTable").equals("")) {
-//				addRowListDialog = null;
-//			} else {
-//				addRowListDialog = new XF310_AddRowList(this);
-//			}
-
 			initialMsg = functionElement_.getAttribute("InitialMsg");
 			jPanelBottom.remove(jProgressBar);
 			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
@@ -535,7 +526,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				if (jTableMain.getRowCount() == 0) {
 					addRow();
 				}
-				this.setVisible(true);
+				if (!this.isToBeCanceled) {
+					this.setVisible(true);
+				}
 			}
 		}
 
@@ -1725,6 +1718,12 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			if (hasNoError && !isCheckOnly) {
 				threadToSetupReferChecker.join();
 				if (headerReferChecker != null) {
+					if (!headerReferChecker.getErrorOfFieldInScript().equals("")) {
+						hasNoError = false;
+						JOptionPane.showMessageDialog(null, headerReferChecker.getErrorOfFieldInScript());
+						exceptionStream.append(headerReferChecker.getErrorOfFieldInScript());
+						setErrorAndCloseFunction();
+					}
 					errorMsgList = headerReferChecker.getOperationErrors("UPDATE", headerFieldValueMap, headerFieldOldValueMap, detailTable.getTableID());
 					for (int i = 0; i < errorMsgList.size(); i++) {
 						hasNoError = false;
@@ -1829,6 +1828,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		if (!addRowListTitle.equals("")) {
 			try {
 				threadToSetupReferChecker.join();
+				if (detailReferChecker != null && !detailReferChecker.getErrorOfFieldInScript().equals("")) {
+					JOptionPane.showMessageDialog(null, detailReferChecker.getErrorOfFieldInScript());
+					exceptionStream.append(detailReferChecker.getErrorOfFieldInScript());
+					setErrorAndCloseFunction();
+				}
 
 				////////////////////////////////
 				//Get latest detail row number//
@@ -1844,47 +1848,49 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 
-				if (addRowListDialog == null) {
-					int countOfAdded = setupNewRowAndAddToJTable(null);
-					if (countOfAdded > 0) {
-						checkErrorsToUpdate(true, false);
-						messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
-						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-					} else {
-						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage60"));
-					}
-				} else {
-					ArrayList<XF310_AddRowListNumber> addRowListNumberList = addRowListDialog.getDefaultRow();
-					if (addRowListNumberList == null) {
-						int result = addRowListDialog.requestSelection();
-						if (result == 0) {
-							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage33"));
-						}
-						if (result == 1) {
-							addRowListNumberList = addRowListDialog.getSelectionList();
-						}
-						if (result == 2) {
-							setupNewRowAndAddToJTable(null);
-							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-						}
-						if (result == 3) {
-							closeFunction(); // closing because of internal error //
-						}
-					}
-
-					if (addRowListNumberList != null) {
-						int countOfAdded = 0;
-						for (int i = 0; i < addRowListNumberList.size(); i++) {
-							countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i));
-						}
-						int countOfNotAdded = addRowListNumberList.size() - countOfAdded;
-						if (countOfNotAdded > 0) {
-							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage34") + countOfNotAdded + XFUtility.RESOURCE.getString("FunctionMessage35"));
-						}
-						checkErrorsToUpdate(true, false);
-						messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
+				if (!isToBeCanceled) {
+					if (addRowListDialog == null) {
+						int countOfAdded = setupNewRowAndAddToJTable(null);
 						if (countOfAdded > 0) {
+							checkErrorsToUpdate(true, false);
+							messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
 							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+						} else {
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage60"));
+						}
+					} else {
+						ArrayList<XF310_AddRowListNumber> addRowListNumberList = addRowListDialog.getDefaultRow();
+						if (addRowListNumberList == null) {
+							int result = addRowListDialog.requestSelection();
+							if (result == 0) {
+								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage33"));
+							}
+							if (result == 1) {
+								addRowListNumberList = addRowListDialog.getSelectionList();
+							}
+							if (result == 2) {
+								setupNewRowAndAddToJTable(null);
+								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+							}
+							if (result == 3) {
+								closeFunction(); // closing because of internal error //
+							}
+						}
+
+						if (addRowListNumberList != null) {
+							int countOfAdded = 0;
+							for (int i = 0; i < addRowListNumberList.size(); i++) {
+								countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i));
+							}
+							int countOfNotAdded = addRowListNumberList.size() - countOfAdded;
+							if (countOfNotAdded > 0) {
+								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage34") + countOfNotAdded + XFUtility.RESOURCE.getString("FunctionMessage35"));
+							}
+							checkErrorsToUpdate(true, false);
+							messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
+							if (countOfAdded > 0) {
+								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+							}
 						}
 					}
 				}
@@ -2048,6 +2054,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 				try {
 					threadToSetupReferChecker.join();
+					if (detailReferChecker != null && !detailReferChecker.getErrorOfFieldInScript().equals("")) {
+						JOptionPane.showMessageDialog(null, detailReferChecker.getErrorOfFieldInScript());
+						exceptionStream.append(detailReferChecker.getErrorOfFieldInScript());
+						setErrorAndCloseFunction();
+					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -3633,11 +3644,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					headerFieldList.get(i).requestFocus();
 					topErrorFieldNotFound = false;
 				}
-				if (headerFieldList.get(i).isVisibleOnPanel()) {
+				//if (headerFieldList.get(i).isVisibleOnPanel()) {
 					messageList.add(workRow, headerFieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + headerFieldList.get(i).getError());
-				} else {
-					messageList.add(workRow, headerFieldList.get(i).getError());
-				}
+				//} else {
+				//	messageList.add(workRow, headerFieldList.get(i).getError());
+				//}
 				workRow++;
 			}
 		}
@@ -8169,6 +8180,7 @@ class XF310_DetailTable extends Object {
 		int count;
 		StringBuffer buf = new StringBuffer();
 		XF310_HeaderField headerField;
+		ArrayList<String> fieldIDList = new ArrayList<String>();
 		
 		////////////////////////////////
 		// Select-Fields-From section //
@@ -8181,15 +8193,18 @@ class XF310_DetailTable extends Object {
 				buf.append(", ");
 			}
 			buf.append(keyFieldIDList.get(i));
+			fieldIDList.add(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < dialog_.getDetailColumnList().size(); i++) {
 			if (dialog_.getDetailColumnList().get(i).getTableID().equals(tableID_) && !dialog_.getDetailColumnList().get(i).isVirtualField()) {
-				if (buf.indexOf(" " + dialog_.getDetailColumnList().get(i).getFieldID()) == -1) {
+				//if (buf.indexOf(" " + dialog_.getDetailColumnList().get(i).getFieldID()) == -1) {
+				if (!fieldIDList.contains(dialog_.getDetailColumnList().get(i).getFieldID())) {
 					count++;
 					if (count > 0) {
 						buf.append(", ");
 					}
 					buf.append(dialog_.getDetailColumnList().get(i).getFieldID());
+					fieldIDList.add(dialog_.getDetailColumnList().get(i).getFieldID());
 				}
 			}
 		}

@@ -1232,6 +1232,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		if (countOfErrors == 0) {
 			try {
 				threadToSetupReferChecker.join();
+				if (referChecker != null && !referChecker.getErrorOfFieldInScript().equals("")) {
+					JOptionPane.showMessageDialog(null, referChecker.getErrorOfFieldInScript());
+					exceptionStream.append(referChecker.getErrorOfFieldInScript());
+					setErrorAndCloseFunction();
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -1385,6 +1390,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			if (hasNoError && !this.isCheckOnly) {
 				threadToSetupReferChecker.join();
 				if (referChecker != null) {
+					if (!referChecker.getErrorOfFieldInScript().equals("")) {
+						JOptionPane.showMessageDialog(null, referChecker.getErrorOfFieldInScript());
+						exceptionStream.append(referChecker.getErrorOfFieldInScript());
+						setErrorAndCloseFunction();
+					}
 					ArrayList<String> errorMsgList = referChecker.getOperationErrors(operation, columnValueMap, columnOldValueMap);
 					for (int i = 0; i < errorMsgList.size(); i++) {
 						hasNoError = false;
@@ -1410,11 +1420,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					fieldList.get(i).requestFocus();
 					isFirstErrorField = false;
 				}
-				if (fieldList.get(i).isVisibleOnPanel()) {
+				//if (fieldList.get(i).isVisibleOnPanel()) {
 					messageList.add(fieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + fieldList.get(i).getError());
-				} else {
-					messageList.add(fieldList.get(i).getError());
-				}
+				//} else {
+				//	messageList.add(fieldList.get(i).getError());
+				//}
 			}
 			/////////////////////////////////////////////////////////
 			// required step to set focus on the first error field //

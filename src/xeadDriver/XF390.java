@@ -2830,6 +2830,7 @@ class XF390_DetailTable extends Object {
 		int count;
 		StringBuffer buf = new StringBuffer();
 		XF390_HeaderField headerField;
+		ArrayList<String> fieldIDList = new ArrayList<String>();
 
 		////////////////////////////////
 		// Select-Fields-FROM section //
@@ -2842,17 +2843,20 @@ class XF390_DetailTable extends Object {
 				buf.append(", ");
 			}
 			buf.append(keyFieldIDList.get(i));
+			fieldIDList.add(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < dialog_.getDetailColumnList(index_).size(); i++) {
 			if (dialog_.getDetailColumnList(index_).get(i).getTableID().equals(tableID_)
 					&& !dialog_.getDetailColumnList(index_).get(i).isVirtualField()
 					&& !dialog_.getDetailColumnList(index_).get(i).getBasicType().equals("BYTEA")) {
-				if (buf.indexOf(" " + dialog_.getDetailColumnList(index_).get(i).getFieldID()) == -1) {
+				//if (buf.indexOf(" " + dialog_.getDetailColumnList(index_).get(i).getFieldID()) == -1) {
+				if (!fieldIDList.contains(dialog_.getDetailColumnList(index_).get(i).getFieldID())) {
 					count++;
 					if (count > 0) {
 						buf.append(", ");
 					}
 					buf.append(dialog_.getDetailColumnList(index_).get(i).getFieldID());
+					fieldIDList.add(dialog_.getDetailColumnList(index_).get(i).getFieldID());
 				}
 			}
 		}

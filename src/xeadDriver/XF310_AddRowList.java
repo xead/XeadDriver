@@ -1687,6 +1687,7 @@ class XF310_AddRowListTable extends Object {
 		StringBuffer buf = new StringBuffer();
 		String workAlias, workTableID, workFieldID;
 		org.w3c.dom.Element workElement;
+		ArrayList<String> fieldIDList = new ArrayList<String>();
 		
 		////////////////////////////////
 		// Select-Fields-From section //
@@ -1699,38 +1700,45 @@ class XF310_AddRowListTable extends Object {
 				buf.append(", ");
 			}
 			buf.append(keyFieldIDList.get(i));
+			fieldIDList.add(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < withFieldIDList.size(); i++) {
-			if (buf.indexOf(" " + withFieldIDList.get(i)) == -1) {
+			//if (buf.indexOf(" " + withFieldIDList.get(i)) == -1) {
+			if (!fieldIDList.contains(withFieldIDList.get(i))) {
 				count++;
 				if (count > 0) {
 					buf.append(", ");
 				}
 				buf.append(withFieldIDList.get(i));
+				fieldIDList.add(withFieldIDList.get(i));
 			}
 		}
 		for (int i = 0; i < dialog_.getAddRowListColumnList().size(); i++) {
 			if (dialog_.getAddRowListColumnList().get(i).getTableID().equals(tableID_)
 					&& !dialog_.getAddRowListColumnList().get(i).isVirtualField()
 					&& !dialog_.getAddRowListColumnList().get(i).getBasicType().equals("BYTEA")) {
-				if (buf.indexOf(" " + dialog_.getAddRowListColumnList().get(i).getFieldID()) == -1) {
+				//if (buf.indexOf(" " + dialog_.getAddRowListColumnList().get(i).getFieldID()) == -1) {
+				if (!fieldIDList.contains(dialog_.getAddRowListColumnList().get(i).getFieldID())) {
 					count++;
 					if (count > 0) {
 						buf.append(", ");
 					}
 					buf.append(dialog_.getAddRowListColumnList().get(i).getFieldID());
+					fieldIDList.add(dialog_.getAddRowListColumnList().get(i).getFieldID());
 				}
 			}
 		}
 		if (rangeKeyType != 0) {
 			workElement = dialog_.getSession().getFieldElement(tableID_, rangeKeyFieldExpire);
 			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-				if (buf.indexOf(" " + rangeKeyFieldExpire) == -1) {
+				//if (buf.indexOf(" " + rangeKeyFieldExpire) == -1) {
+				if (!fieldIDList.contains(rangeKeyFieldExpire)) {
 					count++;
 					if (count > 0) {
 						buf.append(", ");
 					}
 					buf.append(rangeKeyFieldExpire);
+					fieldIDList.add(rangeKeyFieldExpire);
 				}
 			}
 		}

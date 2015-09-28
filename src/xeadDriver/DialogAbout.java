@@ -43,11 +43,18 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R2.M17";
-	public static final String VERSION  = "1.2.17";
+	public static final String FULL_VERSION  = "V1.R2.M18";
+	public static final String VERSION  = "1.2.18";
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String COPYRIGHT = "Copyright 2015 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.2.18
+	//・前方一致であるようなフィールドIDをテーブルに含めると、XF300,310,390でエラーが起こり得る問題を修正
+	//・XF110,200,310について、見出し域の非表示フィールドのNULLエラーメッセージにフィールド名を含めるように改善
+
+	//・XF300について、キーなしで起動された場合のキー入力ダイアログで右上のX印を押した場合の動きに関するバグを修正
+	//・ReferChecker構築スレッドの中でスクリプトの記述エラーを示すとブランク表示される特性に対応した
+	//
 	//1.2.17
 	//・sessionにDB接続定義を得るためのプロパティを加えた
 	//・画像フィールドの高さ設定が指定行数に正確に従っていなかった問題を修正した

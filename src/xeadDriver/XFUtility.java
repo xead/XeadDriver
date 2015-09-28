@@ -5190,7 +5190,7 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		jTextArea.addFocusListener(new ComponentFocusListener());
 		jTextArea.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jTextArea.setLineWrap(true);
-		jTextArea.setWrapStyleWord(true);
+		jTextArea.setWrapStyleWord(false);
 		this.getViewport().add(jTextArea, null);
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ROWS");

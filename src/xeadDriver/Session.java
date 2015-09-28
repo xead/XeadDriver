@@ -803,12 +803,12 @@ public class Session extends JFrame {
 		// Setup elements on menu and show first tab //
 		///////////////////////////////////////////////
 		jLabelUser.setText("User " + userName);
-		jLabelSession.setText("Session " + sessionID);
-		NodeList menuList = domDocument.getElementsByTagName("Menu");
-		sortingList = XFUtility.getSortedListModel(menuList, "ID");
 		if (userMenus.equals("ALL")) {
+			jLabelSession.setText("<html><u><font color='blue'>Session " + sessionID);
+			jLabelSession.addMouseListener(new Session_jLabelSession_mouseAdapter(this));
 			buildMenuWithID("");
 		} else {
+			jLabelSession.setText("Session " + sessionID);
 			StringTokenizer workTokenizer = new StringTokenizer(userMenus, "," );
 			while (workTokenizer.hasMoreTokens()) {
 				buildMenuWithID(workTokenizer.nextToken());
@@ -939,6 +939,24 @@ public class Session extends JFrame {
 		return value;
 	}
 
+	void jLabelSession_mouseClicked(MouseEvent e) {
+		try {
+			HashMap<String, Object> parmMap = new HashMap<String, Object>();
+			parmMap.put("NRSESSION", sessionID);
+			functionLauncher.execute("ZF051", parmMap);
+		} catch (Exception e1) {
+			JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
+		}
+	}
+
+	void jLabelSession_mouseEntered(MouseEvent e) {
+		setCursor(editorKit.getLinkCursor());
+	}
+
+	void jLabelSession_mouseExited(MouseEvent e) {
+		setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+	}
+
 	public ScriptEngineManager getScriptEngineManager() {
 		return scriptEngineManager;
 	}
@@ -970,7 +988,9 @@ public class Session extends JFrame {
 		int menuIndex;
 		StringTokenizer tokenizer;
 		String wrkStr;
-		//
+
+		NodeList menuList = domDocument.getElementsByTagName("Menu");
+		sortingList = XFUtility.getSortedListModel(menuList, "ID");
 		for (int i = 0; i < sortingList.getSize(); i++) {
 			menuElement = (org.w3c.dom.Element)sortingList.getElementAt(i);
 			if (menuElement.getAttribute("ID").equals(id) || id.equals("")) {
@@ -999,7 +1019,7 @@ public class Session extends JFrame {
 						}
 					}
 				}
-				//
+
 				optionList = menuElement.getElementsByTagName("Option");
 				for (int j = 0; j < optionList.getLength(); j++) {
 					optionElement = (org.w3c.dom.Element)optionList.item(j);
@@ -1015,7 +1035,7 @@ public class Session extends JFrame {
 					menuOptionArray[menuIndex][optionNo] = new MenuOption(functionElement, optionElement.getAttribute("OptionName"));
 				}
 				menuOptionArray[menuIndex][19] = new MenuOption(null, "LOGOUT");
-				//
+
 				if (!id.equals("")) {
 					break;
 				}
@@ -2179,19 +2199,22 @@ public class Session extends JFrame {
 		String logString = "";
 		StringBuffer bf = new StringBuffer();
 
-		if (errorLog.equals("")) {
-			bf.append(tableOperationLog.replace("'", "\""));
-			logString = bf.toString();
-		} else {
-			bf.append(errorLog.replace("'", "\""));
-			logString = bf.toString();
+		if (tableOperationLog.length() > 3000) {
+			tableOperationLog = "... " + tableOperationLog.substring(tableOperationLog.length()-3000, tableOperationLog.length());
 		}
-		
+		bf.append(tableOperationLog.replace("'", "\""));
+		if (!errorLog.equals("")) {
+			bf.append("\n<ERROR LOG>\n");
+			bf.append(errorLog.replace("'", "\""));
+		}
+		logString = bf.toString();
 		if (logString.length() > 3800) {
-			logString = logString.substring(0, 3800) + "...";
+			logString = logString.substring(0, 3800) + " ...";
 		}
 
-		// Note that value of MS Access Date field is expressed like #2000-01-01#
+		////////////////////////////////////////////////////////////////////////////
+		// Note that value of MS Access Date field is expressed like #2000-01-01# //
+		////////////////////////////////////////////////////////////////////////////
 		if (databaseName.contains("ucanaccess:")) {
 			if (logString.contains("#")) {
 				logString = logString.replaceAll("#", "\"");
@@ -3631,3 +3654,18 @@ class Session_jTabbedPaneMenu_changeAdapter  implements ChangeListener {
 	}
 }
 
+class Session_jLabelSession_mouseAdapter extends java.awt.event.MouseAdapter {
+	Session adaptee;
+	Session_jLabelSession_mouseAdapter(Session adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void mouseClicked(MouseEvent e) {
+		adaptee.jLabelSession_mouseClicked(e);
+	}
+	public void mouseEntered(MouseEvent e) {
+		adaptee.jLabelSession_mouseEntered(e);
+	}
+	public void mouseExited(MouseEvent e) {
+		adaptee.jLabelSession_mouseExited(e);
+	}
+}

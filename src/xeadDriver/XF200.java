@@ -1378,7 +1378,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						if (operator.next()) {
 							hasNoError = false;
 							for (int j = 0; j < fieldList.size(); j++) {
-								if (keyFieldList.contains(fieldList.get(j).getFieldID()) && !fieldList.get(i).isError()) {
+								//if (keyFieldList.contains(fieldList.get(j).getFieldID()) && !fieldList.get(i).isError()) {
+								if (keyFieldList.contains(fieldList.get(j).getFieldID())) {
 									fieldList.get(j).setError(XFUtility.RESOURCE.getString("FunctionError22"));
 								}
 							}

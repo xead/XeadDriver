@@ -2987,6 +2987,14 @@ class XF100_Filter extends JPanel {
 	public String getDataType(){
 		return dataType;
 	}
+
+	public String getComponentType(){
+		return componentType;
+	}
+
+	public Object getComponent(){
+		return component;
+	}
 	
 	public void requestFocus(){
 		super.requestFocus();

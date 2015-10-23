@@ -37,7 +37,6 @@ import javax.script.ScriptException;
 import javax.swing.JOptionPane;
 
 import java.awt.Color;
-import java.awt.HeadlessException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;

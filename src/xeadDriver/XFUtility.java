@@ -5352,25 +5352,8 @@ class XFInputAssistField extends JComboBox implements XFEditableField {
 		fieldID_ = fieldID;
 		session_ = session;
 
-		String wrkStr;
 		int fieldWidth = 100;
 		this.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
-		//FontMetrics metrics = this.getFontMetrics(this.getFont());
-		String sql = "select distinct " + fieldID_ + " from " + tableID_ + " order by " + fieldID;
-		XFTableOperator operator = new XFTableOperator(session_, null, sql, true);
-		try {
-			while (operator.next()) {
-				wrkStr = operator.getValueOf(fieldID).toString().trim();
-				valueList.add(wrkStr);
-				//if (metrics.stringWidth(wrkStr) > fieldWidth) {
-				//	fieldWidth = metrics.stringWidth(wrkStr);
-				//}
-			}
-		} catch (Exception e) {
-		}
-		//if (fieldWidth > 300) {
-		//	fieldWidth = 300;
-		//}
 		if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 			fieldWidth = digits * XFUtility.FONT_SIZE + 10;
 		} else {
@@ -5379,6 +5362,7 @@ class XFInputAssistField extends JComboBox implements XFEditableField {
 		if (fieldWidth > 800) {
 			fieldWidth = 800;
 		}
+		updateList();
 
 		DefaultComboBoxModel model = new DefaultComboBoxModel(valueList);
 		this.setModel(model);
@@ -5389,7 +5373,21 @@ class XFInputAssistField extends JComboBox implements XFEditableField {
 		field.setText("");
 		field.addKeyListener(new ComboKeyHandler(this));
 	}
-	
+
+	public void updateList() {
+		String wrkStr;
+		valueList.removeAllElements();
+		String sql = "select distinct " + fieldID_ + " from " + tableID_ + " order by " + fieldID_;
+		XFTableOperator operator = new XFTableOperator(session_, null, sql, true);
+		try {
+			while (operator.next()) {
+				wrkStr = operator.getValueOf(fieldID_).toString().trim();
+				valueList.add(wrkStr);
+			}
+		} catch (Exception e) {
+		}
+	}
+
 	@Override public void updateUI() {
 		super.updateUI();
 		setUI(new javax.swing.plaf.basic.BasicComboBoxUI() {

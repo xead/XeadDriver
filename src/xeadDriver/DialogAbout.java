@@ -43,11 +43,16 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R2.M18";
-	public static final String VERSION  = "1.2.18";
+	public static final String FULL_VERSION  = "V1.R2.M19";
+	public static final String VERSION  = "1.2.19";
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String COPYRIGHT = "Copyright 2015 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.2.19
+	//・XF110,XF310について、明細項目でvaluesListを設定した場合のリストボックス表示の問題を修正
+	//・XFInputAssist項目について動作を改善
+	//・XF200におけるSKの重複エラーのメッセージを改善
+	//
 	//1.2.18
 	//・前方一致であるようなフィールドIDをテーブルに含めると、XF300,310,390でエラーが起こり得る問題を修正
 	//・XF110,200,310について、見出し域の非表示フィールドのNULLエラーメッセージにフィールド名を含めるように改善

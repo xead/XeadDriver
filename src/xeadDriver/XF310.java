@@ -33,6 +33,7 @@ package xeadDriver;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.im.InputContext;
 import java.io.*;
 import java.net.URI;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import java.util.Calendar;
 import java.util.EventObject;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 import javax.script.Bindings;
@@ -49,6 +51,9 @@ import javax.script.ScriptException;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
 import javax.swing.*;
 
 import org.apache.poi.ss.usermodel.Footer;
@@ -4855,12 +4860,61 @@ class XF310_HeaderField extends XFFieldScriptable {
 	}
 }
 
-class XF310_CellEditorWithTextField extends XFTextField implements XFTableColumnEditor {
+//class XF310_CellEditorWithTextField extends XFTextField implements XFTableColumnEditor {
+//	private static final long serialVersionUID = 1L;
+//	private XF310 dialog_ = null;
+//
+//	public XF310_CellEditorWithTextField(XF310_DetailColumn detailColumn, XF310 dialog) {
+//		super(detailColumn.getBasicType(), detailColumn.getDataSize(), detailColumn.getDecimalSize(), detailColumn.getDataTypeOptions(), detailColumn.getFieldOptions(), dialog.getSession().systemFont);
+//		dialog_ = dialog;
+//		this.setBorder(BorderFactory.createEmptyBorder());
+//		this.setOpaque(true);
+//		if (detailColumn.getBasicType().equals("INTEGER") || detailColumn.getBasicType().equals("FLOAT")) {
+//			this.setHorizontalAlignment(SwingConstants.RIGHT);
+//		} else {
+//			this.setHorizontalAlignment(SwingConstants.LEFT);
+//		}
+//		this.addFocusListener(new java.awt.event.FocusAdapter() {
+//			public void focusGained(FocusEvent e) {
+//				dialog_.getCellsEditor().updateActiveColumnIndex();
+//			}
+//		});
+//	}
+//
+//	public void setColorOfError() {
+//		this.setBackground(XFUtility.ERROR_COLOR);
+//	}
+//	
+//	public void setColorOfNormal(int row) {
+//		if (this.isEditable()) {
+//			if (row%2==0) {
+//				this.setBackground(SystemColor.text);
+//			} else {
+//				this.setBackground(XFUtility.ODD_ROW_COLOR);
+//			}
+//		} else {
+//			this.setBackground(SystemColor.control);
+//		}
+//	}
+//}            
+class XF310_CellEditorWithTextField extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
+	private String basicType_ = "";
+	private String fontName_ = "";
+	private int digits_ = 5;
+	private int decimal_ = 0;
+	private int rows_ = 1;
+	private ArrayList<String> dataTypeOptionList;
+	private String fieldOptions_;
+	private String autoNumberKey = "";
+	private String oldValue = "";
+	private JTextField jTextField = new JTextField();
+	private JComboBox jComboBox = new JComboBox();
+	private String[] valueList_ = null;
+	private boolean itemSelectionControled = true;
 	private XF310 dialog_ = null;
 
 	public XF310_CellEditorWithTextField(XF310_DetailColumn detailColumn, XF310 dialog) {
-		super(detailColumn.getBasicType(), detailColumn.getDataSize(), detailColumn.getDecimalSize(), detailColumn.getDataTypeOptions(), detailColumn.getFieldOptions(), dialog.getSession().systemFont);
 		dialog_ = dialog;
 		this.setBorder(BorderFactory.createEmptyBorder());
 		this.setOpaque(true);
@@ -4874,12 +4928,120 @@ class XF310_CellEditorWithTextField extends XFTextField implements XFTableColumn
 				dialog_.getCellsEditor().updateActiveColumnIndex();
 			}
 		});
+		basicType_ = detailColumn.getBasicType();
+		fontName_ = dialog.getSession().systemFont;
+
+		////////////////////////////
+		// digits of VARCHAR is 0 //
+		////////////////////////////
+		if (detailColumn.getDataSize() == 0) {
+			digits_ = 10;
+		} else {
+			digits_ = detailColumn.getDataSize();
+		}
+		decimal_ = detailColumn.getDecimalSize();
+		dataTypeOptionList = XFUtility.getOptionList(detailColumn.getDataTypeOptions());
+		fieldOptions_ = detailColumn.getFieldOptions();
+
+		if (basicType_.equals("INTEGER")) {
+			jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+			jTextField.setText(this.getFormattedNumber("0"));
+		} else {
+			if (basicType_.equals("FLOAT")) {
+				jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+				String wrkStr = "";
+				if (decimal_ == 0) {
+					wrkStr = "0";
+				}
+				if (decimal_ == 1) {
+					wrkStr = "0.0";
+				}
+				if (decimal_ == 2) {
+					wrkStr = "0.00";
+				}
+				if (decimal_ == 3) {
+					wrkStr = "0.000";
+				}
+				if (decimal_ == 4) {
+					wrkStr = "0.0000";
+				}
+				if (decimal_ == 5) {
+					wrkStr = "0.00000";
+				}
+				if (decimal_ == 6) {
+					wrkStr = "0.000000";
+				}
+				jTextField.setText(this.getFormattedNumber(wrkStr));
+			} else {
+				jTextField.setHorizontalAlignment(SwingConstants.LEFT);
+			}
+		}
+		jTextField.addFocusListener(new ComponentFocusListener());
+		jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE));
+		jTextField.setDocument(new LimitedDocument(this));
+		jTextField.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					if (basicType_.equals("STRING") && !autoNumberKey.equals("")) {
+						fillZero();
+					}
+				}
+			} 
+		});
+
+		int fieldWidth, fieldHeight;
+		if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
+			fieldWidth = digits_ * XFUtility.FONT_SIZE + 10;
+		} else {
+			if (basicType_.equals("INTEGER") || basicType_.equals("FLOAT")) {
+				fieldWidth = XFUtility.getLengthOfEdittedNumericValue(digits_, decimal_, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
+			} else {
+				if (basicType_.equals("DATETIME")) {
+					fieldWidth = 24 * (XFUtility.FONT_SIZE/2 + 2);
+				} else {
+					fieldWidth = digits_ * (XFUtility.FONT_SIZE/2 + 2) + 10;
+				}
+			}
+		}
+		if (fieldWidth > 800) {
+			fieldWidth = 800;
+		}
+		fieldHeight = XFUtility.FIELD_UNIT_HEIGHT;
+
+		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "WIDTH");
+		if (!wrkStr.equals("")) {
+			fieldWidth = Integer.parseInt(wrkStr);
+		}
+		wrkStr = XFUtility.getOptionValueWithKeyword(detailColumn.getDataTypeOptions(), "AUTO_NUMBER");
+		if (!wrkStr.equals("")) {
+			autoNumberKey = wrkStr;
+		}
+
+		jComboBox.setFont(jTextField.getFont());
+		ListCellRenderer renderer = new DefaultListCellRenderer();
+		((JLabel)renderer).setHorizontalAlignment(jTextField.getHorizontalAlignment());
+		jComboBox.setRenderer(renderer);
+		jComboBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!itemSelectionControled || jTextField.getText().equals("")){
+					jTextField.setText((String)jComboBox.getSelectedItem());
+				}
+			} 
+		});
+		InputMap inputMap  = jComboBox.getInputMap(JComboBox.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+		ActionMap actionMap = jComboBox.getActionMap();
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "CHECK");
+		actionMap.put("CHECK", null);
+
+		this.setSize(new Dimension(fieldWidth, fieldHeight));
+		this.setLayout(new BorderLayout());
+		this.add(jTextField, BorderLayout.CENTER);
 	}
-	
+
 	public void setColorOfError() {
 		this.setBackground(XFUtility.ERROR_COLOR);
 	}
-	
+
 	public void setColorOfNormal(int row) {
 		if (this.isEditable()) {
 			if (row%2==0) {
@@ -4891,7 +5053,405 @@ class XF310_CellEditorWithTextField extends XFTextField implements XFTableColumn
 			this.setBackground(SystemColor.control);
 		}
 	}
-}            
+
+	public boolean isComponentFocusable() {
+		return jTextField.isFocusable();
+	}
+
+	public boolean isEditable() {
+		return jTextField.isEditable();
+	}
+	
+	public String[] getValueList() {
+		return valueList_;
+	}
+	
+	public void setBackground(Color color) {
+		if (jComboBox == null) {
+			if (jTextField != null) {
+				jTextField.setBackground(color);
+			}
+		} else {
+			jComboBox.setBackground(color);
+		}
+	}
+	
+	public void setValueList(String[] valueList) {
+		valueList_ = valueList;
+		if (valueList_ == null || valueList_.length == 0) {
+			this.remove(jComboBox);
+			this.add(jTextField);
+
+		} else {
+			itemSelectionControled = true;
+			jComboBox.removeAllItems();
+			for (int i = 0; i < valueList_.length; i++) {
+				jComboBox.addItem(valueList_[i]);
+			}
+			int index = -1;
+			for (int i = 0; i < jComboBox.getItemCount(); i++) {
+				if (jComboBox.getItemAt(i).toString().equals(jTextField.getText())) {
+					index = i;
+					break;
+				}
+			}
+			if (index > -1) {
+				jComboBox.setSelectedIndex(index);
+			}
+			itemSelectionControled = false;
+			this.remove(jTextField);
+			this.add(jComboBox);
+		}
+		this.updateUI();
+	}
+	
+	public void setHorizontalAlignment(int alignment) {
+		jTextField.setHorizontalAlignment(alignment);
+		if (jComboBox != null) {
+			((JLabel)jComboBox.getRenderer()).setHorizontalAlignment(alignment);
+		}
+	}
+	
+	public void setWidth(int width) {
+		this.setSize(width, this.getHeight());
+	}
+	
+	public void setEditable(boolean editable) {
+		jTextField.setEditable(editable);
+		jTextField.setFocusable(editable);
+		if (jComboBox == null) {
+			if (editable) {
+				jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE - 2));
+			} else {
+				jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE));
+			}
+		} else {
+			jComboBox.setFocusable(editable);
+			if (editable) {
+				this.remove(jTextField);
+				this.add(jComboBox);
+			} else {
+				this.remove(jComboBox);
+				this.add(jTextField);
+			}
+		}
+	}
+
+	public String getStringNumber(String text) {
+		String numberString = XFUtility.getStringNumber(text);
+		if (numberString.equals("")) {
+			if (basicType_.equals("INTEGER")) {
+				numberString = "0";
+			}
+			if (basicType_.equals("FLOAT")) {
+				if (decimal_ == 0) {
+					numberString = "0";
+				}
+				if (decimal_ == 1) {
+					numberString = "0.0";
+				}
+				if (decimal_ == 2) {
+					numberString = "0.00";
+				}
+				if (decimal_ == 3) {
+					numberString = "0.000";
+				}
+				if (decimal_ == 4) {
+					numberString = "0.0000";
+				}
+				if (decimal_ == 5) {
+					numberString = "0.00000";
+				}
+				if (decimal_ == 6) {
+					numberString = "0.000000";
+				}
+			}
+		} else {
+			if (dataTypeOptionList.contains("ZIPNO")) {
+				numberString = numberString.replace("-", "");
+				int workLength = 7 - numberString.length();
+				for (int i = 0; i < workLength; i++) {
+					numberString = numberString + "0";
+				}
+				numberString = numberString.substring(0, 3) + "-" + numberString.substring(3, 7); 
+			}
+		}
+		return numberString;
+	}
+
+	public Object getInternalValue() {
+		String text = "";
+		if (basicType_.equals("INTEGER")
+			|| basicType_.equals("FLOAT")
+			|| dataTypeOptionList.contains("DIAL")
+			|| dataTypeOptionList.contains("ZIPNO")) {
+			if (jTextField.getText().equals("*AUTO")) {
+				text = jTextField.getText();
+			} else {
+				text = this.getStringNumber(jTextField.getText());
+			}
+		} else {
+			text = jTextField.getText();
+		}
+		return text;
+	}
+	
+	public void setOldValue(Object obj) {
+		oldValue = obj.toString();
+	}
+	
+	public Object getOldValue() {
+		String text = "";
+		if (basicType_.equals("INTEGER")
+			|| basicType_.equals("FLOAT")
+			|| dataTypeOptionList.contains("DIAL")
+			|| dataTypeOptionList.contains("ZIPNO")) {
+			text = this.getStringNumber(oldValue);
+		} else {
+			text = oldValue;
+		}
+		return text;
+	}
+
+	public String getText() {
+		return jTextField.getText();
+	}
+
+	public void setText(String text) {
+		jTextField.setText(text);
+	}
+	
+	public Object getExternalValue() {
+		return this.getInternalValue();
+	}
+	
+	public void setValue(Object obj) {
+		String text = null;
+		if (obj != null) {
+			text = obj.toString();
+		}
+		if (text != null) {
+			if (basicType_.equals("INTEGER")) {
+				if (text.equals("*AUTO")) {
+					jTextField.setText(text);
+				} else {
+					jTextField.setText(getFormattedNumber(text));
+				}
+			}
+			if (basicType_.equals("FLOAT")) {
+				jTextField.setText(getFormattedNumber(text));
+			}
+			if (basicType_.equals("DATE")) {
+				jTextField.setText(text);
+			}
+			if (basicType_.equals("TIME")) {
+				jTextField.setText(text);
+			}
+			if (basicType_.equals("DATETIME")) {
+				text = text.replace("-", "/");
+				jTextField.setText(text);
+			}
+			if (basicType_.equals("STRING")
+					|| basicType_.equals("BYTEA")) {
+				text = text.trim();
+				jTextField.setText(text);
+			}
+		}
+	}
+	
+	public String getFormattedNumber(String text) {
+		String value = "0";
+		if (text != null) {
+			if (basicType_.equals("INTEGER")) {
+				value = XFUtility.getFormattedIntegerValue(getStringNumber(text), dataTypeOptionList, digits_);
+			}
+			if (basicType_.equals("FLOAT")) {
+				value = XFUtility.getFormattedFloatValue(getStringNumber(text), decimal_);
+			}
+		}
+		return value;
+	}
+	
+	public int getRows() {
+		return rows_;
+	}
+	
+	private void fillZero() {
+		int stringDigitFrom = -1;
+		int numberDigitFrom = 0;
+		if (jTextField.getText().length() < digits_ && !jTextField.getText().equals("")) {
+			for( int i = 0; i < jTextField.getText().length() ; i++) {
+				try {
+					Integer.parseInt(jTextField.getText().substring(i, i+1));
+					numberDigitFrom = i;
+					break;
+				} catch(NumberFormatException e) {
+					stringDigitFrom = i;
+				}
+			}
+			StringBuffer sb = new StringBuffer();
+			if (stringDigitFrom > -1 && numberDigitFrom > stringDigitFrom) {
+				sb.append(jTextField.getText().substring(stringDigitFrom, numberDigitFrom));
+			}
+			int zeroLen = digits_ - jTextField.getText().length();
+			for( int i = 0; i < zeroLen ; i++) {
+				sb.append("0");
+			}
+			sb.append(jTextField.getText().substring(numberDigitFrom, jTextField.getText().length()));
+			jTextField.setText(sb.toString());
+		}
+	}
+
+	class ComponentFocusListener implements FocusListener{
+		public void focusLost(FocusEvent event){
+			if (basicType_.equals("INTEGER")) {
+				if (!jTextField.getText().equals("*AUTO")) {
+					jTextField.setText(getFormattedNumber(jTextField.getText()));
+				}
+			}
+			if (basicType_.equals("FLOAT")) {
+				jTextField.setText(getFormattedNumber(jTextField.getText()));
+			}
+			if (getInputContext() != null) {
+				getInputContext().setCompositionEnabled(false);
+			}
+			if (basicType_.equals("STRING") && !autoNumberKey.equals("")) {
+				fillZero();
+			}
+		}
+		public void focusGained(FocusEvent event){
+			jTextField.selectAll();
+			Character.Subset[] subsets  = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
+			String lang = Locale.getDefault().getLanguage();
+			if (basicType_.equals("STRING")) {
+				if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
+					if (lang.equals("ja")) {
+						subsets = new Character.Subset[] {java.awt.im.InputSubset.KANJI};
+					}
+					if (lang.equals("ko")) {
+						subsets = new Character.Subset[] {java.awt.im.InputSubset.HANJA};
+					}
+					if (lang.equals("zh")) {
+						subsets = new Character.Subset[] {java.awt.im.InputSubset.TRADITIONAL_HANZI};
+					}
+					getInputContext().setCharacterSubsets(subsets);
+					getInputContext().setCompositionEnabled(true);
+				} else {
+					if (dataTypeOptionList.contains("KATAKANA") && lang.equals("ja")) {
+						subsets = new Character.Subset[] {java.awt.im.InputSubset.HALFWIDTH_KATAKANA};
+						getInputContext().setCharacterSubsets(subsets);
+						getInputContext().setCompositionEnabled(true);
+					} else {
+						InputContext ic = getInputContext();
+						if (ic != null) {
+							ic.setCharacterSubsets(subsets);
+							ic.setCompositionEnabled(false);
+						}
+					}
+				}
+			} else {
+				InputContext ic = getInputContext();
+				if (ic != null) {
+					ic.setCharacterSubsets(subsets);
+					ic.setCompositionEnabled(false);
+				}
+			}
+		}
+	}
+
+	class LimitedDocument extends PlainDocument {
+		private static final long serialVersionUID = 1L;
+		XF310_CellEditorWithTextField adaptee;
+		LimitedDocument(XF310_CellEditorWithTextField adaptee) {
+		  this.adaptee = adaptee;
+		}
+		public void insertString(int offset, String str, AttributeSet attr) {
+			try {
+				int integerSizeOfField = adaptee.digits_ - adaptee.decimal_;
+
+				if (adaptee.decimal_ > 0 && str.length() == 1) {
+					if (adaptee.isEditable()
+							&& (basicType_.equals("INTEGER") || basicType_.equals("FLOAT"))
+							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
+							&& str.contains("-")) {
+						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError") + ": " + str);
+					} else {
+						String wrkStr0 = super.getText(0, super.getLength());
+						wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
+						String wrkStr1 = wrkStr0.replace(".", "");
+						wrkStr1 = wrkStr1.replace(",", "");
+						wrkStr1 = wrkStr1.replace("-", "");
+						wrkStr1 = wrkStr1.replace(":", "");
+						if (wrkStr1.length() > adaptee.digits_) {
+							wrkStr1 = wrkStr1.substring(0, integerSizeOfField) + "." + wrkStr1.substring(integerSizeOfField, wrkStr1.length() - 1);
+							super.replace(0, super.getLength(), wrkStr1, attr);
+						} else {
+							if (basicType_.equals("INTEGER") && str.contains(".")) {
+								JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("NumberFormatError"));
+							} else {
+								int posOfDecimal = wrkStr0.indexOf(".");
+								if (posOfDecimal == -1) {
+									if (wrkStr1.length() > integerSizeOfField) {
+										wrkStr1 = wrkStr1.substring(0, integerSizeOfField) + "." + wrkStr1.substring(integerSizeOfField, wrkStr1.length());
+										super.replace(0, super.getLength(), wrkStr1, attr);
+									} else {
+										super.insertString( offset, str, attr );
+									}
+								} else {
+									int decimalLengthOfInputData = wrkStr0.length() - posOfDecimal - 1;
+									if (decimalLengthOfInputData <= adaptee.decimal_) {
+										super.insertString( offset, str, attr );
+									}
+								}
+							}
+						}
+					}
+				} else {
+					if (adaptee.isEditable()
+							&& (basicType_.equals("INTEGER") || basicType_.equals("FLOAT"))
+							&& !dataTypeOptionList.contains("ACCEPT_MINUS")
+							&& str.contains("-")) {
+						JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("MinusError") + ": " + str);
+					} else {
+						if (basicType_.equals("INTEGER")) {
+							if (str.contains(".")) {
+								JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("NumberFormatError"));
+							} else {
+								String wrkStr0 = super.getText(0, super.getLength());
+								wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
+								String wrkStr1 = wrkStr0.replace(".", "");
+								wrkStr1 = wrkStr1.replace(",", "");
+								wrkStr1 = wrkStr1.replace("-", "");
+								wrkStr1 = wrkStr1.replace(":", "");
+								if (wrkStr1.length() <= adaptee.digits_ || wrkStr1.equals("*AUTO")) {
+									super.insertString(offset, str, attr );
+								}
+							}
+						} else {
+							if (basicType_.equals("FLOAT")) {
+								String wrkStr0 = super.getText(0, super.getLength());
+								wrkStr0 = wrkStr0.substring(0, offset) + str + wrkStr0.substring(offset, wrkStr0.length());
+								String wrkStr1 = wrkStr0.replace(".", "");
+								wrkStr1 = wrkStr1.replace(",", "");
+								wrkStr1 = wrkStr1.replace("-", "");
+								if (wrkStr1.length() <= adaptee.digits_) {
+									super.insertString( offset, str, attr );
+								}
+							} else {
+								if (offset < adaptee.digits_ && super.getLength() < adaptee.digits_) {
+									super.insertString( offset, str, attr );
+								}
+							}
+						}
+					}
+				}
+			} catch (BadLocationException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+
 
 class XF310_CellEditorWithImageField extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;

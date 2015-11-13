@@ -101,7 +101,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	private JButton jButtonList = new JButton();
 	private JButton[] jButtonArray = new JButton[7];
 	private JButton buttonNext = null;
-	private String buttonNextCaption = "";
+	private String functionKeyToGoNext = "";
 	private Color selectionColorWithFocus = new Color(49,106,197);
 	private Color selectionColorWithoutFocus = new Color(213,213,213);
 	private Action helpAction = new AbstractAction(){
@@ -828,7 +828,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				if (element.getAttribute("Action").equals("NEXT")) {
 					buttonNext = jButtonArray[workIndex];
 					buttonNext.setEnabled(false);
-					buttonNextCaption = element.getAttribute("Caption");
+					//buttonNextCaption = element.getAttribute("Caption");
+					functionKeyToGoNext = "F" + element.getAttribute("Number");
 				}
 			}
 		}
@@ -1035,7 +1036,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 							+ (fromRow+blockRows) + XFUtility.RESOURCE.getString("DialogCheckReadMessage3")
 							+ countOfRows + XFUtility.RESOURCE.getString("DialogCheckReadMessage4");
 				}
-				messageList.add(XFUtility.RESOURCE.getString("FunctionMessage5") + buttonNextCaption + XFUtility.RESOURCE.getString("FunctionMessage6") + wrkStr);
+				messageList.add(XFUtility.RESOURCE.getString("FunctionMessage5") + functionKeyToGoNext + XFUtility.RESOURCE.getString("FunctionMessage6") + wrkStr);
 			} else {
 				messageList.add(XFUtility.RESOURCE.getString("FunctionMessage4"));
 			}

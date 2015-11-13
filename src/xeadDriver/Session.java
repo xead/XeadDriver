@@ -93,7 +93,7 @@ public class Session extends JFrame {
 	private String processorVersion = "";
 	private boolean noErrorsOccured = true;
 	private boolean skipPreload = false;
-	private boolean isOnlineSession = true;
+	private boolean isClientSession = true;
 	private String databaseName = "";
 	private String databaseUser = "";
 	private String databasePassword = "";
@@ -310,7 +310,7 @@ public class Session extends JFrame {
 	///////////////////////////////////
 	public Session(String fileName, String user, String password, String xeadServerVersion) throws Exception {
 		try {
-			isOnlineSession = false;
+			isClientSession = false;
 
 			if (parseSystemDefinition(fileName)) {
 				if (setupSessionVariants()) {
@@ -1523,6 +1523,10 @@ public class Session extends JFrame {
 		return offDateList.contains(kbCalendar + ";" + date);
 	}
 
+	public boolean isClientSession() {
+		return isClientSession;
+	}
+
 	public boolean isValidTime(String time, String format) {
 		boolean result = false;
 		try {
@@ -1911,9 +1915,14 @@ public class Session extends JFrame {
 			boolean isWithinMonth = false;
 			int startMonth = 1;
 			int lastDay = 31;
-			//
-			startMonth = getSystemVariantInteger("FIRST_MONTH");
-			lastDay = getSystemVariantInteger("LAST_DAY");
+			int value1 = getSystemVariantInteger("FIRST_MONTH");
+			if (value1 != 0) {
+				startMonth = value1;
+			}
+			int value2 = getSystemVariantInteger("LAST_DAY");
+			if(value2 != 0) {
+				lastDay = value2;
+			}
 			//
 			if (lastDay >= 31) {
 				if ((month == 1 && date <= 31) 
@@ -1976,9 +1985,14 @@ public class Session extends JFrame {
 			boolean isWithinMonth = false;
 			int startMonth = 1;
 			int lastDay = 31;
-			//
-			startMonth = getSystemVariantInteger("FIRST_MONTH");
-			lastDay = (Integer)getSystemVariantInteger("LAST_DAY");
+			int value1 = getSystemVariantInteger("FIRST_MONTH");
+			if (value1 != 0) {
+				startMonth = value1;
+			}
+			int value2 = getSystemVariantInteger("LAST_DAY");
+			if(value2 != 0) {
+				lastDay = value2;
+			}
 			//
 			if (lastDay >= 31) {
 				if ((month == 1 && date <= 31) 
@@ -2422,7 +2436,7 @@ public class Session extends JFrame {
 		public FunctionLauncher(Session session) {
 			session_ = session;
 			xF000[0] = new XF000(session, 0);
-			if (session_.isOnlineSession) {
+			if (session_.isClientSession) {
 				xF100[0] = new XF100(session, 0);
 				xF110[0] = new XF110(session, 0);
 				xF200[0] = new XF200(session, 0);

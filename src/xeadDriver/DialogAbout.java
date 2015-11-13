@@ -43,11 +43,16 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R2.M19";
-	public static final String VERSION  = "1.2.19";
+	public static final String FULL_VERSION  = "V1.R2.M20";
+	public static final String VERSION  = "1.2.20";
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String COPYRIGHT = "Copyright 2015 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.2.20
+	//・getFYearOfDate(...)とgetMSeqOfDate(...)が、関連するシステム制御データが存在しなくても正常動作するようにした
+	//・XFTableOperatorのサーバ処理で接続異状が起きたときの動きを改善した
+	//・XF110の確認リストで表示されるメッセージの不具合を修正した
+	//
 	//1.2.19
 	//・XF110,XF310について、明細項目でvaluesListを設定した場合のリストボックス表示の問題を修正
 	//・XFInputAssist項目について動作を改善

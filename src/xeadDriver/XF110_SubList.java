@@ -123,7 +123,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			cellsEditor.requestFocusOnVerticalCell("DOWN");
 		}
 	};
-	private String buttonUpdateCaption = "";
+	private String functionKeyToUpdate = "";
 	private JPanel jPanelInfo = new JPanel();
 	private GridLayout gridLayoutButtons = new GridLayout();
 	private GridLayout gridLayoutInfo = new GridLayout();
@@ -782,12 +782,12 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				this.setLocation(dialog_.getLocation().x, dialog_.getLocation().y);
 			}
 			messageList.clear();
+			setupFunctionKeysAndButtons();
 			if (initialMsg.equals("")) {
-				jTextAreaMessages.setText(XFUtility.RESOURCE.getString("FunctionMessage7") + buttonUpdateCaption + XFUtility.RESOURCE.getString("FunctionMessage8"));
+				jTextAreaMessages.setText(XFUtility.RESOURCE.getString("FunctionMessage7") + functionKeyToUpdate + XFUtility.RESOURCE.getString("FunctionMessage8"));
 			} else {
 				jTextAreaMessages.setText(initialMsg);
 			}
-			setupFunctionKeysAndButtons();
 			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 150);
 			jPanelBottom.remove(jProgressBar);
 			jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
@@ -1174,7 +1174,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				actionMapBatchFields.put("actionButton" + workIndex, actionButtonArray[workIndex]);
 
 				if (element.getAttribute("Action").equals("UPDATE")) {
-					buttonUpdateCaption = element.getAttribute("Caption");
+					functionKeyToUpdate = "F" + element.getAttribute("Number");
 					keyStrokeToUpdate = XFUtility.getKeyStroke(element.getAttribute("Number"));
 				}
 			}

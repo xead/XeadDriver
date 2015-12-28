@@ -253,11 +253,10 @@ public class Session extends JFrame {
 				System.exit(0);
 
 			} else {
-				application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage1"));
-
 				if (parseSystemDefinition(fileName)) {
 					if (setupSessionVariants()) {
 
+						application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage6"));
 						loginDialog = new DialogLogin(this, loginUser, loginPassword);
 						if (loginDialog.userIsValidated(true)) {
 
@@ -267,8 +266,6 @@ public class Session extends JFrame {
 							userEmailAddress = loginDialog.getUserEmailAddress();
 							userMenus = loginDialog.getUserMenus();
 							processorVersion = "D" + DialogAbout.VERSION;
-
-							application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2"));
 
 							writeLogAndStartSession();
 							setupMenusAndComponents();
@@ -323,6 +320,7 @@ public class Session extends JFrame {
 						userEmployeeNo = loginDialog.getUserEmployeeNo();
 						userEmailAddress = loginDialog.getUserEmailAddress();
 						userMenus = "";
+						menuIDUsing = "**";
 						processorVersion = "S" + xeadServerVersion;
 
 						writeLogAndStartSession();
@@ -349,6 +347,12 @@ public class Session extends JFrame {
 	// Parse XML formatted data into DOM with file name requested //
 	////////////////////////////////////////////////////////////////
 	private boolean parseSystemDefinition(String fileName) throws Exception {
+		if (application != null) {
+			application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage1"));
+			application.setProgressMax(5);
+			application.setProgressValue(1);
+		}
+
 		if (fileName.startsWith("http:")
 				|| fileName.startsWith("https:")
 				|| fileName.startsWith("file:")) {
@@ -386,6 +390,10 @@ public class Session extends JFrame {
 	// Setup session variants according to system definition //
 	///////////////////////////////////////////////////////////
 	private boolean setupSessionVariants() throws Exception {
+		if (application != null) {
+			application.setProgressValue(2);
+		}
+
 		NodeList nodeList = domDocument.getElementsByTagName("System");
 		org.w3c.dom.Element element = (org.w3c.dom.Element)nodeList.item(0);
 		systemName = element.getAttribute("Name");
@@ -405,6 +413,9 @@ public class Session extends JFrame {
 		inputDialog = new XFInputDialog(this);
 		checkListDialog = new XFCheckListDialog(this);
 		xfLongTextEditor = new XFLongTextEditor(this);
+		if (application != null) {
+			application.setProgressValue(3);
+		}
 		
 		////////////////////
 		// System Folders //
@@ -430,6 +441,9 @@ public class Session extends JFrame {
 			if (!outputFolder.exists()) {
 				outputFolder = null;
 			}
+		}
+		if (application != null) {
+			application.setProgressValue(4);
 		}
 
 		///////////////////////////
@@ -468,7 +482,6 @@ public class Session extends JFrame {
 		databaseUser = element.getAttribute("DatabaseUser");
 		databasePassword = element.getAttribute("DatabasePassword");
 		org.w3c.dom.Element subDBElement;
-		//Connection subDBConnection;
 		NodeList subDBList = domDocument.getElementsByTagName("SubDB");
 		for (int i = 0; i < subDBList.getLength(); i++) {
 			subDBElement = (org.w3c.dom.Element)subDBList.item(i);
@@ -503,6 +516,9 @@ public class Session extends JFrame {
 		smtpPort = element.getAttribute("SmtpPort");
 		smtpUser = element.getAttribute("SmtpUser");
 		smtpPassword = element.getAttribute("SmtpPassword");
+		if (application != null) {
+			application.setProgressValue(5);
+		}
 
 		////////////////////
 		// PDF print font //
@@ -535,7 +551,6 @@ public class Session extends JFrame {
 
 	public boolean setupConnectionToDatabase(boolean isToStartSession) {
 		String dbName = "";
-
 		try {
 			///////////////////////////////////////////////////////////////////////////////
 			// Setup committing connections.                                             //
@@ -576,12 +591,20 @@ public class Session extends JFrame {
 
 	
 	private void writeLogAndStartSession() throws ScriptException, Exception {
+		if (application != null) {
+			application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage5"));
+			application.setProgressMax(5);
+			application.setProgressValue(1);
+		}
 
 		/////////////////////////////////
 		// Setup session no and status //
 		/////////////////////////////////
 		sessionID = this.getNextNumber("NRSESSION");
 		sessionStatus = "ACT";
+		if (application != null) {
+			application.setProgressValue(2);
+		}
 
 		//////////////////////////////////////////
 		// insert a new record to session table //
@@ -592,6 +615,9 @@ public class Session extends JFrame {
 		+ "'" + getIpAddress() + "','" + processorVersion + "','" + sessionStatus + "')";
 		XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 		operator.execute();
+		if (application != null) {
+			application.setProgressValue(3);
+		}
 
 		//////////////////////////////////////
 		// setup off date list for calendar //
@@ -600,11 +626,17 @@ public class Session extends JFrame {
 		while (operator.next()) {
 			offDateList.add(operator.getValueOf("KBCALENDAR").toString() + ";" +operator.getValueOf("DTOFF").toString());
 		}
+		if (application != null) {
+			application.setProgressValue(4);
+		}
 
 		/////////////////////////////
 		// setup function launcher //
 		/////////////////////////////
 		functionLauncher = new FunctionLauncher(this);
+		if (application != null) {
+			application.setProgressValue(5);
+		}
 
 		////////////////////////////////////////////////////
 		// setup global bindings and execute login-script //
@@ -618,6 +650,12 @@ public class Session extends JFrame {
 	}
 
 	private void setupMenusAndComponents() throws Exception {
+		if (application != null) {
+			application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2"));
+			application.setProgressMax(5);
+			application.setProgressValue(0);
+		}
+
 		jTabbedPaneMenu.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE+2));
 		jTabbedPaneMenu.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		jTabbedPaneMenu.addKeyListener(new Session_keyAdapter(this));
@@ -694,6 +732,9 @@ public class Session extends JFrame {
 				}
 			}
 		}
+		if (application != null) {
+			application.setProgressValue(1);
+		}
 
 		jScrollPaneMenu.getViewport().add(jPanelMenu, null);
 		jPanelMenuTopMargin.setPreferredSize(new Dimension(20, 20));
@@ -742,6 +783,9 @@ public class Session extends JFrame {
 		jPanelMenuCenter.add(jButtonMenuOptionArray[18]);
 		jPanelMenuCenter.add(jButtonMenuOptionArray[9]);
 		jPanelMenuCenter.add(jButtonMenuOptionArray[19]);
+		if (application != null) {
+			application.setProgressValue(2);
+		}
 
 		jPanelTop.setPreferredSize(new Dimension(10, 30));
 		jPanelTop.setBorder(BorderFactory.createLoweredBevelBorder());
@@ -789,6 +833,9 @@ public class Session extends JFrame {
 		this.pack();
 		this.validate();
 		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		if (application != null) {
+			application.setProgressValue(3);
+		}
 
 		for (int i = 0; i < 20; i++) {
 			for (int j = 0; j < 20; j++) {
@@ -798,6 +845,9 @@ public class Session extends JFrame {
 
 		modifyPasswordDialog = new DialogModifyPassword(this);
 		checkReadDialog = new DialogCheckRead(this);
+		if (application != null) {
+			application.setProgressValue(4);
+		}
 
 		///////////////////////////////////////////////
 		// Setup elements on menu and show first tab //
@@ -815,6 +865,9 @@ public class Session extends JFrame {
 			}
 		}
 		setupOptionsOfMenuWithTabNo(0);
+		if (application != null) {
+			application.setProgressValue(5);
+		}
 
 		//////////////////////////////
 		// setup calendar component //
@@ -827,16 +880,19 @@ public class Session extends JFrame {
 		org.w3c.dom.Element element;
 		int wrkCount = 0;
 		if (loadingChekerIDList.size() > 0) {
-			application.setProgressMax(loadingChekerIDList.size());
-			application.setProgressValue(wrkCount);
-			application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3"));
+			if (application != null) {
+				application.setProgressMax(loadingChekerIDList.size());
+				application.setProgressValue(wrkCount);
+				application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3"));
+			}
 			for (int i = 0; i < tableList.getLength(); i++) {
 				element = (org.w3c.dom.Element)tableList.item(i);
 				if (loadingChekerIDList.contains(element.getAttribute("ID")) && !element.getAttribute("SkipReferCheck").equals("T")) {
 					wrkCount++;
-					//application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3") + element.getAttribute("ID") + "("+ wrkCount + "/" + loadingChekerIDList.size() + ")");
-					application.setProgressValue(wrkCount);
-			    	application.repaintProgress();
+					if (application != null) {
+						application.setProgressValue(wrkCount);
+						application.repaintProgress();
+					}
 
 					ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
 					referCheckerList.add(checker);
@@ -851,16 +907,19 @@ public class Session extends JFrame {
 		String functionType;
 		if (loadingFunctionIDList.size() > 0) {
 			wrkCount = 0;
-			application.setProgressMax(loadingFunctionIDList.size());
-			application.setProgressValue(wrkCount);
-			application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage4"));
+			if (application != null) {
+				application.setProgressMax(loadingFunctionIDList.size());
+				application.setProgressValue(wrkCount);
+				application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage4"));
+			}
 			for (int i = 0; i < functionList.getLength(); i++) {
 				element = (org.w3c.dom.Element)functionList.item(i);
 				if (loadingFunctionIDList.contains(element.getAttribute("ID"))) {
 					wrkCount++;
-					//application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage4") + element.getAttribute("ID") + "("+ wrkCount + "/" + loadingFunctionIDList.size() + ")");
-					application.setProgressValue(wrkCount);
-			    	application.repaintProgress();
+					if (application != null) {
+						application.setProgressValue(wrkCount);
+						application.repaintProgress();
+					}
 
 					functionType = element.getAttribute("Type");
 					if (functionType.equals("XF000")) {
@@ -892,6 +951,13 @@ public class Session extends JFrame {
 				}
 			}
 		}
+	}
+
+	public void setMessage(String text) {
+		jTextAreaMessages.setText(text);
+		jTextAreaMessages.setForeground(Color.blue);
+		jTextAreaMessages.paintImmediately(0, 0, jTextAreaMessages.getWidth(), jTextAreaMessages.getHeight());
+		jTextAreaMessages.setForeground(Color.black);
 	}
 
 	private String getIpAddress() {
@@ -1369,11 +1435,22 @@ public class Session extends JFrame {
 		}
 		//
 		if (countType == 1) {
-			for (int i = 0; i < days; i++) {
-				cal.add(Calendar.DATE, 1);
-				workDate = cal.getTime();
-				if (offDateList.contains(kbCalendar + ";" + dfm.format(workDate))) {
-					days++;
+			if (days >= 0) {
+				for (int i = 0; i < days; i++) {
+					cal.add(Calendar.DATE, 1);
+					workDate = cal.getTime();
+					if (offDateList.contains(kbCalendar + ";" + dfm.format(workDate))) {
+						days++;
+					}
+				}
+			} else {
+				days = days * -1;
+				for (int i = 0; i < days; i++) {
+					cal.add(Calendar.DATE, -1);
+					workDate = cal.getTime();
+					if (offDateList.contains(kbCalendar + ";" + dfm.format(workDate))) {
+						days++;
+					}
 				}
 			}
 		}
@@ -2882,31 +2959,35 @@ public class Session extends JFrame {
 		return checker;
 	}
 
-	public Object requestWebService(String uriText) {
+	public Object requestWebService(String uri) {
+		return requestWebService(uri, "UTF-8");
+	}
+	public Object requestWebService(String uri, String encoding) {
 		Object response = null;
 		HttpResponse httpResponse = null;
 		InputStream inputStream = null;
 		HttpClient httpClient = new DefaultHttpClient();
 		try {
-			httpGet.setURI(new URI(uriText));
+			httpGet.setURI(new URI(uri));
 			httpResponse = httpClient.execute(httpGet);
-			String contentType = httpResponse.getEntity().getContentType().getValue();
-			if (contentType.contains("text/xml")) {
-				inputStream = httpResponse.getEntity().getContent();
-				domParser.parse(new InputSource(inputStream));
-				response = domParser.getDocument();
-			}
-			if (contentType.contains("application/json")) {
-				String text = EntityUtils.toString(httpResponse.getEntity());
-				if (text.startsWith("[")) {
-					response = new JSONArray(text);
-				} else {
-					response = new JSONObject(text);
-				}
-			}
-			if (contentType.contains("text/plain")) {
-				response = EntityUtils.toString(httpResponse.getEntity());
-			}
+//			String contentType = httpResponse.getEntity().getContentType().getValue();
+//			if (contentType.contains("text/xml")) {
+//				inputStream = httpResponse.getEntity().getContent();
+//				domParser.parse(new InputSource(inputStream));
+//				response = domParser.getDocument();
+//			}
+//			if (contentType.contains("application/json")) {
+//				String text = EntityUtils.toString(httpResponse.getEntity());
+//				if (text.startsWith("[")) {
+//					response = new JSONArray(text);
+//				} else {
+//					response = new JSONObject(text);
+//				}
+//			}
+//			if (contentType.contains("text/plain")) {
+//				response = EntityUtils.toString(httpResponse.getEntity());
+//			}
+			response = EntityUtils.toString(httpResponse.getEntity(), encoding);
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
 		} finally {
@@ -2919,56 +3000,18 @@ public class Session extends JFrame {
 		}
 		return response;
 	}
-	
-	public XFHttpRequest createServiceRequest(String uri) {
-		return new XFHttpRequest(uri, domParser);
+	public XFHttpRequest createWebServiceRequest(String uri) {
+		return new XFHttpRequest(uri, "UTF-8");
+	}
+	public XFHttpRequest createWebServiceRequest(String uri, String encoding) {
+		return new XFHttpRequest(uri, encoding);
 	}
 
-//	public Object requestWebService(String uriText, Object document, String requestContentType) {
-//		Object response = null;
-//		HttpResponse httpResponse = null;
-//		InputStream inputStream = null;
-//		HttpClient httpClient = new DefaultHttpClient();
-//		try {
-//			HttpPost httpPost = new HttpPost();
-//			httpPost.setURI(new URI(uriText));
-//			if (requestContentType != null && !requestContentType.equals("")) {
-//				httpPost.setHeader("Content-Type", requestContentType);
-//			}
-//			httpPost.setEntity(new StringEntity(document.toString()));
-//			httpResponse = httpClient.execute(httpPost);  
-//			String responseContentType = httpResponse.getEntity().getContentType().getValue();
-//			if (responseContentType.contains("text/xml")) {
-//				inputStream = httpResponse.getEntity().getContent();
-//				responseDocParser.parse(new InputSource(inputStream));
-//				response = responseDocParser.getDocument();
-//			}
-//			if (responseContentType.contains("application/json")) {
-//				String text = EntityUtils.toString(httpResponse.getEntity());
-//				if (text.startsWith("[")) {
-//					response = new JSONArray(text);
-//				} else {
-//					response = new JSONObject(text);
-//				}
-//			}
-//			if (responseContentType.contains("text/plain")) {
-//				response = EntityUtils.toString(httpResponse.getEntity());
-//			}
-//		} catch (Exception ex) {
-//			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
-//		} finally {
-//			httpClient.getConnectionManager().shutdown();
-//			try {
-//				if (inputStream != null) {
-//					inputStream.close();
-//				}
-//			} catch(Exception e) {}
-//		}
-//		return response;
-//	}
-	
 	public Document parseStringToGetXmlDocument(String data) throws Exception {
-		domParser.parse(data);
+		return parseStringToGetXmlDocument(data, "UTF-8");
+	}
+	public Document parseStringToGetXmlDocument(String data, String encoding) throws Exception {
+		domParser.parse(new InputSource(new ByteArrayInputStream(data.getBytes(encoding))));
 		return domParser.getDocument();
 	}
 	public Document createXmlDocument() throws Exception {
@@ -3055,23 +3098,12 @@ public class Session extends JFrame {
 		InputStream inputStream = null;
 		HttpClient httpClient = new DefaultHttpClient();
 		try {
-			//httpGet.setURI(new URI(ZIP_URL + "zipcode=" + zipNo + "&format=xml"));
 			httpGet.setURI(new URI(ZIP_URL + "zn=" + zipNo_));
 			response = httpClient.execute(httpGet);  
 			if (response.getStatusLine().getStatusCode() < 400){
 				inputStream = response.getEntity().getContent();
 				domParser.parse(new InputSource(inputStream));
 				responseDoc = domParser.getDocument();
-//				org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("groovewebservice").item(0);
-//				if (rootNode.getElementsByTagName("address").getLength() == 0) {
-//					JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage54") + "\n" + zipNo);
-//				} else {
-//					org.w3c.dom.Element addressNode = (org.w3c.dom.Element)rootNode.getElementsByTagName("address").item(0);
-//					org.w3c.dom.Element prefectureNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("prefecture").item(0);
-//					org.w3c.dom.Element cityNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("city").item(0);
-//					org.w3c.dom.Element townNode = (org.w3c.dom.Element)addressNode.getElementsByTagName("town").item(0);
-//					value = prefectureNode.getTextContent() + cityNode.getTextContent() + townNode.getTextContent();
-//				}
 				org.w3c.dom.Element rootNode = (org.w3c.dom.Element)responseDoc.getElementsByTagName("ZIP_result").item(0);
 				if (rootNode.getElementsByTagName("value").getLength() == 0) {
 					JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage54") + "\n" + zipNo);

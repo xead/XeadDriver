@@ -502,7 +502,11 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							&& (filterListArray[i].size() == 0
 							|| firstEditableFilter[i] == null
 							|| detailInitialListingArray[i].equals("T"))) {
-						selectDetailRecordsAndSetupTableRows(i, true);
+						if (i==0) {
+							selectDetailRecordsAndSetupTableRows(i, true);
+						} else {
+							clearTableRows(i);
+						}
 					} else {
 						clearTableRows(i);
 					}
@@ -3120,6 +3124,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 
 	void jTabbedPane_stateChanged(ChangeEvent e) {
 		if (tablesReadyToUse) {
+			setCursor(new Cursor(Cursor.WAIT_CURSOR));
+
 			int index = jTabbedPane.getSelectedIndex();
 			jPanelCenter.removeAll();
 			jPanelTop.removeAll();
@@ -3158,26 +3164,32 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					messageList.add(initialMsgArray[index]);
 				}
 			} else {
-				if (initialMsgArray[index].equals("")) {
-					if (listingResultMsgArray[index].equals("")) {
-						if (filterListArray[index].size() > 0 && firstEditableFilter[index] != null) {
-							StringBuffer buf = new StringBuffer();
-							buf.append(XFUtility.RESOURCE.getString("FunctionMessage1"));
-							buf.append(detailTableArray[index].getOrderByDescription());
-							buf.append(XFUtility.RESOURCE.getString("FunctionMessage56"));
-							messageList.add(buf.toString());
+				if (index == 0) {
+					if (initialMsgArray[index].equals("")) {
+						if (listingResultMsgArray[index].equals("")) {
+							if (filterListArray[index].size() > 0 && firstEditableFilter[index] != null) {
+								StringBuffer buf = new StringBuffer();
+								buf.append(XFUtility.RESOURCE.getString("FunctionMessage1"));
+								buf.append(detailTableArray[index].getOrderByDescription());
+								buf.append(XFUtility.RESOURCE.getString("FunctionMessage56"));
+								messageList.add(buf.toString());
+							} else {
+								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage31"));
+							}
 						} else {
-							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage31"));
+							messageList.add(listingResultMsgArray[index]);
 						}
 					} else {
-						messageList.add(listingResultMsgArray[index]);
+						messageList.add(initialMsgArray[index]);
 					}
 				} else {
-					messageList.add(initialMsgArray[index]);
+					selectDetailRecordsAndSetupTableRows(index, true);
 				}
 			}
 			setMessagesOnPanel();
 			setupFunctionKeysAndButtonsForTabIndex(index);
+
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
 	

@@ -43,11 +43,22 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R2.M20";
-	public static final String VERSION  = "1.2.20";
+	public static final String FULL_VERSION  = "V1.R2.M22";
+	public static final String VERSION  = "1.2.22";
 	public static final String FORMAT_VERSION  = "1.1";
 	public static final String COPYRIGHT = "Copyright 2015 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.2.22
+	//・XF100の初期メッセージの扱いを改善した
+	//・XF300のレスポンス向上のために、明細タブの選択時に明細テーブルを読み込むようにした
+	//・スプラッシュのメッセージや進度表示を改善した
+	//・XFHttpRequestの応答オブジェクトをテキストデータとするとともに、encoding制御を組み込んだ
+	//・XFInputDialogのテキストエリアの文字列をコピー可能にした
+	//
+	//1.2.21
+	//・Session#parseStringToXmlDocument(...)のバグを修正した
+	//・Session#getOffsetDate(...)の過去方向の計算のバグを修正した
+	//
 	//1.2.20
 	//・getFYearOfDate(...)とgetMSeqOfDate(...)が、関連するシステム制御データが存在しなくても正常動作するようにした
 	//・XFTableOperatorのサーバ処理で接続異状が起きたときの動きを改善した

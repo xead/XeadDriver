@@ -119,23 +119,27 @@ public class DialogLogin extends JDialog {
 	}
 
 	public boolean userIsValidated(boolean isOnlineJob) throws Exception {
-		jPanelMain.getRootPane().setDefaultButton(jButtonOK);
-		Dimension dlgSize = this.getPreferredSize();
-		Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
-		this.pack();
-
+//		jPanelMain.getRootPane().setDefaultButton(jButtonOK);
+//		Dimension dlgSize = this.getPreferredSize();
+//		Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+//		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
+//		this.pack();
 		String password = new String(jPasswordField.getPassword());
 		if (jTextFieldUserID.getText().equals("") || password.equals("")) {
 			if (isOnlineJob) {
+				jPanelMain.getRootPane().setDefaultButton(jButtonOK);
+				Dimension dlgSize = this.getPreferredSize();
+				Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
+				this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
+				this.pack();
 				super.setVisible(true);
 			} else {
 				validated = false;
 			}
 		} else {
-			jButtonOK_actionPerformed(null);
+			//jButtonOK_actionPerformed(null);
+			validated = isValidPassword(jTextFieldUserID.getText(), password);
 		}
-
 		return validated;
 	}
 

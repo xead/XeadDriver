@@ -407,7 +407,13 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 				if (functionElement_.getAttribute("InitialListing").equals("T")) {
+					if (!initialMsg.equals("")) {
+						session_.setMessage(initialMsg);
+					}
 					selectRowsAndList();
+					if (!initialMsg.equals("")) {
+						session_.setMessage("");
+					}
 				} else {
 					int rowCount = tableModelMain.getRowCount();
 					for (int i = 0; i < rowCount; i++) {
@@ -415,7 +421,13 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			} else {
+				if (!initialMsg.equals("")) {
+					session_.setMessage(initialMsg);
+				}
 				selectRowsAndList();
+				if (!initialMsg.equals("")) {
+					session_.setMessage("");
+				}
 			}
 			this.setVisible(true);
 		}
@@ -450,6 +462,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		} else {
 			initialReadCount = Integer.parseInt(functionElement_.getAttribute("InitialReadCount"));
 		}
+		initialMsg = functionElement_.getAttribute("InitialMsg");
 
 		//////////////////////////////
 		// Setup JTable and Columns //

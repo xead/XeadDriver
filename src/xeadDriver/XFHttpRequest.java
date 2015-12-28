@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.List;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
@@ -45,21 +46,23 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.apache.xerces.parsers.DOMParser;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+//import org.apache.xerces.parsers.DOMParser;
+//import org.json.JSONArray;
+//import org.json.JSONException;
+//import org.json.JSONObject;
+//import org.xml.sax.InputSource;
+//import org.xml.sax.SAXException;
 
 public class XFHttpRequest {
 	private HttpPost httpPost = null;
-	private DOMParser domParser = null;
-	private ArrayList <NameValuePair> params = new ArrayList <NameValuePair>();
+	private String encoding_ = "";
+	//private DOMParser domParser = null;
+	private List<NameValuePair> params = new ArrayList<NameValuePair>();
 
-    public XFHttpRequest(String uri, DOMParser parser) {
+    public XFHttpRequest(String uri, String encoding) {
     	httpPost = new HttpPost(uri);
-    	domParser = parser;
+    	encoding_ = encoding;
+    	//domParser = parser;
 	}
 
     public void setParameter(String name, String value) {
@@ -69,31 +72,37 @@ public class XFHttpRequest {
     public void setHeader(String name, String value) {
     	httpPost.setHeader(name, value);
     }
-    
+
     public Object execute() {
     	Object response = null;
 		HttpResponse httpResponse = null;
 		InputStream inputStream = null;
 		HttpClient httpClient = new DefaultHttpClient();
     	try {
-			httpPost.setEntity(new UrlEncodedFormEntity(params));
-			httpResponse = httpClient.execute(httpPost);  
-			String responseContentType = httpResponse.getEntity().getContentType().getValue();
-			if (responseContentType.contains("text/xml")) {
-				inputStream = httpResponse.getEntity().getContent();
-				domParser.parse(new InputSource(inputStream));
-				response = domParser.getDocument();
-			}
-			if (responseContentType.contains("application/json")) {
-				String text = EntityUtils.toString(httpResponse.getEntity());
-				if (text.startsWith("[")) {
-					response = new JSONArray(text);
-				} else {
-					response = new JSONObject(text);
-				}
-			}
-			if (responseContentType.contains("text/plain")) {
-				response = EntityUtils.toString(httpResponse.getEntity());
+			httpPost.setEntity(new UrlEncodedFormEntity(params, encoding_));
+			httpResponse = httpClient.execute(httpPost);
+			if (httpResponse == null) {
+				response = "Response is null.";
+			} else {
+//			String responseContentType = httpResponse.getEntity().getContentType().getValue();
+//			if (responseContentType.contains("text/xml")) {
+//				inputStream = httpResponse.getEntity().getContent();
+//				domParser.parse(new InputSource(inputStream));
+//				response = domParser.getDocument();
+//			}
+//			if (responseContentType.contains("application/json")) {
+//				String text = EntityUtils.toString(httpResponse.getEntity(), encoding);
+//				if (text.startsWith("[")) {
+//					response = new JSONArray(text);
+//				} else {
+//					response = text;
+//				}
+//			}
+//			if (response == null) {
+//				//response = EntityUtils.toString(httpResponse.getEntity());
+//				response = EntityUtils.toString(httpResponse.getEntity(), encoding_);
+//			}
+				response = EntityUtils.toString(httpResponse.getEntity(), encoding_);
 			}
 		} catch (UnsupportedEncodingException e) {
 			response = "ERROR: "+e.getMessage();
@@ -105,10 +114,10 @@ public class XFHttpRequest {
 			response = "ERROR: "+e.getMessage();
 		} catch (IOException e) {
 			response = "ERROR: "+e.getMessage();
-		} catch (SAXException e) {
-			response = "ERROR: "+e.getMessage();
-		} catch (JSONException e) {
-			response = "ERROR: "+e.getMessage();
+		//} catch (SAXException e) {
+		//	response = "ERROR: "+e.getMessage();
+		//} catch (JSONException e) {
+		//	response = "ERROR: "+e.getMessage();
 		} finally {
 			httpClient.getConnectionManager().shutdown();
 			try {

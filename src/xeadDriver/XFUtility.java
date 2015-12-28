@@ -631,7 +631,7 @@ public class XFUtility {
 	// Loading Class of Database Driver                  //
 	// This step is required for Tomcat7 not for Tomcat6 //
 	///////////////////////////////////////////////////////
-	static void loadDriverClass(String dbName) throws ClassNotFoundException {
+	public static void loadDriverClass(String dbName) throws ClassNotFoundException {
 		if (dbName.contains("derby:")) {
 			Class.forName(DRIVER_DERBY);
 			return;
@@ -804,7 +804,7 @@ public class XFUtility {
 		return fixedWhereValue;
 	}
 	
-	static String getBasicTypeOf(String dataType){
+	public static String getBasicTypeOf(String dataType){
 		String basicType = "STRING";
 		if (dataType.equals("INTEGER")
 				|| dataType.equals("SMALLINT")
@@ -854,7 +854,7 @@ public class XFUtility {
 		return basicType;
 	}
 	
-	static boolean isLiteralRequiredBasicType(String basicType) {
+	public static boolean isLiteralRequiredBasicType(String basicType) {
 		if (basicType.equals("STRING")
 				|| basicType.equals("DATE")
 				|| basicType.equals("TIME")
@@ -866,7 +866,7 @@ public class XFUtility {
 		}
 	}
 	
-	static Object getTableOperationValue(String basicType, Object value, String dbName){
+	public static Object getTableOperationValue(String basicType, Object value, String dbName){
 		Object returnValue = null;
 		if (basicType.equals("INTEGER")) {
 			if (value == null || value.toString().equals("")) {
@@ -874,7 +874,13 @@ public class XFUtility {
 			}
 			//returnValue = Long.parseLong(value.toString());
 			String strInt = value.toString();
-			strInt = strInt.replace(".0", ""); //step for value of variant defined in JavaScript// 
+			if (strInt.endsWith(".0")) {
+				strInt = strInt.replace(".0", ""); //step for value of variant defined in JavaScript//
+			}
+			if (strInt.contains("E")) {
+				double doubleValue = new Double(strInt);
+				strInt = Integer.toString((int)Math.floor(doubleValue));
+			}
 			returnValue = Long.parseLong(strInt);
 		}
 		if (basicType.equals("FLOAT")) {
@@ -1454,7 +1460,7 @@ public class XFUtility {
 		return floatFormat.format(value);
 	}
 	
-	static String getUserExpressionOfUtilDate(java.util.Date date, String dateFormat, boolean isWithTime) {
+	public static String getUserExpressionOfUtilDate(java.util.Date date, String dateFormat, boolean isWithTime) {
 
 		//en00 06/17/10
 		//en01 Thur,06/17/01

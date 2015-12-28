@@ -89,7 +89,7 @@ public class XFInputDialog extends JDialog {
 		jPanelButtons.setLayout(null);
 		jTextArea.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextArea.setEditable(false);
-		jTextArea.setFocusable(false);
+		//jTextArea.setFocusable(false);
 		jTextArea.setLineWrap(true);
 		jTextArea.setWrapStyleWord(true);
 		jScrollPane.getViewport().add(jTextArea);

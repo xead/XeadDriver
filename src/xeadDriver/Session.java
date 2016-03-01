@@ -103,6 +103,9 @@ public class Session extends JFrame {
 	private String userName = "";
 	private String userEmployeeNo = "";
 	private String userEmailAddress = "";
+	private String digestAlgorithmForUser = "MD5";
+	private int countOfExpandForUser = 1;
+	private boolean isValueSaltedForUser = false;
 	private String userMenus = "";
 	private String userTable = "";
 	private String variantsTable = "";
@@ -128,6 +131,7 @@ public class Session extends JFrame {
 	private String smtpPort = "";
 	private String smtpUser = "";
 	private String smtpPassword = "";
+	private String smtpAdminEmail = "";
 
 	private Image imageTitle;
 	private Dimension screenSize = new Dimension(0,0);
@@ -143,7 +147,7 @@ public class Session extends JFrame {
 	private String[] helpURLArray = new String[20];
 	private MenuOption[][] menuOptionArray = new MenuOption[20][20];
 	private JButton[] jButtonMenuOptionArray = new JButton[20];
-	private ArrayList<String> loadingChekerIDList = new ArrayList<String>();
+//	private ArrayList<String> loadingChekerIDList = new ArrayList<String>();
 	private ArrayList<String> loadingFunctionIDList = new ArrayList<String>();
 	private XFCalendar xfCalendar = null;
 	public JFileChooser jFileChooser = new JFileChooser();
@@ -171,7 +175,7 @@ public class Session extends JFrame {
 	private Calendar calendar = GregorianCalendar.getInstance();
 	private org.w3c.dom.Document domDocument;
 	private Desktop desktop = Desktop.getDesktop();
-	private DigestAdapter digestAdapter = null;
+	//private DigestAdapter digestAdapter = null;
 	private DialogLogin loginDialog = null;
 	private DialogModifyPassword modifyPasswordDialog = null;
 	private DialogCheckRead checkReadDialog = null;
@@ -190,7 +194,7 @@ public class Session extends JFrame {
 	private DOMParser domParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
-	private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
+	//private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
 	private ArrayList<XFExecutable> preloadedFunctionList = new ArrayList<XFExecutable>();
 	private Application application = null;
 	private XFOptionDialog optionDialog = null;
@@ -406,6 +410,26 @@ public class Session extends JFrame {
 		}
 		calendar.setLenient(false);
 
+		/////////////////
+		// Hash Format //
+		/////////////////
+		String hashFormat = element.getAttribute("HashFormat");
+		if (!hashFormat.equals("")) {
+			try {
+				StringTokenizer workTokenizer = new StringTokenizer(hashFormat, ";" );
+				digestAlgorithmForUser = workTokenizer.nextToken(); //Default:MD5
+				if (!digestAlgorithmForUser.equals("MD5")) {
+					new DigestAdapter(digestAlgorithmForUser);
+				}
+				if (workTokenizer.hasMoreTokens()) {
+					countOfExpandForUser = Integer.parseInt(workTokenizer.nextToken()); //Default:1
+				}
+				if (workTokenizer.hasMoreTokens()) {
+					isValueSaltedForUser = Boolean.parseBoolean(workTokenizer.nextToken()); //Default:false
+				}
+			} catch (Exception e) {}
+		}
+		
 		/////////////
 		// Dialogs //
 		/////////////
@@ -516,6 +540,7 @@ public class Session extends JFrame {
 		smtpPort = element.getAttribute("SmtpPort");
 		smtpUser = element.getAttribute("SmtpUser");
 		smtpPassword = element.getAttribute("SmtpPassword");
+		smtpAdminEmail = element.getAttribute("SmtpAdminEmail");
 		if (application != null) {
 			application.setProgressValue(5);
 		}
@@ -538,10 +563,10 @@ public class Session extends JFrame {
 			baseFontMap.put(wrkStr, baseFont);
 		}
 
-		/////////////////////////////
-		// Setup MD5-Hash Digester //
-		/////////////////////////////
-		digestAdapter = new DigestAdapter("MD5");
+//		/////////////////////////////
+//		// Setup MD5-Hash Digester //
+//		/////////////////////////////
+//		digestAdapter = new DigestAdapter("MD5");
 
 		////////////////////////////////////////
 		// Return if variants setup succeeded //
@@ -874,35 +899,37 @@ public class Session extends JFrame {
 		//////////////////////////////
 		xfCalendar = new XFCalendar(this);
 
-		/////////////////////////////////////////////////////////
-		// Construct Cross-Checkers to be loaded at logging-in //
-		/////////////////////////////////////////////////////////
-		org.w3c.dom.Element element;
-		int wrkCount = 0;
-		if (loadingChekerIDList.size() > 0) {
-			if (application != null) {
-				application.setProgressMax(loadingChekerIDList.size());
-				application.setProgressValue(wrkCount);
-				application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3"));
-			}
-			for (int i = 0; i < tableList.getLength(); i++) {
-				element = (org.w3c.dom.Element)tableList.item(i);
-				if (loadingChekerIDList.contains(element.getAttribute("ID")) && !element.getAttribute("SkipReferCheck").equals("T")) {
-					wrkCount++;
-					if (application != null) {
-						application.setProgressValue(wrkCount);
-						application.repaintProgress();
-					}
-
-					ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
-					referCheckerList.add(checker);
-				}
-			}
-		}
+//		/////////////////////////////////////////////////////////
+//		// Construct Cross-Checkers to be loaded at logging-in //
+//		/////////////////////////////////////////////////////////
+//		org.w3c.dom.Element element;
+//		int wrkCount = 0;
+//		if (loadingChekerIDList.size() > 0) {
+//			if (application != null) {
+//				application.setProgressMax(loadingChekerIDList.size());
+//				application.setProgressValue(wrkCount);
+//				application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3"));
+//			}
+//			for (int i = 0; i < tableList.getLength(); i++) {
+//				element = (org.w3c.dom.Element)tableList.item(i);
+//				if (loadingChekerIDList.contains(element.getAttribute("ID")) && !element.getAttribute("SkipReferCheck").equals("T")) {
+//					wrkCount++;
+//					if (application != null) {
+//						application.setProgressValue(wrkCount);
+//						application.repaintProgress();
+//					}
+//
+//					ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
+//					referCheckerList.add(checker);
+//				}
+//			}
+//		}
 
 		////////////////////////////////////////////////////
 		// Construct Functions to be loaded at logging-in //
 		////////////////////////////////////////////////////
+		org.w3c.dom.Element element;
+		int wrkCount = 0;
 		XFExecutable module = null;
 		String functionType;
 		if (loadingFunctionIDList.size() > 0) {
@@ -1070,13 +1097,13 @@ public class Session extends JFrame {
 				menuCaptionArray[menuIndex] = menuElement.getAttribute("Name");
 				helpURLArray[menuIndex] = menuElement.getAttribute("HelpURL");
 				if (!skipPreload) {
-					tokenizer = new StringTokenizer(menuElement.getAttribute("CrossCheckersToBeLoaded"), ";" );
-					while (tokenizer.hasMoreTokens()) {
-						wrkStr = tokenizer.nextToken();
-						if (!loadingChekerIDList.contains(wrkStr)) {
-							loadingChekerIDList.add(wrkStr);
-						}
-					}
+//					tokenizer = new StringTokenizer(menuElement.getAttribute("CrossCheckersToBeLoaded"), ";" );
+//					while (tokenizer.hasMoreTokens()) {
+//						wrkStr = tokenizer.nextToken();
+//						if (!loadingChekerIDList.contains(wrkStr)) {
+//							loadingChekerIDList.add(wrkStr);
+//						}
+//					}
 					tokenizer = new StringTokenizer(menuElement.getAttribute("FunctionsToBeLoaded"), ";" );
 					while (tokenizer.hasMoreTokens()) {
 						wrkStr = tokenizer.nextToken();
@@ -2938,26 +2965,26 @@ public class Session extends JFrame {
 		}
 	}
 
-	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
-		ReferChecker checker = null;
-		org.w3c.dom.Element element = getTableElement(tableID);
-		if (!element.getAttribute("SkipReferCheck").equals("T")) {
-			for (int i = 0; i < referCheckerList.size(); i++) {
-				if (referCheckerList.get(i).getTargetTableID().equals(tableID)) {
-					checker = referCheckerList.get(i);
-					checker.setFunction(function);
-					break;
-				}
-			}
-			if (checker == null) {
-				checker = new ReferChecker(this, tableID, function);
-				if (function != null && !function.isAvailable()) {
-					referCheckerList.add(checker);
-				}
-			}
-		}
-		return checker;
-	}
+//	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
+//		ReferChecker checker = null;
+//		org.w3c.dom.Element element = getTableElement(tableID);
+//		if (!element.getAttribute("SkipReferCheck").equals("T")) {
+//			for (int i = 0; i < referCheckerList.size(); i++) {
+//				if (referCheckerList.get(i).getTargetTableID().equals(tableID)) {
+//					checker = referCheckerList.get(i);
+//					checker.setFunction(function);
+//					break;
+//				}
+//			}
+//			if (checker == null) {
+//				checker = new ReferChecker(this, tableID, function);
+//				if (function != null && !function.isAvailable()) {
+//					referCheckerList.add(checker);
+//				}
+//			}
+//		}
+//		return checker;
+//	}
 
 	public Object requestWebService(String uri) {
 		return requestWebService(uri, "UTF-8");
@@ -3076,18 +3103,42 @@ public class Session extends JFrame {
 		return array.getJSONObject(index);
 	}
 	
-	public String getDigestedValue(String value, String algorithm) {
-		String digestedValue = "";
-		if (algorithm.equals("MD5")) {
-			digestedValue = digestAdapter.digest(value);
+	public String getDigestedValueForUser(String user, String value) {
+		if (isValueSaltedForUser) {
+			return getDigestedValue(value, digestAlgorithmForUser, countOfExpandForUser, user);
 		} else {
+			return getDigestedValue(value, digestAlgorithmForUser, countOfExpandForUser, "");
+		}
+	}
+	public String getDigestedValueForUser(String value) {
+		if (isValueSaltedForUser) {
+			return getDigestedValue(value, digestAlgorithmForUser, countOfExpandForUser, userID);
+		} else {
+			return getDigestedValue(value, digestAlgorithmForUser, countOfExpandForUser, "");
+		}
+	}
+	public String getDigestedValue(String value, String algorithm) {
+		return getDigestedValue(value, algorithm, 1, "");
+	}
+	public String getDigestedValue(String value, String algorithm, int expand, String salt) {
+		String digestedValue = "";
+		int count = expand - 1;
+//		if (algorithm.equals("MD5")) {
+//			digestedValue = digestAdapter.digest(value + salt);
+//			for (int i=0;i<count;i++) {
+//				digestedValue = digestAdapter.digest(digestedValue + salt);
+//			}
+//		} else {
 			try {
 				DigestAdapter adapter = new DigestAdapter(algorithm);
-				digestedValue = adapter.digest(value);
+				digestedValue = adapter.digest(value + salt);
+				for (int i=0;i<count;i++) {
+					digestedValue = adapter.digest(digestedValue + salt);
+				}
 			} catch (NoSuchAlgorithmException e) {
 				return digestedValue;
 			}
-		}
+//		}
 		return digestedValue;
 	}
 
@@ -3267,8 +3318,11 @@ public class Session extends JFrame {
 		return domDocument;
 	}
 
-	public void sendMail(String addressFrom, String addressTo, String addressCc, 
-			String subject, String message,
+	public void sendMail(String addressFrom, String addressTo, String addressCc, String subject, String message) {
+		sendMail(addressFrom, addressTo, addressCc, subject, message, "", "", "");
+	}
+	
+	public void sendMail(String addressFrom, String addressTo, String addressCc, String subject, String message,
 			String fileName, String attachedName, String charset) {
 		try{
 			Properties props = new Properties();
@@ -3283,20 +3337,35 @@ public class Session extends JFrame {
 			}
 			javax.mail.Session mailSession = javax.mail.Session.getDefaultInstance(props, null);
 			MimeMessage mailObj = new MimeMessage(mailSession);
-			InternetAddress[] toList = new InternetAddress[1];
-			toList[0] = new InternetAddress(addressTo);
-			mailObj.setRecipients(Message.RecipientType.TO, toList);
-			InternetAddress[] ccList = new InternetAddress[1];
-			ccList[0] = new InternetAddress(addressCc);
-			mailObj.setRecipients(Message.RecipientType.CC, ccList);
 			mailObj.setFrom(new InternetAddress(addressFrom));
 			mailObj.setSentDate(new Date());
+
+			StringTokenizer workTokenizer = new StringTokenizer(addressTo.replaceAll(" ",""), "," );
+			InternetAddress[] toList = new InternetAddress[workTokenizer.countTokens()];
+			int i = 0;
+			while (workTokenizer.hasMoreTokens()) {
+				toList[i] = new InternetAddress(workTokenizer.nextToken());
+				i++;
+			}
+			mailObj.setRecipients(Message.RecipientType.TO, toList);
+
+			if (!addressCc.equals("")) {
+				workTokenizer = new StringTokenizer(addressCc.replaceAll(" ",""), "," );
+				InternetAddress[] ccList = new InternetAddress[workTokenizer.countTokens()];
+				i = 0;
+				while (workTokenizer.hasMoreTokens()) {
+					ccList[i] = new InternetAddress(workTokenizer.nextToken());
+					i++;
+				}
+				mailObj.setRecipients(Message.RecipientType.CC, ccList);
+			}
+
 			if (charset.equals("")) {
 				mailObj.setSubject(subject);
 			} else {
 				mailObj.setSubject(subject, charset);
 			}
-			//
+
 			MimeBodyPart bodyMessage = new MimeBodyPart();
 			MimeBodyPart bodyAttachedFile = new MimeBodyPart();
 			if (charset.equals("")) {
@@ -3321,7 +3390,7 @@ public class Session extends JFrame {
 				multipart.addBodyPart(bodyAttachedFile);
 			}
 			mailObj.setContent(multipart);
-			//
+
 			if (smtpPassword.equals("")) {
 				Transport.send(mailObj);
 			} else {
@@ -3329,6 +3398,7 @@ public class Session extends JFrame {
 				tp.connect(smtpHost, smtpUser, smtpPassword);
 				tp.sendMessage(mailObj, toList);
 			}
+
 		}catch(Exception e){
 			JOptionPane.showMessageDialog(null, "Sending mail with subject '" + subject + "' failed.\n\n" + e.getMessage());
 		}
@@ -3342,9 +3412,9 @@ public class Session extends JFrame {
 		return desktop;
 	}
 
-	DigestAdapter getDigestAdapter() {
-		return digestAdapter;
-	}
+//	DigestAdapter getDigestAdapter() {
+//		return digestAdapter;
+//	}
 
 	public DialogCheckRead getDialogCheckRead() {
 		return checkReadDialog;
@@ -3356,6 +3426,10 @@ public class Session extends JFrame {
 
 	String getVersion() {
 		return systemVersion;
+	}
+
+	public String getAdminEmail() {
+		return smtpAdminEmail;
 	}
 
 	String getTableNameOfUser() {

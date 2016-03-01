@@ -31,50 +31,83 @@ package xeadDriver;
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-import javax.swing.*;
+//import javax.swing.*;
 
-////////////////////////////////////////////////////////////////
-// This is a public class used in Table-Script.               //
-// Note that public classes are defined in its own java file. //
-////////////////////////////////////////////////////////////////
-public class XFFieldScriptable extends JPanel {
-	private static final long serialVersionUID = 1L;
-	public Object getValue(){
-		return null;
-	}
-	public void setValue(Object value) {
-	}
-	public Object getOldValue(){
-		return null;
-	}
-	public void setOldValue(Object value) {
-	}
-	public boolean isValueChanged() {
-		return false;
-	}
-	public String getColor() {
-		return "";
-	}
-	public void setColor(String colorName) {
-	}
-	public boolean isEnabled() {
-		return true;
-	}
-	public void setEnabled(boolean enabled) {
-	}
-	public boolean isEditable() {
-		return false;
-	}
-	public void setEditable(boolean isEditable) {
-	}
-	public String getError() {
-		return "";
-	}
-	public void setError(String message) {
-	}
-	public void setValueList(String[] valueList) {
-	}
-	public String[] getValueList() {
-		return new String[0];
-	}
+////////////////////////////////////////////////////////////////////////
+// This is a public interface used in Table-Script.                   //
+// Note that public interface should be defined in its own java file. //
+////////////////////////////////////////////////////////////////////////
+public interface XFFieldScriptable {
+	public String getFieldID();
+	public String getTableID();
+	public String getDataSourceID();
+	public String getName();
+	public Object getValue();
+	public void setValue(Object value);
+	public Object getOldValue();
+	public void setOldValue(Object value);
+	public boolean isValueChanged();
+	public String getColor();
+	public void setColor(String colorName);
+	public boolean isEnabled();
+	public void setEnabled(boolean enabled);
+	public boolean isEditable();
+	public void setEditable(boolean isEditable);
+	public String getError();
+	public void setError(String message);
+	public void setValueList(String[] valueList);
+	public String[] getValueList();
 }
+//public class XFFieldScriptable extends JPanel {
+//	private static final long serialVersionUID = 1L;
+//	public String getFieldID(){
+//		return "";
+//	}
+//	public String getTableID(){
+//		return "";
+//	}
+//	public String getDataSourceID(){
+//		return "";
+//	}
+//	public String getName(){
+//		return "";
+//	}
+//	public Object getValue(){
+//		return null;
+//	}
+//	public void setValue(Object value) {
+//	}
+//	public Object getOldValue(){
+//		return null;
+//	}
+//	public void setOldValue(Object value) {
+//	}
+//	public boolean isValueChanged() {
+//		return false;
+//	}
+//	public String getColor() {
+//		return "";
+//	}
+//	public void setColor(String colorName) {
+//	}
+//	public boolean isEnabled() {
+//		return true;
+//	}
+//	public void setEnabled(boolean enabled) {
+//	}
+//	public boolean isEditable() {
+//		return false;
+//	}
+//	public void setEditable(boolean isEditable) {
+//	}
+//	public String getError() {
+//		return "";
+//	}
+//	public void setError(String message) {
+//	}
+//	public void setValueList(String[] valueList) {
+//	}
+//	public String[] getValueList() {
+//		return new String[0];
+//	}
+//}

@@ -1,10 +1,11 @@
 package xeadDriver;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import javax.script.ScriptException;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -42,14 +43,18 @@ public interface XFScriptable {
 	public void commit();
 	public void rollback();
 	public String getFunctionID();
+	public Session getSession();
 	public HashMap<String, Object> getParmMap();
 	public HashMap<String, Object> getReturnMap();
 	public void setProcessLog(String value);
 	public StringBuffer getProcessLog();
 	public XFTableOperator createTableOperator(String oparation, String tableID);
 	public XFTableOperator createTableOperator(String sqlText);
+	public XFTableEvaluator createTableEvaluator(String tableID);
 	public Object getFieldObjectByID(String tableID, String fieldID);
 	public boolean isAvailable();
 	public Object getVariant(String variantID);
 	public void setVariant(String variantID, Object value);
+	public PrintStream getExceptionStream();
+	public void setErrorAndCloseFunction();
 }

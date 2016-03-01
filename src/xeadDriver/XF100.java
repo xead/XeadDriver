@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -664,7 +664,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		scriptBindings = scriptEngine.createBindings();
 		scriptBindings.put("instance", (XFScriptable)this);
 		for (int i = 0; i < columnList.size(); i++) {
-			scriptBindings.put(columnList.get(i).getFieldIDInScript(), columnList.get(i));
+			scriptBindings.put(columnList.get(i).getDataSourceID(), columnList.get(i));
 		}
 
 		//////////////////////////////////////////
@@ -702,7 +702,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 
-	void setErrorAndCloseFunction() {
+	public void setErrorAndCloseFunction() {
 		returnMap_.put("RETURN_CODE", "99");
 		this.rollback();
 		closeFunction();
@@ -888,8 +888,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 							sql = referTableList.get(i).getSelectSQL();
 							if (!sql.equals("")) {
 								referTableOp = getReferOperator(sql);
-								while (referTableOp.next()) {
-									if (referTableList.get(i).isRecordToBeSelected(referTableOp)) {
+								if (referTableOp.next()) {
+//								while (referTableOp.next()) {
+//									if (referTableList.get(i).isRecordToBeSelected(referTableOp)) {
 										for (int j = 0; j < columnList.size(); j++) {
 											if (columnList.get(j).getTableID().equals(referTableList.get(i).getTableID()) && columnList.get(j).getTableAlias().equals(referTableList.get(i).getTableAlias())) {
 												if (referTableOp.hasValueOf(columnList.get(j).getTableID(), columnList.get(j).getFieldID())) {
@@ -903,7 +904,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 											toBeSelected = false;
 											break;
 										}
-									}
+//									}
 								}
 							}
 							if (!toBeSelected) {
@@ -1376,354 +1377,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
             }
             return compareResult;
         }
-//		 public int compare(WorkingRow row1, WorkingRow row2){
-//		 int compareResult = 0;
-//		 double doubleNumber1, doubleNumber2;
-//		 String wrkStr;
-//		 ArrayList<String> orderByFieldList = primaryTable_.getOrderByFieldIDList(isListingInNormalOrder);
-//		 for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
-//			 if (row1.getOrderByFieldTypeList().get(i).equals("INTEGER")
-//					 || row1.getOrderByFieldTypeList().get(i).equals("FLOAT")) {
-//				wrkStr = XFUtility.getStringNumber(row1.getOrderByValueList().get(i).toString());
-//				doubleNumber1 = Double.parseDouble(wrkStr);
-//				wrkStr = XFUtility.getStringNumber(row2.getOrderByValueList().get(i).toString());
-//				doubleNumber2 = Double.parseDouble(wrkStr);
-//				compareResult = 0;
-//				if (doubleNumber1 > doubleNumber2) {
-//					compareResult = 1;
-//				}
-//				if (doubleNumber1 < doubleNumber2) {
-//					compareResult = -1;
-//				}
-//			 } else {
-//				 compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
-//			 }
-//			 if (orderByFieldList.get(i).contains("(D)")) {
-//				 compareResult = compareResult * -1;
-//			 }
-//			 if (compareResult != 0) {
-//				 break;
-//			 }
-//		 }
-//		 return compareResult;
-//	 }
 	}
-		
-//	 class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
-//		 public int compare(WorkingRow row1, WorkingRow row2){
-//			 int compareResult = 0;
-//			 double doubleNumber1, doubleNumber2;
-//			 String wrkStr;
-//			 ArrayList<String> orderByFieldList = primaryTable_.getOrderByFieldIDList(isListingInNormalOrder);
-//			 for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
-//				 if (row1.getOrderByFieldTypeList().get(i).equals("INTEGER")
-//						 || row1.getOrderByFieldTypeList().get(i).equals("FLOAT")) {
-//					wrkStr = XFUtility.getStringNumber(row1.getOrderByValueList().get(i).toString());
-//					doubleNumber1 = Double.parseDouble(wrkStr);
-//					wrkStr = XFUtility.getStringNumber(row2.getOrderByValueList().get(i).toString());
-//					doubleNumber2 = Double.parseDouble(wrkStr);
-//					compareResult = 0;
-//					if (doubleNumber1 > doubleNumber2) {
-//						compareResult = 1;
-//					}
-//					if (doubleNumber1 < doubleNumber2) {
-//						compareResult = -1;
-//					}
-//				 } else {
-//					 compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
-//				 }
-//				 if (orderByFieldList.get(i).contains("(D)")) {
-//					 compareResult = compareResult * -1;
-//				 }
-//				 if (compareResult != 0) {
-//					 break;
-//				 }
-//			 }
-//			 return compareResult;
-//		 }
-//	 }
-	
-//	private URI getExcellBookURI() {
-//		File xlsFile = null;
-//		String xlsFileName = "";
-//		FileOutputStream fileOutputStream = null;
-//		String imageFileName = "";
-//		String wrkStr;
-//		int currentRowNumber = -1;
-//
-//		HSSFWorkbook workBook = new HSSFWorkbook();
-//		wrkStr = functionElement_.getAttribute("Name").replace("/", "_").replace("Å^", "_");
-//		HSSFSheet workSheet = workBook.createSheet(wrkStr);
-//		workSheet.setDefaultRowHeight( (short) 300);
-//		HSSFFooter workSheetFooter = workSheet.getFooter();
-//		workSheetFooter.setRight(functionElement_.getAttribute("Name") + "  Page " + HSSFFooter.page() + " / " + HSSFFooter.numPages() );
-//		patriarch = workSheet.createDrawingPatriarch();
-//
-//		HSSFFont fontHeader = workBook.createFont();
-//		fontHeader = workBook.createFont();
-//		fontHeader.setFontName(XFUtility.RESOURCE.getString("XLSFontHDR"));
-//		fontHeader.setFontHeightInPoints((short)11);
-//
-//		HSSFFont fontDetailBlack = workBook.createFont();
-//		fontDetailBlack.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-//		fontDetailBlack.setFontHeightInPoints((short)11);
-//		HSSFFont fontDetailRed = workBook.createFont();
-//		fontDetailRed.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-//		fontDetailRed.setFontHeightInPoints((short)11);
-//		fontDetailRed.setColor(HSSFColor.RED.index);
-//		HSSFFont fontDetailBlue = workBook.createFont();
-//		fontDetailBlue.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-//		fontDetailBlue.setFontHeightInPoints((short)11);
-//		fontDetailBlue.setColor(HSSFColor.BLUE.index);
-//		HSSFFont fontDetailGreen = workBook.createFont();
-//		fontDetailGreen.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-//		fontDetailGreen.setFontHeightInPoints((short)11);
-//		fontDetailGreen.setColor(HSSFColor.GREEN.index);
-//		HSSFFont fontDetailOrange = workBook.createFont();
-//		fontDetailOrange.setFontName(XFUtility.RESOURCE.getString("XLSFontDTL"));
-//		fontDetailOrange.setFontHeightInPoints((short)11);
-//		fontDetailOrange.setColor(HSSFColor.ORANGE.index);
-//
-//		HSSFCellStyle styleHeader = workBook.createCellStyle();
-//		styleHeader.setBorderBottom(HSSFCellStyle.BORDER_THIN);
-//		styleHeader.setBorderLeft(HSSFCellStyle.BORDER_THIN);
-//		styleHeader.setBorderRight(HSSFCellStyle.BORDER_THIN);
-//		styleHeader.setBorderTop(HSSFCellStyle.BORDER_THIN);
-//		styleHeader.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
-//		styleHeader.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
-//		styleHeader.setAlignment(HSSFCellStyle.ALIGN_LEFT);
-//		styleHeader.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
-//		styleHeader.setFont(fontHeader);
-//		styleHeader.setWrapText(true);
-//
-//		HSSFCellStyle styleHeaderNumber = workBook.createCellStyle();
-//		styleHeaderNumber.setBorderBottom(HSSFCellStyle.BORDER_THIN);
-//		styleHeaderNumber.setBorderLeft(HSSFCellStyle.BORDER_THIN);
-//		styleHeaderNumber.setBorderRight(HSSFCellStyle.BORDER_THIN);
-//		styleHeaderNumber.setBorderTop(HSSFCellStyle.BORDER_THIN);
-//		styleHeaderNumber.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
-//		styleHeaderNumber.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
-//		styleHeaderNumber.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-//		styleHeaderNumber.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
-//		styleHeaderNumber.setFont(fontHeader);
-//
-//		HSSFCellStyle styleDataInteger = workBook.createCellStyle();
-//		styleDataInteger.setBorderBottom(HSSFCellStyle.BORDER_THIN);
-//		styleDataInteger.setBorderLeft(HSSFCellStyle.BORDER_THIN);
-//		styleDataInteger.setBorderRight(HSSFCellStyle.BORDER_THIN);
-//		styleDataInteger.setBorderTop(HSSFCellStyle.BORDER_THIN);
-//		styleDataInteger.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-//		styleDataInteger.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-//		styleDataInteger.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
-//
-//		try {
-//			xlsFile = session_.createTempFile(functionElement_.getAttribute("ID"), ".xls");
-//			xlsFileName = xlsFile.getPath();
-//			fileOutputStream = new FileOutputStream(xlsFileName);
-//			TableCellReadOnly cellObject = null;
-//			XF100_RowNumber rowObject;
-//			HSSFFont font = null;
-//
-//			///////////////////////////
-//			// Setup column headings //
-//			///////////////////////////
-//			currentRowNumber++;
-//			HSSFRow rowCaption = workSheet.createRow(currentRowNumber);
-//			HSSFCell cell = rowCaption.createCell(0);
-//			cell.setCellStyle(styleHeaderNumber);
-//			workSheet.setColumnWidth(0, headersRenderer.getSequenceWidth() * 40);
-//			wrkStr = XFUtility.getCaptionForCell(headersRenderer.getSequenceLabel());
-//			cell.setCellValue(new HSSFRichTextString(wrkStr));
-//			for (int j = 0; j < columnList.size(); j++) {
-//				if (columnList.get(j).isVisibleOnPanel()) {
-//					cell = rowCaption.createCell(j+1);
-//					if (columnList.get(j).getBasicType().equals("INTEGER")
-//							|| columnList.get(j).getBasicType().equals("FLOAT")) {
-//						if (columnList.get(j).getTypeOptionList().contains("MSEQ") || columnList.get(j).getTypeOptionList().contains("FYEAR")) {
-//							cell.setCellStyle(styleHeader);
-//						} else {
-//							cell.setCellStyle(styleHeaderNumber);
-//						}
-//					} else {
-//						cell.setCellStyle(styleHeader);
-//					}
-//					Rectangle rect = headersRenderer.getColumnHeaderList().get(j).getBounds();
-//					workSheet.setColumnWidth(j+1, rect.width * 40);
-//					wrkStr = XFUtility.getCaptionForCell(headersRenderer.getColumnHeaderList().get(j).getText());
-//					wrkStr = wrkStr.replaceAll("<html>" , "");
-//					wrkStr = wrkStr.replaceAll("<u>" , "");
-//					cell.setCellValue(new HSSFRichTextString(wrkStr));
-//				} else {
-//					break;
-//				}
-//			}
-//
-//			///////////////////////
-//			// create data cells //
-//			///////////////////////
-//			for (int i = 0; i < tableModelMain.getRowCount(); i++) {
-//				currentRowNumber++;
-//				HSSFRow rowData = workSheet.createRow(currentRowNumber);
-//
-//				cell = rowData.createCell(0); //Column of Sequence Number
-//				cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-//				cell.setCellStyle(styleDataInteger);
-//				cell.setCellValue(i + 1);
-//
-//				rowObject = (XF100_RowNumber)tableModelMain.getValueAt(i,0);
-//				for (int j = 0; j < columnList.size(); j++) {
-//					if (columnList.get(j).isVisibleOnPanel()) {
-//						cellObject = (TableCellReadOnly)rowObject.getCellObjectList().get(j);
-//						font = fontDetailBlack;
-//						if (cellObject.getColor().equals(Color.red)) {
-//							font = fontDetailRed;
-//						}
-//						if (cellObject.getColor().equals(Color.blue)) {
-//							font = fontDetailBlue;
-//						}
-//						if (cellObject.getColor().equals(Color.green)) {
-//							font = fontDetailGreen;
-//						}
-//						if (cellObject.getColor().equals(Color.orange)) {
-//							font = fontDetailOrange;
-//						}
-//						setupCellAttributes(rowData.createCell(j+1), workBook, columnList.get(j).getBasicType(), columnList.get(j).getTypeOptionList(), cellObject, font, columnList.get(j).getDecimalSize());
-//						if (cellObject.getValueType().equals("IMAGE") && !cellObject.getInternalValue().equals("")) {
-//							imageFileName = session_.getImageFileFolder() + cellObject.getInternalValue();
-//							XFUtility.setupImageCellForDetailColumn(workBook, workSheet, currentRowNumber, j+1, imageFileName, patriarch);
-//						}
-//					}
-//				}
-//			}
-//
-//			///////////////////////////////
-//			// Setup comments on filters //
-//			///////////////////////////////
-//			currentRowNumber++;
-//			HSSFRow rowRemarks = workSheet.createRow(currentRowNumber);
-//			cell = rowRemarks.createCell(0);
-//			StringBuffer buf = new StringBuffer();
-//			buf.append(XFUtility.RESOURCE.getString("XLSComment2"));
-//			for (int j = 0; j < filterList.size(); j++) {
-//				if (j>0) {
-//					buf.append("ÅA");
-//				}
-//				buf.append(filterList.get(j).getCaptionAndValue());
-//			}
-//			cell.setCellValue(new HSSFRichTextString(buf.toString()));
-//
-//			workBook.write(fileOutputStream);
-//			messageList.add(XFUtility.RESOURCE.getString("XLSComment1"));
-//
-//		} catch(Exception e) {
-//			messageList.add(XFUtility.RESOURCE.getString("XLSErrorMessage"));
-//			e.printStackTrace(exceptionStream);
-//		} finally {
-//			try {
-//				fileOutputStream.close();
-//			} catch(Exception e) {
-//				e.printStackTrace(exceptionStream);
-//			}
-//		}
-//		return xlsFile.toURI();
-//	}
-//	
-//	private void setupCellAttributes(HSSFCell cell, HSSFWorkbook workbook, String basicType, ArrayList<String> typeOptionList, TableCellReadOnly object, HSSFFont font, int decimalSize) {
-//		String wrk;
-//
-//		Color color = object.getColor();
-//		if (color.equals(Color.red)) {
-//			font.setColor(HSSFColor.RED.index);
-//		}
-//		if (color.equals(Color.blue)) {
-//			font.setColor(HSSFColor.BLUE.index);
-//		}
-//		if (color.equals(Color.green)) {
-//			font.setColor(HSSFColor.GREEN.index);
-//		}
-//		if (color.equals(Color.orange)) {
-//			font.setColor(HSSFColor.ORANGE.index);
-//		}
-//
-//		HSSFCellStyle style = workbook.createCellStyle();
-//		style.setFont(font);
-//		style.setBorderBottom(HSSFCellStyle.BORDER_THIN);
-//		style.setBorderLeft(HSSFCellStyle.BORDER_THIN);
-//		style.setBorderRight(HSSFCellStyle.BORDER_THIN);
-//		style.setBorderTop(HSSFCellStyle.BORDER_THIN);
-//
-//		if (basicType.equals("INTEGER")) {
-//			if (typeOptionList.contains("MSEQ") || typeOptionList.contains("FYEAR")) {
-//				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-//				cell.setCellValue(new HSSFRichTextString(object.getExternalValue().toString()));
-//				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
-//				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-//				style.setWrapText(true);
-//				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
-//				cell.setCellStyle(style);
-//			} else {
-//				if (object.getExternalValue() == null) {
-//					wrk = "";
-//				} else {
-//					wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
-//				}
-//				if (wrk.equals("") || typeOptionList.contains("NO_EDIT")) {
-//					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-//					cell.setCellValue(new HSSFRichTextString(wrk));
-//				} else {
-//					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-//					cell.setCellValue(Double.parseDouble(wrk));
-//				}
-//				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-//				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-//				if (!typeOptionList.contains("NO_EDIT")
-//						&& !typeOptionList.contains("ZERO_SUPPRESS")) {
-//					style.setDataFormat(HSSFDataFormat.getBuiltinFormat("#,##0"));
-//				}
-//				cell.setCellStyle(style);
-//			}
-//		} else {
-//			if (basicType.equals("FLOAT")) {
-//				if (object.getExternalValue() == null) {
-//					wrk = "";
-//				} else {
-//					wrk = XFUtility.getStringNumber(object.getExternalValue().toString());
-//				}
-//				if (wrk.equals("") || typeOptionList.contains("NO_EDIT")) {
-//					cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-//					cell.setCellValue(new HSSFRichTextString(wrk));
-//				} else {
-//					cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-//					cell.setCellValue(Double.parseDouble(wrk));
-//				}
-//				style.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-//				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-//				if (!typeOptionList.contains("NO_EDIT")
-//					&& !typeOptionList.contains("ZERO_SUPPRESS")) {
-//					style.setDataFormat(XFUtility.getFloatFormat(workbook, decimalSize));
-//				}
-//				cell.setCellStyle(style);
-//			} else {
-//				cell.setCellType(HSSFCell.CELL_TYPE_STRING);
-//				if (object.getExternalValue() == null || object.getValueType().equals("IMAGE")) {
-//					wrk = "";
-//				} else {
-//					if (object.getValueType().equals("FLAG")) {
-//						wrk = object.getInternalValue().toString();
-//					} else {
-//						wrk = object.getExternalValue().toString();
-//					}
-//				}
-//				cell.setCellValue(new HSSFRichTextString(wrk));
-//				style.setAlignment(HSSFCellStyle.ALIGN_LEFT);
-//				style.setVerticalAlignment(HSSFCellStyle.VERTICAL_TOP);
-//				style.setWrapText(true);
-//				style.setDataFormat(HSSFDataFormat.getBuiltinFormat("text"));
-//				cell.setCellStyle(style);
-//			}
-//		}
-//	}
-	private URI getExcellBookURI() {
+
+	 private URI getExcellBookURI() {
 		File xlsFile = null;
 		String xlsFileName = "";
 		FileOutputStream fileOutputStream = null;
@@ -2160,6 +1816,10 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		return new XFTableOperator(session_, processLog, sqlText);
 	}
 
+	public XFTableEvaluator createTableEvaluator(String tableID) {
+		return new XFTableEvaluator(this, tableID);
+	}
+
 	public HashMap<String, Object> getReturnMap() {
 		return returnMap_;
 	}
@@ -2214,7 +1874,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	public boolean scriptIsToBeExecuted(String script) {
 		boolean result = true;
 		for (int i = 0; i < columnList.size(); i++) {
-			if (!script.contains(columnList.get(i).getFieldIDInScript())) {
+			if (!script.contains(columnList.get(i).getDataSourceID())) {
 				result = false;
 				break;
 			}
@@ -4292,7 +3952,7 @@ class XF100_RowNumber extends Object {
 	}
 }
 
-class XF100_Column extends XFColumnScriptable {
+class XF100_Column implements XFFieldScriptable {
 	private org.w3c.dom.Element functionColumnElement_ = null;
 	private org.w3c.dom.Element tableElement = null;
 	private XF100 dialog_ = null;
@@ -4314,8 +3974,8 @@ class XF100_Column extends XFColumnScriptable {
 	private boolean isEnabled = true;
 	private boolean isVisibleOnPanel = true;
 	private boolean isVirtualField = false;
-	private boolean isRangeKeyFieldValid = false;
-	private boolean isRangeKeyFieldExpire = false;
+	//private boolean isRangeKeyFieldValid = false;
+	//private boolean isRangeKeyFieldExpire = false;
 	private boolean isReadyToEvaluate = false;
 	private String valueType = "STRING";
 	private String flagTrue = "";
@@ -4360,15 +4020,15 @@ class XF100_Column extends XFColumnScriptable {
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
-		if (!tableElement.getAttribute("RangeKey").equals("")) {
-			workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
-			if (workTokenizer.nextToken().equals(fieldID)) {
-				isRangeKeyFieldValid = true;
-			}
-			if (workTokenizer.nextToken().equals(fieldID)) {
-				isRangeKeyFieldExpire = true;
-			}
-		}
+//		if (!tableElement.getAttribute("RangeKey").equals("")) {
+//			workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
+//			if (workTokenizer.nextToken().equals(fieldID)) {
+//				isRangeKeyFieldValid = true;
+//			}
+//			if (workTokenizer.nextToken().equals(fieldID)) {
+//				isRangeKeyFieldExpire = true;
+//			}
+//		}
 
 		JLabel jLabel = new JLabel();
 		FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
@@ -4508,15 +4168,15 @@ class XF100_Column extends XFColumnScriptable {
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
-		if (!tableElement.getAttribute("RangeKey").equals("")) {
-			StringTokenizer workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
-			if (workTokenizer.nextToken().equals(fieldID)) {
-				isRangeKeyFieldValid = true;
-			}
-			if (workTokenizer.nextToken().equals(fieldID)) {
-				isRangeKeyFieldExpire = true;
-			}
-		}
+//		if (!tableElement.getAttribute("RangeKey").equals("")) {
+//			StringTokenizer workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
+//			if (workTokenizer.nextToken().equals(fieldID)) {
+//				isRangeKeyFieldValid = true;
+//			}
+//			if (workTokenizer.nextToken().equals(fieldID)) {
+//				isRangeKeyFieldExpire = true;
+//			}
+//		}
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 		if (!wrkStr.equals("")) {
@@ -4549,13 +4209,13 @@ class XF100_Column extends XFColumnScriptable {
 		return isVirtualField;
 	}
 
-	public boolean isRangeKeyFieldValid(){
-		return isRangeKeyFieldValid;
-	}
-
-	public boolean isRangeKeyFieldExpire(){
-		return isRangeKeyFieldExpire;
-	}
+//	public boolean isRangeKeyFieldValid(){
+//		return isRangeKeyFieldValid;
+//	}
+//
+//	public boolean isRangeKeyFieldExpire(){
+//		return isRangeKeyFieldExpire;
+//	}
 
 	public org.w3c.dom.Element getTableElement(){
 		return tableElement;
@@ -4587,10 +4247,6 @@ class XF100_Column extends XFColumnScriptable {
 
 	public String getFieldRemarks(){
 		return fieldRemarks;
-	}
-
-	public String getFieldIDInScript(){
-		return tableAlias + "_" + fieldID;
 	}
 
 	public String getDataSourceName(){
@@ -4724,6 +4380,21 @@ class XF100_Column extends XFColumnScriptable {
 		return fieldCaption;
 	}
 
+	public String getDataSourceID(){
+		return tableAlias + "_" + fieldID;
+	}
+
+	public String getName(){
+		return fieldName;
+	}
+
+	public void setValueList(String[] valueList) {
+	}
+
+	public String[] getValueList() {
+		return new String[0];
+	}
+
 	public int getWidth(){
 		return fieldWidth;
 	}
@@ -4760,9 +4431,9 @@ class XF100_Column extends XFColumnScriptable {
 
 		try {
 			if (this.isVirtualField) {
-				if (this.isRangeKeyFieldExpire()) {
-					value_ = XFUtility.calculateExpireValue(this.getTableElement(), operator, dialog_.getSession(), dialog_.getProcessLog());
-				}
+//				if (this.isRangeKeyFieldExpire()) {
+//					value_ = XFUtility.calculateExpireValue(this.getTableElement(), operator, dialog_.getSession(), dialog_.getProcessLog());
+//				}
 			} else {
 				if (basicType.equals("BYTEA")) {
 					isFoundInResultSet = true; //BYTEA field is not contained intentionally in result set //
@@ -4873,51 +4544,51 @@ class XF100_Column extends XFColumnScriptable {
 }
 
 
-class XF100_ColumnScriptable {
-	XF100_Column column_;
-	public XF100_ColumnScriptable (XF100_Column column) {
-		column_ = column;
-	}
-	public Object getValue(){
-		return column_.getValue();
-	}
-	public void setValue(Object value) {
-		column_.setValue(value);
-	}
-	public Object getOldValue(){
-		return column_.getOldValue();
-	}
-	public void setOldValue(Object value) {
-		column_.setOldValue(value);
-	}
-	public boolean isValueChanged() {
-		return column_.isValueChanged();
-	}
-	public String getColor() {
-		return column_.getColor();
-	}
-	public void setColor(String colorName) {
-		column_.setColor(colorName);
-	}
-	public boolean isEnabled() {
-		return column_.isEnabled();
-	}
-	public void setEnabled(boolean enabled) {
-		column_.setEnabled(enabled);
-	}
-	public boolean isEditable() {
-		return column_.isEditable();
-	}
-	public void setEditable(boolean isEditable) {
-		column_.setEditable(isEditable);
-	}
-	public String getError() {
-		return column_.getError();
-	}
-	public void setError(String message) {
-		column_.setError(message);
-	}
-}
+//class XF100_ColumnScriptable {
+//	XF100_Column column_;
+//	public XF100_ColumnScriptable (XF100_Column column) {
+//		column_ = column;
+//	}
+//	public Object getValue(){
+//		return column_.getValue();
+//	}
+//	public void setValue(Object value) {
+//		column_.setValue(value);
+//	}
+//	public Object getOldValue(){
+//		return column_.getOldValue();
+//	}
+//	public void setOldValue(Object value) {
+//		column_.setOldValue(value);
+//	}
+//	public boolean isValueChanged() {
+//		return column_.isValueChanged();
+//	}
+//	public String getColor() {
+//		return column_.getColor();
+//	}
+//	public void setColor(String colorName) {
+//		column_.setColor(colorName);
+//	}
+//	public boolean isEnabled() {
+//		return column_.isEnabled();
+//	}
+//	public void setEnabled(boolean enabled) {
+//		column_.setEnabled(enabled);
+//	}
+//	public boolean isEditable() {
+//		return column_.isEditable();
+//	}
+//	public void setEditable(boolean isEditable) {
+//		column_.setEditable(isEditable);
+//	}
+//	public String getError() {
+//		return column_.getError();
+//	}
+//	public void setError(String message) {
+//		column_.setError(message);
+//	}
+//}
 
 class XF100_PrimaryTable extends Object {
 	private org.w3c.dom.Element tableElement = null;
@@ -5466,11 +5137,11 @@ class XF100_ReferTable extends Object {
 	private ArrayList<String> orderByFieldIDList = new ArrayList<String>();
 	private XF100 dialog_;
 	private boolean isToBeExecuted = false;
-	private int rangeKeyType = 0;
-	private String rangeKeyFieldValid = "";
-	private String rangeKeyFieldExpire = "";
-	private String rangeKeyFieldSearch = "";
-	private boolean rangeValidated;
+//	private int rangeKeyType = 0;
+//	private String rangeKeyFieldValid = "";
+//	private String rangeKeyFieldExpire = "";
+//	private String rangeKeyFieldSearch = "";
+//	private boolean rangeValidated;
 	private String dbName = "";
 	
 	public XF100_ReferTable(org.w3c.dom.Element referElement, XF100 dialog){
@@ -5494,18 +5165,18 @@ class XF100_ReferTable extends Object {
 		}
 
 		StringTokenizer workTokenizer;
-		String wrkStr = tableElement.getAttribute("RangeKey");
-		if (!wrkStr.equals("")) {
-			workTokenizer = new StringTokenizer(wrkStr, ";" );
-			rangeKeyFieldValid =workTokenizer.nextToken();
-			rangeKeyFieldExpire =workTokenizer.nextToken();
-			org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
-			if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-				rangeKeyType = 1;
-			} else {
-				rangeKeyType = 2;
-			}
-		}
+//		String wrkStr = tableElement.getAttribute("RangeKey");
+//		if (!wrkStr.equals("")) {
+//			workTokenizer = new StringTokenizer(wrkStr, ";" );
+//			rangeKeyFieldValid =workTokenizer.nextToken();
+//			rangeKeyFieldExpire =workTokenizer.nextToken();
+//			org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
+//			if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
+//				rangeKeyType = 1;
+//			} else {
+//				rangeKeyType = 2;
+//			}
+//		}
 		
 		activeWhere = tableElement.getAttribute("ActiveWhere");
 		
@@ -5568,17 +5239,17 @@ class XF100_ReferTable extends Object {
 				buf.append(toKeyFieldIDList.get(i));
 			}
 		}
-		if (!rangeKeyFieldValid.equals("")) {
-			if (count > 0) {
-				buf.append(",");
-			}
-			buf.append(rangeKeyFieldValid);
-			workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
-			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-				buf.append(",");
-				buf.append(rangeKeyFieldExpire);
-			}
-		}
+//		if (!rangeKeyFieldValid.equals("")) {
+//			if (count > 0) {
+//				buf.append(",");
+//			}
+//			buf.append(rangeKeyFieldValid);
+//			workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
+//			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
+//				buf.append(",");
+//				buf.append(rangeKeyFieldExpire);
+//			}
+//		}
 
 		//////////////
 		// Table ID //
@@ -5593,9 +5264,9 @@ class XF100_ReferTable extends Object {
 		XF100_Column column;
 		count = 0;
 		for (int i = 0; i < toKeyFieldIDList.size(); i++) {
-			if (toKeyFieldIDList.get(i).equals(rangeKeyFieldValid)) {
-				rangeKeyFieldSearch = withKeyFieldIDList.get(i);
-			} else {
+//			if (toKeyFieldIDList.get(i).equals(rangeKeyFieldValid)) {
+//				rangeKeyFieldSearch = withKeyFieldIDList.get(i);
+//			} else {
 				if (count > 0) {
 					buf.append(" and ");
 				}
@@ -5624,7 +5295,7 @@ class XF100_ReferTable extends Object {
 					validWhereKeys = true;
 				}
 				count++;
-			}
+//			}
 		}
 		if (!activeWhere.equals("")) {
 			buf.append(" and ");
@@ -5634,11 +5305,11 @@ class XF100_ReferTable extends Object {
 		/////////////////////
 		// Order-by fields //
 		/////////////////////
-		if (this.rangeKeyType != 0) {
-			buf.append(" order by ");
-			buf.append(rangeKeyFieldValid);
-			buf.append(" DESC ");
-		} else {
+//		if (this.rangeKeyType != 0) {
+//			buf.append(" order by ");
+//			buf.append(rangeKeyFieldValid);
+//			buf.append(" DESC ");
+//		} else {
 			if (orderByFieldIDList.size() > 0) {
 				int pos0,pos1;
 				buf.append(" order by ");
@@ -5661,8 +5332,8 @@ class XF100_ReferTable extends Object {
 					}
 				}
 			}
-		}
-		rangeValidated = false;
+//		}
+//		rangeValidated = false;
 
 		if (validWhereKeys) {
 			return buf.toString();
@@ -5695,50 +5366,50 @@ class XF100_ReferTable extends Object {
 		return isToBeExecuted;
 	}
 	
-	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
-		boolean returnValue = false;
-		if (rangeKeyType == 0) {
-			returnValue = true;
-		}
-		if (rangeKeyType == 1) {
-			////////////////////////////////////////////////////////////////
-			// Note that result set is ordered by rangeKeyFieldValue DESC //
-			////////////////////////////////////////////////////////////////
-			if (!rangeValidated) { 
-				StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-				String workTableAlias = workTokenizer.nextToken();
-				String workFieldID = workTokenizer.nextToken();
-				Object valueKey = dialog_.getColumnObjectByID("", workTableAlias, workFieldID).getInternalValue();
-				Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
-				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-				if (comp1 >= 0) {
-					returnValue = true;
-					rangeValidated = true;
-				}
-			}
-		}
-		if (rangeKeyType == 2) {
-			StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-			String workTableAlias = workTokenizer.nextToken();
-			String workFieldID = workTokenizer.nextToken();
-			Object valueKey = dialog_.getColumnObjectByID("", workTableAlias, workFieldID).getInternalValue();
-			Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
-			Object valueThru = operator.getValueOf(rangeKeyFieldExpire);
-			if (valueThru == null) {
-				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-				if (comp1 >= 0) {
-					returnValue = true;
-				}
-			} else {
-				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-				int comp2 = valueKey.toString().compareTo(valueThru.toString());
-				if (comp1 >= 0 && comp2 < 0) {
-					returnValue = true;
-				}
-			}
-		}
-		return returnValue;
-	}
+//	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
+//		boolean returnValue = false;
+//		if (rangeKeyType == 0) {
+//			returnValue = true;
+//		}
+//		if (rangeKeyType == 1) {
+//			////////////////////////////////////////////////////////////////
+//			// Note that result set is ordered by rangeKeyFieldValue DESC //
+//			////////////////////////////////////////////////////////////////
+//			if (!rangeValidated) { 
+//				StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
+//				String workTableAlias = workTokenizer.nextToken();
+//				String workFieldID = workTokenizer.nextToken();
+//				Object valueKey = dialog_.getColumnObjectByID("", workTableAlias, workFieldID).getInternalValue();
+//				Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
+//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
+//				if (comp1 >= 0) {
+//					returnValue = true;
+//					rangeValidated = true;
+//				}
+//			}
+//		}
+//		if (rangeKeyType == 2) {
+//			StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
+//			String workTableAlias = workTokenizer.nextToken();
+//			String workFieldID = workTokenizer.nextToken();
+//			Object valueKey = dialog_.getColumnObjectByID("", workTableAlias, workFieldID).getInternalValue();
+//			Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
+//			Object valueThru = operator.getValueOf(rangeKeyFieldExpire);
+//			if (valueThru == null) {
+//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
+//				if (comp1 >= 0) {
+//					returnValue = true;
+//				}
+//			} else {
+//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
+//				int comp2 = valueKey.toString().compareTo(valueThru.toString());
+//				if (comp1 >= 0 && comp2 < 0) {
+//					returnValue = true;
+//				}
+//			}
+//		}
+//		return returnValue;
+//	}
 }
 
 class XF100_Component_keyAdapter extends java.awt.event.KeyAdapter {

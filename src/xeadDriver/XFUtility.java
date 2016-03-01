@@ -339,7 +339,7 @@ public class XFUtility {
 	}
 
 	
-	static Object getNullValueOfBasicType(String basicType){
+	public static Object getNullValueOfBasicType(String basicType){
 		Object value = null;
 		if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
 			value = 0;
@@ -353,7 +353,7 @@ public class XFUtility {
 		return value;
 	}
 	
-	static boolean isNullValue(String basicType, Object value){
+	public static boolean isNullValue(String basicType, Object value){
 		boolean isNull = false;
 		if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
 			String strValue = value.toString();
@@ -412,7 +412,7 @@ public class XFUtility {
 		return reply;
 	}
 
-	static ArrayList<String> getDSNameListInScriptText(String scriptText, NodeList tableList) {
+	public static ArrayList<String> getDSNameListInScriptText(String scriptText, NodeList tableList) {
 		ArrayList<String> fieldList = new ArrayList<String>();
 		int pos, posWrk, wrkInt, posWrk2;
 		String[] sectionDigit = {"(", ")", "{", "}", "+", "-", "/", "*", "=", "<", ">", ";", "|", "&", "\n", "\t", ",", " ", "!"};
@@ -561,7 +561,7 @@ public class XFUtility {
 		return icon;
 	}
 	
-	static String removeCommentsFromScriptText(String scriptText) {
+	public static String removeCommentsFromScriptText(String scriptText) {
 		StringBuffer buf = new StringBuffer();
 		int posCommentStart;
 		int posCommentEnd = 0;
@@ -662,7 +662,7 @@ public class XFUtility {
 		}
 	}
 
-	static ArrayList<String> getOptionList(String options) {
+	public static ArrayList<String> getOptionList(String options) {
 		ArrayList<String> typeOptionList = new ArrayList<String>();
 		StringTokenizer workTokenizer = new StringTokenizer(options, ",");
 		while (workTokenizer.hasMoreTokens()) {
@@ -671,7 +671,7 @@ public class XFUtility {
 		return typeOptionList;
 	}
 	
-	static String getOptionValueWithKeyword(String options, String keyword) {
+	public static String getOptionValueWithKeyword(String options, String keyword) {
 		String value = "";
 		int pos1, pos2;
 		if (!keyword.equals("")) {
@@ -2437,7 +2437,7 @@ public class XFUtility {
 		return  strDate;
 	}
 	
-	static Color convertStringToColor(String color) {
+	public static Color convertStringToColor(String color) {
 		Color colorConverted = Color.black; //Default//
 		if (color.equals("black")) {
 			colorConverted = Color.black;
@@ -2457,7 +2457,7 @@ public class XFUtility {
 		return colorConverted;
 	}
 
-	static String convertColorToString(Color color) {
+	public static String convertColorToString(Color color) {
 		String colorConverted = "black"; //Default//
 		if (color.equals(Color.black)) {
 			colorConverted = "black";
@@ -2477,7 +2477,7 @@ public class XFUtility {
 		return colorConverted;
 	}
 	
-	static SortableDomElementListModel getSortedListModel(NodeList list, String attName) {
+	public static SortableDomElementListModel getSortedListModel(NodeList list, String attName) {
 		SortableDomElementListModel sortableDomElementListModel = new SortableDomElementListModel(attName);
 		for (int i = 0; i < list.getLength(); i++) {
 			sortableDomElementListModel.addElement((Object)list.item(i));
@@ -3423,7 +3423,7 @@ class XFDateField extends JPanel implements XFEditableField {
 class XFByteArray extends Object {
     private String type_ = "null";
     private Object value_ = null;
-    private XFColumnScriptable typeColumn_ = null;
+    private XFFieldScriptable typeColumn_ = null;
     private XFFieldScriptable typeField_ = null;
 
 	public XFByteArray(Object value){
@@ -3460,12 +3460,12 @@ class XFByteArray extends Object {
 		return "<"+ type_ +">";
 	}
 	
-	public void setTypeColumn(XFColumnScriptable typeColumn) {
+	public void setTypeColumn(XFFieldScriptable typeColumn) {
 		typeColumn_ = typeColumn;
 		type_ = typeColumn_.getValue().toString();
 	}
 	
-	public XFColumnScriptable getTypeColumn() {
+	public XFFieldScriptable getTypeColumn() {
 		return typeColumn_;
 	}
 	
@@ -3986,7 +3986,7 @@ class XFByteaColumn extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private int rows_ = 1;
 	private String typeColumnID_ = "";
-	private XFColumnScriptable typeColumn_ = null;
+	private XFFieldScriptable typeColumn_ = null;
 	private String fieldOptions_ = "";
 	private JLabel jLabel = new JLabel();
 	private JButton jButton = new JButton();
@@ -4059,7 +4059,7 @@ class XFByteaColumn extends JPanel implements XFEditableField {
 		isEditable_ = isEditable;
 	}
 	
-	public void setTypeColumn(XFColumnScriptable typeColumn) {
+	public void setTypeColumn(XFFieldScriptable typeColumn) {
 		if (typeColumn != null) {
 			typeColumn_ = typeColumn;
 			jLabel.setText(this.getExternalValue().toString());

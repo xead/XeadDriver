@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -43,11 +43,20 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R2.M22";
-	public static final String VERSION  = "1.2.22";
-	public static final String FORMAT_VERSION  = "1.1";
-	public static final String COPYRIGHT = "Copyright 2015 DBC Ltd.";
+	public static final String FULL_VERSION  = "V1.R3.M0";
+	public static final String VERSION  = "1.3.0";
+	public static final String FORMAT_VERSION  = "1.2";
+	public static final String COPYRIGHT = "Copyright 2016 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.3.0
+	//・テーブル定義の範囲KEY定義を扱うステップを除去した
+	//・メニュー定義のクロスチェッカーのロード定義を扱うステップを除去した
+	//・削除確認ダイアログの表示タイミングを改善した
+	//・更新系機能タイプでのエラーメッセージの扱いを改善した
+	//・TableEvaluatorクラスを組み込んだ
+	//・「ハッシュ方式」に追随する関数を組み込んだ
+	//・Admin Emailの項目に対応した
+	//
 	//1.2.22
 	//・XF100の初期メッセージの扱いを改善した
 	//・XF300のレスポンス向上のために、明細タブの選択時に明細テーブルを読み込むようにした

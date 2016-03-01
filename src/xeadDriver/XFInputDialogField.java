@@ -27,6 +27,7 @@ import javax.swing.text.PlainDocument;
 public class XFInputDialogField extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private int size_ = 10;
+	private int height_ = XFUtility.FIELD_UNIT_HEIGHT;
 	private int decimal_ = 0;
 	private String parmID_ = "";
 	private String inputType_ = "";
@@ -55,7 +56,8 @@ public class XFInputDialogField extends JPanel {
     			&& !inputType.equals("NUMERIC")
     			&& !inputType.equals("DATE")
     			&& !inputType.equals("LISTBOX")
-    			&& !inputType.equals("CHECKBOX")) {
+    			&& !inputType.equals("CHECKBOX")
+				&& !inputType.equals("TEXTAREA")) {
     		inputType_ = "ALPHA";
     	}
 		inputType_ = inputType;
@@ -68,14 +70,6 @@ public class XFInputDialogField extends JPanel {
 		jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
 		XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
 		metrics = jLabelField.getFontMetrics(jLabelField.getFont());
-//		jLabelField.setPreferredSize(new Dimension(130, XFUtility.FIELD_UNIT_HEIGHT));
-//		if (metrics.stringWidth(fieldCaption) > 125) {
-//			jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
-//			metrics = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-//			if (metrics.stringWidth(fieldCaption) > 125) {
-//				jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
-//			}
-//		}
 		if (inputType_.equals("ALPHA")
 				|| inputType_.equals("ZEROFILL")
 				|| inputType_.equals("KANJI")
@@ -100,22 +94,40 @@ public class XFInputDialogField extends JPanel {
 			JCheckBox field = new JCheckBox();
 			component = field;
 		}
+		if (inputType_.equals("TEXTAREA")) {
+			JTextArea field = new JTextArea();
+			field.setWrapStyleWord(true);
+			field.setLineWrap(true);
+			component = field;
+		}
 		component.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		this.setOpaque(false);
 		if (inputType_.equals("DATE")) {
 			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
 			this.setBounds(this.getBounds().x, this.getBounds().y, 200 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
 		} else {
-			this.setBounds(this.getBounds().x, this.getBounds().y, 250, XFUtility.FIELD_UNIT_HEIGHT);
+			if (inputType_.equals("TEXTAREA")) {
+				height_ = XFUtility.FIELD_UNIT_HEIGHT * 3;
+				this.setBounds(this.getBounds().x, this.getBounds().y, 1000, height_);
+			} else {
+				this.setBounds(this.getBounds().x, this.getBounds().y, 250, height_);
+			}
 		}
 		this.setLayout(new BorderLayout());
 		this.add(jLabelField, BorderLayout.WEST);
-		this.add(component, BorderLayout.CENTER);
+		if (inputType_.equals("TEXTAREA")) {
+			JScrollPane jScrollPane = new JScrollPane();
+			jScrollPane.getViewport().add(component);
+			this.add(jScrollPane, BorderLayout.CENTER);
+		} else {
+			this.add(component, BorderLayout.CENTER);
+		}
    }
     
    public void setEditable(boolean isEditable) {
 		isEditable_ = isEditable;
 		if (inputType_.equals("ALPHA")
+				|| inputType_.equals("TEXTAREA")
 				|| inputType_.equals("KANJI")
 				|| inputType_.equals("NUMERIC")) {
 			((JTextField)component).setEditable(isEditable_);
@@ -138,6 +150,10 @@ public class XFInputDialogField extends JPanel {
 		if (inputType_.equals("CHECKBOX")) {
 			((JCheckBox)component).setEnabled(isEditable_);
 			((JCheckBox)component).setFocusable(isEditable_);
+		}
+		if (inputType_.equals("TEXTAREA")) {
+			((JTextArea)component).setEnabled(isEditable_);
+			((JTextArea)component).setFocusable(isEditable_);
 		}
    }
    
@@ -178,6 +194,9 @@ public class XFInputDialogField extends JPanel {
 	   if (width < 50) {
 		   width = 50;
 	   }
+	   if (width > 800 || inputType_.equals("TEXTAREA")) {
+		   width = 800;
+	   }
 	   if (jButton == null) {
 		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 150, this.getBounds().height);
 	   } else {
@@ -191,15 +210,23 @@ public class XFInputDialogField extends JPanel {
 		   value = "";
 	   }
 	   if (inputType_.equals("ALPHA")
-			   || inputType_.equals("ZEROFILL")
-			   || inputType_.equals("KANJI")
-			   || inputType_.equals("NUMERIC")) {
+			|| inputType_.equals("TEXTAREA")
+			|| inputType_.equals("ZEROFILL")
+			|| inputType_.equals("KANJI")
+			|| inputType_.equals("NUMERIC")) {
 		   if (inputType_.equals("ALPHA") || inputType_.equals("KANJI")) {
 			   String strValue = value.toString();
 			   if (strValue.length() > size_) {
 				   strValue = strValue.substring(0, size_);
 			   }
 			   ((JTextField)component).setText(strValue);
+		   }
+		   if (inputType_.equals("TEXTAREA")) {
+			   String strValue = value.toString();
+			   if (strValue.length() > size_) {
+				   strValue = strValue.substring(0, size_);
+			   }
+			   ((JTextArea)component).setText(strValue);
 		   }
 		   if (inputType_.equals("NUMERIC")) {
 			   String stringValue = "";
@@ -268,6 +295,9 @@ public class XFInputDialogField extends JPanel {
    public Object getValue() {
 		if (inputType_.equals("ALPHA") || inputType_.equals("KANJI")) {
 			return ((JTextField)component).getText();
+		}
+		if (inputType_.equals("TEXTAREA")) {
+			return ((JTextArea)component).getText();
 		}
 		if (inputType_.equals("ZEROFILL")) {
 			String wrkStr = ((JTextField)component).getText();

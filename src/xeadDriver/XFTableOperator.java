@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -39,9 +39,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.JOptionPane;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -51,7 +49,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-
 import xeadServer.Relation;
 
 ////////////////////////////////////////////////////////////////////
@@ -191,6 +188,10 @@ public class XFTableOperator {
     public void setDistinctFields(String fields) {
 		sqlText_ = "";
     	selectFields_ = "distinct " + fields;
+    }
+
+    public void setValueOf(String fieldID, Object value) {
+    	addValue(fieldID, value);
     }
 
     public void addValue(String fieldID, Object value) {

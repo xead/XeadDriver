@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2013 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -503,7 +503,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		setErrorAndCloseFunction();
 	}
 
-	void setErrorAndCloseFunction() {
+	public void setErrorAndCloseFunction() {
 		errorHasOccured = true;
 		closeFunction();
 	}
@@ -580,6 +580,10 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 
 	public XFTableOperator createTableOperator(String sqlText) {
 		return new XFTableOperator(session_, processLog, sqlText);
+	}
+
+	public XFTableEvaluator createTableEvaluator(String tableID) {
+		return new XFTableEvaluator(this, tableID);
 	}
 
 	public HashMap<String, Object> getReturnMap() {

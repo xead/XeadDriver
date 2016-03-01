@@ -166,9 +166,11 @@ public class DialogModifyPassword extends JDialog {
 		boolean validated = false;
 
 		passwordCurrent = new String(jPasswordCurrent.getPassword());
-		String passwordCurrentDigested = session.getDigestAdapter().digest(passwordCurrent);
+		//String passwordCurrentDigested = session.getDigestAdapter().digest(passwordCurrent);
+		String passwordCurrentDigested = session.getDigestedValueForUser(passwordCurrent);
 		passwordNew1 = new String(jPasswordNew1.getPassword());
-		String passwordNewDigested = session.getDigestAdapter().digest(passwordNew1);
+		//String passwordNewDigested = session.getDigestAdapter().digest(passwordNew1);
+		String passwordNewDigested = session.getDigestedValueForUser(passwordNew1);
 		passwordNew2 = new String(jPasswordNew2.getPassword());
 
 		if (passwordNew1.length() < 5) {
@@ -186,7 +188,6 @@ public class DialogModifyPassword extends JDialog {
 					statementBuf.append("' and TXPASSWORD = '") ;
 					statementBuf.append(passwordCurrentDigested);
 					statementBuf.append("'") ;
-
 					XFTableOperator operator = new XFTableOperator(session, null, statementBuf.toString(), true);
 					int count = operator.execute();
 					if (count == 1) {

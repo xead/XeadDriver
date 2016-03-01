@@ -145,22 +145,30 @@ public class XFInputDialog extends JDialog {
     }
 
     public XFInputDialogField addField(String caption, String inputType, int areaIndex, String parmID) {
-    	/////////////////////////////////////////////////////////////////////////////
-    	// inputType: ALPHA, KANJI, NUMERIC, DATE, LISTBOX, CHECKBOX, FILE_CHOOSER //
-    	// areaIndex: 0=top, 1=center, -1=hidden                                   //
-    	/////////////////////////////////////////////////////////////////////////////
+    	///////////////////////////////////////////////////////////////////////////////////////
+    	// inputType: ALPHA, TEXTAREA, KANJI, NUMERIC, DATE, LISTBOX, CHECKBOX, FILE_CHOOSER //
+    	// areaIndex: 0=top, 1=center, -1=hidden                                             //
+    	///////////////////////////////////////////////////////////////////////////////////////
     	if (areaIndex != 0 && areaIndex != 1 && areaIndex != -1) {
     		areaIndex = 0;
     	}
 		XFInputDialogField field = new XFInputDialogField(caption, inputType, parmID, this);
 		if (areaIndex == 0) {
 			field.setBounds(new Rectangle(5, nextLocationTopY, field.getBounds().width, field.getBounds().height));
-			nextLocationTopY = nextLocationTopY + XFUtility.FIELD_UNIT_HEIGHT + 5;
+			if (inputType.equals("TEXTAREA")) {
+				nextLocationTopY = nextLocationTopY + (XFUtility.FIELD_UNIT_HEIGHT * 3) + 5;
+			} else {
+				nextLocationTopY = nextLocationTopY + XFUtility.FIELD_UNIT_HEIGHT + 5;
+			}
 			jPanelTop.add(field);
 		}
 		if (areaIndex == 1) {
 			field.setBounds(new Rectangle(5, nextLocationCenterY, field.getBounds().width, field.getBounds().height));
-			nextLocationCenterY = nextLocationCenterY + XFUtility.FIELD_UNIT_HEIGHT + 5;
+			if (inputType.equals("TEXTAREA")) {
+				nextLocationCenterY = nextLocationCenterY + (XFUtility.FIELD_UNIT_HEIGHT * 3) + 5;
+			} else {
+				nextLocationCenterY = nextLocationCenterY + XFUtility.FIELD_UNIT_HEIGHT + 5;
+			}
 			jPanelCenter.add(field);
 		}
 		fieldList.add(field);

@@ -36,42 +36,56 @@ package xeadDriver;
 // Note that public classes are defined in its own java file. //
 ////////////////////////////////////////////////////////////////
 public class XFColumnScriptable {
-	public Object getValue(){
-		return null;
-	}
-	public void setValue(Object value) {
-	}
-	public Object getOldValue(){
-		return null;
-	}
-	public void setOldValue(Object value) {
-	}
-	public boolean isValueChanged() {
-		return false;
-	}
-	public String getColor() {
-		return "";
-	}
-	public void setColor(String colorName) {
-	}
-	public boolean isEnabled() {
-		return true;
-	}
-	public void setEnabled(boolean enabled) {
-	}
-	public boolean isEditable() {
-		return false;
-	}
-	public void setEditable(boolean isEditable) {
-	}
-	public String getError() {
-		return "";
-	}
-	public void setError(String message) {
-	}
-	public void setValueList(String[] valueList) {
-	}
-	public String[] getValueList() {
-		return new String[0];
-	}
 }
+//public class XFColumnScriptable {
+//	public String getFieldID(){
+//		return "";
+//	}
+//	public String getTableID(){
+//		return "";
+//	}
+//	public String getDataSourceID(){
+//		return "";
+//	}
+//	public String getName(){
+//		return "";
+//	}
+//	public Object getValue(){
+//		return null;
+//	}
+//	public void setValue(Object value) {
+//	}
+//	public Object getOldValue(){
+//		return null;
+//	}
+//	public void setOldValue(Object value) {
+//	}
+//	public boolean isValueChanged() {
+//		return false;
+//	}
+//	public String getColor() {
+//		return "";
+//	}
+//	public void setColor(String colorName) {
+//	}
+//	public boolean isEnabled() {
+//		return true;
+//	}
+//	public void setEnabled(boolean enabled) {
+//	}
+//	public boolean isEditable() {
+//		return false;
+//	}
+//	public void setEditable(boolean isEditable) {
+//	}
+//	public String getError() {
+//		return "";
+//	}
+//	public void setError(String message) {
+//	}
+//	public void setValueList(String[] valueList) {
+//	}
+//	public String[] getValueList() {
+//		return new String[0];
+//	}
+//}

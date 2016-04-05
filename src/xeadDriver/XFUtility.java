@@ -56,8 +56,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
+import java.sql.Blob;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -67,6 +69,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ResourceBundle;
@@ -347,9 +350,9 @@ public class XFUtility {
 		if (basicType.equals("STRING") || basicType.equals("DATETIME") || basicType.equals("TIME") || basicType.equals("DATE")) {
 			value = "";
 		}
-		if (basicType.equals("BYTEA")) {
-			value = new XFByteArray(null);
-		}
+//		if (basicType.equals("BYTEA")) {
+//			value = new XFByteArray(null);
+//		}
 		return value;
 	}
 	
@@ -387,8 +390,13 @@ public class XFUtility {
 			if (value == null) {
 				isNull = true;
 			} else {
-				XFByteArray byteArray = (XFByteArray)value;
-				if (byteArray.getInternalValue() == null || byteArray.getInternalValue().equals("")) {
+//				XFByteArray byteArray = (XFByteArray)value;
+//				if (byteArray.getInternalValue() == null || byteArray.getInternalValue().equals("")) {
+//					isNull = true;
+//				}
+				if (value instanceof byte[]) {
+					isNull = false;
+				} else {
 					isNull = true;
 				}
 			}
@@ -808,8 +816,7 @@ public class XFUtility {
 		String basicType = "STRING";
 		if (dataType.equals("INTEGER")
 				|| dataType.equals("SMALLINT")
-				|| dataType.equals("BIGINT")
-					) {
+				|| dataType.equals("BIGINT")) {
 			basicType = "INTEGER";
 		}
 		if (dataType.equals("DOUBLE")
@@ -817,20 +824,18 @@ public class XFUtility {
 				|| dataType.equals("FLOAT")
 				|| dataType.equals("DOUBLE PRECISION")
 				|| dataType.equals("NUMERIC")
-				|| dataType.equals("REAL")
-					) {
+				|| dataType.equals("REAL")) {
 			basicType = "FLOAT";
 		}
 		if (dataType.equals("CHAR")
 				|| dataType.equals("TEXT")
 				|| dataType.equals("VARCHAR")
-				|| dataType.equals("LONG VARCHAR")
-					) {
+				|| dataType.equals("LONG VARCHAR")) {
 			basicType = "STRING";
 		}
 		if (dataType.equals("BINARY")
 				|| dataType.equals("VARBINARY")
-					) {
+				|| dataType.equals("BLOB")) {
 			basicType = "BINARY";
 		}
 		if (dataType.equals("CLOB")) {
@@ -1071,7 +1076,7 @@ public class XFUtility {
 //				editableField.setValue(valueObject);
 //			}
 //		}
-		if (basicType.equals("DATE") || basicType.equals("BYTEA")) {
+		if (basicType.equals("DATE") || basicType.equals("BYTEA") || basicType.equals("BINARY")) {
 			editableField.setValue(valueObject);
 		}
 		if (basicType.equals("DATETIME") || basicType.equals("TIME")) {
@@ -1124,7 +1129,7 @@ public class XFUtility {
 				}
 			}
 		}
-		if (basicType.equals("DATE")) {
+		if (basicType.equals("DATE") || basicType.equals("BINARY")) {
 			if (valueObject == null) {
 				editableField.setOldValue(null);
 			} else {
@@ -2286,6 +2291,52 @@ public class XFUtility {
         cal.set(Calendar.DAY_OF_MONTH, 1);
         int date = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
         return Integer.toString(date);
+	}
+
+	static public String getStringValueOfDateTime() {
+		String monthStr = "";
+		String dayStr = "";
+		String underbar = "";
+		String hourStr = "";
+		String minStr = "";
+		String secStr = "";
+		String returnValue = "";
+
+		GregorianCalendar calendar = new GregorianCalendar();
+		int year = calendar.get(Calendar.YEAR);
+		int month = calendar.get(Calendar.MONTH) + 1;
+		if (month < 10) {
+			monthStr = "0" + Integer.toString(month);
+		} else {
+			monthStr = Integer.toString(month);
+		}
+		int day = calendar.get(Calendar.DAY_OF_MONTH);
+		if (day < 10) {
+			dayStr = "0" + Integer.toString(day);
+		} else {
+			dayStr = Integer.toString(day);
+		}
+		int hour = calendar.get(Calendar.HOUR_OF_DAY);
+		if (hour < 10) {
+			hourStr = "0" + Integer.toString(hour);
+		} else {
+			hourStr = Integer.toString(hour);
+		}
+		int minute = calendar.get(Calendar.MINUTE);
+		if (minute < 10) {
+			minStr = "0" + Integer.toString(minute);
+		} else {
+			minStr = Integer.toString(minute);
+		}
+		int second = calendar.get(Calendar.SECOND);
+		if (second < 10) {
+			secStr = "0" + Integer.toString(second);
+		} else {
+			secStr = Integer.toString(second);
+		}
+
+		returnValue = Integer.toString(year) + monthStr + dayStr + underbar + hourStr + minStr + secStr;
+		return returnValue;
 	}
 
 	static String getDayOfWeek(Calendar cal, String dateFormat) {
@@ -3931,9 +3982,6 @@ class XFByteaField extends JPanel implements XFEditableField {
 							if (typeField_ != null) {
 								typeField_.setValue(type_);
 							}
-//							if (typeColumn_ != null) {
-//								typeColumn_.setValue(type_);
-//							}
 							jLabel.setText(this.getExternalValue().toString());
 							FileInputStream inputStream = new FileInputStream(file);
 							byte[] binaryByteArray = new byte[(int) file.length()];
@@ -3968,14 +4016,14 @@ class XFByteaField extends JPanel implements XFEditableField {
 			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage10"));
 		} else {
 		    try {
-		    	byte[] base64ByteArray = (byte[])value_;
-				byte[] binaryByteArray = Base64.decodeBase64(base64ByteArray);
+	    		byte[] base64ByteArray = (byte[])value_;
+	    		byte[] binaryByteArray = Base64.decodeBase64(base64ByteArray);
 				File binaryFile = session_.createTempFile("BYTEA", "." + type_);
 				FileOutputStream outputStream = new FileOutputStream(binaryFile);
 				outputStream.write(binaryByteArray);
 				outputStream.close();	
 				session_.getDesktop().browse(binaryFile.toURI());
-			} catch (Exception e) {
+		    } catch (Exception e) {
 				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("ByteaFieldMessage11") + e.getMessage());
 			}
 		}
@@ -6206,13 +6254,13 @@ class XFUrlField extends JPanel implements XFEditableField {
 		jTextField.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jTextField.setDocument(new LimitedDocument(digits));
 		jTextField.setEditable(false);
-		jTextField.setFocusable(false);
 		Font labelFont = new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE);
 		jLabel.setFont(labelFont);
 		jLabel.setForeground(Color.blue);
 		jLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		jLabel.addMouseListener(new jLabel_mouseAdapter(this));
 		jLabel.setBorder(jTextField.getBorder());
+		jLabel.setFocusable(false);
 		this.setLayout(new BorderLayout());
 		this.add(jLabel, BorderLayout.CENTER);
 
@@ -6347,6 +6395,157 @@ class XFUrlField extends JPanel implements XFEditableField {
 		}
 		public void mouseExited(MouseEvent e) {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		}
+	}
+
+	public int getRows() {
+		return rows_;
+	}
+}
+
+class XFBlobField extends JPanel implements XFEditableField {
+	private static final long serialVersionUID = 1L;
+	private JButton jButton = new JButton();
+	private Desktop desktop = Desktop.getDesktop();
+	private int rows_ = 1;
+	private Blob value_ = null;
+	private Blob oldValue_ = null;
+	private boolean isEditable;
+	private String fileType = "png";
+	private File tempFile = null;
+
+	public XFBlobField(String fieldOptions){
+		super();
+		ImageIcon imageIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("prompt.png"));
+	 	jButton.setIcon(imageIcon);
+		jButton.addActionListener(new jButton_actionAdapter(this));
+		this.setLayout(new BorderLayout());
+		this.add(jButton, BorderLayout.CENTER);
+		this.setSize(80, XFUtility.FIELD_UNIT_HEIGHT);
+	}
+	
+	public void setWidth(int width) {
+		this.setSize(width, this.getHeight());
+	}
+
+	public void exitFromComponent() {
+		jButton.transferFocus();
+	}
+
+	public boolean isEditable() {
+		return isEditable;
+	}
+
+	public boolean isFocusable() {
+		return true;
+	}
+
+	public boolean isComponentFocusable() {
+		return true;
+	}
+
+	public void setBackground(Color color) {
+		if (jButton != null) {
+			jButton.setBackground(color);
+		}
+	}
+
+	public void requestFocus() {
+		if (jButton != null) {
+			jButton.requestFocus();;
+		}
+	}
+
+	public void setValue(Object value) {
+		try {
+			value_ = (Blob)value;
+		} catch (Exception e) {
+			value_ = null;
+		}
+	}
+
+	public Object getInternalValue() {
+		if (isEditable && tempFile != null) {
+			try {
+				FileInputStream fis = new FileInputStream(tempFile);
+				OutputStream os = value_.setBinaryStream(1);
+				byte[] buffer = new byte[4096];
+				int length = -1;
+				while((length = fis.read(buffer)) != -1) {
+					os.write(buffer ,0 ,length );
+				}
+				fis.close();
+				os.close();
+			} catch (Exception e) {
+			}
+		}
+		return value_;
+	}
+
+	public Object getExternalValue() {
+		return "";
+	}
+	
+	public void setOldValue(Object value) {
+		try {
+			oldValue_ = (Blob)value;
+		} catch (Exception e) {
+			oldValue_ = null;
+		}
+	}
+
+	public Object getOldValue() {
+		return oldValue_;
+	}
+	
+	public void setEditable(boolean editable) {
+		isEditable = editable;
+		if (jButton != null) {
+			jButton.setFocusable(isEditable);
+		}
+	}
+	
+	public void setToolTipText(String text) {
+		jButton.setToolTipText(text);
+	}
+
+	class jButton_actionAdapter implements java.awt.event.ActionListener {
+		XFBlobField adaptee;
+		jButton_actionAdapter(XFBlobField adaptee) {
+			this.adaptee = adaptee;
+		}
+		public void actionPerformed(ActionEvent e) {
+			try {
+				if (tempFile == null) {
+					tempFile = File.createTempFile("XTEADriver", "." + fileType);
+					tempFile.deleteOnExit();
+				}
+				if (value_ != null) {
+					FileOutputStream fos = new FileOutputStream(tempFile);
+					InputStream is = value_.getBinaryStream();
+					if(is != null ){
+						byte[] buffer = new byte[4096];
+						int length = -1;
+						while((length = is.read(buffer)) != -1) {
+							fos.write(buffer ,0 ,length );
+						}
+					}
+					is.close();
+					fos.close();
+				}
+
+				if (isEditable) {
+					adaptee.desktop.edit(tempFile);
+				} else {
+					if (value_ == null) {
+						JOptionPane.showMessageDialog(null, "NULL!");
+					} else {
+						adaptee.desktop.browse(new URI("file:" + tempFile.getPath()));
+					}
+				}
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(null, "Failed to process BLOB data.\n" + ex.getMessage());
+			}
 		}
 	}
 

@@ -69,7 +69,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private org.w3c.dom.Element functionElement_ = null;
 	private Session session_ = null;
 	private boolean instanceIsAvailable = true;
-	private boolean isToBeCanceled = false;
+	private boolean isClosing = false;
 	private int instanceArrayIndex_ = -1;
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
@@ -391,7 +391,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			// Initializing variants //
 			///////////////////////////
 			instanceIsAvailable = false;
-			isToBeCanceled = false;
+			isClosing = false;
 			exceptionLog = new ByteArrayOutputStream();
 			exceptionStream = new PrintStream(exceptionLog);
 			exceptionHeader = "";
@@ -423,7 +423,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					filterListArray[i].get(j).setValue(filterListArray[i].get(j).getDefaultValue());
 					if (!filterListArray[i].get(j).isValidatedWithParmMapValue(parmMap_)) {
 						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError47") + filterListArray[i].get(j).getCaption() + XFUtility.RESOURCE.getString("FunctionError48"));
-						isToBeCanceled = true;
+						isClosing = true;
 						break;
 					}
 				}
@@ -491,7 +491,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			// Fetch Header Record //
 			/////////////////////////
 			fetchHeaderRecord(false);
-			if (!isToBeCanceled) {
+			if (!isClosing) {
 
 				/////////////////////////////////////////////////
 				// Select Detail Tab Records and Setup JTables //
@@ -569,7 +569,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		///////////////////////////////
 		// Initialize basic variants //
 		///////////////////////////////
-		isToBeCanceled = false;
+		isClosing = false;
 		functionElement_ = functionElement;
 		keyInputDialog = null;
 
@@ -1063,7 +1063,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			JOptionPane.showMessageDialog(null, message);
 		}
 		returnMap_.put("RETURN_CODE", "01");
-		isToBeCanceled = true;
+		isClosing = true;
 	}
 	
 	public void cancelWithScriptException(ScriptException e, String scriptName) {
@@ -1114,7 +1114,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
 		this.pack();
 		jPanelBottom.repaint();
-		//setCursor(new Cursor(Cursor.WAIT_CURSOR));
 	}
 
 	public void commit() {
@@ -1160,7 +1159,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					}
 					parmMap_ = keyInputDialog.requestKeyValues(inputDialogMessage);
 					if (parmMap_.size() == 0) {
-						isToBeCanceled = true;
+						isClosing = true;
 						returnMap_.put("RETURN_CODE", "01");
 						closeFunction();
 						return;
@@ -1186,7 +1185,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						if (!cancelWithoutMessage) {
 							JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("FunctionError38"));
 						}
-						isToBeCanceled = true;
+						isClosing = true;
 						returnMap_.put("RETURN_CODE", "01");
 						closeFunction();
 						return;
@@ -1199,15 +1198,12 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					headerTable_.runScript("AR", "BR(" + headerReferTableList.get(i).getTableAlias() + ")"); /* Script to be run BEFORE READ */
 					referTableOp = createTableOperator(headerReferTableList.get(i).getSelectSQL());
 					if (referTableOp.next()) {
-//					while (referTableOp.next()) {
-//						if (headerReferTableList.get(i).isRecordToBeSelected(referTableOp)) {
-							for (int j = 0; j < headerFieldList.size(); j++) {
-								if (headerFieldList.get(j).getTableAlias().equals(headerReferTableList.get(i).getTableAlias())) {
-									headerFieldList.get(j).setValueOfResultSet(referTableOp);
-								}
+						for (int j = 0; j < headerFieldList.size(); j++) {
+							if (headerFieldList.get(j).getTableAlias().equals(headerReferTableList.get(i).getTableAlias())) {
+								headerFieldList.get(j).setValueOfResultSet(referTableOp);
 							}
-							headerTable_.runScript("AR", "AR(" + headerReferTableList.get(i).getTableAlias() + ")"); /* Script to be run AFTER READ */
-//						}
+						}
+						headerTable_.runScript("AR", "AR(" + headerReferTableList.get(i).getTableAlias() + ")"); /* Script to be run AFTER READ */
 					}
 				}
 			}
@@ -1281,7 +1277,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	void setupHeaderDetailsForTreeNodeSelected() {
-		//int rowCount;
 		XF300_TreeNode node;
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
@@ -1309,16 +1304,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						clearTableRows(i);
 					}
 				}
-//				for (int i = 0; i < jTabbedPane.getTabCount(); i++) {
-//					if (filterListArray[i].size() == 0 || firstEditableFilter[i] == null) {
-//						selectDetailRecordsAndSetupTableRows(i, false);
-//					} else {
-//						rowCount = tableModelMainArray[i].getRowCount();
-//						for (int j = 0; j < rowCount; j++) {
-//							tableModelMainArray[i].removeRow(0);
-//						}
-//					}
-//				}
 			}
 		} finally {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -1417,8 +1402,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					detailColumnListArray[index].get(i).initialize();
 				}
 
-//				detailTableArray[index].runScript(index, "BR", ""); /* Script to be run BEFORE READ */
-
 				for (int i = 0; i < detailColumnListArray[index].size(); i++) {
 					if (detailColumnListArray[index].get(i).getTableID().equals(detailTableArray[index].getTableID())) {
 						readyToValidate = detailColumnListArray[index].get(i).setValueOfResultSet(detailTableOp);
@@ -1449,19 +1432,16 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 									referOperatorList.add(referTableOp);
 								}
 								if (referTableOp.next()) {
-//								while (referTableOp.next()) {
-//									if (detailReferTableListArray[index].get(i).isRecordToBeSelected(index, referTableOp)) {
-										for (int j = 0; j < detailColumnListArray[index].size(); j++) {
-											if (detailColumnListArray[index].get(j).getTableAlias().equals(detailReferTableListArray[index].get(i).getTableAlias())) {
-												detailColumnListArray[index].get(j).setValueOfResultSet(referTableOp);
-											}
+									for (int j = 0; j < detailColumnListArray[index].size(); j++) {
+										if (detailColumnListArray[index].get(j).getTableAlias().equals(detailReferTableListArray[index].get(i).getTableAlias())) {
+											detailColumnListArray[index].get(j).setValueOfResultSet(referTableOp);
 										}
-										detailTableArray[index].runScript(index, "AR", "AR(" + detailReferTableListArray[index].get(i).getTableAlias() + ")"); /* Script to be run AFTER READ */
-										if (!isTheRowToBeSelected(index)) {
-											toBeSelected = false;
-											break;
-										}
-//									}
+									}
+									detailTableArray[index].runScript(index, "AR", "AR(" + detailReferTableListArray[index].get(i).getTableAlias() + ")"); /* Script to be run AFTER READ */
+									if (!isTheRowToBeSelected(index)) {
+										toBeSelected = false;
+										break;
+									}
 								}
 							}
 							if (!toBeSelected) {
@@ -1489,9 +1469,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							cellObjectList = new ArrayList<TableCellReadOnly>();
 							for (int i = 0; i < detailColumnListArray[index].size(); i++) {
 								columnMap.put(detailColumnListArray[index].get(i).getDataSourceName(), detailColumnListArray[index].get(i).getInternalValue());
-								//if (detailColumnListArray[index].get(i).isVisibleOnPanel()) {
-									cellObjectList.add(detailColumnListArray[index].get(i).getCellObject());
-								//}
+								cellObjectList.add(detailColumnListArray[index].get(i).getCellObject());
 							}
 
 							if (detailTableArray[index].hasOrderByAsItsOwnFields()) {
@@ -1525,7 +1503,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 
 			if (!detailTableArray[index].hasOrderByAsItsOwnFields()) {
 				WorkingRow[] workingRowArray = workingRowListArray[index].toArray(new WorkingRow[0]);
-				//Arrays.sort(workingRowArray, new WorkingRowComparator());
 				Arrays.sort(workingRowArray);
 				for (int i = 0; i < workingRowArray.length; i++) {
 					Object[] cell = new Object[1];
@@ -1603,7 +1580,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		}
 
 		WorkingRow[] workingRowArray = workingRowListArray[tabIndex].toArray(new WorkingRow[0]);
-		//Arrays.sort(workingRowArray, new WorkingRowComparator());
 		Arrays.sort(workingRowArray);
 		for (int i = 0; i < workingRowArray.length; i++) {
 			Object[] cell = new Object[1];
@@ -2149,9 +2125,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		public ArrayList<Object> getOrderByValueList() {
 			return orderByValueList_;
 		}
-//		public int getIndex() {
-//			return index_;
-//		}
 		public ArrayList<String> getOrderByFieldTypeList() {
 			return orderByFieldTypeList_;
 		}
@@ -2353,7 +2326,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						 setupCellAttributesForDetailColumn(rowData.createCell(j+1), workBook, detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getBasicType(), detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getTypeOptionList(), cellObject, detailColumnListArray[jTabbedPane.getSelectedIndex()].get(j).getDecimalSize());
 						 if (cellObject.getValueType().equals("IMAGE") && !cellObject.getInternalValue().equals("")) {
 							 imageFileName = session_.getImageFileFolder() + cellObject.getInternalValue();
-							 //XFUtility.setupImageCellForDetailColumn(workBook, workSheet, currentRowNumber, j+1, imageFileName, patriarch);
 							 XFUtility.setupImageCell(workBook, workSheet, currentRowNumber, currentRowNumber+1, j+1, j+2, imageFileName);
 						 }
 					 }
@@ -2664,7 +2636,6 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				jPanelTop.setVisible(true);
 				jPanelTop.add(jScrollPaneFilters[index], BorderLayout.CENTER);
 				if (firstEditableFilter[index] != null) {
-					//jPanelTop.add(jPanelTopEast, BorderLayout.EAST);
 					jPanelTop.add(jButtonList, BorderLayout.EAST);
 					firstEditableFilter[index].requestFocus();
 				}
@@ -3243,8 +3214,6 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 	private boolean isVisibleOnPanel = true;
 	private boolean isHorizontal = false;
 	private boolean isVirtualField = false;
-	//private boolean isRangeKeyFieldValid = false;
-	//private boolean isRangeKeyFieldExpire = false;
 	private boolean isImage = false;
 	private int positionMargin = 0;
 	private Color foreground = Color.black;
@@ -3308,15 +3277,6 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
-//		if (!tableElement.getAttribute("RangeKey").equals("")) {
-//			workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
-//			if (workTokenizer.nextToken().equals(fieldID_)) {
-//				isRangeKeyFieldValid = true;
-//			}
-//			if (workTokenizer.nextToken().equals(fieldID_)) {
-//				isRangeKeyFieldExpire = true;
-//			}
-//		}
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
@@ -3452,7 +3412,6 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 			jLabelFieldComment.setText(wrkStr);
 			jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-			//jLabelFieldComment.setVerticalAlignment(SwingConstants.TOP);
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
 			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 5, this.getPreferredSize().height));
 			this.add(jLabelFieldComment, BorderLayout.EAST);
@@ -3519,15 +3478,6 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
-//		if (!tableElement.getAttribute("RangeKey").equals("")) {
-//			StringTokenizer workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
-//			if (workTokenizer.nextToken().equals(fieldID_)) {
-//				isRangeKeyFieldValid = true;
-//			}
-//			if (workTokenizer.nextToken().equals(fieldID_)) {
-//				isRangeKeyFieldExpire = true;
-//			}
-//		}
 
 		xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 		xFTextField.setLocation(5, 0);
@@ -3627,14 +3577,6 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 		return isVirtualField;
 	}
 
-//	public boolean isRangeKeyFieldValid(){
-//		return isRangeKeyFieldValid;
-//	}
-//
-//	public boolean isRangeKeyFieldExpire(){
-//		return isRangeKeyFieldExpire;
-//	}
-
 	public org.w3c.dom.Element getTableElement(){
 		return tableElement;
 	}
@@ -3669,11 +3611,7 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 
 	public void setValueOfResultSet(XFTableOperator operator){
 		try {
-			if (this.isVirtualField) {
-//				if (this.isRangeKeyFieldExpire()) {
-//					component.setValue(XFUtility.calculateExpireValue(this.getTableElement(), operator, dialog_.getSession(), dialog_.getProcessLog()));
-//				}
-			} else {
+			if (!this.isVirtualField) {
 				Object value = operator.getValueOf(this.getFieldID()); 
 				if (this.getBasicType().equals("INTEGER")) {
 					if (value == null || value.equals("")) {
@@ -3799,10 +3737,12 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 	}
 	
 	public void setupByteaTypeField(ArrayList<XF300_HeaderField> fieldList) {
-		for (int i = 0; i < fieldList.size(); i++) {
-			if (fieldList.get(i).getFieldID().equals(byteaTypeFieldID)) {
-				((XFByteaField)component).setTypeField((XFFieldScriptable)fieldList.get(i));
-				break;
+		if (isVisibleOnPanel) {
+			for (int i = 0; i < fieldList.size(); i++) {
+				if (fieldList.get(i).getFieldID().equals(byteaTypeFieldID)) {
+					((XFByteaField)component).setTypeField((XFFieldScriptable)fieldList.get(i));
+					break;
+				}
 			}
 		}
 	}
@@ -3897,8 +3837,6 @@ class XF300_DetailColumn implements XFFieldScriptable {
 	private boolean isEnabled = true;
 	private boolean isVisibleOnPanel = true;
 	private boolean isVirtualField = false;
-//	private boolean isRangeKeyFieldValid = false;
-//	private boolean isRangeKeyFieldExpire = false;
 	private boolean isReadyToValidate = false;
 	private String valueType = "STRING";
 	private String flagTrue = "";
@@ -3951,15 +3889,6 @@ class XF300_DetailColumn implements XFFieldScriptable {
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
-//		if (!tableElement.getAttribute("RangeKey").equals("")) {
-//			workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
-//			if (workTokenizer.nextToken().equals(fieldID_)) {
-//				isRangeKeyFieldValid = true;
-//			}
-//			if (workTokenizer.nextToken().equals(fieldID_)) {
-//				isRangeKeyFieldExpire = true;
-//			}
-//		}
 
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
@@ -4093,15 +4022,6 @@ class XF300_DetailColumn implements XFFieldScriptable {
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
-//		if (!tableElement.getAttribute("RangeKey").equals("")) {
-//			StringTokenizer workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
-//			if (workTokenizer.nextToken().equals(fieldID_)) {
-//				isRangeKeyFieldValid = true;
-//			}
-//			if (workTokenizer.nextToken().equals(fieldID_)) {
-//				isRangeKeyFieldExpire = true;
-//			}
-//		}
 
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
@@ -4115,14 +4035,6 @@ class XF300_DetailColumn implements XFFieldScriptable {
 	public boolean isVirtualField(){
 		return isVirtualField;
 	}
-
-//	public boolean isRangeKeyFieldValid(){
-//		return isRangeKeyFieldValid;
-//	}
-//
-//	public boolean isRangeKeyFieldExpire(){
-//		return isRangeKeyFieldExpire;
-//	}
 
 	public boolean isReadyToValidate(){
 		return isReadyToValidate;
@@ -4322,11 +4234,7 @@ class XF300_DetailColumn implements XFFieldScriptable {
 		this.setColor("");
 
 		try {
-			if (this.isVirtualField) {
-//				if (this.isRangeKeyFieldExpire()) {
-//					value_ = XFUtility.calculateExpireValue(this.getTableElement(), operator, dialog_.getSession(), dialog_.getProcessLog());
-//				}
-			} else {
+			if (!this.isVirtualField) {
 				if (basicType.equals("BYTEA")) {
 					isFoundInResultSet = true; //BYTEA field is not contained intentionally in result set //
 					value_ = new XFByteArray(null);
@@ -4377,10 +4285,12 @@ class XF300_DetailColumn implements XFFieldScriptable {
 	}
 	
 	public void setByteaType(ArrayList<XF300_DetailColumn> columnList) {
-		for (int i = 0; i < columnList.size(); i++) {
-			if (columnList.get(i).getFieldID().equals(byteaTypeFieldID)) {
-				((XFByteArray)value_).setType(columnList.get(i).getValue().toString());
-				break;
+		if (isVisibleOnPanel) {
+			for (int i = 0; i < columnList.size(); i++) {
+				if (columnList.get(i).getFieldID().equals(byteaTypeFieldID)) {
+					((XFByteArray)value_).setType(columnList.get(i).getValue().toString());
+					break;
+				}
 			}
 		}
 	}
@@ -4470,7 +4380,6 @@ class XF300_Filter extends JPanel {
 	private JComponent component = null;
 	private boolean isVertical = false;
 	private int verticalMargin = 5;
-	//private int horizontalMargin = 45;
 	private int horizontalMargin = 30;
 	private boolean isReflect = false;
 	private boolean isEditable_ = true;
@@ -4568,24 +4477,6 @@ class XF300_Filter extends JPanel {
 		} else {
 			jLabelField.setPreferredSize(new Dimension(width + horizontalMargin, XFUtility.FIELD_UNIT_HEIGHT));
 		}
-//		FontMetrics metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 14));
-//		if (metrics1.stringWidth(fieldCaption) > 110) {
-//			jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
-//			metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 12));
-//			if (metrics1.stringWidth(fieldCaption) > 110) {
-//				jLabelField.setFont(new java.awt.Font("Dialog", 0, 10));
-//				metrics1 = jLabelField.getFontMetrics(new java.awt.Font("Dialog", 0, 10));
-//			} else {
-//				jLabelField.setFont(new java.awt.Font("Dialog", 0, 12));
-//			}
-//		} else {
-//			jLabelField.setFont(new java.awt.Font("Dialog", 0, 14));
-//		}
-//		if (isVertical || dialog_.getFilterList(index_).size() == 0) {
-//			jLabelField.setPreferredSize(new Dimension(110, 20));
-//		} else {
-//			jLabelField.setPreferredSize(new Dimension(metrics1.stringWidth(fieldCaption) + horizontalMargin, 20));
-//		}
 
 		jPanelField.setLayout(null);
 		this.setLayout(new BorderLayout());
@@ -4618,7 +4509,6 @@ class XF300_Filter extends JPanel {
 				////////////////////////////////////////////////////////////////////////////////
 				if (fieldOptionList.contains("PROMPT_LIST1") || fieldOptionList.contains("PROMPT_LIST2")) {
 					FontMetrics metrics2 = jLabelField.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
-					//int valueIndex = -1;
 					String wrkText, wrkKey;
 
 					wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
@@ -4630,7 +4520,6 @@ class XF300_Filter extends JPanel {
 						int fieldWidth = 20;
 
 						if (fieldOptionList.contains("PROMPT_LIST1")) {
-							//valueIndex++;
 							keyValueList.add("");
 							jComboBox.addItem("");
 						}
@@ -4640,7 +4529,6 @@ class XF300_Filter extends JPanel {
 							operator.addKeyValue("IDUSERKUBUN", wrkStr);
 							operator.setOrderBy("SQLIST");
 							while (operator.next()) {
-								//valueIndex++;
 								wrkKey = operator.getValueOf("KBUSERKUBUN").toString().trim();
 								keyValueList.add(wrkKey);
 								wrkText = operator.getValueOf("TXUSERKUBUN").toString().trim();
@@ -4668,13 +4556,11 @@ class XF300_Filter extends JPanel {
 							int fieldWidth = 20;
 
 							if (fieldOptionList.contains("PROMPT_LIST1")) {
-								//valueIndex++;
 								jComboBox.addItem("");
 							}
 
 							StringTokenizer workTokenizer = new StringTokenizer(wrkStr, ";" );
 							while (workTokenizer.hasMoreTokens()) {
-								//valueIndex++;
 								wrkKey = workTokenizer.nextToken();
 								jComboBox.addItem(wrkKey);
 								if (metrics2.stringWidth(wrkKey) > fieldWidth) {
@@ -4698,7 +4584,6 @@ class XF300_Filter extends JPanel {
 								if (referTableList.get(i).getTableID().equals(tableID)) {
 									if (referTableList.get(i).getTableAlias().equals("") || referTableList.get(i).getTableAlias().equals(tableAlias)) {
 										if (fieldOptionList.contains("PROMPT_LIST1")) {
-											//valueIndex++;
 											jComboBox.addItem("");
 										}
 
@@ -4707,7 +4592,6 @@ class XF300_Filter extends JPanel {
 											operator.setSelectFields(fieldID);
 											operator.setOrderBy(fieldID);
 											while (operator.next()) {
-												//valueIndex++;
 												wrkKey = operator.getValueOf(fieldID).toString().trim();
 												jComboBox.addItem(wrkKey);
 												if (metrics2.stringWidth(wrkKey) > fieldWidth) {
@@ -5018,7 +4902,6 @@ class XF300_Filter extends JPanel {
 		}
 		if (componentType.equals("DATE")) {
 			xFDateField.setValue(value.toString());
-			//xFDateField.setEditable(false);
 		}
 		if (componentType.equals("YMONTH")) {
 			xFYMonthBox.setValue(value.toString());
@@ -5669,26 +5552,6 @@ class XF300_Filter extends JPanel {
 							if (stringFilterValue.equals("")) {
 								validated = true;
 							} else {
-//								if (operandType.equals("EQ")) {
-//									if (stringResultValue.equals(stringFilterValue)) {
-//										validated = true;
-//									}
-//								}
-//								if (operandType.equals("SCAN")) {
-//									if (stringResultValue.contains(stringFilterValue)) {
-//										validated = true;
-//									}
-//								}
-//								if (operandType.equals("GENERIC")) {
-//									int lengthResultValue = stringResultValue.length();
-//									int lengthFieldValue = stringFilterValue.length();
-//									if (lengthResultValue >= lengthFieldValue) {
-//										String wrk = stringResultValue.substring(0, lengthFieldValue);
-//										if (wrk.equals(stringFilterValue)) {
-//											validated = true;
-//										}
-//									}
-//								}
 								StringTokenizer workTokenizer = new StringTokenizer(stringFilterValue, ";" );
 								while (workTokenizer.hasMoreTokens()) {
 									if (operandType.equals("EQ")) {
@@ -5987,7 +5850,6 @@ class XF300_PromptCallField extends JPanel implements XFEditableField {
 
 	public Object getInternalValue() {
 		String text = "";
-		//if (xFTextField.getText().equals("*LIST")) {
 		if (xFTextField.getText().equals("*LIST") || kubunValueList != null) {
 			text = listValue;
 		} else {
@@ -6062,7 +5924,6 @@ class XF300_HeaderTable extends Object {
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element functionElement_ = null;
 	private String tableID = "";
-	private String activeWhere = "";
 	private String fixedWhere = "";
 	private ArrayList<String> keyFieldIDList = new ArrayList<String>();
 	private ArrayList<XFScript> scriptList = new ArrayList<XFScript>();
@@ -6077,7 +5938,6 @@ class XF300_HeaderTable extends Object {
 
 		tableID = functionElement_.getAttribute("HeaderTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
-		activeWhere = tableElement.getAttribute("ActiveWhere");
 
 		if (tableElement.getAttribute("DB").equals("")) {
 			dbName = dialog_.getSession().getDatabaseName();
@@ -6152,21 +6012,6 @@ class XF300_HeaderTable extends Object {
 				}
 				buf.append(dialog_.getHeaderFieldList().get(i).getFieldID()) ;
 				buf.append("=") ;
-//				if (XFUtility.isLiteralRequiredBasicType(dialog_.getHeaderFieldList().get(i).getBasicType())) {
-//					buf.append("'") ;
-//					if (dialog_.getParmMap().containsKey(dialog_.getHeaderFieldList().get(i).getFieldID())) {
-//						buf.append(dialog_.getParmMap().get(dialog_.getHeaderFieldList().get(i).getFieldID()));
-//					} else {
-//						buf.append(dialog_.getParmMap().get(dialog_.getHeaderFieldList().get(i).getDataSourceName()));
-//					}
-//					buf.append("'") ;
-//				} else {
-//					if (dialog_.getParmMap().containsKey(dialog_.getHeaderFieldList().get(i).getFieldID())) {
-//						buf.append(dialog_.getParmMap().get(dialog_.getHeaderFieldList().get(i).getFieldID()));
-//					} else {
-//						buf.append(dialog_.getParmMap().get(dialog_.getHeaderFieldList().get(i).getDataSourceName()));
-//					}
-//				}
 				if (dialog_.getParmMap().containsKey(dialog_.getHeaderFieldList().get(i).getFieldID())) {
 					buf.append(XFUtility.getTableOperationValue(dialog_.getHeaderFieldList().get(i).getBasicType(),
 							dialog_.getParmMap().get(dialog_.getHeaderFieldList().get(i).getFieldID()), dbName)) ;
@@ -6175,11 +6020,6 @@ class XF300_HeaderTable extends Object {
 							dialog_.getParmMap().get(dialog_.getHeaderFieldList().get(i).getDataSourceName()), dbName)) ;
 				}
 			}
-		}
-		if (!activeWhere.equals("")) {
-			buf.append(" and (");
-			buf.append(activeWhere);
-			buf.append(") ");
 		}
 		if (!fixedWhere.equals("")) {
 			buf.append(" and (");
@@ -6260,17 +6100,10 @@ class XF300_HeaderReferTable extends Object {
 	private XF300 dialog_ = null;
 	private String tableID = "";
 	private String tableAlias = "";
-	private String activeWhere = "";
 	private ArrayList<String> fieldIDList = new ArrayList<String>();
 	private ArrayList<String> toKeyFieldIDList = new ArrayList<String>();
 	private ArrayList<String> withKeyFieldIDList = new ArrayList<String>();
-	private ArrayList<String> orderByFieldIDList = new ArrayList<String>();
 	private boolean isToBeExecuted = false;
-//	private int rangeKeyType = 0;
-//	private String rangeKeyFieldValid = "";
-//	private String rangeKeyFieldExpire = "";
-//	private String rangeKeyFieldSearch = "";
-//	private boolean rangeValidated;
 	private String dbName = "";
 
 	public XF300_HeaderReferTable(org.w3c.dom.Element referElement, XF300 dialog){
@@ -6287,28 +6120,12 @@ class XF300_HeaderReferTable extends Object {
 			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
 		}
 
-		StringTokenizer workTokenizer;
-//		String wrkStr = tableElement.getAttribute("RangeKey");
-//		if (!wrkStr.equals("")) {
-//			workTokenizer = new StringTokenizer(wrkStr, ";" );
-//			rangeKeyFieldValid =workTokenizer.nextToken();
-//			rangeKeyFieldExpire =workTokenizer.nextToken();
-//			org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
-//			if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-//				rangeKeyType = 1;
-//			} else {
-//				rangeKeyType = 2;
-//			}
-//		}
-
-		activeWhere = tableElement.getAttribute("ActiveWhere");
-
 		tableAlias = referElement_.getAttribute("TableAlias");
 		if (tableAlias.equals("")) {
 			tableAlias = tableID;
 		}
 
-		workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
+		StringTokenizer workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			fieldIDList.add(workTokenizer.nextToken());
 		}
@@ -6329,11 +6146,6 @@ class XF300_HeaderReferTable extends Object {
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("WithKeyFields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			withKeyFieldIDList.add(workTokenizer.nextToken());
-		}
-
-		workTokenizer = new StringTokenizer(referElement_.getAttribute("OrderBy"), ";" );
-		while (workTokenizer.hasMoreTokens()) {
-			orderByFieldIDList.add(workTokenizer.nextToken());
 		}
 	}
 
@@ -6366,18 +6178,6 @@ class XF300_HeaderReferTable extends Object {
 				buf.append(toKeyFieldIDList.get(i));
 			}
 		}
-//		if (!rangeKeyFieldValid.equals("")) {
-//			if (count > 0) {
-//				buf.append(",");
-//			}
-//			buf.append(rangeKeyFieldValid);
-//			//
-//			workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
-//			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-//				buf.append(",");
-//				buf.append(rangeKeyFieldExpire);
-//			}
-//		}
 		
 		////////////////////////////
 		// From and Where section //
@@ -6387,68 +6187,20 @@ class XF300_HeaderReferTable extends Object {
 		buf.append(" where ");
 		count = 0;
 		for (int i = 0; i < toKeyFieldIDList.size(); i++) {
-//			if (toKeyFieldIDList.get(i).equals(rangeKeyFieldValid)) {
-//				rangeKeyFieldSearch = withKeyFieldIDList.get(i);
-//			} else {
-				if (count > 0) {
-					buf.append(" and ");
-				}
-				buf.append(toKeyFieldIDList.get(i));
-				buf.append("=");
-				for (int j = 0; j < dialog_.getHeaderFieldList().size(); j++) {
-					if (withKeyFieldIDList.get(i).equals(dialog_.getHeaderFieldList().get(j).getTableAlias() + "." + dialog_.getHeaderFieldList().get(j).getFieldID())) {
-//						if (XFUtility.isLiteralRequiredBasicType(dialog_.getHeaderFieldList().get(j).getBasicType())) {
-//							buf.append("'") ;
-//							buf.append(dialog_.getHeaderFieldList().get(j).getInternalValue());
-//							buf.append("'") ;
-//						} else {
-//							buf.append(dialog_.getHeaderFieldList().get(j).getInternalValue());
-//						}
-						buf.append(XFUtility.getTableOperationValue(dialog_.getHeaderFieldList().get(j).getBasicType(),
-								dialog_.getHeaderFieldList().get(j).getInternalValue(), dbName)) ;
-						break;
-					}
-				}
-				count++;
-//			}
-		}
-		if (!activeWhere.equals("")) {
-			buf.append(" and ");
-			buf.append(activeWhere);
-		}
-
-		//////////////////////
-		// Order-by section //
-		//////////////////////
-//		if (this.rangeKeyType != 0) {
-//			buf.append(" order by ");
-//			buf.append(rangeKeyFieldValid);
-//			buf.append(" DESC ");
-//		} else {
-			if (orderByFieldIDList.size() > 0) {
-				int pos0,pos1;
-				buf.append(" order by ");
-				for (int i = 0; i < orderByFieldIDList.size(); i++) {
-					if (i > 0) {
-						buf.append(",");
-					}
-					pos0 = orderByFieldIDList.get(i).indexOf(".");
-					pos1 = orderByFieldIDList.get(i).indexOf("(A)");
-					if (pos1 >= 0) {
-						buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
-					} else {
-						pos1 = orderByFieldIDList.get(i).indexOf("(D)");
-						if (pos1 >= 0) {
-							buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
-							buf.append(" DESC ");
-						} else {
-							buf.append(orderByFieldIDList.get(i).substring(pos0+1, orderByFieldIDList.get(i).length()));
-						}
-					}
+			if (count > 0) {
+				buf.append(" and ");
+			}
+			buf.append(toKeyFieldIDList.get(i));
+			buf.append("=");
+			for (int j = 0; j < dialog_.getHeaderFieldList().size(); j++) {
+				if (withKeyFieldIDList.get(i).equals(dialog_.getHeaderFieldList().get(j).getTableAlias() + "." + dialog_.getHeaderFieldList().get(j).getFieldID())) {
+					buf.append(XFUtility.getTableOperationValue(dialog_.getHeaderFieldList().get(j).getBasicType(),
+							dialog_.getHeaderFieldList().get(j).getInternalValue(), dbName)) ;
+					break;
 				}
 			}
-//		}
-//		rangeValidated = false;
+			count++;
+		}
 
 		return buf.toString();
 	}
@@ -6476,58 +6228,12 @@ class XF300_HeaderReferTable extends Object {
 	public boolean isToBeExecuted(){
 		return isToBeExecuted;
 	}
-
-//	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
-//		boolean returnValue = false;
-//		if (rangeKeyType == 0) {
-//			returnValue = true;
-//		}
-//		if (rangeKeyType == 1) {
-//			if (!rangeValidated) {
-//				////////////////////////////////////////////////////////////////
-//				// Note that result set is ordered by rangeKeyFieldValue DESC //
-//				////////////////////////////////////////////////////////////////
-//				StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-//				String workTableAlias = workTokenizer.nextToken();
-//				String workFieldID = workTokenizer.nextToken();
-//				Object valueKey = dialog_.getHeaderFieldObjectByID("", workTableAlias, workFieldID).getInternalValue();
-//				Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				if (comp1 >= 0) {
-//					returnValue = true;
-//					rangeValidated = true;
-//				}
-//			}
-//		}
-//		if (rangeKeyType == 2) {
-//			StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-//			String workTableAlias = workTokenizer.nextToken();
-//			String workFieldID = workTokenizer.nextToken();
-//			Object valueKey = dialog_.getHeaderFieldObjectByID("", workTableAlias, workFieldID).getInternalValue();
-//			Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//			Object valueThru = operator.getValueOf(rangeKeyFieldExpire);
-//			if (valueThru == null) {
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				if (comp1 >= 0) {
-//					returnValue = true;
-//				}
-//			} else {
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				int comp2 = valueKey.toString().compareTo(valueThru.toString());
-//				if (comp1 >= 0 && comp2 < 0) {
-//					returnValue = true;
-//				}
-//			}
-//		}
-//		return returnValue;
-//	}
 }
 
 class XF300_StructureTable extends Object {
 	private org.w3c.dom.Element functionElement_ = null;
 	private org.w3c.dom.Element tableElement_ = null;
 	private String tableID = "";
-	private String activeWhere = "";
 	private ArrayList<String> upperKeyFieldIDList = new ArrayList<String>();
 	private ArrayList<String> childKeyFieldIDList = new ArrayList<String>();
 	private ArrayList<String> orderByFieldIDList = new ArrayList<String>();
@@ -6552,7 +6258,6 @@ class XF300_StructureTable extends Object {
 
 		tableID = functionElement_.getAttribute("StructureTable");
 		tableElement_ = dialog_.getSession().getTableElement(tableID);
-		activeWhere = tableElement_.getAttribute("ActiveWhere");
 
 		if (tableElement_.getAttribute("DB").equals("")) {
 			dbName = dialog_.getSession().getDatabaseName();
@@ -6641,20 +6346,8 @@ class XF300_StructureTable extends Object {
 			}
 			buf.append("=") ;
 			headerField = dialog_.getHeaderFieldObjectByID(dialog_.getHeaderTable().getTableID(), "", dialog_.getHeaderTable().getKeyFieldIDList().get(i));
-//			if (XFUtility.isLiteralRequiredBasicType(headerField.getBasicType())) {
-//				buf.append("'");
-//				buf.append(parmMap.get(dialog_.getHeaderTable().getKeyFieldIDList().get(i)));
-//				buf.append("'");
-//			} else {
-//				buf.append(parmMap.get(dialog_.getHeaderTable().getKeyFieldIDList().get(i)));
-//			}
 			buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(),
 					parmMap.get(dialog_.getHeaderTable().getKeyFieldIDList().get(i)), dbName)) ;
-		}
-		if (!activeWhere.equals("")) {
-			buf.append(" and (");
-			buf.append(activeWhere);
-			buf.append(") ");
 		}
 		
 		//////////////////////
@@ -6709,13 +6402,6 @@ class XF300_StructureTable extends Object {
 			buf.append(dialog_.getHeaderTable().getKeyFieldIDList().get(i)) ;
 			buf.append("=") ;
 			headerField = dialog_.getHeaderFieldObjectByID(dialog_.getHeaderTable().getTableID(), "", dialog_.getHeaderTable().getKeyFieldIDList().get(i));
-//			if (XFUtility.isLiteralRequiredBasicType(headerField.getBasicType())) {
-//				buf.append("'");
-//				buf.append(keyValueMap.get(dialog_.getHeaderTable().getKeyFieldIDList().get(i)));
-//				buf.append("'");
-//			} else {
-//				buf.append(keyValueMap.get(dialog_.getHeaderTable().getKeyFieldIDList().get(i)));
-//			}
 			buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(),
 					keyValueMap.get(dialog_.getHeaderTable().getKeyFieldIDList().get(i)), dbName)) ;
 		}
@@ -6747,21 +6433,6 @@ class XF300_StructureTable extends Object {
 			buf.append(dialog_.getHeaderTable().getKeyFieldIDList().get(i)) ;
 			buf.append("=") ;
 			headerField = dialog_.getHeaderFieldObjectByID(dialog_.getHeaderTable().getTableID(), "", dialog_.getHeaderTable().getKeyFieldIDList().get(i));
-//			if (XFUtility.isLiteralRequiredBasicType(headerField.getBasicType())) {
-//				buf.append("'");
-//				if (dialog_.isForExplosion()) {
-//					buf.append(structreTableOperator.getValueOf(childKeyFieldIDList.get(i)));
-//				} else {
-//					buf.append(structreTableOperator.getValueOf(upperKeyFieldIDList.get(i)));
-//				}
-//				buf.append("'");
-//			} else {
-//				if (dialog_.isForExplosion()) {
-//					buf.append(structreTableOperator.getValueOf(childKeyFieldIDList.get(i)));
-//				} else {
-//					buf.append(structreTableOperator.getValueOf(upperKeyFieldIDList.get(i)));
-//				}
-//			}
 			if (dialog_.isForExplosion()) {
 				buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(),
 						structreTableOperator.getValueOf(childKeyFieldIDList.get(i)), dbName)) ;
@@ -6865,7 +6536,6 @@ class XF300_DetailTable extends Object {
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element detailTableElement_ = null;
 	private String tableID = "";
-	private String activeWhere = "";
 	private String fixedWhere = "";
 	private ArrayList<String> headerKeyFieldIDList = new ArrayList<String>();
 	private ArrayList<String> keyFieldIDList = new ArrayList<String>();
@@ -6885,7 +6555,6 @@ class XF300_DetailTable extends Object {
 
 		tableID = detailTableElement.getAttribute("Table");
 		tableElement = dialog_.getSession().getTableElement(tableID);
-		activeWhere = tableElement.getAttribute("ActiveWhere");
 
 		if (tableElement.getAttribute("DB").equals("")) {
 			dbName = dialog_.getSession().getDatabaseName();
@@ -6983,7 +6652,6 @@ class XF300_DetailTable extends Object {
 			if (dialog_.getDetailColumnList(tabIndex_).get(i).getTableID().equals(tableID)
 					&& !dialog_.getDetailColumnList(tabIndex_).get(i).isVirtualField()
 					&& !dialog_.getDetailColumnList(tabIndex_).get(i).getBasicType().equals("BYTEA")) {
-				//if (buf.indexOf(" " + dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID()) == -1) {
 				if (!fieldIDList.contains(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID())) {
 					count++;
 					if (count > 0) {
@@ -7011,19 +6679,7 @@ class XF300_DetailTable extends Object {
 			buf.append(keyFieldIDList.get(i)) ;
 			buf.append("=") ;
 			headerField = dialog_.getHeaderFieldObjectByID(dialog_.getHeaderTable().getTableID(), "", headerKeyFieldIDList.get(i));
-//			if (XFUtility.isLiteralRequiredBasicType(headerField.getBasicType())) {
-//				buf.append("'");
-//				buf.append(headerField.getInternalValue());
-//				buf.append("'");
-//			} else {
-//				buf.append(headerField.getInternalValue());
-//			}
 			buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(), headerField.getInternalValue(), dbName)) ;
-		}
-		if (!activeWhere.equals("")) {
-			buf.append(" and (");
-			buf.append(activeWhere);
-			buf.append(") ");
 		}
 		if (!fixedWhere.equals("")) {
 			buf.append(" and (");
@@ -7136,7 +6792,6 @@ class XF300_DetailTable extends Object {
 				pos0 = workStr.indexOf(".");
 				pos1 = workStr.indexOf("(D)");
 				if (pos1 >= 0) {
-					//workTableID = workStr.substring(0, pos0);
 					workAlias = workStr.substring(0, pos0);
 					workTableID = dialog_.getTableIDOfTableAlias(workAlias, tabIndex_);
 					workFieldID = workStr.substring(pos0+1, pos1);
@@ -7144,7 +6799,6 @@ class XF300_DetailTable extends Object {
 					buf.append(workElement.getAttribute("Name"));
 					buf.append(XFUtility.RESOURCE.getString("Descend"));
 				} else {
-					//workTableID = workStr.substring(0, pos0);
 					workAlias = workStr.substring(0, pos0);
 					workTableID = dialog_.getTableIDOfTableAlias(workAlias, tabIndex_);
 					workFieldID = workStr.substring(pos0+1, workStr.length());
@@ -7227,17 +6881,10 @@ class XF300_DetailReferTable extends Object {
 	private XF300 dialog_ = null;
 	private String tableID = "";
 	private String tableAlias = "";
-	private String activeWhere = "";
 	private ArrayList<String> fieldIDList = new ArrayList<String>();
 	private ArrayList<String> toKeyFieldIDList = new ArrayList<String>();
 	private ArrayList<String> withKeyFieldIDList = new ArrayList<String>();
-	private ArrayList<String> orderByFieldIDList = new ArrayList<String>();
 	private boolean isToBeExecuted = false;
-//	private int rangeKeyType = 0;
-//	private String rangeKeyFieldValid = "";
-//	private String rangeKeyFieldExpire = "";
-//	private String rangeKeyFieldSearch = "";
-//	private boolean rangeValidated;
 	private String dbName = "";
 
 	public XF300_DetailReferTable(org.w3c.dom.Element referElement, int tabIndex, XF300 dialog){
@@ -7255,28 +6902,12 @@ class XF300_DetailReferTable extends Object {
 			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
 		}
 
-		StringTokenizer workTokenizer;
-//		String wrkStr = tableElement.getAttribute("RangeKey");
-//		if (!wrkStr.equals("")) {
-//			workTokenizer = new StringTokenizer(wrkStr, ";" );
-//			rangeKeyFieldValid =workTokenizer.nextToken();
-//			rangeKeyFieldExpire =workTokenizer.nextToken();
-//			org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
-//			if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-//				rangeKeyType = 1;
-//			} else {
-//				rangeKeyType = 2;
-//			}
-//		}
-
-		activeWhere = tableElement.getAttribute("ActiveWhere");
-
 		tableAlias = referElement_.getAttribute("TableAlias");
 		if (tableAlias.equals("")) {
 			tableAlias = tableID;
 		}
 
-		workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
+		StringTokenizer workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			fieldIDList.add(workTokenizer.nextToken());
 		}
@@ -7297,11 +6928,6 @@ class XF300_DetailReferTable extends Object {
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("WithKeyFields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			withKeyFieldIDList.add(workTokenizer.nextToken());
-		}
-
-		workTokenizer = new StringTokenizer(referElement_.getAttribute("OrderBy"), ";" );
-		while (workTokenizer.hasMoreTokens()) {
-			orderByFieldIDList.add(workTokenizer.nextToken());
 		}
 	}
 
@@ -7335,18 +6961,6 @@ class XF300_DetailReferTable extends Object {
 				buf.append(toKeyFieldIDList.get(i));
 			}
 		}
-//		if (!rangeKeyFieldValid.equals("")) {
-//			if (count > 0) {
-//				buf.append(",");
-//			}
-//			buf.append(rangeKeyFieldValid);
-//			//
-//			workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
-//			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-//				buf.append(",");
-//				buf.append(rangeKeyFieldExpire);
-//			}
-//		}
 		buf.append(" from ");
 		buf.append(tableID);
 
@@ -7356,75 +6970,23 @@ class XF300_DetailReferTable extends Object {
 		buf.append(" where ");
 		count = 0;
 		for (int i = 0; i < toKeyFieldIDList.size(); i++) {
-//			if (toKeyFieldIDList.get(i).equals(rangeKeyFieldValid)) {
-//				rangeKeyFieldSearch = withKeyFieldIDList.get(i);
-//			} else {
-				if (count > 0) {
-					buf.append(" and ");
-				}
-				buf.append(toKeyFieldIDList.get(i));
-				buf.append("=");
-				for (int j = 0; j < dialog_.getDetailColumnList(tabIndex_).size(); j++) {
-					if (withKeyFieldIDList.get(i).equals(dialog_.getDetailColumnList(tabIndex_).get(j).getDataSourceName())) {
-//						if (XFUtility.isLiteralRequiredBasicType(dialog_.getDetailColumnList(tabIndex_).get(j).getBasicType())) {
-//							buf.append("'");
-//							buf.append(dialog_.getDetailColumnList(tabIndex_).get(j).getInternalValue());
-//							buf.append("'");
-//							if (!dialog_.getDetailColumnList(tabIndex_).get(j).getInternalValue().equals("")) {
-//								validWhereKeys = true;
-//							}
-//						} else {
-//							buf.append(dialog_.getDetailColumnList(tabIndex_).get(j).getInternalValue());
-//							validWhereKeys = true;
-//						}
-						buf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList(tabIndex_).get(j).getBasicType(),
-								dialog_.getDetailColumnList(tabIndex_).get(j).getInternalValue(), dbName)) ;
-						if (!dialog_.getDetailColumnList(tabIndex_).get(j).getInternalValue().equals("")) {
-							validWhereKeys = true;
-						}
-						break;
+			if (count > 0) {
+				buf.append(" and ");
+			}
+			buf.append(toKeyFieldIDList.get(i));
+			buf.append("=");
+			for (int j = 0; j < dialog_.getDetailColumnList(tabIndex_).size(); j++) {
+				if (withKeyFieldIDList.get(i).equals(dialog_.getDetailColumnList(tabIndex_).get(j).getDataSourceName())) {
+					buf.append(XFUtility.getTableOperationValue(dialog_.getDetailColumnList(tabIndex_).get(j).getBasicType(),
+							dialog_.getDetailColumnList(tabIndex_).get(j).getInternalValue(), dbName)) ;
+					if (!dialog_.getDetailColumnList(tabIndex_).get(j).getInternalValue().equals("")) {
+						validWhereKeys = true;
 					}
-				}
-				count++;
-//			}
-		}
-		if (!activeWhere.equals("")) {
-			buf.append(" and ");
-			buf.append(activeWhere);
-		}
-		
-		//////////////////////
-		// Order-by section //
-		//////////////////////
-//		if (this.rangeKeyType != 0) {
-//			buf.append(" order by ");
-//			buf.append(rangeKeyFieldValid);
-//			buf.append(" DESC ");
-//		} else {
-			if (orderByFieldIDList.size() > 0) {
-				int pos0,pos1;
-				buf.append(" order by ");
-				for (int i = 0; i < orderByFieldIDList.size(); i++) {
-					if (i > 0) {
-						buf.append(",");
-					}
-					pos0 = orderByFieldIDList.get(i).indexOf(".");
-					pos1 = orderByFieldIDList.get(i).indexOf("(A)");
-					if (pos1 >= 0) {
-						buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
-					} else {
-						pos1 = orderByFieldIDList.get(i).indexOf("(D)");
-						if (pos1 >= 0) {
-							buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
-							buf.append(" DESC ");
-						} else {
-							buf.append(orderByFieldIDList.get(i).substring(pos0+1, orderByFieldIDList.get(i).length()));
-						}
-					}
+					break;
 				}
 			}
-//		}
-//		rangeValidated = false;
+			count++;
+		}
 
 		if (validWhereKeys) {
 			return buf.toString();
@@ -7456,51 +7018,6 @@ class XF300_DetailReferTable extends Object {
 	public boolean isToBeExecuted(){
 		return isToBeExecuted;
 	}
-
-//	public boolean isRecordToBeSelected(int index, XFTableOperator operator) throws Exception {
-//		boolean returnValue = false;
-//		if (rangeKeyType == 0) {
-//			returnValue = true;
-//		}
-//		if (rangeKeyType == 1) {
-//			////////////////////////////////////////////////////////////////
-//			// Note that result set is ordered by rangeKeyFieldValue DESC //
-//			////////////////////////////////////////////////////////////////
-//			if (!rangeValidated) { 
-//				StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-//				String workTableAlias = workTokenizer.nextToken();
-//				String workFieldID = workTokenizer.nextToken();
-//				Object valueKey = dialog_.getDetailColumnObjectByID(index, "", workTableAlias, workFieldID).getInternalValue();
-//				Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				if (comp1 >= 0) {
-//					returnValue = true;
-//					rangeValidated = true;
-//				}
-//			}
-//		}
-//		if (rangeKeyType == 2) {
-//			StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-//			String workTableAlias = workTokenizer.nextToken();
-//			String workFieldID = workTokenizer.nextToken();
-//			Object valueKey = dialog_.getDetailColumnObjectByID(index, "", workTableAlias, workFieldID).getInternalValue();
-//			Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//			Object valueThru = operator.getValueOf(rangeKeyFieldExpire);
-//			if (valueThru == null) {
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				if (comp1 >= 0) {
-//					returnValue = true;
-//				}
-//			} else {
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				int comp2 = valueKey.toString().compareTo(valueThru.toString());
-//				if (comp1 >= 0 && comp2 < 0) {
-//					returnValue = true;
-//				}
-//			}
-//		}
-//		return returnValue;
-//	}
 }
 
 class XF300_KeyInputDialog extends JDialog {

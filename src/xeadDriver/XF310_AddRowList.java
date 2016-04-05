@@ -119,7 +119,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	private boolean isInvalid = false;
 	private boolean isWithoutButtonToAddBlank;
 	private boolean isWithoutButtonToCallFunction;
-	//private boolean isFirstTimeToSelect = true;
 	private String lastSqlText = "";
 	private ArrayList<XF310_AddRowListNumber> addRowListNumberReturnList = null;
 	private Action helpAction = new AbstractAction(){
@@ -284,7 +283,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			actionButtonArray[i] = new ButtonAction(jButtonArray[i]);
 			jPanelButtons.add(jPanelButtonArray[i]);
 		}
-		//setupFunctionKeysAndButtons();
 		NodeList buttonList = dialog_.getFunctionElement().getElementsByTagName("AddRowListButton");
 		for (int i = 0; i < buttonList.getLength(); i++) {
 			workElement = (org.w3c.dom.Element)buttonList.item(i);
@@ -416,7 +414,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 							String msg = XFUtility.RESOURCE.getString("FunctionError1") + addRowListTable.getTableID() + XFUtility.RESOURCE.getString("FunctionError2") + addRowListTable.getScriptList().get(j).getName() + XFUtility.RESOURCE.getString("FunctionError3") + workAlias + "_" + workFieldID + XFUtility.RESOURCE.getString("FunctionError4");
 							JOptionPane.showMessageDialog(this, msg);
 							return;
-							//throw new Exception();
 						} else {
 							addRowListColumnList.add(new XF310_AddRowListColumn(workTableID, workAlias, workFieldID, this));
 						}
@@ -498,10 +495,7 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 	
 	public int requestSelection() {
 		try {
-			//if (isFirstTimeToSelect) {
-				selectDetailRecordsAndSetupTableRows();
-			//	isFirstTimeToSelect = false;
-			//}
+			selectDetailRecordsAndSetupTableRows();
 
 			result = 0;
 			addRowListNumberReturnList = new ArrayList<XF310_AddRowListNumber>();
@@ -544,10 +538,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		String workStr;
 		HashMap<String, Object> columnValueMap, returnFieldMap;
 		ArrayList<TableCellReadOnly> cellObjectList = null;
-//		int rowCount = tableModelMain.getRowCount();
-//		for (int i = 0; i < rowCount; i++) {
-//			tableModelMain.removeRow(0);
-//		}
 		ArrayList<Object> orderByValueList;
 		ArrayList<String> orderByFieldTypeList;
 		ArrayList<WorkingRow> tableRowList = new ArrayList<WorkingRow>();
@@ -669,7 +659,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 		}
 
 		WorkingRow[] workingRowArray = tableRowList.toArray(new WorkingRow[0]);
-		//Arrays.sort(workingRowArray, new WorkingRowComparator());
 		Arrays.sort(workingRowArray);
 		for (int i = 0; i < workingRowArray.length; i++) {
 			Object[] cell = new Object[1];
@@ -810,15 +799,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			jButtonArray[workIndex].setVisible(true);
 			inputMap.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
 			actionMap.put("actionButton" + workIndex, actionButtonArray[workIndex]);
-//			if (element.getAttribute("Action").equals("ADD_SELECTED")) {
-//				addSelectedActionName = element.getAttribute("Caption");
-//			}
-//			if (element.getAttribute("Action").equals("ADD_BLANK")) {
-//				isWithoutButtonToAddBlank = false;
-//			}
-//			if (element.getAttribute("Action").contains("CALL(")) {
-//				isWithoutButtonToCallFunction = false;
-//			}
 		}
 	}
 	
@@ -871,16 +851,13 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 								referOperatorList.add(operator);
 							}
 							if (operator.next()) {
-//							while (operator.next()) {
-//								if (addRowListReferTableList.get(i).isRecordToBeSelected(operator)) {
-									for (int j = 0; j < addRowListColumnList.size(); j++) {
-										if (addRowListColumnList.get(j).getTableAlias().equals(addRowListReferTableList.get(i).getTableAlias())) {
-											addRowListColumnList.get(j).setValueOfResultSet(operator);
-											columnValueMap.put(addRowListColumnList.get(j).getDataSourceName(), addRowListColumnList.get(j).getInternalValue());
-										}
+								for (int j = 0; j < addRowListColumnList.size(); j++) {
+									if (addRowListColumnList.get(j).getTableAlias().equals(addRowListReferTableList.get(i).getTableAlias())) {
+										addRowListColumnList.get(j).setValueOfResultSet(operator);
+										columnValueMap.put(addRowListColumnList.get(j).getDataSourceName(), addRowListColumnList.get(j).getInternalValue());
 									}
-									addRowListTable.runScript(event, "AR(" + addRowListReferTableList.get(i).getTableAlias() + ")", columnValueMap); /* Script to be run AFTER READ */
-//								}
+								}
+								addRowListTable.runScript(event, "AR(" + addRowListReferTableList.get(i).getTableAlias() + ")", columnValueMap); /* Script to be run AFTER READ */
 							}
 						}
 					}
@@ -1146,39 +1123,6 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			return compareResult;
         }
 	}
-
-//	class WorkingRowComparator implements java.util.Comparator<WorkingRow>{
-//		public int compare(WorkingRow row1, WorkingRow row2){
-//			int compareResult = 0;
-//			double doubleNumber1, doubleNumber2;
-//			String wrkStr;
-//			for (int i = 0; i < row1.getOrderByValueList().size(); i++) {
-//				if (row1.getOrderByFieldTypeList().get(i).equals("INTEGER")
-//						|| row1.getOrderByFieldTypeList().get(i).equals("FLOAT")) {
-//					wrkStr = XFUtility.getStringNumber(row1.getOrderByValueList().get(i).toString());
-//					doubleNumber1 = Double.parseDouble(wrkStr);
-//					wrkStr = XFUtility.getStringNumber(row2.getOrderByValueList().get(i).toString());
-//					doubleNumber2 = Double.parseDouble(wrkStr);
-//					compareResult = 0;
-//					if (doubleNumber1 > doubleNumber2) {
-//						compareResult = 1;
-//					}
-//					if (doubleNumber1 < doubleNumber2) {
-//						compareResult = -1;
-//					}
-//				} else {
-//					compareResult = row1.getOrderByValueList().get(i).toString().compareTo(row2.getOrderByValueList().get(i).toString());
-//				}
-//				if (addRowListTable.getOrderByFieldIDList().get(i).contains("(D)")) {
-//					compareResult = compareResult * -1;
-//				}
-//				if (compareResult != 0) {
-//					break;
-//				}
-//			}
-//			return compareResult;
-//		}
-//	}
 
 	class TableHeadersRenderer extends JPanel implements TableCellRenderer {   
 		private static final long serialVersionUID = 1L;
@@ -1576,7 +1520,6 @@ class XF310_AddRowListTable extends Object {
 	private org.w3c.dom.Element tableElement = null;
 	private org.w3c.dom.Element functionElement_ = null;
 	private String tableID_ = "";
-	private String activeWhere = "";
 	private String additionalWhere = "";
 	private ArrayList<String> keyFieldIDList = new ArrayList<String>();
 	private ArrayList<String> withFieldIDList = new ArrayList<String>();
@@ -1588,13 +1531,6 @@ class XF310_AddRowListTable extends Object {
 	private XF310_AddRowList dialog_;
 	private StringTokenizer workTokenizer;
 	private boolean isOrderByInSelectSQL = true;
-//	private int rangeKeyType = 0;
-//	private String rangeKeyFieldValid = "";
-//	private String rangeKeyFieldExpire = "";
-//	private String rangeKeyFieldSearch = "";
-//	private Object valueKey = null;
-//	private Object valueFrom = null;
-//	private Object valueThru = null;
 	private ArrayList<Object> upperKeyGroupValueList = new ArrayList<Object>();
 	private String dbName = "";
 
@@ -1605,7 +1541,6 @@ class XF310_AddRowListTable extends Object {
 
 		tableID_ = functionElement_.getAttribute("AddRowListTable");
 		tableElement = dialog_.getSession().getTableElement(tableID_);
-		activeWhere = tableElement.getAttribute("ActiveWhere");
 
 		if (tableElement.getAttribute("DB").equals("")) {
 			dbName = dialog_.getSession().getDatabaseName();
@@ -1635,22 +1570,6 @@ class XF310_AddRowListTable extends Object {
 			withFieldIDList.add(workTokenizer.nextToken());
 		}
 
-//		rangeKeyType = 0;
-//		String wrkStr = tableElement.getAttribute("RangeKey");
-//		if (!wrkStr.equals("")) {
-//			workTokenizer = new StringTokenizer(wrkStr, ";" );
-//			rangeKeyFieldValid =workTokenizer.nextToken();
-//			rangeKeyFieldExpire =workTokenizer.nextToken();
-//			workElement = dialog_.getSession().getFieldElement(tableID_, rangeKeyFieldExpire);
-//			if (withFieldIDList.contains(rangeKeyFieldValid)) {
-//				if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-//					rangeKeyType = 1;
-//				} else {
-//					rangeKeyType = 2;
-//				}
-//			}
-//		}
-
 		workTokenizer = new StringTokenizer(functionElement_.getAttribute("AddRowListWithHeaderFields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			withHeaderDataSourceList.add(workTokenizer.nextToken());
@@ -1678,9 +1597,6 @@ class XF310_AddRowListTable extends Object {
 			}
 			orderByFieldIDList.add(wrkStr1);
 		}
-//		if (rangeKeyType != 0 && orderByFieldIDList.size() > 0) {
-//			isOrderByInSelectSQL = false;
-//		}
 
 		org.w3c.dom.Element element;
 		NodeList workList = tableElement.getElementsByTagName("Script");
@@ -1696,7 +1612,6 @@ class XF310_AddRowListTable extends Object {
 		XF310_HeaderField headerField;
 		StringBuffer buf = new StringBuffer();
 		String workAlias, workTableID, workFieldID;
-//		org.w3c.dom.Element workElement;
 		ArrayList<String> fieldIDList = new ArrayList<String>();
 		
 		////////////////////////////////
@@ -1713,7 +1628,6 @@ class XF310_AddRowListTable extends Object {
 			fieldIDList.add(keyFieldIDList.get(i));
 		}
 		for (int i = 0; i < withFieldIDList.size(); i++) {
-			//if (buf.indexOf(" " + withFieldIDList.get(i)) == -1) {
 			if (!fieldIDList.contains(withFieldIDList.get(i))) {
 				count++;
 				if (count > 0) {
@@ -1727,7 +1641,6 @@ class XF310_AddRowListTable extends Object {
 			if (dialog_.getAddRowListColumnList().get(i).getTableID().equals(tableID_)
 					&& !dialog_.getAddRowListColumnList().get(i).isVirtualField()
 					&& !dialog_.getAddRowListColumnList().get(i).getBasicType().equals("BYTEA")) {
-				//if (buf.indexOf(" " + dialog_.getAddRowListColumnList().get(i).getFieldID()) == -1) {
 				if (!fieldIDList.contains(dialog_.getAddRowListColumnList().get(i).getFieldID())) {
 					count++;
 					if (count > 0) {
@@ -1738,20 +1651,6 @@ class XF310_AddRowListTable extends Object {
 				}
 			}
 		}
-//		if (rangeKeyType != 0) {
-//			workElement = dialog_.getSession().getFieldElement(tableID_, rangeKeyFieldExpire);
-//			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-//				//if (buf.indexOf(" " + rangeKeyFieldExpire) == -1) {
-//				if (!fieldIDList.contains(rangeKeyFieldExpire)) {
-//					count++;
-//					if (count > 0) {
-//						buf.append(", ");
-//					}
-//					buf.append(rangeKeyFieldExpire);
-//					fieldIDList.add(rangeKeyFieldExpire);
-//				}
-//			}
-//		}
 		buf.append(" from ");
 		buf.append(tableID_);
 
@@ -1763,43 +1662,22 @@ class XF310_AddRowListTable extends Object {
 			buf.append(" where ") ;
 			count = -1;
 			for (int i = 0; i < withFieldIDList.size(); i++) {
-//				if (withFieldIDList.get(i).equals(rangeKeyFieldValid)) {
-//					rangeKeyFieldSearch = withHeaderDataSourceList.get(i);
-//				} else {
-					count++;
-					if (count > 0) {
-						buf.append(" and ") ;
-					}
-					buf.append(withFieldIDList.get(i)) ;
-					buf.append("=") ;
-					workTokenizer = new StringTokenizer(withHeaderDataSourceList.get(i), "." );
-					workAlias = workTokenizer.nextToken();
-					workTableID = dialog_.getTableIDOfTableAlias(workAlias);
-					workFieldID = workTokenizer.nextToken();
-					headerField = dialog_.getHeaderFieldObjectByID(workTableID, workAlias, workFieldID);
-//					if (XFUtility.isLiteralRequiredBasicType(headerField.getBasicType())) {
-//						buf.append("'");
-//						buf.append(headerField.getInternalValue());
-//						buf.append("'");
-//					} else {
-//						buf.append(headerField.getInternalValue());
-//					}
-					buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(), headerField.getInternalValue(), dbName)) ;
-//				}
-			}
-		}
-		if (!activeWhere.equals("")) {
-			if (withFieldIDList.size() > 0) {
-				buf.append(" and (");
-				buf.append(activeWhere);
-				buf.append(") ");
-			} else {
-				buf.append(" where ") ;
-				buf.append(activeWhere);
+				count++;
+				if (count > 0) {
+					buf.append(" and ") ;
+				}
+				buf.append(withFieldIDList.get(i)) ;
+				buf.append("=") ;
+				workTokenizer = new StringTokenizer(withHeaderDataSourceList.get(i), "." );
+				workAlias = workTokenizer.nextToken();
+				workTableID = dialog_.getTableIDOfTableAlias(workAlias);
+				workFieldID = workTokenizer.nextToken();
+				headerField = dialog_.getHeaderFieldObjectByID(workTableID, workAlias, workFieldID);
+				buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(), headerField.getInternalValue(), dbName)) ;
 			}
 		}
 		if (!additionalWhere.equals("")) {
-			if (withFieldIDList.size() > 0 || !activeWhere.equals("")) {
+			if (withFieldIDList.size() > 0) {
 				buf.append(" and (");
 				buf.append(additionalWhere);
 				buf.append(") ");
@@ -1814,132 +1692,52 @@ class XF310_AddRowListTable extends Object {
 		//////////////////////
 		int pos0,pos1;
 		count = -1;
-//		if (rangeKeyType == 0) {
-			if (isOrderByInSelectSQL) {
-				if (orderByFieldIDList.size() > 0) {
-					for (int i = 0; i < orderByFieldIDList.size(); i++) {
-						count++;
-						if (count <= 0) {
-							buf.append(" order by ");
-						} else {
-							buf.append(",");
-						}
-						pos0 = orderByFieldIDList.get(i).indexOf(".");
-						pos1 = orderByFieldIDList.get(i).indexOf("(A)");
+		if (isOrderByInSelectSQL) {
+			if (orderByFieldIDList.size() > 0) {
+				for (int i = 0; i < orderByFieldIDList.size(); i++) {
+					count++;
+					if (count <= 0) {
+						buf.append(" order by ");
+					} else {
+						buf.append(",");
+					}
+					pos0 = orderByFieldIDList.get(i).indexOf(".");
+					pos1 = orderByFieldIDList.get(i).indexOf("(A)");
+					if (pos1 >= 0) {
+						buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
+					} else {
+						pos1 = orderByFieldIDList.get(i).indexOf("(D)");
 						if (pos1 >= 0) {
 							buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
+							buf.append(" DESC ");
 						} else {
-							pos1 = orderByFieldIDList.get(i).indexOf("(D)");
-							if (pos1 >= 0) {
-								buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
-								buf.append(" DESC ");
-							} else {
-								buf.append(orderByFieldIDList.get(i).substring(pos0+1, orderByFieldIDList.get(i).length()));
-							}
+							buf.append(orderByFieldIDList.get(i).substring(pos0+1, orderByFieldIDList.get(i).length()));
 						}
-					}
-				} else {
-					for (int i = 0; i < keyFieldIDList.size(); i++) {
-						count++;
-						if (count <= 0) {
-							buf.append(" order by ");
-						} else {
-							buf.append(",");
-						}
-						buf.append(keyFieldIDList.get(i));
 					}
 				}
+			} else {
+				for (int i = 0; i < keyFieldIDList.size(); i++) {
+					count++;
+					if (count <= 0) {
+						buf.append(" order by ");
+					} else {
+						buf.append(",");
+					}
+					buf.append(keyFieldIDList.get(i));
+				}
 			}
-//		} else {
-//			buf.append(" order by ");
-//			for (int i = 0; i < keyFieldIDList.size(); i++) {
-//				count++;
-//				if (count > 0) {
-//					buf.append(",");
-//				}
-//				buf.append(keyFieldIDList.get(i));
-//				if (keyFieldIDList.get(i).equals(rangeKeyFieldValid)) {
-//					buf.append(" DESC ");
-//				}
-//			}
-//		}
-//		if (rangeKeyType != 0) {
-//			workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-//			workAlias = workTokenizer.nextToken();
-//			workFieldID = workTokenizer.nextToken();
-//			valueKey = dialog_.getHeaderFieldObjectByID("", workAlias, workFieldID).getInternalValue();
-//			upperKeyGroupValueList.clear();
-//			for (int i = 0; i < keyFieldIDList.size(); i++) {
-//				upperKeyGroupValueList.add(i, null);
-//			}
-//		}
+		}
 
 		return buf.toString();
 	}
 
-//	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
-//		boolean returnValue = false;
-//		int comp1, comp2;
-//		if (rangeKeyType == 0) {
-//			returnValue = true;
-//		}
-//
-//		///////////////////////
-//		// virtual selection //
-//		///////////////////////
-//		if (rangeKeyType == 1) {
-//			////////////////////////////////////////////////////////////////
-//			// Note that result set is ordered by rangeKeyFieldValue DESC //
-//			////////////////////////////////////////////////////////////////
-//			if (isNewUpperKeyGroup(operator)) {
-//				valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//				comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				if (comp1 >= 0) {
-//					returnValue = true;
-//				}
-//			} else {
-//				valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//				comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				comp2 = valueKey.toString().compareTo(valueThru.toString());
-//				if (comp1 >= 0 && comp2 < 0) {
-//					returnValue = true;
-//				}
-//			}
-//			valueThru = valueFrom;
-//		}
-//
-//		////////////////////////
-//		// Physical selection //
-//		////////////////////////
-//		if (rangeKeyType == 2) {
-//			valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//			valueThru = operator.getValueOf(rangeKeyFieldExpire);
-//			if (valueThru == null) {
-//				comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				if (comp1 >= 0) {
-//					returnValue = true;
-//				}
-//			} else {
-//				comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				comp2 = valueKey.toString().compareTo(valueThru.toString());
-//				if (comp1 >= 0 && comp2 < 0) {
-//					returnValue = true;
-//				}
-//			}
-//		}
-//
-//		return returnValue;
-//	}
-
 	boolean isNewUpperKeyGroup(XFTableOperator operator) throws Exception {
 		boolean returnValue = false;
 		for (int i = 0; i < keyFieldIDList.size(); i++) {
-//			if (!keyFieldIDList.get(i).equals(rangeKeyFieldValid)) {
-				if (!upperKeyGroupValueList.get(i).equals(operator.getValueOf(keyFieldIDList.get(i)))) {
-					returnValue = true;
-					break;
-				}
-//			}
+			if (!upperKeyGroupValueList.get(i).equals(operator.getValueOf(keyFieldIDList.get(i)))) {
+				returnValue = true;
+				break;
+			}
 			upperKeyGroupValueList.add(i, operator.getValueOf(keyFieldIDList.get(i)));
 		}
 		return returnValue;
@@ -1955,7 +1753,6 @@ class XF310_AddRowListTable extends Object {
 			workTableID = dialog_.getTableIDOfTableAlias(workAlias);
 			workFieldID = workTokenizer.nextToken();
 			headerField = dialog_.getHeaderFieldObjectByID(workTableID, workAlias, workFieldID);
-			//
 			keyMap.put(withFieldIDList.get(i), headerField.getInternalValue()) ;
 		}
 		return keyMap;
@@ -2088,8 +1885,6 @@ class XF310_AddRowListColumn implements XFFieldScriptable {
 	private boolean isEnabled = true;
 	private boolean isVisibleOnPanel = true;
 	private boolean isVirtualField = false;
-	//private boolean isRangeKeyFieldValid = false;
-	//private boolean isRangeKeyFieldExpire = false;
 	private String valueType = "STRING";
 	private String flagTrue = "";
 	private ArrayList<String> kubunValueList = new ArrayList<String>();
@@ -2141,15 +1936,6 @@ class XF310_AddRowListColumn implements XFFieldScriptable {
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
-//		if (!tableElement.getAttribute("RangeKey").equals("")) {
-//			workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
-//			if (workTokenizer.nextToken().equals(fieldID)) {
-//				isRangeKeyFieldValid = true;
-//			}
-//			if (workTokenizer.nextToken().equals(fieldID)) {
-//				isRangeKeyFieldExpire = true;
-//			}
-//		}
 
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
@@ -2280,15 +2066,6 @@ class XF310_AddRowListColumn implements XFFieldScriptable {
 		byteaTypeFieldID = workElement.getAttribute("ByteaTypeField");
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
-//		if (!tableElement.getAttribute("RangeKey").equals("")) {
-//			StringTokenizer workTokenizer = new StringTokenizer(tableElement.getAttribute("RangeKey"), ";" );
-//			if (workTokenizer.nextToken().equals(fieldID)) {
-//				isRangeKeyFieldValid = true;
-//			}
-//			if (workTokenizer.nextToken().equals(fieldID)) {
-//				isRangeKeyFieldExpire = true;
-//			}
-//		}
 
 		if (dataTypeOptionList.contains("VIRTUAL")) {
 			isVirtualField = true;
@@ -2302,14 +2079,6 @@ class XF310_AddRowListColumn implements XFFieldScriptable {
 	public boolean isVirtualField(){
 		return isVirtualField;
 	}
-
-//	public boolean isRangeKeyFieldValid(){
-//		return isRangeKeyFieldValid;
-//	}
-//
-//	public boolean isRangeKeyFieldExpire(){
-//		return isRangeKeyFieldExpire;
-//	}
 
 	public org.w3c.dom.Element getTableElement(){
 		return tableElement;
@@ -2504,11 +2273,7 @@ class XF310_AddRowListColumn implements XFFieldScriptable {
 	public void setValueOfResultSet(XFTableOperator operator) throws Exception {
 		String basicType = this.getBasicType();
 		this.setColor("");
-		if (this.isVirtualField) {
-//			if (this.isRangeKeyFieldExpire()) {
-//				value_ = XFUtility.calculateExpireValue(this.getTableElement(), operator, dialog_.getSession(), dialog_.getProcessLog());
-//			}
-		} else {
+		if (!this.isVirtualField) {
 			if (basicType.equals("BYTEA")) {
 				value_ = new XFByteArray(null);
 			} else {
@@ -2548,10 +2313,12 @@ class XF310_AddRowListColumn implements XFFieldScriptable {
 	}
 	
 	public void setByteaType(ArrayList<XF310_AddRowListColumn> columnList) {
-		for (int i = 0; i < columnList.size(); i++) {
-			if (columnList.get(i).getFieldID().equals(byteaTypeFieldID)) {
-				((XFByteArray)value_).setType(columnList.get(i).getValue().toString());
-				break;
+		if (isVisibleOnPanel) {
+			for (int i = 0; i < columnList.size(); i++) {
+				if (columnList.get(i).getFieldID().equals(byteaTypeFieldID)) {
+					((XFByteArray)value_).setType(columnList.get(i).getValue().toString());
+					break;
+				}
 			}
 		}
 	}
@@ -2616,17 +2383,10 @@ class XF310_AddRowListReferTable extends Object {
 	private XF310_AddRowList dialog_ = null;
 	private String tableID = "";
 	private String tableAlias = "";
-	private String activeWhere = "";
 	private ArrayList<String> fieldIDList = new ArrayList<String>();
 	private ArrayList<String> toKeyFieldIDList = new ArrayList<String>();
 	private ArrayList<String> withKeyFieldIDList = new ArrayList<String>();
-	private ArrayList<String> orderByFieldIDList = new ArrayList<String>();
 	private boolean isToBeExecuted = false;
-//	private int rangeKeyType = 0;
-//	private String rangeKeyFieldValid = "";
-//	private String rangeKeyFieldExpire = "";
-//	private String rangeKeyFieldSearch = "";
-//	private boolean rangeValidated;
 	private String dbName = "";
 
 	public XF310_AddRowListReferTable(org.w3c.dom.Element referElement, XF310_AddRowList dialog){
@@ -2643,28 +2403,12 @@ class XF310_AddRowListReferTable extends Object {
 			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
 		}
 
-		StringTokenizer workTokenizer;
-//		String wrkStr = tableElement.getAttribute("RangeKey");
-//		if (!wrkStr.equals("")) {
-//			workTokenizer = new StringTokenizer(wrkStr, ";" );
-//			rangeKeyFieldValid =workTokenizer.nextToken();
-//			rangeKeyFieldExpire =workTokenizer.nextToken();
-//			org.w3c.dom.Element workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
-//			if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-//				rangeKeyType = 1;
-//			} else {
-//				rangeKeyType = 2;
-//			}
-//		}
-
-		activeWhere = tableElement.getAttribute("ActiveWhere");
-
 		tableAlias = referElement_.getAttribute("TableAlias");
 		if (tableAlias.equals("")) {
 			tableAlias = tableID;
 		}
 
-		workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
+		StringTokenizer workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			fieldIDList.add(workTokenizer.nextToken());
 		}
@@ -2685,11 +2429,6 @@ class XF310_AddRowListReferTable extends Object {
 		workTokenizer = new StringTokenizer(referElement_.getAttribute("WithKeyFields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			withKeyFieldIDList.add(workTokenizer.nextToken());
-		}
-
-		workTokenizer = new StringTokenizer(referElement_.getAttribute("OrderBy"), ";" );
-		while (workTokenizer.hasMoreTokens()) {
-			orderByFieldIDList.add(workTokenizer.nextToken());
 		}
 	}
 
@@ -2723,18 +2462,6 @@ class XF310_AddRowListReferTable extends Object {
 				buf.append(toKeyFieldIDList.get(i));
 			}
 		}
-//		if (!rangeKeyFieldValid.equals("")) {
-//			if (count > 0) {
-//				buf.append(",");
-//			}
-//			buf.append(rangeKeyFieldValid);
-//			//
-//			workElement = dialog_.getSession().getFieldElement(tableID, rangeKeyFieldExpire);
-//			if (!XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
-//				buf.append(",");
-//				buf.append(rangeKeyFieldExpire);
-//			}
-//		}
 		buf.append(" from ");
 		buf.append(tableID);
 		
@@ -2744,75 +2471,23 @@ class XF310_AddRowListReferTable extends Object {
 		buf.append(" where ");
 		count = 0;
 		for (int i = 0; i < toKeyFieldIDList.size(); i++) {
-//			if (toKeyFieldIDList.get(i).equals(rangeKeyFieldValid)) {
-//				rangeKeyFieldSearch = withKeyFieldIDList.get(i);
-//			} else {
-				if (count > 0) {
-					buf.append(" and ");
-				}
-				buf.append(toKeyFieldIDList.get(i));
-				buf.append("=");
-				for (int j = 0; j < dialog_.getAddRowListColumnList().size(); j++) {
-					if (withKeyFieldIDList.get(i).equals(dialog_.getAddRowListColumnList().get(j).getDataSourceName())) {
-//						if (XFUtility.isLiteralRequiredBasicType(dialog_.getAddRowListColumnList().get(j).getBasicType())) {
-//							buf.append("'");
-//							buf.append(dialog_.getAddRowListColumnList().get(j).getInternalValue());
-//							buf.append("'");
-//							if (!dialog_.getAddRowListColumnList().get(j).getInternalValue().equals("")) {
-//								validWhereKeys = true;
-//							}
-//						} else {
-//							buf.append(dialog_.getAddRowListColumnList().get(j).getInternalValue());
-//							validWhereKeys = true;
-//						}
-						buf.append(XFUtility.getTableOperationValue(dialog_.getAddRowListColumnList().get(j).getBasicType(),
-								dialog_.getAddRowListColumnList().get(j).getInternalValue(), dbName)) ;
-						if (!dialog_.getAddRowListColumnList().get(j).getInternalValue().equals("")) {
-							validWhereKeys = true;
-						}
-						break;
+			if (count > 0) {
+				buf.append(" and ");
+			}
+			buf.append(toKeyFieldIDList.get(i));
+			buf.append("=");
+			for (int j = 0; j < dialog_.getAddRowListColumnList().size(); j++) {
+				if (withKeyFieldIDList.get(i).equals(dialog_.getAddRowListColumnList().get(j).getDataSourceName())) {
+					buf.append(XFUtility.getTableOperationValue(dialog_.getAddRowListColumnList().get(j).getBasicType(),
+							dialog_.getAddRowListColumnList().get(j).getInternalValue(), dbName)) ;
+					if (!dialog_.getAddRowListColumnList().get(j).getInternalValue().equals("")) {
+						validWhereKeys = true;
 					}
-				}
-				count++;
-//			}
-		}
-		if (!activeWhere.equals("")) {
-			buf.append(" and ");
-			buf.append(activeWhere);
-		}
-		
-		//////////////////////
-		// Order-by section //
-		//////////////////////
-//		if (this.rangeKeyType != 0) {
-//			buf.append(" order by ");
-//			buf.append(rangeKeyFieldValid);
-//			buf.append(" DESC ");
-//		} else {
-			if (orderByFieldIDList.size() > 0) {
-				int pos0,pos1;
-				buf.append(" order by ");
-				for (int i = 0; i < orderByFieldIDList.size(); i++) {
-					if (i > 0) {
-						buf.append(",");
-					}
-					pos0 = orderByFieldIDList.get(i).indexOf(".");
-					pos1 = orderByFieldIDList.get(i).indexOf("(A)");
-					if (pos1 >= 0) {
-						buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
-					} else {
-						pos1 = orderByFieldIDList.get(i).indexOf("(D)");
-						if (pos1 >= 0) {
-							buf.append(orderByFieldIDList.get(i).substring(pos0+1, pos1));
-							buf.append(" DESC ");
-						} else {
-							buf.append(orderByFieldIDList.get(i).substring(pos0+1, orderByFieldIDList.get(i).length()));
-						}
-					}
+					break;
 				}
 			}
-//		}
-//		rangeValidated = false;
+			count++;
+		}
 
 		if (validWhereKeys) {
 			return buf.toString();
@@ -2863,51 +2538,6 @@ class XF310_AddRowListReferTable extends Object {
 		}
 		return isKeyNull;
 	}
-
-//	public boolean isRecordToBeSelected(XFTableOperator operator) throws Exception {
-//		boolean returnValue = false;
-//		if (rangeKeyType == 0) {
-//			returnValue = true;
-//		}
-//		if (rangeKeyType == 1) {
-//			////////////////////////////////////////////////////////////////
-//			// Note that result set is ordered by rangeKeyFieldValue DESC //
-//			////////////////////////////////////////////////////////////////
-//			if (!rangeValidated) { 
-//				StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-//				String workTableAlias = workTokenizer.nextToken();
-//				String workFieldID = workTokenizer.nextToken();
-//				Object valueKey = dialog_.getAddRowListColumnObjectByID("", workTableAlias, workFieldID).getInternalValue();
-//				Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				if (comp1 >= 0) {
-//					returnValue = true;
-//					rangeValidated = true;
-//				}
-//			}
-//		}
-//		if (rangeKeyType == 2) {
-//			StringTokenizer workTokenizer = new StringTokenizer(rangeKeyFieldSearch, "." );
-//			String workTableAlias = workTokenizer.nextToken();
-//			String workFieldID = workTokenizer.nextToken();
-//			Object valueKey = dialog_.getAddRowListColumnObjectByID("", workTableAlias, workFieldID).getInternalValue();
-//			Object valueFrom = operator.getValueOf(rangeKeyFieldValid);
-//			Object valueThru = operator.getValueOf(rangeKeyFieldExpire);
-//			if (valueThru == null) {
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				if (comp1 >= 0) {
-//					returnValue = true;
-//				}
-//			} else {
-//				int comp1 = valueKey.toString().compareTo(valueFrom.toString());
-//				int comp2 = valueKey.toString().compareTo(valueThru.toString());
-//				if (comp1 >= 0 && comp2 < 0) {
-//					returnValue = true;
-//				}
-//			}
-//		}
-//		return returnValue;
-//	}
 
 	public void setKeyFieldValues(XFHashMap keyValues){
 		for (int i = 0; i < withKeyFieldIDList.size(); i++) {

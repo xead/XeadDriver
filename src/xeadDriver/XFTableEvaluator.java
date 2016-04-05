@@ -57,8 +57,6 @@ public class XFTableEvaluator {
     private String moduleID = "";
     private String dbName = "";
     private String orderBy = "";
-	private String activeWhere = "";
-	private String updateValueToInactivate = "";
 	private String fixedWhere = "";
 	private ArrayList<XFTableEvaluator_ReferTable> referTableList = new ArrayList<XFTableEvaluator_ReferTable>();
 	private ArrayList<XFTableEvaluator_Field> fieldList = new ArrayList<XFTableEvaluator_Field>();
@@ -84,7 +82,6 @@ public class XFTableEvaluator {
 
 		session_ = instance_.getSession();
 		org.w3c.dom.Element tableElement = session_.getTableElement(tableID);
-		activeWhere = tableElement.getAttribute("ActiveWhere");
 		if (tableElement.getAttribute("DB").equals("")) {
 			dbName = session_.getDatabaseName();
 		} else {
@@ -141,7 +138,6 @@ public class XFTableEvaluator {
 			}
 		}
 
-		updateValueToInactivate = tableElement.getAttribute("DeleteOperation");
 		updateCounterID = tableElement.getAttribute("UpdateCounter");
 		if (updateCounterID.equals("")) {
 			updateCounterID = XFUtility.DEFAULT_UPDATE_COUNTER;
@@ -766,16 +762,6 @@ public class XFTableEvaluator {
 			buf.append(withKeyList_.get(i));
 			countOfWhereKey++;
 		}
-		if (!activeWhere.equals("")) {
-			if (countOfWhereKey == 0) {
-				buf.append(" where (");
-			} else {
-				buf.append(" and (");
-			}
-			buf.append(activeWhere);
-			buf.append(") ");
-			countOfWhereKey++;
-		}
 		if (!fixedWhere.equals("")) {
 			if (countOfWhereKey == 0) {
 				buf.append(" where (");
@@ -810,10 +796,6 @@ public class XFTableEvaluator {
 					buf.append(XFUtility.getTableOperationValue(fieldList.get(i).getBasicType(), fieldList.get(i).getValue(), dbName));
 					orderOfFieldInKey++;
 				}
-			}
-			if (!activeWhere.equals("")) {
-				buf.append(" and ");
-				buf.append(activeWhere);
 			}
 			buf.append(" order by ");
 			buf.append(detailRowNoID);
@@ -1015,21 +997,8 @@ public class XFTableEvaluator {
 	String getSQLToDelete() {
 		StringBuffer statementBuf = new StringBuffer();
 
-		if (updateValueToInactivate.equals("")) {
-			statementBuf.append("delete from ");
-			statementBuf.append(moduleID);
-		} else {
-			statementBuf.append("update ");
-			statementBuf.append(moduleID);
-			statementBuf.append(" set ");
-			statementBuf.append(updateValueToInactivate) ;
-			if (!updateCounterID.equals("")) {
-				statementBuf.append(", ") ;
-				statementBuf.append(updateCounterID) ;
-				statementBuf.append("=") ;
-				statementBuf.append(updateCounterValue + 1) ;
-			}
-		}
+		statementBuf.append("delete from ");
+		statementBuf.append(moduleID);
 
 		//////////////////////////////////////////////////////////////////////
 		// Note that update is done with PK not with keys set by addKeyOf() //
@@ -1081,7 +1050,6 @@ class XFTableEvaluator_ReferTable extends Object {
 	private String tableID = "";
 	private String moduleID = "";
 	private String tableAlias = "";
-	private String activeWhere = "";
 	private ArrayList<String> fieldIDList = new ArrayList<String>();
 	private ArrayList<XFTableEvaluator_Field> fieldList = new ArrayList<XFTableEvaluator_Field>();
 	private ArrayList<String> toKeyFieldIDList = new ArrayList<String>();
@@ -1110,7 +1078,6 @@ class XFTableEvaluator_ReferTable extends Object {
 			dbName = evaluator_.getSession().getSubDBName(dbID);
 		}
 		StringTokenizer workTokenizer;
-		activeWhere = tableElement.getAttribute("ActiveWhere");
 		tableAlias = referElement_.getAttribute("TableAlias");
 		if (tableAlias.equals("")) {
 			tableAlias = tableID;
@@ -1192,15 +1159,6 @@ class XFTableEvaluator_ReferTable extends Object {
 				}
 			}
 			count++;
-		}
-
-		if (!activeWhere.equals("")) {
-			if (count == 0) {
-				buf.append(" where ");
-			} else {
-				buf.append(" and ");
-			}
-			buf.append(activeWhere);
 		}
 
 		return buf.toString();

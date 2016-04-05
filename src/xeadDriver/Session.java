@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -60,6 +60,7 @@ import javax.script.ScriptException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.xerces.parsers.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
@@ -147,7 +148,6 @@ public class Session extends JFrame {
 	private String[] helpURLArray = new String[20];
 	private MenuOption[][] menuOptionArray = new MenuOption[20][20];
 	private JButton[] jButtonMenuOptionArray = new JButton[20];
-//	private ArrayList<String> loadingChekerIDList = new ArrayList<String>();
 	private ArrayList<String> loadingFunctionIDList = new ArrayList<String>();
 	private XFCalendar xfCalendar = null;
 	public JFileChooser jFileChooser = new JFileChooser();
@@ -175,7 +175,6 @@ public class Session extends JFrame {
 	private Calendar calendar = GregorianCalendar.getInstance();
 	private org.w3c.dom.Document domDocument;
 	private Desktop desktop = Desktop.getDesktop();
-	//private DigestAdapter digestAdapter = null;
 	private DialogLogin loginDialog = null;
 	private DialogModifyPassword modifyPasswordDialog = null;
 	private DialogCheckRead checkReadDialog = null;
@@ -189,12 +188,10 @@ public class Session extends JFrame {
 	private ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
 	private Bindings globalScriptBindings = null;
 	private ScriptEngine scriptEngine = null;
-	//private static final String ZIP_URL = "http://api.postalcode.jp/v1/zipsearch?";
 	private static final String ZIP_URL = "http://zip.cgis.biz/xml/zip.php?";
 	private DOMParser domParser = new DOMParser();
 	private org.w3c.dom.Document responseDoc = null;
 	private HttpGet httpGet = new HttpGet();
-	//private ArrayList<ReferChecker> referCheckerList = new ArrayList<ReferChecker>();
 	private ArrayList<XFExecutable> preloadedFunctionList = new ArrayList<XFExecutable>();
 	private Application application = null;
 	private XFOptionDialog optionDialog = null;
@@ -206,7 +203,6 @@ public class Session extends JFrame {
 	// Construct Online Session //
 	//////////////////////////////
 	public Session(String[] args, Application app) {
-		//String fileName = "";
 		String loginUser = "";
 		String loginPassword = "";
 		application = app;
@@ -563,11 +559,6 @@ public class Session extends JFrame {
 			baseFontMap.put(wrkStr, baseFont);
 		}
 
-//		/////////////////////////////
-//		// Setup MD5-Hash Digester //
-//		/////////////////////////////
-//		digestAdapter = new DigestAdapter("MD5");
-
 		////////////////////////////////////////
 		// Return if variants setup succeeded //
 		////////////////////////////////////////
@@ -899,32 +890,6 @@ public class Session extends JFrame {
 		//////////////////////////////
 		xfCalendar = new XFCalendar(this);
 
-//		/////////////////////////////////////////////////////////
-//		// Construct Cross-Checkers to be loaded at logging-in //
-//		/////////////////////////////////////////////////////////
-//		org.w3c.dom.Element element;
-//		int wrkCount = 0;
-//		if (loadingChekerIDList.size() > 0) {
-//			if (application != null) {
-//				application.setProgressMax(loadingChekerIDList.size());
-//				application.setProgressValue(wrkCount);
-//				application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage3"));
-//			}
-//			for (int i = 0; i < tableList.getLength(); i++) {
-//				element = (org.w3c.dom.Element)tableList.item(i);
-//				if (loadingChekerIDList.contains(element.getAttribute("ID")) && !element.getAttribute("SkipReferCheck").equals("T")) {
-//					wrkCount++;
-//					if (application != null) {
-//						application.setProgressValue(wrkCount);
-//						application.repaintProgress();
-//					}
-//
-//					ReferChecker checker = new ReferChecker(this, element.getAttribute("ID"), null);
-//					referCheckerList.add(checker);
-//				}
-//			}
-//		}
-
 		////////////////////////////////////////////////////
 		// Construct Functions to be loaded at logging-in //
 		////////////////////////////////////////////////////
@@ -1097,13 +1062,6 @@ public class Session extends JFrame {
 				menuCaptionArray[menuIndex] = menuElement.getAttribute("Name");
 				helpURLArray[menuIndex] = menuElement.getAttribute("HelpURL");
 				if (!skipPreload) {
-//					tokenizer = new StringTokenizer(menuElement.getAttribute("CrossCheckersToBeLoaded"), ";" );
-//					while (tokenizer.hasMoreTokens()) {
-//						wrkStr = tokenizer.nextToken();
-//						if (!loadingChekerIDList.contains(wrkStr)) {
-//							loadingChekerIDList.add(wrkStr);
-//						}
-//					}
 					tokenizer = new StringTokenizer(menuElement.getAttribute("FunctionsToBeLoaded"), ";" );
 					while (tokenizer.hasMoreTokens()) {
 						wrkStr = tokenizer.nextToken();
@@ -1448,19 +1406,18 @@ public class Session extends JFrame {
 		String offsetDate = "";
 		Date workDate;
 		SimpleDateFormat dfm = new SimpleDateFormat("yyyy-MM-dd");
-		//
+
 		dateFrom = dateFrom.replaceAll("-", "").replaceAll("/", "").trim();
-		//
+
 		int y = Integer.parseInt(dateFrom.substring(0,4));
 		int m = Integer.parseInt(dateFrom.substring(4,6));
 		int d = Integer.parseInt(dateFrom.substring(6,8));
 		Calendar cal = Calendar.getInstance();
 		cal.set(y, m-1, d);
-		//
+
 		if (countType == 0) {
 			cal.add(Calendar.DATE, days);
 		}
-		//
 		if (countType == 1) {
 			if (days >= 0) {
 				for (int i = 0; i < days; i++) {
@@ -1481,10 +1438,10 @@ public class Session extends JFrame {
 				}
 			}
 		}
-		//
+
 		workDate = cal.getTime();
 		offsetDate = dfm.format(workDate);
-		//
+
 		return offsetDate;
 	}
 
@@ -1530,32 +1487,29 @@ public class Session extends JFrame {
 		Date dateFrom, dateThru;
 		SimpleDateFormat dfm = new SimpleDateFormat("yyyy-MM-dd");
 		Calendar cal = Calendar.getInstance();
-		//
+
 		strDateFrom = strDateFrom.replaceAll("-", "").replaceAll("/", "").trim();
 		y = Integer.parseInt(strDateFrom.substring(0,4));
 		m = Integer.parseInt(strDateFrom.substring(4,6));
 		d = Integer.parseInt(strDateFrom.substring(6,8));
 		cal.set(y, m-1, d, 0, 0, 0);
 		dateFrom = cal.getTime();
-		//
+
 		strDateThru = strDateThru.replaceAll("-", "").replaceAll("/", "").trim();
 		y = Integer.parseInt(strDateThru.substring(0,4));
 		m = Integer.parseInt(strDateThru.substring(4,6));
 		d = Integer.parseInt(strDateThru.substring(6,8));
 		cal.set(y, m-1, d, 0, 0, 0);
 		dateThru = cal.getTime();
-		//
+
 		if (countType == 0) {
 			long diff = dateThru.getTime() - dateFrom.getTime();
 			days = (int)(diff / 86400000); 
 		}
-		//
 		if (countType == 1) {
-			//
 			if (dateThru.getTime() == dateFrom.getTime()) {
 				days = 0;
 			}
-			//
 			if (dateThru.getTime() > dateFrom.getTime()) {
 				y = Integer.parseInt(strDateFrom.substring(0,4));
 				m = Integer.parseInt(strDateFrom.substring(4,6));
@@ -1571,7 +1525,6 @@ public class Session extends JFrame {
 					timeWork = cal.getTime().getTime();
 				}
 			}
-			//
 			if (dateThru.getTime() < dateFrom.getTime()) {
 				y = Integer.parseInt(strDateThru.substring(0,4));
 				m = Integer.parseInt(strDateThru.substring(4,6));
@@ -1589,7 +1542,7 @@ public class Session extends JFrame {
 				days = days * -1;
 			}
 		}
-		//
+
 		return days;
 	}
 
@@ -1778,7 +1731,6 @@ public class Session extends JFrame {
 		String wrkStr;
 		String nextNumber = "";
 		int wrkInt, wrkSum;
-		//
 		DecimalFormat decimalFormat = new DecimalFormat();
 		StringBuffer buf = new StringBuffer();
 		for (int i = 0; i < digit; i++) {
@@ -1786,7 +1738,6 @@ public class Session extends JFrame {
 		}
 		decimalFormat.applyPattern(buf.toString());
 		String outputdata = decimalFormat.format(number);
-		//
 		if (withCD.equals("T")) {
 			wrkSum = 0;
 			for (int i = 0; i < outputdata.length(); i++) {
@@ -1803,7 +1754,6 @@ public class Session extends JFrame {
 		} else {
 			nextNumber = prefix + outputdata;
 		}
-		//
 		return nextNumber;
 	}
 
@@ -2015,7 +1965,7 @@ public class Session extends JFrame {
 			parmDate = parmDate.replaceAll("/", "");
 			month = Integer.parseInt(parmDate.substring(4,6));
 			date = Integer.parseInt(parmDate.substring(6,8));
-			//
+
 			boolean isWithinMonth = false;
 			int startMonth = 1;
 			int lastDay = 31;
@@ -2027,7 +1977,7 @@ public class Session extends JFrame {
 			if(value2 != 0) {
 				lastDay = value2;
 			}
-			//
+
 			if (lastDay >= 31) {
 				if ((month == 1 && date <= 31) 
 						|| (month == 2 && date <= 29)
@@ -2063,7 +2013,7 @@ public class Session extends JFrame {
 			if (lastDay <= 29 && date <= lastDay) {
 				isWithinMonth = true;
 			}
-			//
+
 			if (isWithinMonth) {
 				mSeq = month - startMonth + 1;
 			} else {
@@ -2073,6 +2023,7 @@ public class Session extends JFrame {
 				mSeq = mSeq + 12;
 			}
 		}
+
 		return mSeq;
 	}
 
@@ -2085,7 +2036,7 @@ public class Session extends JFrame {
 			fYear = Integer.parseInt(parmDate.substring(0,4));
 			month = Integer.parseInt(parmDate.substring(4,6));
 			date = Integer.parseInt(parmDate.substring(6,8));
-			//
+
 			boolean isWithinMonth = false;
 			int startMonth = 1;
 			int lastDay = 31;
@@ -2097,7 +2048,7 @@ public class Session extends JFrame {
 			if(value2 != 0) {
 				lastDay = value2;
 			}
-			//
+
 			if (lastDay >= 31) {
 				if ((month == 1 && date <= 31) 
 						|| (month == 2 && date <= 29)
@@ -2133,7 +2084,7 @@ public class Session extends JFrame {
 			if (lastDay <= 29 && date <= lastDay) {
 				isWithinMonth = true;
 			}
-			//
+
 			if (isWithinMonth) {
 				mSeq = month - startMonth + 1;
 			} else {
@@ -2143,6 +2094,7 @@ public class Session extends JFrame {
 				fYear = fYear - 1;
 			}
 		}
+
 		return fYear;
 	}
 
@@ -2153,7 +2105,6 @@ public class Session extends JFrame {
 		int startMonth = getSystemVariantInteger("FIRST_MONTH");
 		int fYear = Integer.parseInt(fYearMSeq.substring(0, 4)); 
 		int mSeq = Integer.parseInt(fYearMSeq.substring(4, 6)); 
-		//
 		workInt = startMonth + mSeq - 1;
 		if (workInt > 12) {
 			workInt = workInt - 12;
@@ -2165,7 +2116,6 @@ public class Session extends JFrame {
 			workInt = fYear;
 			resultYear = Integer.toString(workInt);
 		}
-		//
 		return resultYear + resultMonth;
 	}
 
@@ -2267,20 +2217,11 @@ public class Session extends JFrame {
 	void jButtonMenu_actionPerformed(ActionEvent e) {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
-			//
 			Component com = (Component)e.getSource();
 			for (int i = 0; i < 20; i++) {
 				if (com.equals(jButtonMenuOptionArray[i])) {
 					if (menuOptionArray[jTabbedPaneMenu.getSelectedIndex()][i].isLogoutOption) {
 						logout(null);
-//						Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("Cancel")};
-//						int rtn = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage55"),
-//								systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
-//						if (rtn == 0) {
-//							this.closeSession(true);
-//							this.setVisible(false);
-//							System.exit(0);
-//						}
 					} else {
 						HashMap<String, Object> returnMap = menuOptionArray[jTabbedPaneMenu.getSelectedIndex()][i].call();
 						if (returnMap != null && returnMap.get("RETURN_CODE") != null) {
@@ -2429,7 +2370,7 @@ public class Session extends JFrame {
 	void setFocusOnNextVisibleButton(int index, String direction) {
 		int i= index;
 		boolean anyFound = false;
-		//
+
 		if (direction.equals("RIGHT")) {
 			if (i >= 0 && i <= 9) {
 				i = i + 10;
@@ -2457,7 +2398,7 @@ public class Session extends JFrame {
 				}
 			}
 		}
-		//
+
 		if (direction.equals("LEFT")) {
 			if (i >= 10 && i <= 19) {
 				i = i - 10;
@@ -2485,7 +2426,7 @@ public class Session extends JFrame {
 				}
 			}
 		}
-		//
+
 		if (direction.equals("DOWN")) {
 			while (i != 9 && i != 19) {
 				i = i + 1;
@@ -2495,7 +2436,7 @@ public class Session extends JFrame {
 				}
 			}
 		}
-		//
+
 		if (direction.equals("UP")) {
 			while (i != 0 && i != 10) {
 				i = i - 1;
@@ -2821,11 +2762,9 @@ public class Session extends JFrame {
 		private org.w3c.dom.Element functionElement_ = null;
 		private String optionName_;
 		private boolean isLogoutOption = false;
-		//
+
 		public MenuOption(org.w3c.dom.Element functionElement, String optionName) {
-			//
 			functionElement_ = functionElement;
-			//
 			if (optionName.equals("")) {
 				if (functionElement_ != null) {
 					optionName_ = functionElement_.getAttribute("Name");
@@ -2839,15 +2778,15 @@ public class Session extends JFrame {
 				}
 			}
 		}
-		//
+
 		public String getMenuOptionName() {
 			return optionName_;
 		}
-		//
+
 		public boolean isLogoutOption() {
 			return isLogoutOption;
 		}
-		//
+
 		public HashMap<String, Object> call() {
 			if (isLogoutOption) {
 				return null;
@@ -2935,7 +2874,6 @@ public class Session extends JFrame {
 					objValuePairs.add(new BasicNameValuePair("METHOD", "ROLLBACK"));
 				}
 				httpPost.setEntity(new UrlEncodedFormEntity(objValuePairs, "UTF-8"));  
-				//
 				HttpResponse response = httpClient.execute(httpPost);
 				HttpEntity responseEntity = response.getEntity();
 				if (logBuf != null) {
@@ -2965,27 +2903,6 @@ public class Session extends JFrame {
 		}
 	}
 
-//	public ReferChecker createReferChecker(String tableID, XFScriptable function) {
-//		ReferChecker checker = null;
-//		org.w3c.dom.Element element = getTableElement(tableID);
-//		if (!element.getAttribute("SkipReferCheck").equals("T")) {
-//			for (int i = 0; i < referCheckerList.size(); i++) {
-//				if (referCheckerList.get(i).getTargetTableID().equals(tableID)) {
-//					checker = referCheckerList.get(i);
-//					checker.setFunction(function);
-//					break;
-//				}
-//			}
-//			if (checker == null) {
-//				checker = new ReferChecker(this, tableID, function);
-//				if (function != null && !function.isAvailable()) {
-//					referCheckerList.add(checker);
-//				}
-//			}
-//		}
-//		return checker;
-//	}
-
 	public Object requestWebService(String uri) {
 		return requestWebService(uri, "UTF-8");
 	}
@@ -2997,23 +2914,6 @@ public class Session extends JFrame {
 		try {
 			httpGet.setURI(new URI(uri));
 			httpResponse = httpClient.execute(httpGet);
-//			String contentType = httpResponse.getEntity().getContentType().getValue();
-//			if (contentType.contains("text/xml")) {
-//				inputStream = httpResponse.getEntity().getContent();
-//				domParser.parse(new InputSource(inputStream));
-//				response = domParser.getDocument();
-//			}
-//			if (contentType.contains("application/json")) {
-//				String text = EntityUtils.toString(httpResponse.getEntity());
-//				if (text.startsWith("[")) {
-//					response = new JSONArray(text);
-//				} else {
-//					response = new JSONObject(text);
-//				}
-//			}
-//			if (contentType.contains("text/plain")) {
-//				response = EntityUtils.toString(httpResponse.getEntity());
-//			}
 			response = EntityUtils.toString(httpResponse.getEntity(), encoding);
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
@@ -3102,6 +3002,21 @@ public class Session extends JFrame {
 	public JSONObject getJsonObject(JSONArray array, int index) throws Exception {
 		return array.getJSONObject(index);
 	}
+
+	public byte[] decodeBase64StringToByteArray(Object value) {
+		if (value instanceof String) {
+			return Base64.decodeBase64((String)value);
+		} else {
+			return null;
+		}
+	}
+	public String encodeByteArrayToBase64String(Object value) {
+		if (value instanceof byte[]) {
+			return Base64.encodeBase64String((byte[])value);
+		} else {
+			return "";
+		}
+	}
 	
 	public String getDigestedValueForUser(String user, String value) {
 		if (isValueSaltedForUser) {
@@ -3123,22 +3038,15 @@ public class Session extends JFrame {
 	public String getDigestedValue(String value, String algorithm, int expand, String salt) {
 		String digestedValue = "";
 		int count = expand - 1;
-//		if (algorithm.equals("MD5")) {
-//			digestedValue = digestAdapter.digest(value + salt);
-//			for (int i=0;i<count;i++) {
-//				digestedValue = digestAdapter.digest(digestedValue + salt);
-//			}
-//		} else {
-			try {
-				DigestAdapter adapter = new DigestAdapter(algorithm);
-				digestedValue = adapter.digest(value + salt);
-				for (int i=0;i<count;i++) {
-					digestedValue = adapter.digest(digestedValue + salt);
-				}
-			} catch (NoSuchAlgorithmException e) {
-				return digestedValue;
+		try {
+			DigestAdapter adapter = new DigestAdapter(algorithm);
+			digestedValue = adapter.digest(value + salt);
+			for (int i=0;i<count;i++) {
+				digestedValue = adapter.digest(digestedValue + salt);
 			}
-//		}
+		} catch (NoSuchAlgorithmException e) {
+			return digestedValue;
+		}
 		return digestedValue;
 	}
 
@@ -3251,7 +3159,6 @@ public class Session extends JFrame {
 	
 	public File createTempFile(String functionID, String extension) throws IOException {
 		String header = "XeadDriver_";
-		//
 		if (extension.equals(".pdf")) {
 			header = "PDF_" + header;
 		}
@@ -3261,13 +3168,10 @@ public class Session extends JFrame {
 		if (extension.equals(".log")) {
 			header = "LOG_" + header;
 		}
-		//
 		File tempFile = File.createTempFile(header + functionID + "_", extension, outputFolder);
-		//
 		if (outputFolder == null) {
 			tempFile.deleteOnExit();
 		}
-		//
 		return tempFile;
 	}
 
@@ -3412,10 +3316,6 @@ public class Session extends JFrame {
 		return desktop;
 	}
 
-//	DigestAdapter getDigestAdapter() {
-//		return digestAdapter;
-//	}
-
 	public DialogCheckRead getDialogCheckRead() {
 		return checkReadDialog;
 	}
@@ -3499,25 +3399,21 @@ public class Session extends JFrame {
 		Statement statement = null;
 		HttpPost httpPost = null;
 		String msg = "";
-		//
+
 		if (databaseName.contains("jdbc:derby:")) {
 			try {
 				if (appServerName.equals("")) {
 					statement = connectionManualCommit.createStatement();
 				}
-				//
 				for (int i = 0; i < tableList.getLength(); i++) {
-					//
 					element = (org.w3c.dom.Element)tableList.item(i);
 					if (element.getAttribute("ID").startsWith(tableID) || tableID.equals("")) {
-						//
 						statementBuf = new StringBuffer();
 						statementBuf.append("CALL SYSCS_UTIL.SYSCS_COMPRESS_TABLE('");
 						statementBuf.append(databaseUser);
 						statementBuf.append("', '") ;
 						statementBuf.append(element.getAttribute("ID"));
 						statementBuf.append("', 1)") ;
-						//
 						//////////////////////////////////////
 						// Execute procedure by auto-commit //
 						//////////////////////////////////////
@@ -3617,7 +3513,6 @@ public class Session extends JFrame {
 	public String getFunctionName(String functionID) {
 		org.w3c.dom.Element workElement;
 		String functionName = "";
-		//
 		for (int k = 0; k < functionList.getLength(); k++) {
 			workElement = (org.w3c.dom.Element)functionList.item(k);
 			if (workElement.getAttribute("ID").equals(functionID)) {
@@ -3625,7 +3520,6 @@ public class Session extends JFrame {
 				break;
 			}
 		}
-		//
 		return functionName;
 	}
 

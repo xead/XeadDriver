@@ -56,6 +56,7 @@ public class XFOptionDialog extends JDialog {
 	private Session session_;
     private Dimension scrSize, dlgSize;
     private int maxCellWidth = 0;
+    private int explicitWidth = 0;
     private ArrayList<String> optionList = new ArrayList<String>();
     private int selectedIndex = -1;
     private XFOptionDialog_keyAdapter keyListener = new XFOptionDialog_keyAdapter();
@@ -87,17 +88,18 @@ public class XFOptionDialog extends JDialog {
     	}
     }
 
+    public void setWidth(int width) {
+    	explicitWidth = width;
+    }
+
     public int request(String title) {
     	selectedIndex = -1;
 
     	int width = maxCellWidth + 10;
     	int height = optionList.size() * XFUtility.FIELD_UNIT_HEIGHT;
-		FontMetrics metricsTitle = jLabel.getFontMetrics(this.getFont());
 		int dialogWidth = width + 20;
-		int titleWidth = metricsTitle.stringWidth(title) + 50;
-		if (dialogWidth < titleWidth) {
-			dialogWidth = titleWidth;
-			width = dialogWidth - 20;
+		if (explicitWidth == 0) {
+			explicitWidth = dialogWidth;
 		}
     	this.setTitle(title);
 
@@ -112,7 +114,7 @@ public class XFOptionDialog extends JDialog {
 		jList.setBorder(null);
 		jPanelMain.add(jList, BorderLayout.CENTER);
 
-		dlgSize = new Dimension(dialogWidth, height + 10);
+		dlgSize = new Dimension(explicitWidth, height + 10);
 		jPanelMain.setPreferredSize(dlgSize);
    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
 
@@ -141,7 +143,7 @@ public class XFOptionDialog extends JDialog {
 
     class XFOptionDialog_mouseAdapter extends java.awt.event.MouseAdapter {
     	public void mouseClicked(MouseEvent e) {
-    		if (e.getClickCount() >= 2 && optionList.size() > 0) {
+    		if (optionList.size() > 0) {
     			selectedIndex = jList.getSelectedIndex();
     			clear();
     			setVisible(false);

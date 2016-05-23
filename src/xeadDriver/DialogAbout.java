@@ -43,16 +43,28 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M1";
-	public static final String VERSION  = "1.3.1";
+	public static final String FULL_VERSION  = "V1.R3.M2";
+	public static final String VERSION  = "1.3.2";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2016 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.3.2
+	//・XFTextField,XFDateField等について、アルファベットのベースライン以下が見えにくい問題を改善した
+	//・TableOperatorのログ書き込みで、SQL文の最長を1000桁にした
+	//・実行中の機能上でEscキーが押された場合、全機能を閉じてメニューに戻るようにした
+	//・セッション明細を記録する際に機能名が長すぎると異常終了する問題を修正した
+	//・TableOperatorとTableEvaluatorでのaddKeyValueでの空白値の処理ロジックを改善した
+	//・XF110のバッチ項目がバッチテーブルのPKである場合に入力不可になる問題を修正した
+	//・XF110の明細項目がバッチテーブルへの外部キーである場合に入力不可になるようにした
+	//・更新機能にSTRING値の桁数検査を組み込んだ
+	//・フィールド情報の検索関数をセッション関数として組み込んだ
+	//・TableEvaluatorの更新機能にチェックオンリーパラメータを組み込んだ
+	//・TableEvaluatorの更新機能にSTRING値の桁数検査を組み込んだ
+	//
 	//1.3.1
 	//・BYTEAフィールドの扱いに関して全体的に改善した
 	//・論理削除の自動化機構を廃止した
 	//・XF100で、検索結果が１件だけの場合に明細処理を自動起動するためのオプションを設けた
-	//・TableOperatorのログ書き込みで、SQL文の最長を1000桁にした（未公開）
 	//
 	//1.3.0
 	//・テーブル定義の範囲KEY定義を扱うステップを除去した

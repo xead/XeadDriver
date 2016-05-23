@@ -363,7 +363,13 @@ public class XFTableOperator {
     				}
     			} else {
     				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
+//					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
+    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+    					int length = Integer.parseInt(workElement.getAttribute("Size"));
+    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length) + " " + postfix);
+    				} else {
+    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
+    				}
     			}
     		}
 		}

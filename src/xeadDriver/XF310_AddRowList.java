@@ -127,6 +127,13 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 			dialog_.getSession().browseHelp();
 		}
 	};
+	private Action escapeAction = new AbstractAction() {
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e) {
+			setVisible(false);
+			dialog_.returnToMenu();
+		}
+	};
 	
 	public XF310_AddRowList(XF310 dialog) {
 		super(dialog, "", true);
@@ -787,6 +794,8 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
 		actionMap.put("HELP", helpAction);
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ESCAPE");
+		actionMap.put("ESCAPE", escapeAction);
 
 		int workIndex;
 		org.w3c.dom.Element element;
@@ -1049,6 +1058,10 @@ class XF310_AddRowList extends JDialog implements XFScriptable {
 					jTextAreaMessages.setText(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
 				} else {
 					jTextAreaMessages.setText(returnMap.get("RETURN_MESSAGE").toString());
+				}
+				if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+					this.setVisible(false);
+					dialog_.returnToMenu();
 				}
 			} catch (Exception e) {
 				JOptionPane.showMessageDialog(null, e.getMessage());

@@ -39,11 +39,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
-
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-
 import org.w3c.dom.NodeList;
 
 ////////////////////////////////////////////////////////////////////
@@ -54,6 +52,7 @@ public class XFTableEvaluator {
     private Session session_ = null;
     private XFScriptable instance_ = null;
     private String tableID_ = "";
+    private String tableName = "";
     private String moduleID = "";
     private String dbName = "";
     private String orderBy = "";
@@ -82,6 +81,7 @@ public class XFTableEvaluator {
 
 		session_ = instance_.getSession();
 		org.w3c.dom.Element tableElement = session_.getTableElement(tableID);
+		tableName = tableElement.getAttribute("Name");
 		if (tableElement.getAttribute("DB").equals("")) {
 			dbName = session_.getDatabaseName();
 		} else {
@@ -182,6 +182,10 @@ public class XFTableEvaluator {
 
 	public String getTableID() {
 		return tableID_;
+	}
+
+	public String getTableName() {
+		return tableName;
 	}
 
 	public String getDetailRowNoID() {
@@ -327,7 +331,13 @@ public class XFTableEvaluator {
     				}
     			} else {
     				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
+//					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
+    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+    					int length = Integer.parseInt(workElement.getAttribute("Size"));
+    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length) + " " + postfix);
+    				} else {
+    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
+    				}
     			}
     		}
 		}
@@ -479,6 +489,10 @@ public class XFTableEvaluator {
 	}
 
 	public int insert() {
+		return insert(false);
+	}
+
+	public int insert(boolean isCheckOnly) {
 		int countOfProcessed = 0;
 		int countOfErrors = 0;
 		try {
@@ -514,7 +528,7 @@ public class XFTableEvaluator {
 				}
 			}
 			if (countOfErrors == 0) {
-				if (hasNoErrorWithKey("INSERT")) {
+				if (hasNoErrorWithKey("INSERT") && !isCheckOnly) {
 					for (int i = 0; i < fieldList.size(); i++) {
 						if (fieldList.get(i).isAutoNumberField()) {
 							fieldList.get(i).setValue(fieldList.get(i).getAutoNumber());
@@ -544,6 +558,10 @@ public class XFTableEvaluator {
 	}
 
 	public int update() {
+		return update(false);
+	}
+
+	public int update(boolean isCheckOnly) {
 		int countOfProcessed = 0;
 
 		try {
@@ -583,7 +601,7 @@ public class XFTableEvaluator {
 				}
 			}
 			if (countOfErrors == 0) {
-				if (hasNoErrorWithKey("UPDATE")) {
+				if (hasNoErrorWithKey("UPDATE") && !isCheckOnly) {
 					tableOperator = instance_.createTableOperator(getSQLToUpdate());
 					countOfProcessed = tableOperator.execute();
 					if (countOfProcessed == 1) {
@@ -600,6 +618,10 @@ public class XFTableEvaluator {
 	}
 
 	public int delete() {
+		return delete(false);
+	}
+
+	public int delete(boolean isCheckOnly) {
 		int countOfProcessed = 0;
 		int countOfErrors = 0;
 		try {
@@ -634,7 +656,7 @@ public class XFTableEvaluator {
 					countOfErrors++;
 				}
 			}
-			if (countOfErrors == 0) {
+			if (countOfErrors == 0 && isCheckOnly) {
 				tableOperator = instance_.createTableOperator(getSQLToDelete());
 				countOfProcessed = tableOperator.execute();
 				if (countOfProcessed == 1) {
@@ -1246,6 +1268,7 @@ class XFTableEvaluator_Field extends Object implements XFFieldScriptable {
 	private String fieldID_ = "";
 	private String fieldName = "";
 	private String dataType = "";
+	private int dataSize = 5;
 	private String dataTypeOptions = "";
 	private ArrayList<String> dataTypeOptionList;
 	private String autoNumberKey = "";
@@ -1277,6 +1300,7 @@ class XFTableEvaluator_Field extends Object implements XFFieldScriptable {
 		org.w3c.dom.Element fieldElement = evaluator_.getSession().getFieldElement(tableID_, fieldID_);
 		dataType = fieldElement.getAttribute("Type");
 		fieldName = fieldElement.getAttribute("Name");
+		dataSize = Integer.parseInt(fieldElement.getAttribute("Size"));
 		dataTypeOptions = fieldElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		if (fieldElement.getAttribute("Nullable").equals("F")) {
@@ -1427,6 +1451,9 @@ class XFTableEvaluator_Field extends Object implements XFFieldScriptable {
 		if (this.isNoUpdate() && this.isValueChanged()) {
 			this.setError(XFUtility.RESOURCE.getString("FunctionError51"));
 		}
+		if (this.isTooLong()) {
+			this.setError(XFUtility.RESOURCE.getString("FunctionError55"));
+		}
 		if (!this.isError) {
 			StringTokenizer tokenizer;
 
@@ -1564,7 +1591,18 @@ class XFTableEvaluator_Field extends Object implements XFFieldScriptable {
 			}
 		}
 	}
-	
+
+	public boolean isTooLong() {
+		boolean isError = false;
+		if (dataType.equals("CHAR") &&  value_ != null) {
+			String wrkStr = value_.toString();
+			if (wrkStr.length() > this.dataSize) {
+				isError = true;
+			}
+		}
+		return isError;
+	}
+
 	public boolean isValueChanged() {
 		return !this.getValue().equals(this.getOldValue());
 	}

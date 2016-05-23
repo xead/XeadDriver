@@ -153,6 +153,12 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			session_.browseHelp();
 		}
 	};
+	private Action escapeAction = new AbstractAction() {
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e) {
+			returnToMenu();
+		}
+	};
 	private JPanel[] jPanelButtonArray = new JPanel[7];
 	private JButton[] jButtonArray = new JButton[7];
 	private String[] jButtonNumberArray = new String[7];
@@ -947,6 +953,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		closeFunction();
 	}
 
+	void returnToMenu() {
+		returnMap_.put("RETURN_TO", "MENU");
+		closeFunction();
+	}
+
 	void closeFunction() {
 		instanceIsAvailable = true;
 		if (anyRecordsDeleted && !returnMap_.get("RETURN_CODE").toString().equals("99")) {
@@ -1275,6 +1286,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		actionMapHeaderFields.put("CHECK", checkAction);
 		inputMapHeaderFields.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
 		actionMapHeaderFields.put("HELP", helpAction);
+		inputMapHeaderFields.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ESCAPE");
+		actionMapHeaderFields.put("ESCAPE", escapeAction);
 		actionMapHeaderFields.put(inputMapHeaderFields.get(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0)), tabAction);
 		actionMapHeaderFields.put(inputMapHeaderFields.get(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, Event.SHIFT_MASK)), shiftTabAction);
 		actionMapHeaderFields.put(inputMapHeaderFields.get(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0)), arrowUpAction);
@@ -1284,6 +1297,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		actionMapTableMain.put("CHECK", checkAction);
 		inputMapTableMain.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
 		actionMapTableMain.put("HELP", helpAction);
+		inputMapTableMain.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ESCAPE");
+		actionMapTableMain.put("ESCAPE", escapeAction);
 		actionMapTableMain.put(inputMapTableMain.get(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0)), tabAction);
 		actionMapTableMain.put(inputMapTableMain.get(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, Event.SHIFT_MASK)), shiftTabAction);
 		actionMapTableMain.put(inputMapTableMain.get(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0)), arrowUpAction);
@@ -1471,7 +1486,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			countOfErrors = fetchHeaderReferRecords("BU", true, "");
 			for (int i = 0; i < headerFieldList.size(); i++) {
 				if (headerFieldList.get(i).isFieldOnPrimaryTable()) {
-					if (headerFieldList.get(i).isNullError()) {
+					if (headerFieldList.get(i).isNullError() || headerFieldList.get(i).isTooLong()) {
 						countOfErrors++;
 					}
 				}
@@ -4080,6 +4095,18 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 		return isNullError;
 	}
 
+	public boolean isTooLong(){
+		boolean isError = false;
+		if (dataType.equals("CHAR")) {
+			String strWrk = (String)component.getInternalValue();
+			if (strWrk.length() > this.dataSize) {
+				isError = true;
+				this.setError(XFUtility.RESOURCE.getString("FunctionError55"));
+			}
+		}
+		return isError;
+	}
+
 	public void setValueOfResultSet(XFTableOperator operator){
 		try {
 			if (!this.isVirtualField) {
@@ -5964,7 +5991,9 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 					}
 
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, parmValueMap);
-					//if (!returnMap.get("RETURN_CODE").equals("99")) {
+					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+						dialog_.returnToMenu();
+					}
 					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
@@ -6229,7 +6258,8 @@ class XF310_DetailRowNumber extends Object {
 			if (dialog_.getDetailColumnList().get(i).getTableAlias().equals(dialog_.getDetailTable().getTableID())
 					&& dialog_.getDetailColumnList().get(i).isVisibleOnPanel()
 					&& dialog_.getDetailColumnList().get(i).isEditable()) {
-				if (!this.isJustAdded && dialog_.getDetailColumnList().get(i).isNullError(columnValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()))) {
+				if ((!this.isJustAdded && dialog_.getDetailColumnList().get(i).isNullError(columnValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName())))
+								|| dialog_.getDetailColumnList().get(i).isTooLong(columnValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()))) {
 					countOfErrors++;
 				}
 			}
@@ -6783,6 +6813,22 @@ class XF310_DetailColumn implements XFFieldScriptable {
 		}
 		if (isNullError) {
 			this.setError(XFUtility.RESOURCE.getString("FunctionError16"));
+		}
+		return isNullError;
+	}
+	
+	public boolean isTooLong(Object object){
+		String strWrk;
+		boolean isNullError = false;
+		if (dataType.equals("CHAR")) {
+			strWrk = "";
+			if (object != null) {
+				strWrk = object.toString();
+				if (strWrk.length() > this.dataSize) {
+					isNullError = true;
+					this.setError(XFUtility.RESOURCE.getString("FunctionError55"));
+				}
+			}
 		}
 		return isNullError;
 	}
@@ -8712,6 +8758,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
+		jTextField.setBorder(null);
 		FontMetrics metrics = jTextField.getFontMetrics(jTextField.getFont());
 		jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jComboBox.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -8755,6 +8802,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 				setupRecordList();
 			}
 		});
+		jComboBox.setBorder(null);
 
 		strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "VALUES");
 		if (!strWrk.equals("")) {
@@ -8819,6 +8867,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 			}
 		}
 
+		this.setBorder(BorderFactory.createLineBorder(Color.lightGray));
 		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(jComboBox, BorderLayout.CENTER);
@@ -9207,6 +9256,9 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 						}
 					}
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
+					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+						dialog_.returnToMenu();
+					}
 					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {

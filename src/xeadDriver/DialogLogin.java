@@ -220,7 +220,7 @@ public class DialogLogin extends JDialog {
 		StringBuffer statementBuf;
 		XFTableOperator operator;
 
-		if (userID.equals("") || password.equals("")) {
+		if (userID.equals("") || !userID.matches("[0-9a-zA-Z]+") || password.equals("")) {
 			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInComment"));
 		} else {
 			statementBuf = new StringBuffer();

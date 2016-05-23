@@ -496,9 +496,7 @@ public class Session extends JFrame {
 		// Main / Sub Databases //
 		//////////////////////////
 		databaseName = element.getAttribute("DatabaseName");
-		if (databaseName.contains("<CURRENT>")) {
-			databaseName = databaseName.replace("<CURRENT>", currentFolder);
-		}
+		databaseName = databaseName.replace("<CURRENT>", currentFolder);
 		databaseUser = element.getAttribute("DatabaseUser");
 		databasePassword = element.getAttribute("DatabasePassword");
 		org.w3c.dom.Element subDBElement;
@@ -509,9 +507,7 @@ public class Session extends JFrame {
 			subDBUserList.add(subDBElement.getAttribute("User"));
 			subDBPasswordList.add(subDBElement.getAttribute("Password"));
 			wrkStr = subDBElement.getAttribute("Name");
-			if (wrkStr.contains("<CURRENT>")) {
-				wrkStr = wrkStr.replace("<CURRENT>", currentFolder);
-			}
+			wrkStr = wrkStr.replace("<CURRENT>", currentFolder);
 			subDBNameList.add(wrkStr);
 		}
 
@@ -2231,6 +2227,9 @@ public class Session extends JFrame {
 								jTextAreaMessages.setText(returnMap.get("RETURN_MESSAGE").toString());
 							}
 						}
+						if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+							jTextAreaMessages.setText(XFUtility.RESOURCE.getString("SessionMessage3"));
+						}
 					}
 					break;
 				}
@@ -2243,9 +2242,12 @@ public class Session extends JFrame {
 	public int writeLogOfFunctionStarted(String functionID, String functionName) {
 		sqProgram++;
 		try {
+			if (functionName.length() > 30) {
+				functionName = functionName.substring(0, 27) + "...";
+			}
 			String sql = "insert into " + sessionDetailTable
-			+ " (NRSESSION, SQPROGRAM, IDMENU, IDPROGRAM, TXPROGRAM, DTSTART, KBPROGRAMSTATUS) values ("
-			+ "'" + this.getSessionID() + "'," + sqProgram + "," + "'" + this.getMenuID() + "'," + "'" + functionID + "'," + "'" + functionName + "'," + "CURRENT_TIMESTAMP,'')";
+							+ " (NRSESSION, SQPROGRAM, IDMENU, IDPROGRAM, TXPROGRAM, DTSTART, KBPROGRAMSTATUS) values ("
+							+ "'" + this.getSessionID() + "'," + sqProgram + "," + "'" + this.getMenuID() + "'," + "'" + functionID + "'," + "'" + functionName + "'," + "CURRENT_TIMESTAMP,'')";
 			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 			operator.execute();
 		} catch (Exception e) {
@@ -3595,6 +3597,42 @@ public class Session extends JFrame {
 			}
 		}
 		return element3;
+	}
+
+	public String getFieldName(String tableID, String fieldID) {
+		String name = "";
+		org.w3c.dom.Element element = getFieldElement(tableID, fieldID);
+		if (element != null) {
+			name = element.getAttribute("Name");
+		}
+		return name;
+	}
+
+	public String getFieldType(String tableID, String fieldID) {
+		String name = "";
+		org.w3c.dom.Element element = getFieldElement(tableID, fieldID);
+		if (element != null) {
+			name = element.getAttribute("Type");
+		}
+		return name;
+	}
+
+	public String getFieldSize(String tableID, String fieldID) {
+		String name = "";
+		org.w3c.dom.Element element = getFieldElement(tableID, fieldID);
+		if (element != null) {
+			name = element.getAttribute("Size");
+		}
+		return name;
+	}
+
+	public String getFieldDecimal(String tableID, String fieldID) {
+		String name = "";
+		org.w3c.dom.Element element = getFieldElement(tableID, fieldID);
+		if (element != null) {
+			name = element.getAttribute("Decimal");
+		}
+		return name;
 	}
 }
 

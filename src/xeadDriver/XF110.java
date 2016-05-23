@@ -110,6 +110,12 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			session_.browseHelp();
 		}
 	};
+	private Action escapeAction = new AbstractAction(){
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e){
+			returnToMenu();
+		}
+	};
 	private Action[] actionButtonArray = new Action[7];
 	private String[] actionDefinitionArray = new String[7];
 	private int buttonIndexForF6, buttonIndexForF8;
@@ -298,7 +304,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			returnMap_.clear();
 			returnMap_.putAll(parmMap_);
-			returnMap_.put("RETURN_CODE", "00");
+			returnMap_.put("RETURN_CODE", "21");
 
 			/////////////////////////
 			// Initialize variants //
@@ -700,6 +706,11 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		closeFunction();
 	}
 
+	void returnToMenu() {
+		returnMap_.put("RETURN_TO", "MENU");
+		closeFunction();
+	}
+
 	void closeFunction() {
 		instanceIsAvailable = true;
 		String errorLog = "";
@@ -802,6 +813,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
 		actionMap.put("HELP", helpAction);
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ESCAPE");
+		actionMap.put("ESCAPE", escapeAction);
 
 		buttonIndexForF6 = -1;
 		buttonIndexForF8 = -1;
@@ -3818,6 +3831,9 @@ class XF110_PromptCallField extends JPanel implements XFEditableField {
 				}
 				try {
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
+					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+						dialog_.returnToMenu();
+					}
 					if (!returnMap.get("RETURN_CODE").equals("99")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {

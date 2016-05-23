@@ -3256,6 +3256,7 @@ class XFDateField extends JPanel implements XFEditableField {
 
 		session_ = session;
 		dateTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		dateTextField.setBorder(null);
 		dateTextField.setEditable(false);
 		dateTextField.addFocusListener(new FocusAdapter() {
 			public void focusGained(FocusEvent event) {
@@ -3304,6 +3305,7 @@ class XFDateField extends JPanel implements XFEditableField {
 
 		this.setSize(new Dimension(XFUtility.getWidthOfDateValue(session.getDateFormat(), session_.systemFont, XFUtility.FONT_SIZE) + 26, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
+		this.setBorder(BorderFactory.createLineBorder(Color.lightGray));
 		this.add(dateTextField, BorderLayout.CENTER);
 		this.add(jButton, BorderLayout.EAST);
 	}
@@ -4780,6 +4782,8 @@ class XFTextField extends JPanel implements XFEditableField {
 			} 
 		});
 		this.setSize(new Dimension(fieldWidth, fieldHeight));
+		jTextField.setBorder(null);
+		this.setBorder(BorderFactory.createLineBorder(Color.lightGray));
 		this.setLayout(new BorderLayout());
 		this.add(jTextField, BorderLayout.CENTER);
 	}
@@ -4819,7 +4823,7 @@ class XFTextField extends JPanel implements XFEditableField {
 			} else {
 				itemSelectionControled = true;
 				jComboBox = new JComboBox();
-				jComboBox.setFont(jTextField.getFont());
+				jComboBox.setBorder(null);
 				ListCellRenderer renderer = new DefaultListCellRenderer();
 				((JLabel)renderer).setHorizontalAlignment(jTextField.getHorizontalAlignment());
 				jComboBox.setRenderer(renderer);

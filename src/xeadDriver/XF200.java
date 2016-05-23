@@ -130,6 +130,12 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 	};
+	private Action escapeAction = new AbstractAction() {
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e) {
+			returnToMenu();
+		}
+	};
 	private Action[] actionButtonArray = new Action[7];
 	private int buttonIndexForF6, buttonIndexForF8;
 	private String functionKeyToEdit = "";
@@ -829,6 +835,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		closeFunction();
 	}
 
+	void returnToMenu() {
+		returnMap_.put("RETURN_TO", "MENU");
+		closeFunction();
+	}
+
 	void closeFunction() {
 		instanceIsAvailable_ = true;
 		messageList.clear();
@@ -1006,6 +1017,8 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		actionMap.put("CHECK", checkAction);
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
 		actionMap.put("HELP", helpAction);
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ESCAPE");
+		actionMap.put("ESCAPE", escapeAction);
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T,ActionEvent.CTRL_MASK), "FOCUS_TAB");
 		actionMap.put("FOCUS_TAB", focusTabAction);
 
@@ -1203,7 +1216,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	int checkFieldValueErrors(String event) {
 		int countOfErrors = fetchReferTableRecords(event, true, "");
 		for (int i = 0; i < fieldList.size(); i++) {
-			if (fieldList.get(i).isNullError(panelMode_)) {
+			if (fieldList.get(i).isNullError(panelMode_) || fieldList.get(i).isTooLong(panelMode_)) {
 				countOfErrors++;
 			}
 		}
@@ -1721,6 +1734,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			messageList.clear();
 			try {
 				HashMap<String, Object> returnMap = session_.executeFunction(functionID, parmMap_);
+				if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+					returnToMenu();
+				}
 				if (returnMap.get("RETURN_MESSAGE") == null) {
 					messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
 				} else {
@@ -2963,6 +2979,22 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 		return isError;
 	}
 
+	public boolean isTooLong(String mode){
+		boolean isError = false;
+		if (this.isEditable() && this.isVisibleOnPanel && this.isFieldOnPrimaryTable && !this.isError) {
+			if (mode.equals("EDIT") || mode.equals("ADD") || mode.equals("COPY")) {
+				if (dataType.equals("CHAR")) {
+					String strWrk = (String)component.getInternalValue();
+					if (strWrk.length() > this.dataSize) {
+						isError = true;
+						this.setError(XFUtility.RESOURCE.getString("FunctionError55"));
+					}
+				}
+			}
+		}
+		return isError;
+	}
+
 	public Object getValue() {
 		Object returnObj = null;
 		if (this.getBasicType().equals("INTEGER")) {
@@ -3057,6 +3089,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 		jTextField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
 		jTextField.setFocusable(false);
+		jTextField.setBorder(null);
 		FontMetrics metrics = jTextField.getFontMetrics(jTextField.getFont());
 		jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jComboBox.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -3100,6 +3133,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				setupRecordList();
 			}
 		});
+		jComboBox.setBorder(null);
 
 		strWrk = XFUtility.getOptionValueWithKeyword(dataTypeOptions_, "VALUES");
 		if (!strWrk.equals("")) {
@@ -3165,6 +3199,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			}
 		}
 
+		this.setBorder(BorderFactory.createLineBorder(Color.lightGray));
 		this.setSize(new Dimension(fieldWidth, XFUtility.FIELD_UNIT_HEIGHT));
 		this.setLayout(new BorderLayout());
 		this.add(jComboBox, BorderLayout.CENTER);
@@ -3559,6 +3594,9 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 					}
 
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
+					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+						dialog_.returnToMenu();
+					}
 					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {

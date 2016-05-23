@@ -108,6 +108,12 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			session_.browseHelp();
 		}
 	};
+	private Action escapeAction = new AbstractAction() {
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e) {
+			returnToMenu();
+		}
+	};
 	private Action[] actionButtonArray = new Action[7];
 	private String[] actionDefinitionArray = new String[7];
 	private int buttonIndexForF6, buttonIndexForF8;
@@ -705,6 +711,11 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		closeFunction();
 	}
 
+	void returnToMenu() {
+		returnMap_.put("RETURN_TO", "MENU");
+		closeFunction();
+	}
+
 	void closeFunction() {
 		if (!returnMap_.get("RETURN_CODE").equals("99")) {
 			this.commit();
@@ -798,6 +809,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
 		actionMap.put("HELP", helpAction);
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ESCAPE");
+		actionMap.put("ESCAPE", escapeAction);
 
 		buttonIndexForF6 = -1;
 		buttonIndexForF8 = -1;
@@ -1151,6 +1164,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					} else {
 						messageList.add(returnMap.get("RETURN_MESSAGE").toString());
 					}
+					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+						returnToMenu();
+					}
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(null, e.getMessage());
 					exceptionHeader = e.getMessage();
@@ -1180,6 +1196,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 								messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
 							} else {
 								messageList.add(returnMap.get("RETURN_MESSAGE").toString());
+							}
+							if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+								returnToMenu();
 							}
 						} catch (Exception e) {
 							JOptionPane.showMessageDialog(null, e.getMessage());
@@ -1699,7 +1718,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		if (e.getKeyCode() == KeyEvent.VK_ENTER && tableModelMain.getRowCount() > 0) {
 			processRow(true);
 		}
-		
+	
 		///////////////////////////////////////////////
 		// Steps to override F6 and F8 of JSplitPane //
 		///////////////////////////////////////////////
@@ -1750,6 +1769,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 								messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
 							} else {
 								messageList.add(returnMap.get("RETURN_MESSAGE").toString());
+							}
+							if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+								returnToMenu();
 							}
 						} catch (Exception e) {
 							messageList.add(XFUtility.RESOURCE.getString("FunctionError15") + " " + detailFunctionID);
@@ -3786,6 +3808,9 @@ class XF100_PromptCallField extends JPanel implements XFEditableField {
 				}
 				try {
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
+					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+						dialog_.returnToMenu();
+					}
 					if (!returnMap.get("RETURN_CODE").equals("99")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {

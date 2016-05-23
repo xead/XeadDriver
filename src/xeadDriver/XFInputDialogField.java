@@ -100,7 +100,7 @@ public class XFInputDialogField extends JPanel {
 			field.setLineWrap(true);
 			component = field;
 		}
-		component.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+		component.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-1));
 		this.setOpaque(false);
 		if (inputType_.equals("DATE")) {
 			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);

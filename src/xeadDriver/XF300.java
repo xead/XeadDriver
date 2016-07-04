@@ -87,6 +87,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private NodeList headerReferElementList;
 	private XF300_StructureTable structureTable_ = null;
 	private String headerFunctionID = "";
+	private String headerFunctionParm = "";
 	private JSplitPane jSplitPaneTop = new JSplitPane();
 	private JPanel jPanelTop = new JPanel();
 	private JPanel jPanelCenter = new JPanel();
@@ -108,6 +109,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private XF300_DetailTable[] detailTableArray = new XF300_DetailTable[10];
 	private String[] detailFunctionIDArray = new String[10];
 	private String[] detailParmTypeArray = new String[10];
+	private String[] detailParmAdditionalArray = new String[10];
 	private String[] detailInitialListingArray = new String[10];
 	private TableModelReadOnly[] tableModelMainArray = new TableModelReadOnly[10];
 	private JTable[] jTableMainArray = new JTable[10];
@@ -632,6 +634,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			headerReferTableList.add(new XF300_HeaderReferTable((org.w3c.dom.Element)workSortingList.getElementAt(i), this));
 		}
 		headerFunctionID = functionElement_.getAttribute("HeaderFunction");
+		headerFunctionParm = functionElement_.getAttribute("HeaderParmAdditional");
 
 		/////////////////////////////////////////////////
 		// Setup Header Fields and Fetch Header Record //
@@ -993,6 +996,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			// Setup information of detail function called //
 			/////////////////////////////////////////////////
 			detailParmTypeArray[i] = workElement.getAttribute("ParmType");
+			detailParmAdditionalArray[i] = workElement.getAttribute("ParmAdditional");
 			detailInitialListingArray[i] = workElement.getAttribute("InitialListing");
 			detailFunctionIDArray[i] = workElement.getAttribute("DetailFunction");
 			if (detailFunctionIDArray[i].equals("NONE")) {
@@ -1687,7 +1691,22 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 
 			if (action.equals("HEADER")) {
 				try {
-					returnMap = session_.executeFunction(headerFunctionID, parmMap_);
+					HashMap<String, Object> workMap = new HashMap<String, Object>();
+					workMap.putAll(parmMap_);
+					workMap.remove("INSTANCE_MODE");
+					StringTokenizer workTokenizer1, workTokenizer2;
+					String parmName, parmValue;
+					workTokenizer1 = new StringTokenizer(headerFunctionParm, ";" );
+					while (workTokenizer1.hasMoreTokens()) {
+						workTokenizer2 = new StringTokenizer(workTokenizer1.nextToken(), ":" );
+						if (workTokenizer2.countTokens() == 2) {
+							parmName = workTokenizer2.nextToken();
+							parmValue = workTokenizer2.nextToken();
+							workMap.put(parmName, parmValue);
+						}
+					}
+//					returnMap = session_.executeFunction(headerFunctionID, parmMap_);
+					returnMap = session_.executeFunction(headerFunctionID, workMap);
 					if (returnMap.get("RETURN_CODE").equals("30")) {
 						returnMap_.put("RETURN_CODE", "30");
 						closeFunction();
@@ -1749,9 +1768,28 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			pos1 = action.indexOf("CALL(", 0);
 			if (pos1 >= 0) {
 				pos2 = action.indexOf(")", pos1);
-				String functionID = action.substring(pos1+5, pos2);
+				String functionAndParms = action.substring(pos1+5, pos2);
 				try {
-					returnMap = session_.executeFunction(functionID, parmMap_);
+					HashMap<String, Object> workMap = new HashMap<String, Object>();
+					workMap.putAll(parmMap_);
+					workMap.remove("INSTANCE_MODE");
+					StringTokenizer workTokenizer1, workTokenizer2, workTokenizer3;
+					String parmName, parmValue;
+					workTokenizer1 = new StringTokenizer(functionAndParms, "," );
+					String functionID = workTokenizer1.nextToken();
+					if (workTokenizer1.hasMoreTokens()) {
+						workTokenizer2 = new StringTokenizer(workTokenizer1.nextToken(), ";" );
+						while (workTokenizer2.hasMoreTokens()) {
+							workTokenizer3 = new StringTokenizer(workTokenizer2.nextToken(), ":" );
+							if (workTokenizer3.countTokens() == 2) {
+								parmName = workTokenizer3.nextToken();
+								parmValue = workTokenizer3.nextToken();
+								workMap.put(parmName, parmValue);
+							}
+						}
+					}
+//					returnMap = session_.executeFunction(functionID, parmMap_);
+					returnMap = session_.executeFunction(functionID, workMap);
 					if (returnMap.get("RETURN_CODE").equals("30")) {
 						returnMap_.put("RETURN_CODE", "30");
 						closeFunction();
@@ -2706,7 +2744,19 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						messageList.add(initialMsgArray[index]);
 					}
 				} else {
-					selectDetailRecordsAndSetupTableRows(index, true);
+					if (detailInitialListingArray[index].equals("T")) {
+						selectDetailRecordsAndSetupTableRows(index, true);
+					} else {
+						if (initialMsgArray[index].equals("")) {
+							StringBuffer buf = new StringBuffer();
+							buf.append(XFUtility.RESOURCE.getString("FunctionMessage1"));
+							buf.append(detailTableArray[index].getOrderByDescription());
+							buf.append(XFUtility.RESOURCE.getString("FunctionMessage56"));
+							messageList.add(buf.toString());
+						} else {
+							messageList.add(initialMsgArray[index]);
+						}
+					}
 				}
 			}
 			setMessagesOnPanel();
@@ -2804,8 +2854,23 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						returnMap_.put("RETURN_CODE", "00");
 						closeFunction();
 					} else {
-						if (!detailTableArray[jTabbedPane.getSelectedIndex()].getTableID().equals(headerTable_.getTableID())) {
-							keyMap.putAll(parmMap_);
+						if (detailParmTypeArray[jTabbedPane.getSelectedIndex()].equals("COLUMNS")) {
+							keyMap = detailRowNumber.getColumnMap();
+						} else {
+							if (!detailTableArray[jTabbedPane.getSelectedIndex()].getTableID().equals(headerTable_.getTableID())) {
+								keyMap.putAll(parmMap_);
+							}
+						}
+						if (!detailParmAdditionalArray[jTabbedPane.getSelectedIndex()].equals("")) {
+							StringTokenizer workTokenizer1 = new StringTokenizer(detailParmAdditionalArray[jTabbedPane.getSelectedIndex()], ";" );
+							while (workTokenizer1.hasMoreTokens()) {
+								StringTokenizer workTokenizer2 = new StringTokenizer(workTokenizer1.nextToken(), ":" );
+								if (workTokenizer2.countTokens() == 2) {
+									String parmName = workTokenizer2.nextToken();
+									String parmValue = workTokenizer2.nextToken();
+									keyMap.put(parmName, parmValue);
+								}
+							}
 						}
 						try {
 							HashMap<String, Object> returnMap = session_.executeFunction(detailFunctionIDArray[jTabbedPane.getSelectedIndex()], keyMap);
@@ -5208,12 +5273,12 @@ class XF300_Filter extends JPanel {
 								validated = true;
 							} else {
 								if (operandType.equals("EQ")) {
-									if (stringResultValue.equals(stringFilterValue)) {
+									if (stringResultValue.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 										validated = true;
 									}
 								}
 								if (operandType.equals("SCAN")) {
-									if (stringResultValue.contains(stringFilterValue)) {
+									if (stringResultValue.toUpperCase().contains(stringFilterValue.toUpperCase())) {
 										validated = true;
 									}
 								}
@@ -5222,7 +5287,7 @@ class XF300_Filter extends JPanel {
 									int lengthFieldValue = stringFilterValue.length();
 									if (lengthResultValue >= lengthFieldValue) {
 										String wrk = stringResultValue.substring(0, lengthFieldValue);
-										if (wrk.equals(stringFilterValue)) {
+										if (wrk.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 											validated = true;
 										}
 									}

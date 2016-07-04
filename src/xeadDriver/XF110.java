@@ -345,6 +345,22 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					break;
 				}
 			}
+
+			//////////////////////////
+			// Restore filter value //
+			//////////////////////////
+			HashMap<String, String> valueMap = session_.getFilterValueMap(this.getFunctionID());
+			if (valueMap != null) {
+				for (int i = 0; i < filterList.size(); i++) {
+					if (filterList.get(i).isEditable() && filterList.get(i).getBasicType().equals("STRING")) {
+						if (filterList.get(i).getValue().equals("")) {
+							if (valueMap.containsKey(filterList.get(i).getDataSourceName())) {
+								filterList.get(i).setValue(valueMap.get(filterList.get(i).getDataSourceName()));
+							}
+						}
+					}
+				}
+			}
 			
 			////////////////////
 			// Reset checkBox //
@@ -1119,6 +1135,18 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		}
 
 		orderByFieldList.remove(0);
+	}
+
+	public void saveFilterValues() {
+		if (!session_.getTableNameOfUserFilterValue().equals("")) {
+			for (int i = 0; i < filterList.size(); i++) {
+				if (filterList.get(i).isEditable()
+						&& filterList.get(i).getBasicType().equals("STRING")
+						&& filterList.get(i).getDefaultValue().equals("")) {
+					session_.setFilterValueMap(getFunctionID(), filterList.get(i).getDataSourceName(), filterList.get(i).getValue().toString());
+				}
+			}
+		}
 	}
 
 	public XFTableOperator getReferOperator(String sql) {
@@ -3036,12 +3064,12 @@ class XF110_Filter extends JPanel {
 									validated = true;
 								} else {
 									if (operandType.equals("EQ")) {
-										if (stringResultValue.equals(stringFilterValue)) {
+										if (stringResultValue.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 											validated = true;
 										}
 									}
 									if (operandType.equals("SCAN")) {
-										if (stringResultValue.contains(stringFilterValue)) {
+										if (stringResultValue.toUpperCase().contains(stringFilterValue.toUpperCase())) {
 											validated = true;
 										}
 									}
@@ -3050,7 +3078,7 @@ class XF110_Filter extends JPanel {
 										int lengthFieldValue = stringFilterValue.length();
 										if (lengthResultValue >= lengthFieldValue) {
 											String wrk = stringResultValue.substring(0, lengthFieldValue);
-											if (wrk.equals(stringFilterValue)) {
+											if (wrk.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 												validated = true;
 											}
 										}
@@ -3458,10 +3486,10 @@ class XF110_Filter extends JPanel {
 								}
 							} else {
 								if (operandType.equals("SCAN")) {
-									value = fieldID + " LIKE '%" + wrkStr + "%'";
+									value = "UPPER(" + fieldID + ") LIKE UPPER('%" + wrkStr + "%')";
 								} else {
 									if (operandType.equals("GENERIC")) {
-										value = fieldID + " LIKE '" + wrkStr + "%'";
+										value = "UPPER(" + fieldID + ") LIKE UPPER('" + wrkStr + "%')";
 									} else {
 										value = fieldID + operand + "'" + wrkStr + "'";
 									}
@@ -5354,6 +5382,7 @@ class XF110_jButtonList_actionAdapter implements java.awt.event.ActionListener {
 			adaptee.setListingInNormalOrder(true);
 		}
 		adaptee.selectRowsAndList();
+		adaptee.saveFilterValues();
 	}
 }
 

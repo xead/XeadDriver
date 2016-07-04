@@ -68,6 +68,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private boolean instanceIsAvailable = true;
 	private boolean isClosing = false;
 	private boolean anyRecordsDeleted = false;
+	private boolean headerRecordDeleted = false;
 	private int instanceArrayIndex_ = -1;
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
@@ -179,6 +180,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private HashMap<String, Object> variantMap = new HashMap<String, Object>();
 	private int biggestWidth = 0;
 	private int biggestHeight = 0;
+    private ArrayList<String> fieldsToPutList_ = new ArrayList<String>();
+    private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
+    private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
+    private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
 
 	public XF310(Session session, int instanceArrayIndex) {
 		super(session, "", true);
@@ -360,6 +365,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			messageList.clear();
 			keyInputDialog = null;
 			anyRecordsDeleted = false;
+			headerRecordDeleted = false;
 			hasNoErrorInTableRows = true;
 			firstEditableHeaderField = null;
 			deleteRowNumberList.clear();
@@ -962,6 +968,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		instanceIsAvailable = true;
 		if (anyRecordsDeleted && !returnMap_.get("RETURN_CODE").toString().equals("99")) {
 			returnMap_.put("RETURN_CODE", "20");
+		}
+		if (headerRecordDeleted && !returnMap_.get("RETURN_CODE").toString().equals("99")) {
+			returnMap_.put("RETURN_CODE", "30");
 		}
 		String errorLog = "";
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
@@ -1733,6 +1742,89 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 		return hasNoError;
 	}
+
+	void checkErrorsToDelete() {
+		XF310_DetailRowNumber tableRowNumber;
+		XFTableOperator operator;
+		String sql = "";
+		int recordCount;
+
+		////////////////////////////
+		// Confirm user to remove // 
+		////////////////////////////
+		Object[] bts = {XFUtility.RESOURCE.getString("Yes"), XFUtility.RESOURCE.getString("No")} ;
+		int reply = JOptionPane.showOptionDialog(this, XFUtility.RESOURCE.getString("FunctionMessage64"), XFUtility.RESOURCE.getString("CheckToDelete"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+		if (reply == 0) {
+			try {
+				setCursor(new Cursor(Cursor.WAIT_CURSOR));
+
+				///////////////////////////////////////////
+				// Delete detail records of removed rows //
+				///////////////////////////////////////////
+				for (int i = 0; i < deleteRowNumberList.size(); i++) {
+					tableRowNumber = (XF310_DetailRowNumber)deleteRowNumberList.get(i);
+					tableRowNumber.setValuesToDetailColumns();
+
+					if (detailTable.getUpdateCounterID().equals("")) {
+						sql = detailTable.getSQLToDelete(deleteRowNumberList.get(i).getKeyValueMap(), 0);
+					} else {
+						sql = detailTable.getSQLToDelete(deleteRowNumberList.get(i).getKeyValueMap(), (Long)deleteRowNumberList.get(i).getColumnValueMap().get(detailTable.getUpdateCounterID()))	;
+					}
+					operator = createTableOperator(sql);
+					recordCount = operator.execute();
+					if (recordCount == 1) {
+						detailTable.runScript("AD", "", deleteRowNumberList.get(i).getColumnValueMap(), deleteRowNumberList.get(i).getColumnOldValueMap());
+					} else {
+						String errorMessage = XFUtility.RESOURCE.getString("FunctionError33");
+						JOptionPane.showMessageDialog(jPanelMain, errorMessage);
+						exceptionHeader = errorMessage.replace("\n", " ");
+						this.rollback();
+						setErrorAndCloseFunction();
+					}
+				}
+
+				///////////////////////////////////////////////////
+				// Execute header-table scripts of BEFORE-DELETE //
+				///////////////////////////////////////////////////
+				int countOfErrors = headerTable.runScript("BD", "");
+				if (countOfErrors == 0) {
+
+					//////////////////////////////
+					// Delete the header record //
+					//////////////////////////////
+					operator = createTableOperator(headerTable.getSQLToDelete());
+					recordCount = operator.execute();
+					if (recordCount == 1) {
+
+						//////////////////////////////////////////////////////////////
+						// Execute table scripts of AFTER-DELETE and close function //
+						//////////////////////////////////////////////////////////////
+						headerTable.runScript("AD", "");
+						headerRecordDeleted = true;
+						this.commit();
+						closeFunction();
+
+					} else {
+						String errorMessage = XFUtility.RESOURCE.getString("FunctionError19");
+						JOptionPane.showMessageDialog(jPanelMain, errorMessage);
+						exceptionHeader = errorMessage.replace("\n", " ");
+						this.rollback();
+						setErrorAndCloseFunction();
+					}
+
+				} else {
+					this.rollback();
+				}
+
+			} catch(ScriptException e) {
+				cancelWithScriptException(e, this.getScriptNameRunning());
+			} catch (Exception e) {
+				cancelWithException(e);
+			} finally {
+				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+			}
+		}
+	}
 	
 	boolean isDuplicatedInTableComponent(XF310_DetailRowNumber rowNumber, ArrayList<String> keyFieldList) {
 		XF310_DetailRowNumber rn;
@@ -1808,7 +1900,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						if (addRowListNumberList != null) {
 							int countOfAdded = 0;
 							for (int i = 0; i < addRowListNumberList.size(); i++) {
-								countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i));
+								countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i).getReturnFieldMap());
 							}
 							int countOfNotAdded = addRowListNumberList.size() - countOfAdded;
 							if (countOfNotAdded > 0) {
@@ -1831,7 +1923,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 	
-	int setupNewRowAndAddToJTable(XF310_AddRowListNumber rowNumber) {
+	int setupNewRowAndAddToJTable(HashMap<String, Object> returnFieldMap) {
 		XF310_HeaderField headerField;
 		XF310_DetailColumn detailColumn;
 		int countOfAdded = 0;
@@ -1864,7 +1956,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			detailColumn = getDetailColumnObjectByID(detailTable.getTableID(), "", detailTable.getKeyFieldIDList().get(i));
 			detailColumn.setValue(headerField.getInternalValue());
 		}
-		if (rowNumber == null) {
+		if (returnFieldMap == null) {
 			for (int i = 0; i < detailColumnList.size(); i++) {
 				if (detailColumnList.get(i).isDetailKey()
 						&& detailColumnList.get(i).isNull()) {
@@ -1898,8 +1990,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		} else {
 			for (int i = 0; i < detailColumnList.size(); i++) {
-				if (rowNumber.getReturnFieldMap().containsKey(detailColumnList.get(i).getDataSourceName())) {
-					detailColumnList.get(i).setValue(rowNumber.getReturnFieldMap().get(detailColumnList.get(i).getDataSourceName()));
+				if (returnFieldMap.containsKey(detailColumnList.get(i).getDataSourceName())) {
+					detailColumnList.get(i).setValue(returnFieldMap.get(detailColumnList.get(i).getDataSourceName()));
 				}
 			}
 		}
@@ -2067,8 +2159,17 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				addRow();
 			}
 
+			if (action.contains("CALL_TO_ADD")) {
+				checkErrorsToUpdate(true, true);
+				callFunctionToAddRow(action);
+			}
+
 			if (action.equals("REMOVE_ROW")) {
 				removeRow();
+			}
+
+			if (action.equals("DELETE")) {
+				checkErrorsToDelete();
 			}
 
 			if (action.equals("OUTPUT")) {
@@ -2080,7 +2181,126 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
-	
+
+	void callFunctionToAddRow(String action) {
+		String functionID, wrkStr;
+		Object value;
+		StringTokenizer workTokenizer;
+		try {
+			setCursor(new Cursor(Cursor.WAIT_CURSOR));
+
+			int pos1 = action.indexOf("CALL_TO_ADD(");
+			int pos2 = action.indexOf(")", pos1);
+			functionID = action.substring(12, pos2);
+
+			pos1 = action.indexOf("PUT_FROM(");
+			if (pos1 >= 0) {
+				pos2 = action.indexOf(")", pos1);
+				wrkStr = action.substring(pos1 + 9, pos2);
+				if (!wrkStr.equals("")) {
+					workTokenizer = new StringTokenizer(wrkStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						fieldsToPutList_.add(workTokenizer.nextToken());
+					}
+				}
+			}
+			pos1 = action.indexOf("PUT_TO(");
+			if (pos1 >= 0) {
+				pos2 = action.indexOf(")", pos1);
+				wrkStr = action.substring(pos1 + 7, pos2);
+				if (!wrkStr.equals("")) {
+					workTokenizer = new StringTokenizer(wrkStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						fieldsToPutToList_.add(workTokenizer.nextToken());
+					}
+				}
+			}
+			pos1 = action.indexOf("GET_FROM(");
+			if (pos1 >= 0) {
+				pos2 = action.indexOf(")", pos1);
+				wrkStr = action.substring(pos1 + 9, pos2);
+				if (!wrkStr.equals("")) {
+					workTokenizer = new StringTokenizer(wrkStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						fieldsToGetList_.add(workTokenizer.nextToken());
+					}
+				}
+			}
+			pos1 = action.indexOf("GET_TO(");
+			if (pos1 >= 0) {
+				pos2 = action.indexOf(")", pos1);
+				wrkStr = action.substring(pos1 + 7, pos2);
+				if (!wrkStr.equals("")) {
+					workTokenizer = new StringTokenizer(wrkStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						fieldsToGetToList_.add(workTokenizer.nextToken());
+					}
+				}
+			}
+
+			HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
+			for (int i = 0; i < fieldsToPutList_.size(); i++) {
+				value = getValueOfHeaderFieldByName(fieldsToPutList_.get(i));
+				if (value == null) {
+					JOptionPane.showMessageDialog(null, "Unable to send the value of field " + fieldsToPutList_.get(i));
+				} else {
+					fieldValuesMap.put(fieldsToPutToList_.get(i), value);
+				}
+			}
+
+			HashMap<String, Object> returnMap = session_.executeFunction(functionID, fieldValuesMap);
+			if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+				returnToMenu();
+			}
+			if (returnMap.get("RETURN_CODE").equals("00")) {
+				String datasourceName = "";
+				String multipleValues = "";
+				for (int i = 0; i < fieldsToGetList_.size(); i++) {
+					value = returnMap.get(fieldsToGetList_.get(i));
+					if (value == null) {
+						JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+					} else {
+						if (value.toString().contains(";")) {
+							datasourceName = fieldsToGetList_.get(i);
+							multipleValues = value.toString();
+							break;
+						}
+					}
+				}
+				if (multipleValues.equals("")) {
+					HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
+					for (int i = 0; i < fieldsToGetList_.size(); i++) {
+						value = returnMap.get(fieldsToGetList_.get(i));
+						if (value != null) {
+							fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+						}
+					}
+					setupNewRowAndAddToJTable(fieldsToGetMap);
+				} else {
+					workTokenizer = new StringTokenizer(multipleValues, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
+						for (int i = 0; i < fieldsToGetList_.size(); i++) {
+							value = returnMap.get(fieldsToGetList_.get(i));
+							if (value != null) {
+								if (fieldsToGetList_.get(i).equals(datasourceName)) {
+									fieldsToGetMap.put(fieldsToGetToList_.get(i), workTokenizer.nextToken());
+								} else {
+									fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+								}
+							}
+						}
+						setupNewRowAndAddToJTable(fieldsToGetMap);
+					}
+				}
+			}
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(null, ex.getMessage());
+		} finally {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		}
+	}
+
 	class TableModelEditableList extends DefaultTableModel {
 		private static final long serialVersionUID = 1L;
 		public boolean isCellEditable(int row, int col) {
@@ -7431,6 +7651,32 @@ class XF310_HeaderTable extends Object {
 			statementBuf.append(updateCounterValue);
 		}
 
+		return statementBuf.toString();
+	}
+
+	String getSQLToDelete() {
+		StringBuffer statementBuf = new StringBuffer();
+		statementBuf.append("delete from ");
+		statementBuf.append(tableID);
+		statementBuf.append(" where ") ;
+		boolean firstField = true;
+		for (int i = 0; i < dialog_.getHeaderFieldList().size(); i++) {
+			if (dialog_.getHeaderFieldList().get(i).isKey()) {
+				if (!firstField) {
+					statementBuf.append(" and ") ;
+				}
+				statementBuf.append(dialog_.getHeaderFieldList().get(i).getFieldID());
+				statementBuf.append("=");
+				statementBuf.append(XFUtility.getTableOperationValue(dialog_.getHeaderFieldList().get(i).getBasicType(), dialog_.getHeaderFieldList().get(i).getInternalValue(), dbName));
+				firstField = false;
+			}
+		}
+		if (!updateCounterID.equals("")) {
+			statementBuf.append(" and ");
+			statementBuf.append(updateCounterID);
+			statementBuf.append("=");
+			statementBuf.append(updateCounterValue);
+		}
 		return statementBuf.toString();
 	}
 	

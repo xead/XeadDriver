@@ -43,11 +43,24 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M2";
-	public static final String VERSION  = "1.3.2";
+	public static final String FULL_VERSION  = "V1.R3.M4";
+	public static final String VERSION  = "1.3.4";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2016 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.3.4
+	//・XF310で見出しレコード削除用のボタンを使えるようにした
+	//・XF310で行追加用の機能を起動するようにした
+	//・規定テーブルを追加することで、XF100,XF110でのフィルター値がユーザ毎に記録・復元されるようにした
+	//・ユーザIDの長さやラベルがログインダイアログに反映されるようにした
+	//・XF300で明細タブを選んだときの動作に関する細かいバグを修正した
+	//・XF100,110,300の絞込み条件で大文字小文字の区別をしないようにした
+	//
+	//1.3.3
+	//・XF100,XF200,XF300からの機能起動において、指定された固定値の追加パラメータを渡すようにした
+	//・上記の改善にともなって、XF200の更新専用設定を廃止した
+	//・XF200で、キー値指定のADDモードで起動された場合、複写モードで始まるようにした
+	//
 	//1.3.2
 	//・XFTextField,XFDateField等について、アルファベットのベースライン以下が見えにくい問題を改善した
 	//・TableOperatorのログ書き込みで、SQL文の最長を1000桁にした

@@ -109,6 +109,7 @@ public class Session extends JFrame {
 	private boolean isValueSaltedForUser = false;
 	private String userMenus = "";
 	private String userTable = "";
+	private String userFilterValueTable = "";
 	private String variantsTable = "";
 	private String userVariantsTable = "";
 	private String sessionTable = "";
@@ -470,6 +471,7 @@ public class Session extends JFrame {
 		// System control tables //
 		///////////////////////////
 		userTable = element.getAttribute("UserTable");
+		userFilterValueTable = element.getAttribute("UserFilterValueTable");
 		variantsTable = element.getAttribute("VariantsTable");
 		userVariantsTable = element.getAttribute("UserVariantsTable");
 		numberingTable = element.getAttribute("NumberingTable");
@@ -591,11 +593,11 @@ public class Session extends JFrame {
 
 		} catch (Exception e) {
 			if (isToStartSession) {
-				if (e.getMessage() != null && e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
-					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
-				} else {
+//				if (e.getMessage() != null && e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
+//					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
+//				} else {
 					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + dbName + XFUtility.RESOURCE.getString("SessionError7") + "Message:" + e.getMessage());
-				}
+//				}
 			}
 			return false;
 		}
@@ -1801,6 +1803,51 @@ public class Session extends JFrame {
 			JOptionPane.showMessageDialog(null, "Accessing to the system variant table failed.\n" + e.getMessage());
 		}
 		return strValue;
+	}
+
+	public HashMap getFilterValueMap(String functionID) {
+		HashMap<String, String> valueMap = null;
+		if (!userFilterValueTable.equals("")) {
+			try {
+				valueMap = new HashMap<String, String>();
+				String sql = "select * from " + userFilterValueTable
+						+ " where IDUSER ='" + this.getUserID()
+						+ "' AND IDFUNCTION = '" + functionID + "'";
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				while (operator.next()) {
+					valueMap.put(operator.getValueOf("IDFILTER").toString(), operator.getValueOf("TXVALUE").toString());
+				}
+			} catch (Exception e) {
+				valueMap = null;
+			}
+		}
+		return valueMap;
+	}
+
+	public void setFilterValueMap(String functionID, String filterID, String value) {
+		if (!userFilterValueTable.equals("")) {
+			try {
+				String sql = "select * from " + userFilterValueTable
+						+ " where IDUSER ='" + this.getUserID()
+						+ "' AND IDFUNCTION = '" + functionID
+						+ "' AND IDFILTER = '" + filterID + "'";
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				if (operator.next()) {
+					sql = "update " + userFilterValueTable
+							+ " set TXVALUE = '" + value
+							+ "' where IDUSER ='" + this.getUserID()
+							+ "' AND IDFUNCTION = '" + functionID
+							+ "' AND IDFILTER = '" + filterID + "'";
+				} else {
+					sql = "insert into " + userFilterValueTable
+							+ " (IDUSER, IDFUNCTION, IDFILTER, TXVALUE) values ("
+							+ "'" + this.getUserID() + "', '" + functionID
+							+ "', '" + filterID + "', '" + value + "')";
+				}
+				operator = new XFTableOperator(this, null, sql, true);
+				operator.execute();
+			} catch (Exception e) {}
+		}
 	}
 
 	public int getSystemVariantInteger(String itemID) {
@@ -3336,6 +3383,10 @@ public class Session extends JFrame {
 
 	String getTableNameOfUser() {
 		return userTable;
+	}
+
+	String getTableNameOfUserFilterValue() {
+		return userFilterValueTable;
 	}
 
 	String getTableNameOfVariants() {

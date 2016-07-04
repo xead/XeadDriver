@@ -337,6 +337,22 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 
+			//////////////////////////
+			// Restore filter value //
+			//////////////////////////
+			HashMap<String, String> valueMap = session_.getFilterValueMap(this.getFunctionID());
+			if (valueMap != null) {
+				for (int i = 0; i < filterList.size(); i++) {
+					if (filterList.get(i).isEditable() && filterList.get(i).getBasicType().equals("STRING")) {
+						if (filterList.get(i).getValue().equals("")) {
+							if (valueMap.containsKey(filterList.get(i).getDataSourceName())) {
+								filterList.get(i).setValue(valueMap.get(filterList.get(i).getDataSourceName()));
+							}
+						}
+					}
+				}
+			}
+
 			////////////////////////////////
 			// Setup Panel Configurations //
 			////////////////////////////////
@@ -1057,7 +1073,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
-	
+
 	public void resortTableRowsByColumnIndex(int col, boolean isAscending) {
 		String workStr;
 		ArrayList<Object> orderByValueList;
@@ -1095,7 +1111,6 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		}
 
 		WorkingRow[] workingRowArray = workingRowList.toArray(new WorkingRow[0]);
-		//Arrays.sort(workingRowArray, new WorkingRowComparator());
 		Arrays.sort(workingRowArray);
 		for (int i = 0; i < workingRowArray.length; i++) {
 			Object[] cell = new Object[1];
@@ -1104,6 +1119,18 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		}
 
 		orderByFieldList.remove(0);
+	}
+
+	public void saveFilterValues() {
+		if (!session_.getTableNameOfUserFilterValue().equals("")) {
+			for (int i = 0; i < filterList.size(); i++) {
+				if (filterList.get(i).isEditable()
+						&& filterList.get(i).getBasicType().equals("STRING")
+						&& filterList.get(i).getDefaultValue().equals("")) {
+					session_.setFilterValueMap(getFunctionID(), filterList.get(i).getDataSourceName(), filterList.get(i).getValue().toString());
+				}
+			}
+		}
 	}
 	
 	public XFTableOperator getReferOperator(String sql) {
@@ -1182,10 +1209,27 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				pos1 = action.indexOf("CALL(", 0);
 				if (pos1 >= 0) {
 					pos2 = action.indexOf(")", 0);
-					String functionID = action.substring(pos1+5, pos2);
-					if (!functionID.equals("")) {
+					String callAction = action.substring(pos1+5, pos2);
+					if (!callAction.equals("")) {
 						try {
-							HashMap<String, Object> returnMap = session_.executeFunction(functionID, parmMap_);
+							HashMap<String, Object> workMap = new HashMap<String, Object>();
+							StringTokenizer workTokenizer1, workTokenizer2, workTokenizer3;
+							String parmName, parmValue;
+							workTokenizer1 = new StringTokenizer(callAction, "," );
+							String functionID = workTokenizer1.nextToken();
+							if (workTokenizer1.hasMoreTokens()) {
+								workTokenizer2 = new StringTokenizer(workTokenizer1.nextToken(), ";" );
+								while (workTokenizer2.hasMoreTokens()) {
+									workTokenizer3 = new StringTokenizer(workTokenizer2.nextToken(), ":" );
+									if (workTokenizer3.countTokens() == 2) {
+										parmName = workTokenizer3.nextToken();
+										parmValue = workTokenizer3.nextToken();
+										workMap.put(parmName, parmValue);
+									}
+								}
+							}
+							//HashMap<String, Object> returnMap = session_.executeFunction(functionID, parmMap_);
+							HashMap<String, Object> returnMap = session_.executeFunction(functionID, workMap);
 							if (returnMap.get("RETURN_CODE").equals("10")
 									|| returnMap.get("RETURN_CODE").equals("20")
 									|| returnMap.get("RETURN_CODE").equals("30")) {
@@ -1755,6 +1799,17 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 						HashMap<String, Object> workMap = tableRowNumber.getKeyMap();
 						if (functionElement_.getAttribute("ParmType").equals("COLUMNS")) {
 							workMap = tableRowNumber.getColumnMap();
+						}
+						if (!functionElement_.getAttribute("ParmAdditional").equals("")) {
+							StringTokenizer workTokenizer1 = new StringTokenizer(functionElement_.getAttribute("ParmAdditional"), ";" );
+							while (workTokenizer1.hasMoreTokens()) {
+								StringTokenizer workTokenizer2 = new StringTokenizer(workTokenizer1.nextToken(), ":" );
+								if (workTokenizer2.countTokens() == 2) {
+									String parmName = workTokenizer2.nextToken();
+									String parmValue = workTokenizer2.nextToken();
+									workMap.put(parmName, parmValue);
+								}
+							}
 						}
 
 						try {
@@ -3000,12 +3055,12 @@ class XF100_Filter extends JPanel {
 									validated = true;
 								} else {
 									if (operandType.equals("EQ")) {
-										if (stringResultValue.equals(stringFilterValue)) {
+										if (stringResultValue.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 											validated = true;
 										}
 									}
 									if (operandType.equals("SCAN")) {
-										if (stringResultValue.contains(stringFilterValue)) {
+										if (stringResultValue.toUpperCase().contains(stringFilterValue.toUpperCase())) {
 											validated = true;
 										}
 									}
@@ -3014,7 +3069,7 @@ class XF100_Filter extends JPanel {
 										int lengthFieldValue = stringFilterValue.length();
 										if (lengthResultValue >= lengthFieldValue) {
 											String wrk = stringResultValue.substring(0, lengthFieldValue);
-											if (wrk.equals(stringFilterValue)) {
+											if (wrk.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 												validated = true;
 											}
 										}
@@ -3436,10 +3491,10 @@ class XF100_Filter extends JPanel {
 								}
 							} else {
 								if (operandType.equals("SCAN")) {
-									value = fieldID + " LIKE '%" + wrkStr + "%'";
+									value = "UPPER(" + fieldID + ") LIKE UPPER('%" + wrkStr + "%')";
 								} else {
 									if (operandType.equals("GENERIC")) {
-										value = fieldID + " LIKE '" + wrkStr + "%'";
+										value = "UPPER(" + fieldID + ") LIKE UPPER('" + wrkStr + "%')";
 									} else {
 										value = fieldID + operand + "'" + wrkStr + "'";
 									}
@@ -5229,6 +5284,7 @@ class XF100_jButtonList_actionAdapter implements java.awt.event.ActionListener {
 			adaptee.setListingInNormalOrder(true);
 		}
 		adaptee.selectRowsAndList();
+		adaptee.saveFilterValues();
 	}
 }
 

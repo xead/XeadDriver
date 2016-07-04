@@ -347,9 +347,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			// Initializing panel mode //
 			/////////////////////////////
 			if (hasParmMapWithCompleteKeySet()) {
-				if (functionElement_.getAttribute("UpdateOnly").equals("T")
-						|| (parmMap_.get("INSTANCE_MODE") != null && parmMap_.get("INSTANCE_MODE").toString().equals("EDIT"))) {
-
+//				if (functionElement_.getAttribute("UpdateOnly").equals("T")
+//						|| (parmMap_.containsKey("INSTANCE_MODE") && parmMap_.get("INSTANCE_MODE").toString().equals("EDIT"))) {
+				if (parmMap_.containsKey("INSTANCE_MODE") && parmMap_.get("INSTANCE_MODE").toString().equals("EDIT")) {
 					panelMode_ = "EDIT";
 					returnMap_.put("RETURN_CODE", "21");
 					this.setTitle(functionElement_.getAttribute("Name"));
@@ -358,20 +358,31 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					} else {
 						messageList.add(initialMsg);
 					}
-					
 				} else {
-					panelMode_ = "DISPLAY";
-					returnMap_.put("RETURN_CODE", "00");
-					this.setTitle(XFUtility.RESOURCE.getString("FunctionMessage10") + dataName + XFUtility.RESOURCE.getString("FunctionMessage11"));
-					if (initialMsg.equals("")) {
-						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage12"));
+					if (parmMap_.containsKey("INSTANCE_MODE") && parmMap_.get("INSTANCE_MODE").toString().equals("ADD")) {
+						panelMode_ = "ADD";
+						returnMap_.put("RETURN_CODE", "11");
+						this.setTitle(XFUtility.RESOURCE.getString("FunctionMessage25") + dataName + XFUtility.RESOURCE.getString("FunctionMessage26"));
+						if (initialMsg.equals("")) {
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage15"));
+						} else {
+							messageList.add(initialMsg);
+						}
 					} else {
-						messageList.add(initialMsg);
+						panelMode_ = "DISPLAY";
+						returnMap_.put("RETURN_CODE", "00");
+						this.setTitle(XFUtility.RESOURCE.getString("FunctionMessage10") + dataName + XFUtility.RESOURCE.getString("FunctionMessage11"));
+						if (initialMsg.equals("")) {
+							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage12"));
+						} else {
+							messageList.add(initialMsg);
+						}
 					}
 				}
 			} else {
-				if (functionElement_.getAttribute("UpdateOnly").equals("T")
-						|| ((parmMap_.get("INSTANCE_MODE") != null && !parmMap_.get("INSTANCE_MODE").toString().equals("ADD")))) {
+//				if (functionElement_.getAttribute("UpdateOnly").equals("T")
+//						|| ((parmMap_.containsKey("INSTANCE_MODE") && !parmMap_.get("INSTANCE_MODE").toString().equals("ADD")))) {
+				if ((parmMap_.containsKey("INSTANCE_MODE") && !parmMap_.get("INSTANCE_MODE").toString().equals("ADD"))) {
 					panelMode_ = "EDIT";
 					returnMap_.put("RETURN_CODE", "21");
 					closeFunction();
@@ -416,6 +427,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			if (panelMode_.equals("ADD")) {
 				initializeFieldValues();
+				if (parmMap_.containsKey("INSTANCE_MODE") && parmMap_.get("INSTANCE_MODE").toString().equals("ADD")) {
+					fetchTableRecord();
+				}
 				fetchReferTableRecords("BC", false, "");
 				resetFieldError();
 			}
@@ -1038,16 +1052,15 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					&& (element.getAttribute("Action").equals("COPY")
 							|| element.getAttribute("Action").equals("DELETE"))) {
 			} else {
-				if (parmMap_.get("INSTANCE_MODE") != null
-						&& parmMap_.get("INSTANCE_MODE").toString().equals("INQ")
+				if (parmMap_.containsKey("INSTANCE_MODE") && parmMap_.get("INSTANCE_MODE").toString().equals("INQ")
 						&& (element.getAttribute("Action").equals("EDIT")
 								|| element.getAttribute("Action").equals("COPY")
 								|| element.getAttribute("Action").equals("DELETE"))) {
-					if (element.getAttribute("Action").equals("EDIT")
-							&& functionElement_.getAttribute("UpdateOnly").equals("T")) {
-						functionKeyToEdit = "F" + element.getAttribute("Number");
-						buttonToEdit.setText(functionKeyToEdit + " " + element.getAttribute("Caption"));
-					}
+//					if (element.getAttribute("Action").equals("EDIT")
+//							&& functionElement_.getAttribute("UpdateOnly").equals("T")) {
+//						functionKeyToEdit = "F" + element.getAttribute("Number");
+//						buttonToEdit.setText(functionKeyToEdit + " " + element.getAttribute("Caption"));
+//					}
 				} else {
 					workIndex = Integer.parseInt(element.getAttribute("Position"));
 
@@ -1074,6 +1087,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						XFUtility.setCaptionToButton(jButtonArray[workIndex], element, XFUtility.RESOURCE.getString("Add"), this.getPreferredSize().width / 8);
 					} else {
 						XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8);
+						if (element.getAttribute("Action").equals("EDIT") && panelMode_.equals("EDIT")) {
+							buttonToEdit.setText(functionKeyToEdit + " " + element.getAttribute("Caption"));
+						}
 					}
 
 					if (element.getAttribute("Number").equals("6")) {
@@ -1086,7 +1102,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 		if (panelMode_.equals("EDIT")) {
-			buttonToEdit.setText(functionKeyToEdit + " " + XFUtility.RESOURCE.getString("Update"));
+//			buttonToEdit.setText(functionKeyToEdit + " " + XFUtility.RESOURCE.getString("Update"));
 			if (buttonToCopy != null) {
 				buttonToCopy.setVisible(false);
 			}
@@ -1167,11 +1183,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				break;
 			}
 		}
-		if (hasCompleteKeySet && parmMap_.containsKey("INSTANCE_MODE")) {
-			if (parmMap_.get("INSTANCE_MODE").toString().equals("ADD")) {
-				hasCompleteKeySet = false;
-			}
-		}
+//		if (hasCompleteKeySet && parmMap_.containsKey("INSTANCE_MODE")) {
+//			if (parmMap_.get("INSTANCE_MODE").toString().equals("ADD")) {
+//				hasCompleteKeySet = false;
+//			}
+//		}
 		return hasCompleteKeySet;
 	}
 	
@@ -1730,10 +1746,29 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		int pos1 = action.indexOf("CALL(", 0);
 		if (pos1 >= 0) {
 			int pos2 = action.indexOf(")", pos1);
-			String functionID = action.substring(pos1+5, pos2);
+			String functionAndParms = action.substring(pos1+5, pos2);
 			messageList.clear();
 			try {
-				HashMap<String, Object> returnMap = session_.executeFunction(functionID, parmMap_);
+				HashMap<String, Object> workMap = new HashMap<String, Object>();
+				workMap.putAll(parmMap_);
+				workMap.remove("INSTANCE_MODE");
+				StringTokenizer workTokenizer1, workTokenizer2, workTokenizer3;
+				String parmName, parmValue;
+				workTokenizer1 = new StringTokenizer(functionAndParms, "," );
+				String functionID = workTokenizer1.nextToken();
+				if (workTokenizer1.hasMoreTokens()) {
+					workTokenizer2 = new StringTokenizer(workTokenizer1.nextToken(), ";" );
+					while (workTokenizer2.hasMoreTokens()) {
+						workTokenizer3 = new StringTokenizer(workTokenizer2.nextToken(), ":" );
+						if (workTokenizer3.countTokens() == 2) {
+							parmName = workTokenizer3.nextToken();
+							parmValue = workTokenizer3.nextToken();
+							workMap.put(parmName, parmValue);
+						}
+					}
+				}
+//				HashMap<String, Object> returnMap = session_.executeFunction(functionID, parmMap_);
+				HashMap<String, Object> returnMap = session_.executeFunction(functionID, workMap);
 				if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
 					returnToMenu();
 				}

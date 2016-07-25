@@ -43,18 +43,26 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M4";
-	public static final String VERSION  = "1.3.4";
+	public static final String FULL_VERSION  = "V1.R3.M5";
+	public static final String VERSION  = "1.3.5";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2016 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.3.5
+	//・XF310で行追加用の機能を起動するようにした
+	//・XF310の「明細行が0件ならば追加処理から開始」に対応した
+	//・XF310の明細項目からプロンプタ機能に対して見出し項目の値を渡せなくなっていた問題を修正した
+	//・XF100,110,300の絞込み条件で大文字小文字の区別をしないようにした
+	//・自己参照テーブルの属性の読み取りに関する不具合を修正した
+	//・XF100,110での固定Whereを使うと異常終了する問題を修正した
+	//・XF310の明細行追加の際に行番がカウントアップされないことのあるバグを修正した
+	//・XF310で追加したばかりの明細行を何も入力せずに削除できるようにした
+	//
 	//1.3.4
 	//・XF310で見出しレコード削除用のボタンを使えるようにした
-	//・XF310で行追加用の機能を起動するようにした
 	//・規定テーブルを追加することで、XF100,XF110でのフィルター値がユーザ毎に記録・復元されるようにした
 	//・ユーザIDの長さやラベルがログインダイアログに反映されるようにした
 	//・XF300で明細タブを選んだときの動作に関する細かいバグを修正した
-	//・XF100,110,300の絞込み条件で大文字小文字の区別をしないようにした
 	//
 	//1.3.3
 	//・XF100,XF200,XF300からの機能起動において、指定された固定値の追加パラメータを渡すようにした

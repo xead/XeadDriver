@@ -3206,6 +3206,7 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -3663,7 +3664,7 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 		if (!message.equals("") && this.errorMessage.equals("")) {
 			setError(true);
 			if (this.errorMessage.equals("")) {
-				this.errorMessage = message;
+				this.errorMessage = fieldName + ":" + message;
 			} else {
 				this.errorMessage = this.errorMessage + " " + message;
 			}

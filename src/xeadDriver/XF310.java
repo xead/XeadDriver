@@ -69,6 +69,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private boolean isClosing = false;
 	private boolean anyRecordsDeleted = false;
 	private boolean headerRecordDeleted = false;
+	private boolean isToStartInAddModeIfWithNoRow = false;
 	private int instanceArrayIndex_ = -1;
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
@@ -173,7 +174,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private String exceptionHeader = "";
 	private long detailRowNoLastValue = 0;
 	private boolean hasNoErrorInTableRows;
-	private String addRowListTitle = "";
+	private String addRowCaption = "";
+	private String callToAddAction = "";
 	private KeyStroke keyStrokeToUpdate = null;
 	private HashMap<String, Object> headerFieldValueMap = new HashMap<String, Object>();
 	private HashMap<String, Object> headerFieldOldValueMap = new HashMap<String, Object>();
@@ -529,8 +531,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		if (!this.isClosing) {
 			if (addRowListDialog == null
 					|| (addRowListDialog != null && !addRowListDialog.isInvalid())) {
-				if (jTableMain.getRowCount() == 0) {
-					addRow();
+				if (jTableMain.getRowCount() == 0 && isToStartInAddModeIfWithNoRow) {
+					if (addRowCaption.equals("")) {
+						if (!callToAddAction.equals("")) {
+							callFunctionToAddRow(callToAddAction);
+						}
+					} else {
+						addRow();
+					}
 				}
 				if (!this.isClosing) {
 					this.setVisible(true);
@@ -543,8 +551,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception {
 		org.w3c.dom.Element workElement;
+		int pos1, pos2;
 		String workStr, workAlias, workTableID, workFieldID;
-		StringTokenizer workTokenizer;
+		StringTokenizer workTokenizer, workTokenizer2;
 
 		///////////////////////////////
 		// Initialize basic variants //
@@ -574,6 +583,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		biggestHeight = 30;
 		boolean firstVisibleField = true;
 		XFEditableField zipField = null;
+		if (functionElement_.getAttribute("StartInAddMode").equals("T")) {
+			isToStartInAddModeIfWithNoRow = true;
+		} else {
+			isToStartInAddModeIfWithNoRow = false;
+		}
 
 		/////////////////////////////////////////////////
 		// Setup information of Header Table and Lists //
@@ -640,6 +654,31 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				workFieldID = workTokenizer.nextToken();
 				if (!containsHeaderField(workTableID, workAlias, workFieldID)) {
 					headerFieldList.add(new XF310_HeaderField(workTableID, workAlias, workFieldID, this));
+				}
+			}
+		}
+
+		/////////////////////////////////////////////////////////////
+		// Add exchange-field for add-row-function as HIDDEN field //
+		/////////////////////////////////////////////////////////////
+		NodeList buttonList = functionElement_.getElementsByTagName("Button");
+		for (int i = 0; i < buttonList.getLength(); i++) {
+			workElement = (org.w3c.dom.Element)buttonList.item(i);
+			pos1 = workElement.getAttribute("Action").indexOf("PUT_FROM(");
+			if (pos1 >= 0) {
+				pos2 = workElement.getAttribute("Action").indexOf(")", pos1);
+				workStr = workElement.getAttribute("Action").substring(pos1 + 9, pos2);
+				if (!workStr.equals("")) {
+					workTokenizer = new StringTokenizer(workStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						workTokenizer2 = new StringTokenizer(workTokenizer.nextToken(), "." );
+						workAlias = workTokenizer2.nextToken();
+						workTableID = getTableIDOfTableAlias(workAlias);
+						workFieldID = workTokenizer2.nextToken();
+						if (!containsHeaderField(workTableID, workAlias, workFieldID)) {
+							headerFieldList.add(new XF310_HeaderField(workTableID, workAlias, workFieldID, this));
+						}
+					}
 				}
 			}
 		}
@@ -801,6 +840,30 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				workFieldID = workTokenizer.nextToken();
 				if (!containsDetailField(workTableID, workAlias, workFieldID)) {
 					detailColumnList.add(new XF310_DetailColumn(workTableID, workAlias, workFieldID, this));
+				}
+			}
+		}
+
+		//////////////////////////////////////////////////////////////
+		// Add exchange-field for add-row-function as HIDDEN column //
+		//////////////////////////////////////////////////////////////
+		for (int i = 0; i < buttonList.getLength(); i++) {
+			workElement = (org.w3c.dom.Element)buttonList.item(i);
+			pos1 = workElement.getAttribute("Action").indexOf("GET_TO(");
+			if (pos1 >= 0) {
+				pos2 = workElement.getAttribute("Action").indexOf(")", pos1);
+				workStr = workElement.getAttribute("Action").substring(pos1 + 7, pos2);
+				if (!workStr.equals("")) {
+					workTokenizer = new StringTokenizer(workStr, ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						workTokenizer2 = new StringTokenizer(workTokenizer.nextToken(), "." );
+						workAlias = workTokenizer2.nextToken();
+						workTableID = getTableIDOfTableAlias(workAlias);
+						workFieldID = workTokenizer2.nextToken();
+						if (!containsDetailField(workTableID, workAlias, workFieldID)) {
+							detailColumnList.add(new XF310_DetailColumn(workTableID, workAlias, workFieldID, this));
+						}
+					}
 				}
 			}
 		}
@@ -1090,7 +1153,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				if (operator.next()) {
 					recordNotFound = false;
 					for (int i = 0; i < headerFieldList.size(); i++) {
-						if (headerFieldList.get(i).getTableID().equals(headerTable.getTableID())) {
+						if (headerFieldList.get(i).getTableAlias().equals(headerTable.getTableID())) {
 							headerFieldList.get(i).setValueOfResultSet(operator);
 						}
 					}
@@ -1320,7 +1383,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			actionDefinitionArray[i] = "";
 		}
 
-		addRowListTitle = "";
+		addRowCaption = "";
+		callToAddAction = "";
 		int workIndex;
 		org.w3c.dom.Element element;
 		NodeList buttonList = functionElement_.getElementsByTagName("Button");
@@ -1339,7 +1403,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			actionMapTableMain.put("actionButton" + workIndex, actionButtonArray[workIndex]);
 
 			if (element.getAttribute("Action").equals("ADD_ROW")) {
-				addRowListTitle = element.getAttribute("Caption");
+				addRowCaption = element.getAttribute("Caption");
+			}
+			if (element.getAttribute("Action").contains("CALL_TO_ADD")) {
+				callToAddAction = element.getAttribute("Action");
 			}
 			if (element.getAttribute("Action").equals("UPDATE")) {
 				buttonUpdateCaption = element.getAttribute("Caption");
@@ -1851,7 +1918,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 	
 	void addRow() {
-		if (!addRowListTitle.equals("")) {
+		if (!addRowCaption.equals("")) {
 			try {
 
 				////////////////////////////////
@@ -2083,7 +2150,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					e.printStackTrace(exceptionStream);
 					setErrorAndCloseFunction();
 				}
-				if (countOfErrors == 0)	{
+				if (countOfErrors == 0 || rowNumber.isPendingRow())	{
 
 					////////////////////////////
 					// Confirm user to remove // 
@@ -2155,13 +2222,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			}
 
 			if (action.equals("ADD_ROW")) {
-				checkErrorsToUpdate(true, true);
+//				checkErrorsToUpdate(true, true);
 				addRow();
 			}
 
 			if (action.contains("CALL_TO_ADD")) {
-				checkErrorsToUpdate(true, true);
+//				checkErrorsToUpdate(true, true);
 				callFunctionToAddRow(action);
+				checkErrorsToUpdate(true, true);
 			}
 
 			if (action.equals("REMOVE_ROW")) {
@@ -2189,10 +2257,17 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
+			//////////////////////////////////
+			// Get function id to be called //
+			//////////////////////////////////
 			int pos1 = action.indexOf("CALL_TO_ADD(");
 			int pos2 = action.indexOf(")", pos1);
 			functionID = action.substring(12, pos2);
 
+			/////////////////////////////////////////
+			// Setup field id list to be exchanged //
+			/////////////////////////////////////////
+			fieldsToPutList_.clear();
 			pos1 = action.indexOf("PUT_FROM(");
 			if (pos1 >= 0) {
 				pos2 = action.indexOf(")", pos1);
@@ -2204,6 +2279,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			}
+			fieldsToPutToList_.clear();
 			pos1 = action.indexOf("PUT_TO(");
 			if (pos1 >= 0) {
 				pos2 = action.indexOf(")", pos1);
@@ -2215,6 +2291,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			}
+			fieldsToGetList_.clear();
 			pos1 = action.indexOf("GET_FROM(");
 			if (pos1 >= 0) {
 				pos2 = action.indexOf(")", pos1);
@@ -2226,6 +2303,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			}
+			fieldsToGetToList_.clear();
 			pos1 = action.indexOf("GET_TO(");
 			if (pos1 >= 0) {
 				pos2 = action.indexOf(")", pos1);
@@ -2238,9 +2316,12 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 
+			///////////////////////////////////////////////////////////
+			// Setup field value map to be exchanged to the function //
+			///////////////////////////////////////////////////////////
 			HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
 			for (int i = 0; i < fieldsToPutList_.size(); i++) {
-				value = getValueOfHeaderFieldByName(fieldsToPutList_.get(i));
+				value = getValueOfHeaderFieldByDataSourceName(fieldsToPutList_.get(i));
 				if (value == null) {
 					JOptionPane.showMessageDialog(null, "Unable to send the value of field " + fieldsToPutList_.get(i));
 				} else {
@@ -2248,11 +2329,32 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 
+			////////////////////////////////////////////////
+			// Call function exchanging map to get result //
+			////////////////////////////////////////////////
 			HashMap<String, Object> returnMap = session_.executeFunction(functionID, fieldValuesMap);
 			if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
 				returnToMenu();
 			}
-			if (returnMap.get("RETURN_CODE").equals("00")) {
+			if (returnMap.get("RETURN_CODE").equals("00") && returnMap.size() > 1) {
+
+				///////////////////////////////////////////////////////////////////
+				// Get latest detail row number if it is an auto-numbering field //
+				///////////////////////////////////////////////////////////////////
+				if (!detailTable.getDetailRowNoID().equals("")) {
+					detailRowNoLastValue = 0;
+					for (int i = 0; i < jTableMain.getRowCount(); i++) {
+						XF310_DetailRowNumber tableRowNumber = (XF310_DetailRowNumber)tableModelMain.getValueAt(i, 0);
+						long rowNoValue = (Long)tableRowNumber.getKeyValueMap().get(detailTable.getDetailRowNoID());
+						if (rowNoValue > detailRowNoLastValue) {
+							detailRowNoLastValue = rowNoValue;
+						}
+					}
+				}
+
+				////////////////////////////////////////////////////////
+				// Create new row(s) according to value maps returned //
+				////////////////////////////////////////////////////////
 				String datasourceName = "";
 				String multipleValues = "";
 				for (int i = 0; i < fieldsToGetList_.size(); i++) {
@@ -3400,7 +3502,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public String getAddRowListTitle() {
-		return addRowListTitle;
+		return addRowCaption;
 	}
 
 	public org.w3c.dom.Element getFunctionElement() {
@@ -3670,7 +3772,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		return tableID;
 	}
 
-	public Object getValueOfHeaderFieldByName(String dataSourceName) {
+	public Object getValueOfHeaderFieldByDataSourceName(String dataSourceName) {
 		Object obj = null;
 		for (int i = 0; i < headerFieldList.size(); i++) {
 			if (headerFieldList.get(i).getDataSourceName().equals(dataSourceName)) {
@@ -4057,6 +4159,7 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -4517,7 +4620,7 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 		if (!message.equals("")) {
 			setError(true);
 			if (this.errorMessage.equals("")) {
-				this.errorMessage = message;
+				this.errorMessage = fieldName + ":" + message;
 			} else {
 				this.errorMessage = this.errorMessage + " " + message;
 			}
@@ -6193,6 +6296,9 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 
 					HashMap<String, Object> parmValueMap = new HashMap<String, Object>();
 					HashMap<String, Object> columnValueMap = dialog_.getCellsEditor().getActiveRowObject().getColumnValueMap();
+					for (int i = 0; i < dialog_.getHeaderFieldList().size(); i++) {
+						columnValueMap.put(dialog_.getHeaderFieldList().get(i).getDataSourceName(), dialog_.getHeaderFieldList().get(i).getInternalValue());
+					}
 					for (int i = 0; i < fieldsToPutList_.size(); i++) {
 						value = columnValueMap.get(fieldsToPutList_.get(i));
 						if (value == null) {
@@ -6203,7 +6309,7 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 					}
 					if (parmValueMap.size() < fieldsToPutList_.size()) {
 						for (int i = 0; i < fieldsToPutList_.size(); i++) {
-							value = dialog_.getValueOfHeaderFieldByName(fieldsToPutList_.get(i));
+							value = dialog_.getValueOfHeaderFieldByDataSourceName(fieldsToPutList_.get(i));
 							if (value != null) {
 								parmValueMap.put(fieldsToPutToList_.get(i), value);
 							}
@@ -6560,7 +6666,11 @@ class XF310_DetailRowNumber extends Object {
 			return -1;
 		}
 	}
-	
+
+	public boolean isPendingRow(){
+		return recordType_.equals("NEW");
+	}
+
 	public int getRowIndex() {
 		int index = -1;
 		XF310_DetailRowNumber rowNumber = null;
@@ -9494,7 +9604,7 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 					setCursor(new Cursor(Cursor.WAIT_CURSOR));
 					HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
 					for (int i = 0; i < fieldsToPutList_.size(); i++) {
-						value = dialog_.getValueOfHeaderFieldByName(fieldsToPutList_.get(i));
+						value = dialog_.getValueOfHeaderFieldByDataSourceName(fieldsToPutList_.get(i));
 						if (value == null) {
 							JOptionPane.showMessageDialog(null, "Unable to send the value of field " + fieldsToPutList_.get(i));
 						} else {

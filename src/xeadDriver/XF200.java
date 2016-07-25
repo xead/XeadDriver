@@ -1129,7 +1129,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			if (operatorPrimary.next()) {
 
 				for (int i = 0; i < fieldList.size(); i++) {
-					if (fieldList.get(i).getTableID().equals(primaryTable_.getTableID())) {
+					if (fieldList.get(i).getTableAlias().equals(primaryTable_.getTableID())) {
 						fieldList.get(i).setValueOfResultSet(operatorPrimary);
 					}
 				}
@@ -2504,6 +2504,7 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 		if (workElement == null) {
 			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
+		fieldName = workElement.getAttribute("Name");
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -3056,7 +3057,7 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 		if (!message.equals("")) {
 			setError(true);
 			if (this.errorMessage.equals("")) {
-				this.errorMessage = message;
+				this.errorMessage = fieldName + ":" + message;
 			} else {
 				this.errorMessage = this.errorMessage + " " +message;
 			}

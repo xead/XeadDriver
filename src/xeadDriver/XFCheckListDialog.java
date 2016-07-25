@@ -224,7 +224,6 @@ public class XFCheckListDialog extends JDialog {
     }
     
     public void jButtonOK_actionPerformed(ActionEvent e) {
-    	reply = 0;
     	StringBuffer bf = new StringBuffer();
     	for (int i = 0; i < keyList.size(); i++) {
     		JCheckBox checkBox = (JCheckBox)listModel.getElementAt(i);
@@ -236,6 +235,9 @@ public class XFCheckListDialog extends JDialog {
     		}
     	}
     	checkedKeyList = bf.toString();
+    	if (!checkedKeyList.equals("")) {
+    		reply = 0;
+    	}
 		clear();
     	this.setVisible(false);
     }

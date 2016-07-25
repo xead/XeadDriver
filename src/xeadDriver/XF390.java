@@ -828,7 +828,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 
 				for (int i = 0; i < detailColumnListArray[index].size(); i++) {
 					detailColumnListArray[index].get(i).initialize();
-					if (detailColumnListArray[index].get(i).getTableID().equals(detailTableArray[index].getTableID())) {
+					if (detailColumnListArray[index].get(i).getTableAlias().equals(detailTableArray[index].getTableID())) {
 						detailColumnListArray[index].get(i).setValueOfResultSet(operatorDetail);
 					}
 				}
@@ -1141,7 +1141,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			if (operatorHeader.next()) {
 
 				for (int i = 0; i < headerFieldList.size(); i++) {
-					if (headerFieldList.get(i).getTableID().equals(headerTable_.getTableID())) {
+					if (headerFieldList.get(i).getTableAlias().equals(headerTable_.getTableID())) {
 						headerFieldList.get(i).setValueOfResultSet(operatorHeader);
 					}
 				}

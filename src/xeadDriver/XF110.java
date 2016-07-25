@@ -909,10 +909,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					columnList.get(i).initialize();
 				}
 
-				//primaryTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
-
 				for (int i = 0; i < columnList.size(); i++) {
-					if (columnList.get(i).getTableID().equals(primaryTable_.getTableID())) {
+					if (columnList.get(i).getTableAlias().equals(primaryTable_.getTableID())) {
 						readyToEvaluate = columnList.get(i).setValueOfResultSet(primaryTableOp);
 						columnList.get(i).setReadyToValidate(readyToEvaluate);
 					}
@@ -929,8 +927,6 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 							if (!sql.equals("")) {
 								referTableOp = getReferOperator(sql);
 								if (referTableOp.next()) {
-//								while (referTableOp.next()) {
-//									if (referTableList.get(i).isRecordToBeSelected(referTableOp)) {
 										for (int j = 0; j < columnList.size(); j++) {
 											if (columnList.get(j).getTableID().equals(referTableList.get(i).getTableID()) && columnList.get(j).getTableAlias().equals(referTableList.get(i).getTableAlias())) {
 												readyToEvaluate = columnList.get(j).setValueOfResultSet(referTableOp);
@@ -4867,7 +4863,7 @@ class XF110_PrimaryTable extends Object {
 				if (!fixedWhere.equals("")) {
 					buf.append(" where ((");
 					buf.append(fixedWhere);
-					buf.append(")");
+					//buf.append(")");
 					count++;
 				}
 				for (int i = 0; i < dialog_.getFilterList().size(); i++) {
@@ -4942,7 +4938,7 @@ class XF110_PrimaryTable extends Object {
 		if (!fixedWhere.equals("")) {
 			buf.append(" where ((");
 			buf.append(fixedWhere);
-			buf.append(") ");
+			//buf.append(") ");
 			count++;
 		}
 		for (int i = 0; i < dialog_.getFilterList().size(); i++) {

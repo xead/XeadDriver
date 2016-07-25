@@ -1188,7 +1188,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				if (headerTableOp.next()) {
 					recordNotFound = false;
 					for (int i = 0; i < headerFieldList.size(); i++) {
-						if (headerFieldList.get(i).getTableID().equals(headerTable_.getTableID())) {
+						if (headerFieldList.get(i).getTableAlias().equals(headerTable_.getTableID())) {
 							headerFieldList.get(i).setValueOfResultSet(headerTableOp);
 						}
 					}
@@ -1420,7 +1420,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				}
 
 				for (int i = 0; i < detailColumnListArray[index].size(); i++) {
-					if (detailColumnListArray[index].get(i).getTableID().equals(detailTableArray[index].getTableID())) {
+					if (detailColumnListArray[index].get(i).getTableAlias().equals(detailTableArray[index].getTableID())) {
 						readyToValidate = detailColumnListArray[index].get(i).setValueOfResultSet(detailTableOp);
 						detailColumnListArray[index].get(i).setReadyToValidate(readyToValidate);
 					}

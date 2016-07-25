@@ -631,7 +631,7 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			XFTableOperator operator = createTableOperator(primaryTable_.getSQLToSelect());
 			if (operator.next()) {
 				for (int i = 0; i < fieldList.size(); i++) {
-					if (fieldList.get(i).getTableID().equals(primaryTable_.getTableID())) {
+					if (fieldList.get(i).getTableAlias().equals(primaryTable_.getTableID())) {
 						fieldList.get(i).setValueOfResultSet(operator);
 					}
 				}

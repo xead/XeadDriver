@@ -898,7 +898,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				}
 
 				for (int i = 0; i < columnList.size(); i++) {
-					if (columnList.get(i).getTableID().equals(primaryTable_.getTableID())) {
+					if (columnList.get(i).getTableAlias().equals(primaryTable_.getTableID())) {
 						readyToEvaluate = columnList.get(i).setValueOfResultSet(primaryTableOp);
 						columnList.get(i).setReadyToEvaluate(readyToEvaluate);
 					}
@@ -4788,7 +4788,7 @@ class XF100_PrimaryTable extends Object {
 				if (!fixedWhere.equals("")) {
 					buf.append(" where ((");
 					buf.append(fixedWhere);
-					buf.append(")");
+					//buf.append(")");
 					count++;
 				}
 				for (int i = 0; i < dialog_.getFilterList().size(); i++) {
@@ -4857,7 +4857,7 @@ class XF100_PrimaryTable extends Object {
 		if (!fixedWhere.equals("")) {
 			buf.append(" where ((");
 			buf.append(fixedWhere);
-			buf.append(")");
+			//buf.append(")");
 			count++;
 		}
 		for (int i = 0; i < dialog_.getFilterList().size(); i++) {

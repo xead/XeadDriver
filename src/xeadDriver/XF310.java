@@ -74,7 +74,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
 	private XF310_KeyInputDialog keyInputDialog = null;
-	private XF310_AddRowList addRowListDialog = null;
+	//private XF310_AddRowList addRowListDialog = null;
 	private JPanel jPanelMain = new JPanel();
 	private JPanel jPanelHeaderFields = new JPanel();
 	private JScrollPane jScrollPaneHeaderFields = new JScrollPane();
@@ -460,14 +460,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			/////////////////////////////////////
 			setupFunctionKeysAndButtons();
 
-			///////////////////////////////
-			// Setup Add-Row-List Dialog //
-			///////////////////////////////
-			if (functionElement_.getAttribute("AddRowListTable").equals("")) {
-				addRowListDialog = null;
-			} else {
-				addRowListDialog = new XF310_AddRowList(this);
-			}
+//			///////////////////////////////
+//			// Setup Add-Row-List Dialog //
+//			///////////////////////////////
+//			if (functionElement_.getAttribute("AddRowListTable").equals("")) {
+//				addRowListDialog = null;
+//			} else {
+//				addRowListDialog = new XF310_AddRowList(this);
+//			}
 
 			/////////////////////////
 			// Fetch Header Record //
@@ -529,8 +529,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		// Show Panel //
 		////////////////
 		if (!this.isClosing) {
-			if (addRowListDialog == null
-					|| (addRowListDialog != null && !addRowListDialog.isInvalid())) {
+//			if (addRowListDialog == null
+//					|| (addRowListDialog != null && !addRowListDialog.isInvalid())) {
 				if (jTableMain.getRowCount() == 0 && isToStartInAddModeIfWithNoRow) {
 					if (addRowCaption.equals("")) {
 						if (!callToAddAction.equals("")) {
@@ -543,7 +543,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				if (!this.isClosing) {
 					this.setVisible(true);
 				}
-			}
+//			}
 		}
 
 		return returnMap_;
@@ -1936,7 +1936,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 
 				if (!isClosing) {
-					if (addRowListDialog == null) {
+//					if (addRowListDialog == null) {
 						int countOfAdded = setupNewRowAndAddToJTable(null);
 						if (countOfAdded > 0) {
 							checkErrorsToUpdate(true, false);
@@ -1945,41 +1945,41 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						} else {
 							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage60"));
 						}
-					} else {
-						ArrayList<XF310_AddRowListNumber> addRowListNumberList = addRowListDialog.getDefaultRow();
-						if (addRowListNumberList == null) {
-							int result = addRowListDialog.requestSelection();
-							if (result == 0) {
-								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage33"));
-							}
-							if (result == 1) {
-								addRowListNumberList = addRowListDialog.getSelectionList();
-							}
-							if (result == 2) {
-								setupNewRowAndAddToJTable(null);
-								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-							}
-							if (result == 3) {
-								closeFunction(); // closing because of internal error //
-							}
-						}
-
-						if (addRowListNumberList != null) {
-							int countOfAdded = 0;
-							for (int i = 0; i < addRowListNumberList.size(); i++) {
-								countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i).getReturnFieldMap());
-							}
-							int countOfNotAdded = addRowListNumberList.size() - countOfAdded;
-							if (countOfNotAdded > 0) {
-								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage34") + countOfNotAdded + XFUtility.RESOURCE.getString("FunctionMessage35"));
-							}
-							checkErrorsToUpdate(true, false);
-							messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
-							if (countOfAdded > 0) {
-								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-							}
-						}
-					}
+//					} else {
+//						ArrayList<XF310_AddRowListNumber> addRowListNumberList = addRowListDialog.getDefaultRow();
+//						if (addRowListNumberList == null) {
+//							int result = addRowListDialog.requestSelection();
+//							if (result == 0) {
+//								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage33"));
+//							}
+//							if (result == 1) {
+//								addRowListNumberList = addRowListDialog.getSelectionList();
+//							}
+//							if (result == 2) {
+//								setupNewRowAndAddToJTable(null);
+//								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+//							}
+//							if (result == 3) {
+//								closeFunction(); // closing because of internal error //
+//							}
+//						}
+//
+//						if (addRowListNumberList != null) {
+//							int countOfAdded = 0;
+//							for (int i = 0; i < addRowListNumberList.size(); i++) {
+//								countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i).getReturnFieldMap());
+//							}
+//							int countOfNotAdded = addRowListNumberList.size() - countOfAdded;
+//							if (countOfNotAdded > 0) {
+//								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage34") + countOfNotAdded + XFUtility.RESOURCE.getString("FunctionMessage35"));
+//							}
+//							checkErrorsToUpdate(true, false);
+//							messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
+//							if (countOfAdded > 0) {
+//								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+//							}
+//						}
+//					}
 				}
 
 			} catch (Exception e) {
@@ -2254,6 +2254,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		String functionID, wrkStr;
 		Object value;
 		StringTokenizer workTokenizer;
+		boolean isNoError = true;
+
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
@@ -2360,39 +2362,46 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				for (int i = 0; i < fieldsToGetList_.size(); i++) {
 					value = returnMap.get(fieldsToGetList_.get(i));
 					if (value == null) {
-						JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+//						JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+						isNoError = false;
 					} else {
-						if (value.toString().contains(";")) {
+						if (value.toString().contains(";") && !value.toString().equals(";")) {
 							datasourceName = fieldsToGetList_.get(i);
 							multipleValues = value.toString();
-							break;
+//							break;
 						}
 					}
 				}
-				if (multipleValues.equals("")) {
-					HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
-					for (int i = 0; i < fieldsToGetList_.size(); i++) {
-						value = returnMap.get(fieldsToGetList_.get(i));
-						if (value != null) {
-							fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
-						}
-					}
-					setupNewRowAndAddToJTable(fieldsToGetMap);
-				} else {
-					workTokenizer = new StringTokenizer(multipleValues, ";" );
-					while (workTokenizer.hasMoreTokens()) {
+				if (isNoError) {
+					if (multipleValues.equals("")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
 							if (value != null) {
-								if (fieldsToGetList_.get(i).equals(datasourceName)) {
-									fieldsToGetMap.put(fieldsToGetToList_.get(i), workTokenizer.nextToken());
-								} else {
-									fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
-								}
+								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}
-						setupNewRowAndAddToJTable(fieldsToGetMap);
+						if (fieldsToGetMap.size() > 0) {
+							setupNewRowAndAddToJTable(fieldsToGetMap);
+						}
+					} else {
+						workTokenizer = new StringTokenizer(multipleValues, ";" );
+						while (workTokenizer.hasMoreTokens()) {
+							HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
+							for (int i = 0; i < fieldsToGetList_.size(); i++) {
+								value = returnMap.get(fieldsToGetList_.get(i));
+								if (value != null) {
+									if (fieldsToGetList_.get(i).equals(datasourceName)) {
+										fieldsToGetMap.put(fieldsToGetToList_.get(i), workTokenizer.nextToken());
+									} else {
+										fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+									}
+								}
+							}
+							if (fieldsToGetMap.size() > 0) {
+								setupNewRowAndAddToJTable(fieldsToGetMap);
+							}
+						}
 					}
 				}
 			}
@@ -3443,11 +3452,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					headerFieldList.get(i).requestFocus();
 					topErrorFieldNotFound = false;
 				}
-				if (headerFieldList.get(i).isVisibleOnPanel()) {
+				//if (headerFieldList.get(i).isVisibleOnPanel()) {
 					messageList.add(workRow, headerFieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + headerFieldList.get(i).getError());
-				} else {
-					messageList.add(workRow, headerFieldList.get(i).getError());
-				}
+				//} else {
+				//	messageList.add(workRow, headerFieldList.get(i).getError());
+				//}
 				workRow++;
 			}
 		}
@@ -4620,7 +4629,7 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 		if (!message.equals("")) {
 			setError(true);
 			if (this.errorMessage.equals("")) {
-				this.errorMessage = fieldName + ":" + message;
+				this.errorMessage = message;
 			} else {
 				this.errorMessage = this.errorMessage + " " + message;
 			}
@@ -7732,7 +7741,9 @@ class XF310_HeaderTable extends Object {
 			}
 		}
 		if (!updateCounterID.equals("")) {
-			statementBuf.append(", ");
+			if (!firstField) {
+				statementBuf.append(", ");
+			}
 			statementBuf.append(updateCounterID);
 			statementBuf.append("=");
 			statementBuf.append(updateCounterValue + 1);
@@ -8475,7 +8486,9 @@ class XF310_DetailTable extends Object {
 			}
 		}
 		if (!updateCounterID.equals("")) {
-			statementBuf.append(", ");
+			if (!firstField) {
+				statementBuf.append(", ");
+			}
 			statementBuf.append(updateCounterID);
 			statementBuf.append("=");
 			statementBuf.append((Long)rowNumber.getColumnValueMap().get(updateCounterID) + 1);

@@ -2283,12 +2283,20 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					cellList.get(i).setText((String)rowObject.getCellObjectList().get(i).getExternalValue());
 					if (isSelected) {
-						cellList.get(i).setForeground(table.getSelectionForeground());
+						if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
+							cellList.get(i).setForeground(table.getSelectionForeground());
+						} else {
+							cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+						}
 					} else {
 						if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
 							cellList.get(i).setForeground(table.getForeground());
 						} else {
-							cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+							if (rowObject.getCellObjectList().get(i).getColor().equals(Color.blue)) {
+								cellList.get(i).setForeground(Color.cyan);
+							} else {
+								cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+							}
 						}
 					}
 				}

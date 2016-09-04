@@ -43,11 +43,23 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M5";
-	public static final String VERSION  = "1.3.5";
+	public static final String FULL_VERSION  = "V1.R3.M7";
+	public static final String VERSION  = "1.3.7";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2016 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.3.7
+	//・accdb向けのDBドライバを更新した
+	//・スクリプトでのフィールド色の設定が効かなくなっていた問題を修正した
+	//・Excelを操作するためのクラスXFExcelFileOperatorとこれを生成するsessionメソッドを追加した
+	//・WEBサービス関連のsessionメソッドをいくつか追加した
+	//・XFTableEvaluatorでOrderByとKeyを同時に指定すると異常終了する問題を修正した
+	//
+	//1.3.6
+	//・XF310で、行追加用機能を起動できるようになったので、「行追加設定」を廃止した
+	//・XF200,310で、更新対象テーブルに更新項目がない場合に異常終了するバグを修正した
+	//・XF290,390で、ある種のフィールドが編集されずに出力されるバグを修正した
+	//
 	//1.3.5
 	//・XF310で行追加用の機能を起動するようにした
 	//・XF310の「明細行が0件ならば追加処理から開始」に対応した

@@ -1806,7 +1806,15 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				} else {
 					cellList.get(i).setText((String)detailColumnList.get(i).getExternalValue());
 					if (isSelected) {
-						cellList.get(i).setForeground(table.getSelectionForeground());
+						if (detailColumnList.get(i).getColor().equals(Color.black)) {
+							cellList.get(i).setForeground(table.getSelectionForeground());
+						} else {
+							if (detailColumnList.get(i).getColor().equals(Color.blue)) {
+								cellList.get(i).setForeground(Color.cyan);
+							} else {
+								cellList.get(i).setForeground(Color.getColor(detailColumnList.get(i).getColor()));
+							}
+						}
 					} else {
 						if (detailColumnList.get(i).getColor().equals(Color.black)) {
 							cellList.get(i).setForeground(table.getForeground());
@@ -3664,7 +3672,7 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 		if (!message.equals("") && this.errorMessage.equals("")) {
 			setError(true);
 			if (this.errorMessage.equals("")) {
-				this.errorMessage = fieldName + ":" + message;
+				this.errorMessage = message;
 			} else {
 				this.errorMessage = this.errorMessage + " " + message;
 			}

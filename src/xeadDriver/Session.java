@@ -59,8 +59,13 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.xerces.parsers.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
@@ -359,6 +364,7 @@ public class Session extends JFrame {
 				|| fileName.startsWith("file:")) {
 			try {
 				URL url = new URL(fileName);
+				currentFolder = url.getPath();
 				URLConnection connection = url.openConnection();
 				InputStream inputStream = connection.getInputStream();
 				domParser.parse(new InputSource(inputStream));
@@ -2990,6 +2996,13 @@ public class Session extends JFrame {
 		domParser.parse(new InputSource(new ByteArrayInputStream(data.getBytes(encoding))));
 		return domParser.getDocument();
 	}
+	public String parseXmlDocumentToGetString(Document document) throws Exception {
+		StringWriter sw = new StringWriter();
+		TransformerFactory tfactory = TransformerFactory.newInstance(); 
+		Transformer transformer = tfactory.newTransformer(); 
+		transformer.transform(new DOMSource(document), new StreamResult(sw)); 
+		return sw.toString();
+	}
 	public Document createXmlDocument() throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 	    DocumentBuilder db = dbf.newDocumentBuilder();
@@ -3097,6 +3110,9 @@ public class Session extends JFrame {
 			return digestedValue;
 		}
 		return digestedValue;
+	}
+	public String getRandomString(int length, String characters) {
+		return RandomStringUtils.random(length, characters);
 	}
 
 	public String getAddressFromZipNo(String zipNo) {
@@ -3238,6 +3254,43 @@ public class Session extends JFrame {
 			File currentFile = new File(currentName);
 			File newFile = new File(newName);
 			return currentFile.renameTo(newFile);
+	}
+
+	public boolean copyFile(String originalName, String newName) {
+		boolean result = false;
+		try {
+			File originalFile = new File(originalName);
+			if (!originalFile.exists()) {
+				return result;
+			}
+			File newFile = new File(newName);
+			if (!newFile.exists()) {
+				newFile.createNewFile();
+			}
+			FileInputStream fis  = new FileInputStream(originalFile);
+			FileOutputStream fos = new FileOutputStream(newFile);
+			try {
+				byte[] buf = new byte[1024];
+				int i = 0;
+				while ((i = fis.read(buf)) != -1) {
+					fos.write(buf, 0, i);
+				}
+				result = true;
+			} catch (Exception e) {
+			} finally {
+				try {
+					if (fis != null) fis.close();
+				} catch (IOException e) {}
+				try {
+					if (fos != null) fos.close();
+				} catch (IOException e) {}
+			}
+		} catch (Exception e) {}
+		return result;
+	}
+
+	public XFExcelFileOperator createExcelFileOperator(String fileName) {
+		return new XFExcelFileOperator(fileName);
 	}
 
 	public XFTextFileOperator createTextFileOperator(String operation, String fileName, String separator) {
@@ -3525,6 +3578,18 @@ public class Session extends JFrame {
 
 	public String getFileName() {
 		return fileName;
+	}
+
+	public String getFileFolder() {
+		return currentFolder;
+	}
+
+	public String getOutputFolder() {
+		if (outputFolder == null) {
+			return "";
+		} else {
+			return outputFolder.getPath();
+		}
 	}
 
 	public String getUserID() {

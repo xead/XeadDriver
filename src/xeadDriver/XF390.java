@@ -1516,10 +1516,10 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		for (int i = 0; i < headerFieldList.size(); i++) {
 			if (headerFieldList.get(i).getDataSourceName().equals(wrkStr)) {
 				if (headerFieldList.get(i).isKubunField()
-					|| headerFieldList.get(i).getBasicType().equals("BYTEA")
-					|| headerFieldList.get(i).getDataTypeOptionList().contains("MSEQ")
-					|| headerFieldList.get(i).getDataTypeOptionList().contains("YMONTH")
-					|| headerFieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
+					|| headerFieldList.get(i).getBasicType().equals("BYTEA")) {
+//					|| headerFieldList.get(i).getDataTypeOptionList().contains("MSEQ")
+//					|| headerFieldList.get(i).getDataTypeOptionList().contains("YMONTH")
+//					|| headerFieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
 					value = headerFieldList.get(i).getExternalValue().toString();
 				} else {
 					value = headerFieldList.get(i).getInternalValue().toString();
@@ -1628,7 +1628,7 @@ class XF390_HeaderField implements XFFieldScriptable {
 	private int decimalSize = 0;
 	private String dataTypeOptions = "";
 	private ArrayList<String> dataTypeOptionList;
-	private XFTextField xFTextField = null;
+	//private XFTextField xFTextField = null;
 	private XFEditableField component = null;
 	private String byteaTypeFieldID = "";
 	private boolean isKubunField = false;
@@ -1720,9 +1720,15 @@ class XF390_HeaderField implements XFFieldScriptable {
 
 		tableElement = (org.w3c.dom.Element)workElement.getParentNode();
 
-		xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, "", dialog_.getSession().systemFont);
-		xFTextField.setLocation(5, 0);
-		component = xFTextField;
+		if (dataTypeOptionList.contains("YMONTH")) {
+			component = new XFYMonthBox(dialog_.getSession());
+		} else {
+//		xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, "", dialog_.getSession().systemFont);
+//		xFTextField.setLocation(5, 0);
+//		component = xFTextField;
+			component = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, "", dialog_.getSession().systemFont);
+		}
+		component.setLocation(5, 0);
 	}
 
 	public String getByteaTypeFieldID(){

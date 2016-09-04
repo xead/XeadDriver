@@ -3448,6 +3448,12 @@ class XFDateField extends JPanel implements XFEditableField {
 		return false;
 	}
 
+	public void setForeground(Color color) {
+		if (dateTextField != null) {
+			dateTextField.setForeground(color);
+		}
+	}
+
 	public void setBackground(Color color) {
 		if (dateTextField != null) {
 			dateTextField.setBackground(color);
@@ -4800,6 +4806,16 @@ class XFTextField extends JPanel implements XFEditableField {
 		return valueList_;
 	}
 	
+	public void setForeground(Color color) {
+		if (jComboBox == null) {
+			if (jTextField != null) {
+				jTextField.setForeground(color);
+			}
+		} else {
+			jComboBox.setForeground(color);
+		}
+	}
+	
 	public void setBackground(Color color) {
 		if (jComboBox == null) {
 			if (jTextField != null) {
@@ -5284,6 +5300,12 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 
 	public boolean isFocusable() {
 		return false;
+	}
+
+	public void setForeground(Color color) {
+		if (jTextArea != null) {
+			jTextArea.setForeground(color);
+		}
 	}
 
 	public void setBackground(Color color) {
@@ -5785,6 +5807,16 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 		return oldValue;
 	}
 
+	public void setForeground(Color color) {
+		if (jComboBoxYear != null && jComboBoxMonth != null) {
+			jComboBoxYear.setForeground(color);
+			jComboBoxMonth.setForeground(color);
+		}
+		if (jTextField != null) {
+			jTextField.setForeground(color);
+		}
+	}
+
 	public void setBackground(Color color) {
 		if (jComboBoxYear != null && jComboBoxMonth != null) {
 			jComboBoxYear.setBackground(color);
@@ -5951,6 +5983,15 @@ class XFFYearBox extends JPanel implements XFEditableField {
 		return oldValue;
 	}
 
+	public void setForeground(Color color) {
+		if (jComboBoxYear != null) {
+			jComboBoxYear.setForeground(color);
+		}
+		if (jTextField != null) {
+			jTextField.setForeground(color);
+		}
+	}
+
 	public void setBackground(Color color) {
 		if (jComboBoxYear != null) {
 			jComboBoxYear.setBackground(color);
@@ -6103,6 +6144,15 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 
 	public Object getOldValue() {
 		return Integer.toString(oldValue_);
+	}
+
+	public void setForeground(Color color) {
+		if (jComboBoxMSeq != null) {
+			jComboBoxMSeq.setForeground(color);
+		}
+		if (jTextField != null) {
+			jTextField.setForeground(color);
+		}
 	}
 
 	public void setBackground(Color color) {
@@ -6300,6 +6350,12 @@ class XFUrlField extends JPanel implements XFEditableField {
 
 	public boolean isComponentFocusable() {
 		return jTextField.isFocusable();
+	}
+
+	public void setForeground(Color color) {
+		if (jTextField != null) {
+			jTextField.setForeground(color);
+		}
 	}
 
 	public void setBackground(Color color) {

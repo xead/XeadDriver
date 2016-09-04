@@ -870,10 +870,10 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		for (int i = 0; i < fieldList.size(); i++) {
 			if (fieldList.get(i).getDataSourceName().equals(wrkStr)) {
 				if (fieldList.get(i).isKubunField()
-				  || fieldList.get(i).getBasicType().equals("BYTEA")
-				  || fieldList.get(i).getDataTypeOptionList().contains("MSEQ")
-				  || fieldList.get(i).getDataTypeOptionList().contains("YMONTH")
-				  || fieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
+				  || fieldList.get(i).getBasicType().equals("BYTEA")) {
+//				  || fieldList.get(i).getDataTypeOptionList().contains("MSEQ")
+//				  || fieldList.get(i).getDataTypeOptionList().contains("YMONTH")
+//				  || fieldList.get(i).getDataTypeOptionList().contains("FYEAR")) {
 					value = fieldList.get(i).getExternalValue().toString();
 				} else {
 					value = fieldList.get(i).getInternalValue().toString();

@@ -1390,11 +1390,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					fieldList.get(i).requestFocus();
 					isFirstErrorField = false;
 				}
-				if (fieldList.get(i).isVisibleOnPanel()) {
+				//if (fieldList.get(i).isVisibleOnPanel()) {
 					messageList.add(fieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + fieldList.get(i).getError());
-				} else {
-					messageList.add(fieldList.get(i).getError());
-				}
+				//} else {
+				//	messageList.add(fieldList.get(i).getError());
+				//}
 			}
 			/////////////////////////////////////////////////////////
 			// required step to set focus on the first error field //
@@ -3057,7 +3057,7 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 		if (!message.equals("")) {
 			setError(true);
 			if (this.errorMessage.equals("")) {
-				this.errorMessage = fieldName + ":" + message;
+				this.errorMessage = message;
 			} else {
 				this.errorMessage = this.errorMessage + " " +message;
 			}
@@ -4164,7 +4164,9 @@ class XF200_PrimaryTable extends Object {
 			}
 		}
 		if (!updateCounterID.equals("")) {
-			statementBuf.append(", ") ;
+			if (!firstField) {
+				statementBuf.append(", ") ;
+			}
 			statementBuf.append(updateCounterID) ;
 			statementBuf.append("=") ;
 			statementBuf.append(updateCounterValue + 1) ;

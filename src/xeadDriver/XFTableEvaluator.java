@@ -771,11 +771,6 @@ public class XFTableEvaluator {
 		buf.append(" from ");
 		buf.append(moduleID);
 
-		if (!orderBy.equals("")) {
-			buf.append(" order by ");
-			buf.append(orderBy);
-		}
-
 		int countOfWhereKey = 0;
 		for (int i = 0; i < withKeyList_.size(); i++) {
 			if (countOfWhereKey == 0) {
@@ -793,6 +788,11 @@ public class XFTableEvaluator {
 			buf.append(fixedWhere);
 			buf.append(") ");
 			countOfWhereKey++;
+		}
+
+		if (!orderBy.equals("")) {
+			buf.append(" order by ");
+			buf.append(orderBy);
 		}
 
 		return buf.toString();

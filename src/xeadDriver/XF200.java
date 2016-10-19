@@ -791,39 +791,39 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 
-		////////////////////////////////////////////////////////////////////////
-		// Analyze refer tables and set their fields as Key-Dependent         //
-		// if their With-Key contains primary key field. Key-Dependent fields //
-		// are not to be edited by prompting features in Edit mode            //
-		////////////////////////////////////////////////////////////////////////
-		boolean containsPrimaryKeyWithinWithKey;
-		for (int i = 0; i < referTableList.size(); i++) {
-			containsPrimaryKeyWithinWithKey = false;
-			for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
-				for (int k = 0; k < primaryTable_.getKeyFieldList().size(); k++) {
-					if (referTableList.get(i).getWithKeyFieldIDList().get(j).equals(primaryTable_.getTableID() + "." + primaryTable_.getKeyFieldList().get(k))) {
-						containsPrimaryKeyWithinWithKey = true;
-						break;
-					}
-				}
-				if (containsPrimaryKeyWithinWithKey) {
-					break;
-				}
-			}
-			if (containsPrimaryKeyWithinWithKey) {
-				workAlias = referTableList.get(i).getTableAlias();
-				for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
-					for (int k = 0; k < fieldList.size(); k++) {
-						workFieldID = referTableList.get(i).getFieldIDList().get(j);
-						if (fieldList.get(k).getTableAlias().equals(workAlias) && fieldList.get(k).getFieldID().equals(workFieldID)) {
-							if (fieldList.get(k).isVisibleOnPanel()) {
-								fieldList.get(k).setKeyDependent(true);
-							}
-						}
-					}
-				}
-			}
-		}
+//		////////////////////////////////////////////////////////////////////////
+//		// Analyze refer tables and set their fields as Key-Dependent         //
+//		// if their With-Key contains primary key field. Key-Dependent fields //
+//		// are not to be edited by prompting features in Edit mode            //
+//		////////////////////////////////////////////////////////////////////////
+//		boolean containsPrimaryKeyWithinWithKey;
+//		for (int i = 0; i < referTableList.size(); i++) {
+//			containsPrimaryKeyWithinWithKey = false;
+//			for (int j = 0; j < referTableList.get(i).getWithKeyFieldIDList().size(); j++) {
+//				for (int k = 0; k < primaryTable_.getKeyFieldList().size(); k++) {
+//					if (referTableList.get(i).getWithKeyFieldIDList().get(j).equals(primaryTable_.getTableID() + "." + primaryTable_.getKeyFieldList().get(k))) {
+//						containsPrimaryKeyWithinWithKey = true;
+//						break;
+//					}
+//				}
+//				if (containsPrimaryKeyWithinWithKey) {
+//					break;
+//				}
+//			}
+//			if (containsPrimaryKeyWithinWithKey) {
+//				workAlias = referTableList.get(i).getTableAlias();
+//				for (int j = 0; j < referTableList.get(i).getFieldIDList().size(); j++) {
+//					for (int k = 0; k < fieldList.size(); k++) {
+//						workFieldID = referTableList.get(i).getFieldIDList().get(j);
+//						if (fieldList.get(k).getTableAlias().equals(workAlias) && fieldList.get(k).getFieldID().equals(workFieldID)) {
+//							if (fieldList.get(k).isVisibleOnPanel()) {
+//								fieldList.get(k).setKeyDependent(true);
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
 
 		//////////////////////////////////////
 		// Setup Script Engine and Bindings //
@@ -924,6 +924,14 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 
 	public HashMap<String, Object> getParmMap() {
 		return parmMap_;
+	}
+
+	public String getUserValueOf(String dataSourceName) {
+		return session_.getFilterValue(this.getFunctionID(), dataSourceName);
+	}
+
+	public void setUserValueOf(String dataSourceName, Object value) {
+		session_.setFilterValue(this.getFunctionID(), dataSourceName, value.toString());
 	}
 	
 	public void setProcessLog(String text) {
@@ -1084,9 +1092,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					}
 
 					if (panelMode_.equals("ADD") && element.getAttribute("Action").equals("EDIT")) {
-						XFUtility.setCaptionToButton(jButtonArray[workIndex], element, XFUtility.RESOURCE.getString("Add"), this.getPreferredSize().width / 8);
+						XFUtility.setCaptionToButton(jButtonArray[workIndex], element, XFUtility.RESOURCE.getString("Add"), this.getPreferredSize().width / 8, session_);
 					} else {
-						XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8);
+						XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8, session_);
 						if (element.getAttribute("Action").equals("EDIT") && panelMode_.equals("EDIT")) {
 							buttonToEdit.setText(functionKeyToEdit + " " + element.getAttribute("Caption"));
 						}
@@ -1204,7 +1212,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					if (fieldList.get(i).isEditable() && fieldList.get(i).getComponent() instanceof XF200_ComboBox) {
 						XF200_ComboBox comboBox = (XF200_ComboBox)fieldList.get(i).getComponent();
-						comboBox.setsetSelectedIndex(0);
+						comboBox.setSelectedIndex(0);
 					} else {
 						fieldList.get(i).setValue(fieldList.get(i).getNullValue());
 					}
@@ -2147,7 +2155,7 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 	private String errorMessage = "";
 	private boolean isNullable = true;
 	private boolean isKey = false;
-	private boolean isKeyDependent = false;
+//	private boolean isKeyDependent = false;
 	private boolean isNoUpdate = false;
 	private boolean isFieldOnPrimaryTable = false;
 	private boolean isError = false;
@@ -2259,6 +2267,7 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 
 		if (fieldOptionList.contains("PROMPT_LIST")) {
 			isEditable = true;
+			isNoUpdate = false;
 			XF200_ReferTable referTable = null;
 			ArrayList<XF200_ReferTable> referTableList = dialog_.getReferTableList();
 			for (int i = 0; i < referTableList.size(); i++) {
@@ -2275,6 +2284,7 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 			if (!wrkStr.equals("")) {
 				isEditable = true;
+				isNoUpdate = false;
 				boolean isEditableInEditMode = false;
 				if (this.isFieldOnPrimaryTable) {
 					isEditableInEditMode = true;
@@ -2677,9 +2687,9 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 		}
 	}
 
-	public void setKeyDependent(boolean keyDependent){
-		this.isKeyDependent = keyDependent;
-	}
+//	public void setKeyDependent(boolean keyDependent){
+//		this.isKeyDependent = keyDependent;
+//	}
 
 	public void setEditable(boolean editable){
 		this.isEditable = editable;
@@ -2757,7 +2767,8 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 			this.setComponentEditable(true);
 		}
 		if (mode.equals("EDIT") && this.isEditable && !this.isNoUpdate) {
-			if (!this.isKey() && !this.isKeyDependent) {
+//			if (!this.isKey && !this.isKeyDependent) {
+			if (!this.isKey) {
 				this.setComponentEditable(true);
 			}
 		}
@@ -3143,7 +3154,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 		});
 		jComboBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0) {
+				if (referTable_ != null && isEditable && jComboBox.getSelectedIndex() >= 0 && dialog_.isVisible()) {
 					referTable_.setKeyFieldValues(tableKeyValuesList.get(jComboBox.getSelectedIndex()));
 				}
 			}
@@ -3282,6 +3293,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				while (operator.next()) {
 					keyValues = new XFHashMap();
 					for (int i = 0; i < keyFieldList.size(); i++) {
+						//keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), operator.getValueOf(keyFieldList.get(i)).toString());
 						keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), operator.getValueOf(keyFieldList.get(i)).toString());
 					}
 					tableKeyValuesList.add(keyValues);
@@ -3362,14 +3374,14 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 		return false;
 	}
 
-	public void setsetSelectedIndex(int index) {
+	public void setSelectedIndex(int index) {
 		if (jComboBox.getItemCount() > 0) {
 			jComboBox.setSelectedIndex(index);
 		}
 	}
 
 	public void setValue(Object obj) {
-		String value = (String)obj;
+		String value = obj.toString();
 		value = value.trim();
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
@@ -3411,6 +3423,12 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 	public void setBackground(Color color) {
 		if (jComboBox != null) {
 			jComboBox.setBackground(color);
+		}
+	}
+
+	public void setForeground(Color color) {
+		if (jComboBox != null) {
+			jComboBox.setForeground(color);
 		}
 	}
 
@@ -3646,7 +3664,15 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 						for (int i = 0; i < dialog_.getFieldList().size(); i++) {
 							value = fieldsToGetMap.get(dialog_.getFieldList().get(i).getDataSourceName());
 							if (value != null) {
-								dialog_.getFieldList().get(i).setValue(value);
+//								////////////////////////////////////////////////////
+//								// Check if update-control field is being updated //
+//								////////////////////////////////////////////////////
+//								if ((dialog_.getFieldList().get(i).isKey() || dialog_.getFieldList().get(i).isNoUpdate())
+//										&& !dialog_.getFieldList().get(i).getValue().equals(value)) {
+//									JOptionPane.showMessageDialog(null, dialog_.getFieldList().get(i).getDataSourceName()+" is an update-controled field. Unable to accept value.");
+//								} else {
+									dialog_.getFieldList().get(i).setValue(value);
+//								}
 							}
 						}
 					}
@@ -3677,7 +3703,8 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 	}
 
 	public void setEditable(boolean editable) {
-		if (editable && !isEditControled()) {
+		//if (editable && !isEditControled()) {
+		if (editable) {
 			this.add(jButton, BorderLayout.EAST);
 			xFTextField.setBackground(XFUtility.ACTIVE_COLOR);
 			xFTextField.setEditable(isEditableInEditMode_);
@@ -3692,22 +3719,22 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		}
 	}
 
-	private boolean isEditControled() {
-		boolean reply = false;
-		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
-			for (int j = 0; j < dialog_.getFieldList().size(); j++) {
-				if (dialog_.getFieldList().get(j).isFieldOnPrimaryTable()
-						&& dialog_.getFieldList().get(j).getDataSourceName().equals(fieldsToGetToList_.get(i))) {
-					if (dialog_.getPanelMode().equals("EDIT")
-							&& (dialog_.getFieldList().get(j).isKey() || dialog_.getFieldList().get(j).isNoUpdate())) {
-						reply = true;
-						break;
-					}
-				}
-			}
-		}
-		return reply;
-	}
+//	private boolean isEditControled() {
+//		boolean reply = false;
+//		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
+//			for (int j = 0; j < dialog_.getFieldList().size(); j++) {
+//				if (dialog_.getFieldList().get(j).isFieldOnPrimaryTable()
+//						&& dialog_.getFieldList().get(j).getDataSourceName().equals(fieldsToGetToList_.get(i))) {
+//					if (dialog_.getPanelMode().equals("EDIT")
+//							&& (dialog_.getFieldList().get(j).isKey() || dialog_.getFieldList().get(j).isNoUpdate())) {
+//						reply = true;
+//						break;
+//					}
+//				}
+//			}
+//		}
+//		return reply;
+//	}
 
 	public void setFollowingField(XFEditableField field) {
 	}

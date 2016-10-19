@@ -897,6 +897,14 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	public HashMap<String, Object> getParmMap() {
 		return dialog_.getParmMap();
 	}
+
+	public String getUserValueOf(String dataSourceName) {
+		return session_.getFilterValue(this.getFunctionID(), dataSourceName);
+	}
+
+	public void setUserValueOf(String dataSourceName, Object value) {
+		session_.setFilterValue(this.getFunctionID(), dataSourceName, value.toString());
+	}
 	
 	public void setProcessLog(String text) {
 		dialog_.setProcessLog(text);
@@ -1146,7 +1154,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 
 				workIndex = Integer.parseInt(element.getAttribute("Position"));
 				actionDefinitionArray[workIndex] = element.getAttribute("Action");
-				XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8);
+				XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8, session_);
 				jButtonArray[workIndex].setVisible(true);
 
 				inputMapTableMain.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
@@ -5202,7 +5210,7 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 	}
 	
 	public void setValue(Object obj) {
-		String value = (String)obj;
+		String value = obj.toString();
 		value = value.trim();
 		if (jComboBox.getItemCount() > 0) {
 			jComboBox.setSelectedIndex(0);
@@ -5731,10 +5739,10 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 					break;
 				}
 			}
-		} else {
-			if (!fieldOptionList.contains("PROMPT_LIST")) {
-				isNonEditableField = true;
-			}
+//		} else {
+//			if (!fieldOptionList.contains("PROMPT_LIST")) {
+//				isNonEditableField = true;
+//			}
 		}
 		if (isFieldOnDetailTable) {
 			for (int i = 0; i < dialog_.getDetailTable().getBatchTableWithKeyFieldIDList().size(); i++) {
@@ -5809,6 +5817,7 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 			editor = new XF110_SubListCellEditorWithCheckBox(dataTypeOptions, dialog_);
 		} else {
 			if (fieldOptionList.contains("PROMPT_LIST")) {
+				isNonEditableField = false;
 				XF110_SubListDetailReferTable referTable = null;
 				ArrayList<XF110_SubListDetailReferTable> referTableList = dialog_.getDetailReferTableList();
 				for (int i = 0; i < referTableList.size(); i++) {
@@ -5828,6 +5837,7 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 			} else {
 				wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 				if (!wrkStr.equals("")) {
+					isNonEditableField = false;
 					if (dataTypeOptionList.contains("KANJI")) {
 						fieldWidth = dataSize * XFUtility.FONT_SIZE + 5;
 					} else {
@@ -8032,7 +8042,7 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 	}
 	
 	public void setValue(Object obj) {
-		String value = (String)obj;
+		String value = obj.toString();
 		value = value.trim();
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {

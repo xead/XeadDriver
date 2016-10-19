@@ -1393,7 +1393,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			workIndex = Integer.parseInt(element.getAttribute("Position"));
 			jButtonNumberArray[workIndex] = element.getAttribute("Number");
 			actionDefinitionArray[workIndex] = element.getAttribute("Action");
-			XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", jPanelButtons.getSize().width / 8);
+			XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", jPanelButtons.getSize().width / 8, session_);
 			jButtonArray[workIndex].setVisible(true);
 
 			inputMapHeaderFields.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
@@ -3569,6 +3569,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	public HashMap<String, Object> getParmMap() {
 		return parmMap_;
 	}
+
+	public String getUserValueOf(String dataSourceName) {
+		return session_.getFilterValue(this.getFunctionID(), dataSourceName);
+	}
+
+	public void setUserValueOf(String dataSourceName, Object value) {
+		session_.setFilterValue(this.getFunctionID(), dataSourceName, value.toString());
+	}
 	
 	public void setProcessLog(String text) {
 		XFUtility.appendLog(text, processLog);
@@ -3922,6 +3930,7 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 		}
 
 		if (fieldOptionList.contains("PROMPT_LIST")) {
+			isNoUpdate = false;
 			isEditable = true;
 			XF310_HeaderReferTable referTable = null;
 			ArrayList<XF310_HeaderReferTable> referTableList = dialog_.getHeaderReferTableList();
@@ -3938,6 +3947,7 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 		} else {
 			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 			if (!wrkStr.equals("")) {
+				isNoUpdate = false;
 				isEditable = true;
 				component = new XF310_HeaderPromptCall(functionFieldElement_, wrkStr, dialog_);
 				component.setLocation(5, 0);
@@ -6158,7 +6168,7 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 	}
 	
 	public void setValue(Object obj) {
-		String value = (String)obj;
+		String value = obj.toString();
 		value = value.trim();
 		if (jComboBox.getItemCount() > 0) {
 			jComboBox.setSelectedIndex(0);
@@ -6859,6 +6869,7 @@ class XF310_DetailColumn implements XFFieldScriptable {
 
 		} else {
 			if (fieldOptionList.contains("PROMPT_LIST")) {
+				isNoUpdate = false;
 				XF310_DetailReferTable referTable = null;
 				ArrayList<XF310_DetailReferTable> referTableList = dialog_.getDetailReferTableList();
 				for (int i = 0; i < referTableList.size(); i++) {
@@ -6879,6 +6890,7 @@ class XF310_DetailColumn implements XFFieldScriptable {
 			} else {
 				wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 				if (!wrkStr.equals("")) {
+					isNoUpdate = false;
 					if (dataTypeOptionList.contains("KANJI") || dataTypeOptionList.contains("ZIPADRS")) {
 						fieldWidth = dataSize * XFUtility.FONT_SIZE + 5;
 					} else {
@@ -9362,7 +9374,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	}
 	
 	public void setValue(Object obj) {
-		String value = (String)obj;
+		String value = obj.toString();
 		value = value.trim();
 		if (listType.equals("VALUES_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
@@ -9603,8 +9615,8 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 		}
 
 		xFTextField = new XFTextField(XFUtility.getBasicTypeOf(dataType), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
-		xFTextField.setEditable(tableID.equals(dialog_.getHeaderTable().getTableID()));
-		xFTextField.setFocusable(tableID.equals(dialog_.getHeaderTable().getTableID()));
+		xFTextField.setEditable(tableAlias.equals(dialog_.getHeaderTable().getTableID()));
+		xFTextField.setFocusable(tableAlias.equals(dialog_.getHeaderTable().getTableID()));
 		xFTextField.setLocation(5, 0);
 
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF310.class.getResource("prompt.png"));

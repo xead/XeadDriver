@@ -225,84 +225,89 @@ public class DialogLogin extends JDialog {
 		StringBuffer statementBuf;
 		XFTableOperator operator;
 
-		String userID = originalUserID.substring(0, lengthOfUserID);
-		if (userID.equals("") || !userID.matches("[0-9a-zA-Z]+") || password.equals("")) {
-			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInComment"));
-		} else {
-			statementBuf = new StringBuffer();
-			statementBuf.append("select * from ");
-			statementBuf.append(session.getTableNameOfUserVariants());
-			statementBuf.append(" where IDUSERKUBUN = 'KBCALENDAR'");
-			operator = new XFTableOperator(session, null, statementBuf.toString(), true);
-			if (!operator.next()) {
-				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError5"));
-				validated = false;
+		if (originalUserID.length() == lengthOfUserID) {
+			String userID = originalUserID.substring(0, lengthOfUserID);
+			if (userID.equals("") || !userID.matches("[0-9a-zA-Z]+") || password.equals("")) {
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInComment"));
 			} else {
-				if (session.getSystemVariantString("LOGIN_PERMITTED").equals("")) {
-					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError4"));
+				statementBuf = new StringBuffer();
+				statementBuf.append("select * from ");
+				statementBuf.append(session.getTableNameOfUserVariants());
+				statementBuf.append(" where IDUSERKUBUN = 'KBCALENDAR'");
+				operator = new XFTableOperator(session, null, statementBuf.toString(), true);
+				if (!operator.next()) {
+					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError5"));
 					validated = false;
 				} else {
-					if (session.getSystemVariantString("LOGIN_PERMITTED").equals("F")) {
-						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError3"));
+					if (session.getSystemVariantString("LOGIN_PERMITTED").equals("")) {
+						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError4"));
+						validated = false;
 					} else {
+						if (session.getSystemVariantString("LOGIN_PERMITTED").equals("F")) {
+							JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError3"));
+						} else {
 
-						/////////////////////////////////////////////////////
-						// Setup select-statement to check login authority //
-						/////////////////////////////////////////////////////
-						//String passwordDigested = session.getDigestAdapter().digest(password);
-						String passwordDigested = session.getDigestedValueForUser(userID, password);
-						statementBuf = new StringBuffer();
-						statementBuf.append("select * from ");
-						statementBuf.append(session.getTableNameOfUser());
-						statementBuf.append(" where IDUSER = '") ;
-						statementBuf.append(userID) ;
-						statementBuf.append("' and TXPASSWORD = '") ;
-						statementBuf.append(passwordDigested);
-						statementBuf.append("'") ;
+							/////////////////////////////////////////////////////
+							// Setup select-statement to check login authority //
+							/////////////////////////////////////////////////////
+							//String passwordDigested = session.getDigestAdapter().digest(password);
+							String passwordDigested = session.getDigestedValueForUser(userID, password);
+							statementBuf = new StringBuffer();
+							statementBuf.append("select * from ");
+							statementBuf.append(session.getTableNameOfUser());
+							statementBuf.append(" where IDUSER = '") ;
+							statementBuf.append(userID) ;
+							statementBuf.append("' and TXPASSWORD = '") ;
+							statementBuf.append(passwordDigested);
+							statementBuf.append("'") ;
 
-						///////////////////////////////////////////////
-						// Execute select-statement retrying 3 times //
-						///////////////////////////////////////////////
-						int retryCount = 0;
-						while (retryCount < 3) {
-							try {
-								retryCount++;
-								operator = new XFTableOperator(session, null, statementBuf.toString(), true);
-								if (operator.next()) {
-									Date resultDateFrom = null;
-									Date resultDateThru = null;
-									Date today = new Date();
-									resultDateFrom = (java.util.Date)operator.getValueOf("DTVALID");
-									resultDateThru = (java.util.Date)operator.getValueOf("DTEXPIRE");
-									if (today.after(resultDateFrom)) {
-										if (resultDateThru == null || today.before(resultDateThru)) {
-											this.userID = jTextFieldUserID.getText();
-											this.userName = operator.getValueOf("TXNAME").toString().trim();
-											this.userEmployeeNo = operator.getValueOf("NREMPLOYEE").toString().trim();
-											this.userEmailAddress = operator.getValueOf("TXEMAIL").toString().trim();
-											this.userMenus = operator.getValueOf("TXMENUS").toString().trim();
-											validated = true;
+							///////////////////////////////////////////////
+							// Execute select-statement retrying 3 times //
+							///////////////////////////////////////////////
+							int retryCount = 0;
+							while (retryCount < 3) {
+								try {
+									retryCount++;
+									operator = new XFTableOperator(session, null, statementBuf.toString(), true);
+									if (operator.next()) {
+										Date resultDateFrom = null;
+										Date resultDateThru = null;
+										Date today = new Date();
+										resultDateFrom = (java.util.Date)operator.getValueOf("DTVALID");
+										resultDateThru = (java.util.Date)operator.getValueOf("DTEXPIRE");
+										if (today.after(resultDateFrom)) {
+											if (resultDateThru == null || today.before(resultDateThru)) {
+												this.userID = jTextFieldUserID.getText();
+												this.userName = operator.getValueOf("TXNAME").toString().trim();
+												this.userEmployeeNo = operator.getValueOf("NREMPLOYEE").toString().trim();
+												this.userEmailAddress = operator.getValueOf("TXEMAIL").toString().trim();
+												this.userMenus = operator.getValueOf("TXMENUS").toString().trim();
+												validated = true;
+											} else {
+												JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError1"));
+											}
 										} else {
 											JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError1"));
 										}
 									} else {
-										JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError1"));
+										JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError2"));
 									}
-								} else {
-									JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError2"));
-								}
-								retryCount = 3;
-							} catch(Exception e) {
-								if (retryCount < 3) {
-									Thread.sleep(1000);
-								} else {
-									throw e;
+									retryCount = 3;
+								} catch(Exception e) {
+									if (retryCount < 3) {
+										Thread.sleep(1000);
+									} else {
+										throw e;
+									}
 								}
 							}
 						}
 					}
 				}
 			}
+		} else {
+			JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("LogInError2"));
+			validated = false;
 		}
 		return validated;
 	}

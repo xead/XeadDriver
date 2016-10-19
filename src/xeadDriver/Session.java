@@ -1795,9 +1795,8 @@ public class Session extends JFrame {
 
 	public String getSystemVariantString(String itemID) {
 		String strValue = "";
-		String sql = "";
 		try {
-			sql = "select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'";
+			String sql = "select * from " + variantsTable + " where IDVARIANT = '" + itemID + "'";
 			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 			if (operator.next()) {
 				strValue = operator.getValueOf("TXVALUE").toString().trim();
@@ -1809,51 +1808,6 @@ public class Session extends JFrame {
 			JOptionPane.showMessageDialog(null, "Accessing to the system variant table failed.\n" + e.getMessage());
 		}
 		return strValue;
-	}
-
-	public HashMap getFilterValueMap(String functionID) {
-		HashMap<String, String> valueMap = null;
-		if (!userFilterValueTable.equals("")) {
-			try {
-				valueMap = new HashMap<String, String>();
-				String sql = "select * from " + userFilterValueTable
-						+ " where IDUSER ='" + this.getUserID()
-						+ "' AND IDFUNCTION = '" + functionID + "'";
-				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
-				while (operator.next()) {
-					valueMap.put(operator.getValueOf("IDFILTER").toString(), operator.getValueOf("TXVALUE").toString());
-				}
-			} catch (Exception e) {
-				valueMap = null;
-			}
-		}
-		return valueMap;
-	}
-
-	public void setFilterValueMap(String functionID, String filterID, String value) {
-		if (!userFilterValueTable.equals("")) {
-			try {
-				String sql = "select * from " + userFilterValueTable
-						+ " where IDUSER ='" + this.getUserID()
-						+ "' AND IDFUNCTION = '" + functionID
-						+ "' AND IDFILTER = '" + filterID + "'";
-				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
-				if (operator.next()) {
-					sql = "update " + userFilterValueTable
-							+ " set TXVALUE = '" + value
-							+ "' where IDUSER ='" + this.getUserID()
-							+ "' AND IDFUNCTION = '" + functionID
-							+ "' AND IDFILTER = '" + filterID + "'";
-				} else {
-					sql = "insert into " + userFilterValueTable
-							+ " (IDUSER, IDFUNCTION, IDFILTER, TXVALUE) values ("
-							+ "'" + this.getUserID() + "', '" + functionID
-							+ "', '" + filterID + "', '" + value + "')";
-				}
-				operator = new XFTableOperator(this, null, sql, true);
-				operator.execute();
-			} catch (Exception e) {}
-		}
 	}
 
 	public int getSystemVariantInteger(String itemID) {
@@ -1917,6 +1871,83 @@ public class Session extends JFrame {
 			}
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "Accessing to the system variant table failed.\n" + e.getMessage());
+		}
+	}
+
+	public String getUserVariantDescription(String variantID, String value) {
+		String strValue = "";
+		try {
+			String sql = "select * from " + userVariantsTable + " where IDUSERKUBUN = '" + variantID + "' and KBUSERKUBUN = '" + value + "'";
+			XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+			if (operator.next()) {
+				strValue = operator.getValueOf("TXUSERKUBUN").toString().trim();
+			}
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Accessing to the user variant table failed.\n" + e.getMessage());
+		}
+		return strValue;
+	}
+
+	public HashMap getFilterValueMap(String functionID) {
+		HashMap<String, String> valueMap = null;
+		if (!userFilterValueTable.equals("")) {
+			try {
+				valueMap = new HashMap<String, String>();
+				String sql = "select * from " + userFilterValueTable
+						+ " where IDUSER ='" + this.getUserID()
+						+ "' AND IDFUNCTION = '" + functionID + "'";
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				while (operator.next()) {
+					valueMap.put(operator.getValueOf("IDFILTER").toString(), operator.getValueOf("TXVALUE").toString());
+				}
+			} catch (Exception e) {
+				valueMap = null;
+			}
+		}
+		return valueMap;
+	}
+
+	public String getFilterValue(String functionID, String filterID) {
+		String value = "";
+		if (!userFilterValueTable.equals("")) {
+			try {
+				String sql = "select * from " + userFilterValueTable
+						+ " where IDUSER ='" + this.getUserID()
+						+ "' AND IDFUNCTION = '" + functionID
+						+ "' AND IDFILTER = '" + filterID + "'";
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				if (operator.next()) {
+					value = operator.getValueOf("TXVALUE").toString();
+				}
+			} catch (Exception e) {
+			}
+		}
+		return value;
+	}
+
+	public void setFilterValue(String functionID, String filterID, String value) {
+		if (!userFilterValueTable.equals("")) {
+			try {
+				String sql = "select * from " + userFilterValueTable
+						+ " where IDUSER ='" + this.getUserID()
+						+ "' AND IDFUNCTION = '" + functionID
+						+ "' AND IDFILTER = '" + filterID + "'";
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				if (operator.next()) {
+					sql = "update " + userFilterValueTable
+							+ " set TXVALUE = '" + value
+							+ "' where IDUSER ='" + this.getUserID()
+							+ "' AND IDFUNCTION = '" + functionID
+							+ "' AND IDFILTER = '" + filterID + "'";
+				} else {
+					sql = "insert into " + userFilterValueTable
+							+ " (IDUSER, IDFUNCTION, IDFILTER, TXVALUE) values ("
+							+ "'" + this.getUserID() + "', '" + functionID
+							+ "', '" + filterID + "', '" + value + "')";
+				}
+				operator = new XFTableOperator(this, null, sql, true);
+				operator.execute();
+			} catch (Exception e) {}
 		}
 	}
 
@@ -1990,6 +2021,30 @@ public class Session extends JFrame {
 			float rate = 0;
 			try {
 				String sql = "select * from " + taxTable + " order by DTSTART DESC";
+				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
+				while (operator.next()) {
+					fromDate = Integer.parseInt(operator.getValueOf("DTSTART").toString().replaceAll("-", ""));
+					if (targetDate >= fromDate) {
+						rate = Float.parseFloat(operator.getValueOf("VLTAXRATE").toString());
+						break;
+					}
+				}
+				taxAmount = (int)Math.floor(amount * rate);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return taxAmount;
+	}
+
+	public int getTaxAmount(String date, int amount, String kbKazei) {
+		int fromDate = 0;
+		int taxAmount = 0;
+		if (date != null && !date.equals("")) {
+			int targetDate = Integer.parseInt(date.replaceAll("-", "").replaceAll("/", ""));
+			float rate = 0;
+			try {
+				String sql = "select * from " + taxTable + " where KBKAZEI = '" + kbKazei  + "' order by DTSTART DESC";
 				XFTableOperator operator = new XFTableOperator(this, null, sql, true);
 				while (operator.next()) {
 					fromDate = Integer.parseInt(operator.getValueOf("DTSTART").toString().replaceAll("-", ""));
@@ -3055,6 +3110,9 @@ public class Session extends JFrame {
 	public JSONArray createJsonArray(String text) throws Exception {
 		return new JSONArray(text);
 	}
+	public JSONArray createJsonArray() throws Exception {
+		return new JSONArray();
+	}
 	public JSONObject getJsonObject(JSONObject object, String name) throws Exception {
 		return object.getJSONObject(name);
 	}
@@ -3093,6 +3151,9 @@ public class Session extends JFrame {
 		} else {
 			return getDigestedValue(value, digestAlgorithmForUser, countOfExpandForUser, "");
 		}
+	}
+	public String getDigestedValue(String value) {
+		return getDigestedValueForUser(value);
 	}
 	public String getDigestedValue(String value, String algorithm) {
 		return getDigestedValue(value, algorithm, 1, "");

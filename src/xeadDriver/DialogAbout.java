@@ -43,11 +43,19 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M7";
-	public static final String VERSION  = "1.3.7";
+	public static final String FULL_VERSION  = "V1.R3.M8";
+	public static final String VERSION  = "1.3.8";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2016 DBC Ltd.";
 	public static final String URL_DBC = "http://homepage2.nifty.com/dbc/";
+	//1.3.8
+	//・sessionメソッドとして、引数なしのcreateJsonObject()を追加した
+	//・session.getUserVariantDescription(...)を追加した
+	//･session.getDigestedValue(...)を強化した
+	//・システム制御テーブルの「消費税テーブル」を軽減税率に合わせて作り変え、これを扱うためのsessionメソッドを追加した
+	//・「ユーザ値」を取得・保管するためのinstanceメソッドを組み込んだ
+	//・XF200の更新モードにおいて、更新禁止項目が更新されるような選択がプロンプトからなされた場合、エラーメッセージを示して拒否するようにした
+	//
 	//1.3.7
 	//・accdb向けのDBドライバを更新した
 	//・スクリプトでのフィールド色の設定が効かなくなっていた問題を修正した

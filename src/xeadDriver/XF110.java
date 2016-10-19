@@ -844,7 +844,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					|| element.getAttribute("Action").equals("OUTPUT")) {
 				workIndex = Integer.parseInt(element.getAttribute("Position"));
 				actionDefinitionArray[workIndex] = element.getAttribute("Action");
-				XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8);
+				XFUtility.setCaptionToButton(jButtonArray[workIndex], element, "", this.getPreferredSize().width / 8, session_);
 				jButtonArray[workIndex].setVisible(true);
 				inputMap.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
 				actionMap.put("actionButton" + workIndex, actionButtonArray[workIndex]);
@@ -1139,7 +1139,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				if (filterList.get(i).isEditable()
 						&& filterList.get(i).getBasicType().equals("STRING")
 						&& filterList.get(i).getDefaultValue().equals("")) {
-					session_.setFilterValueMap(getFunctionID(), filterList.get(i).getDataSourceName(), filterList.get(i).getValue().toString());
+					session_.setFilterValue(getFunctionID(), filterList.get(i).getDataSourceName(), filterList.get(i).getValue().toString());
 				}
 			}
 		}
@@ -1799,6 +1799,14 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 
 	public HashMap<String, Object> getParmMap() {
 		return parmMap_;
+	}
+
+	public String getUserValueOf(String dataSourceName) {
+		return session_.getFilterValue(this.getFunctionID(), dataSourceName);
+	}
+
+	public void setUserValueOf(String dataSourceName, Object value) {
+		session_.setFilterValue(this.getFunctionID(), dataSourceName, value.toString());
 	}
 
 	public void setProcessLog(String text) {

@@ -704,6 +704,14 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	public HashMap<String, Object> getParmMap() {
 		return parmMap_;
 	}
+
+	public String getUserValueOf(String dataSourceName) {
+		return session_.getFilterValue(this.getFunctionID(), dataSourceName);
+	}
+
+	public void setUserValueOf(String dataSourceName, Object value) {
+		session_.setFilterValue(this.getFunctionID(), dataSourceName, value.toString());
+	}
 	
 	public void setProcessLog(String text) {
 		XFUtility.appendLog(text, processLog);

@@ -2537,7 +2537,7 @@ public class XFUtility {
 		return sortableDomElementListModel;
 	}
 
-	static void setCaptionToButton(JButton button, org.w3c.dom.Element element, String buttonText, int buttonWidth) {
+	static void setCaptionToButton(JButton button, org.w3c.dom.Element element, String buttonText, int buttonWidth, Session session) {
         StringBuffer bf = new StringBuffer();
         bf.append("F");
 		bf.append(element.getAttribute("Number"));
@@ -2549,6 +2549,25 @@ public class XFUtility {
 		}
 		button.setText(bf.toString());
 		button.setToolTipText(bf.toString());
+
+		if (element.getAttribute("Action").contains("CALL")) {
+			int pos1 = element.getAttribute("Action").indexOf("CALL(");
+			if (pos1 >= 0) {
+				int pos2 = element.getAttribute("Action").indexOf(")", pos1);
+				String callAction = element.getAttribute("Action").substring(pos1+5, pos2);
+				StringTokenizer workTokenizer1 = new StringTokenizer(callAction, "," );
+				String functionID = "";
+				if (workTokenizer1.countTokens() >= 1) {
+					functionID = workTokenizer1.nextToken();
+				}
+				String functionName = session.getFunctionName(functionID);
+				if (functionName.equals("")) {
+					button.setToolTipText(functionID + " N/A");
+				} else {
+					button.setToolTipText(functionID + " " + functionName);
+				}
+			}
+		}
 
 		JButton dummy;
 		for (int i = XFUtility.FONT_SIZE; i > 8; i--) {

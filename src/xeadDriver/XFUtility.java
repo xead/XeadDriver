@@ -3003,6 +3003,7 @@ class XFImageField extends JPanel implements XFEditableField {
 	private int fieldHeight = 0;
 	private int fieldWidth = 0;
 	private String oldValue = "";
+	private String fontName_ = "";
 	private Desktop desktop = Desktop.getDesktop();
 
 	public XFImageField(String fieldOptions, int size, String imageFileFolder, String fontName){
@@ -3013,6 +3014,7 @@ class XFImageField extends JPanel implements XFEditableField {
 		fieldOptions_ = fieldOptions;
 		size_ = size;
 		imageFileFolder_ = imageFileFolder;
+		fontName_ = fontName;
 
 		jTextField.setEditable(false);
 		Border workBorder = jTextField.getBorder();
@@ -3020,12 +3022,11 @@ class XFImageField extends JPanel implements XFEditableField {
 		jTextField.setBorder(BorderFactory.createLineBorder(normalModeColor));
 		jTextField.setBackground(Color.white);
 		jTextField.setEditable(true);
-		jTextField.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
+		jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE));
 		jTextField.setDocument(new LimitDocument());
 
-		jButton.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
+		jButton.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE));
 		jButton.setPreferredSize(new Dimension(35, XFUtility.FIELD_UNIT_HEIGHT));
-		//jButton.setText(XFUtility.RESOURCE.getString("Refresh"));
 		jButton.setIcon(XFUtility.ICON_REFRESH);
 		jButton.addActionListener(new XFImageField_jButton_actionAdapter(this));
 		jButton.addKeyListener(new XFImageField_jButton_keyAdapter(this));
@@ -3045,7 +3046,6 @@ class XFImageField extends JPanel implements XFEditableField {
 		if (!wrkStr.equals("")) {
 			rows_ = Integer.parseInt(wrkStr);
 		}
-		//fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT - FIELD_VERTICAL_MARGIN - 3;
 		fieldHeight = rows_ * (XFUtility.FIELD_UNIT_HEIGHT + FIELD_VERTICAL_MARGIN) - FIELD_VERTICAL_MARGIN;
 
 		fieldWidth = DEFAULT_WIDTH;
@@ -3111,18 +3111,17 @@ class XFImageField extends JPanel implements XFEditableField {
 		String fullName = imageFileFolder_ + imageFileName;
 		if (imageFileName.equals("")) {
 			jLabelImage = new JLabel();
+			jLabelImage.setHorizontalAlignment(SwingConstants.CENTER);
 			isExistingFile = false;
 		} else {
 			if (fullName.startsWith("http://")) {
 				try{
-					//imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
 					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-30);
 				}catch(Exception e){
 				}
 			} else {
 				File imageFile = new File(fullName);
 				if (imageFile.exists()) {
-					//imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-15);
 					imageIcon = XFUtility.createSmallIcon(fullName, fieldWidth-15, fieldHeight-30);
 				} else {
 					isExistingFile = false;
@@ -3130,6 +3129,7 @@ class XFImageField extends JPanel implements XFEditableField {
 			}
 			jLabelImage = new JLabel("", imageIcon, JLabel.CENTER);
 		}
+		jLabelImage.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE));
 		jLabelImage.setOpaque(true);
 
 		/////////////////////////////////////
@@ -3146,11 +3146,9 @@ class XFImageField extends JPanel implements XFEditableField {
 				int wrkWidth = this.getWidth() - 50;
 				int wrkHeight = this.getHeight() - 50;
 				if (imageIcon.getIconWidth() > wrkWidth) {
-					//wrkWidth = imageIcon.getIconWidth() + 10;
 					wrkWidth = imageIcon.getIconWidth();
 				}
 				if (imageIcon.getIconHeight() > wrkHeight) {
-					//wrkHeight = imageIcon.getIconHeight() + 10;
 					wrkHeight = imageIcon.getIconHeight();
 				}
 	    		jLabelImage.setToolTipText("<html>" + imageFileName + "<br>" + XFUtility.RESOURCE.getString("ImageFileShown"));
@@ -3161,7 +3159,11 @@ class XFImageField extends JPanel implements XFEditableField {
 			}
         	jLabelImage.addMouseListener(new jLabel_mouseAdapter(this));
         } else {
-			jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
+    		if (imageFileName.equals("")) {
+    			jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotSpecified"));
+    		} else {
+    			jLabelImage.setText(XFUtility.RESOURCE.getString("ImageFileNotFound1") + fullName + XFUtility.RESOURCE.getString("ImageFileNotFound2"));
+    		}
         }
 		jScrollPane.getViewport().add(jLabelImage, null);
 	}

@@ -74,7 +74,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private int programSequence;
 	private StringBuffer processLog = new StringBuffer();
 	private XF310_KeyInputDialog keyInputDialog = null;
-	//private XF310_AddRowList addRowListDialog = null;
 	private JPanel jPanelMain = new JPanel();
 	private JPanel jPanelHeaderFields = new JPanel();
 	private JScrollPane jScrollPaneHeaderFields = new JScrollPane();
@@ -460,15 +459,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			/////////////////////////////////////
 			setupFunctionKeysAndButtons();
 
-//			///////////////////////////////
-//			// Setup Add-Row-List Dialog //
-//			///////////////////////////////
-//			if (functionElement_.getAttribute("AddRowListTable").equals("")) {
-//				addRowListDialog = null;
-//			} else {
-//				addRowListDialog = new XF310_AddRowList(this);
-//			}
-
 			/////////////////////////
 			// Fetch Header Record //
 			/////////////////////////
@@ -529,21 +519,18 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		// Show Panel //
 		////////////////
 		if (!this.isClosing) {
-//			if (addRowListDialog == null
-//					|| (addRowListDialog != null && !addRowListDialog.isInvalid())) {
-				if (jTableMain.getRowCount() == 0 && isToStartInAddModeIfWithNoRow) {
-					if (addRowCaption.equals("")) {
-						if (!callToAddAction.equals("")) {
-							callFunctionToAddRow(callToAddAction);
-						}
-					} else {
-						addRow();
+			if (jTableMain.getRowCount() == 0 && isToStartInAddModeIfWithNoRow) {
+				if (addRowCaption.equals("")) {
+					if (!callToAddAction.equals("")) {
+						callFunctionToAddRow(callToAddAction);
 					}
+				} else {
+					addRow();
 				}
-				if (!this.isClosing) {
-					this.setVisible(true);
-				}
-//			}
+			}
+			if (!this.isClosing) {
+				this.setVisible(true);
+			}
 		}
 
 		return returnMap_;
@@ -861,7 +848,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						workTableID = getTableIDOfTableAlias(workAlias);
 						workFieldID = workTokenizer2.nextToken();
 						if (!containsDetailField(workTableID, workAlias, workFieldID)) {
-							detailColumnList.add(new XF310_DetailColumn(workTableID, workAlias, workFieldID, this));
+							workElement = session_.getFieldElement(workTableID, workFieldID);
+							if (workElement == null) {
+								String msg = XFUtility.RESOURCE.getString("FunctionError56") + workAlias + '.' + workFieldID;
+								JOptionPane.showMessageDialog(null, msg);
+								throw new Exception(msg);
+							} else {
+								detailColumnList.add(new XF310_DetailColumn(workTableID, workAlias, workFieldID, this));
+							}
 						}
 					}
 				}
@@ -1435,10 +1429,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			jScrollPaneTable.updateUI();
 			int countOfRows = 0;
 
-			////////////////////////////////////////////
-			// Run Detail-table-script for BeforeRead //
-			////////////////////////////////////////////
-			detailTable.runScript("BR", "", null, null);
+//			detailTable.runScript("BR", "", null, null); // Run Detail-table-script for BeforeRead //
 
 			/////////////////////////////////
 			// Select Detail-table records //
@@ -1449,6 +1440,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				for (int i = 0; i < detailColumnList.size(); i++) {
 					detailColumnList.get(i).initValue();
 				}
+
+				detailTable.runScript("BR", "", null, null); // Run Detail-table-script for BeforeRead //
 				
 				for (int i = 0; i < detailColumnList.size(); i++) {
 					if (detailColumnList.get(i).getTableID().equals(detailTable.getTableID())) {
@@ -1936,50 +1929,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 
 				if (!isClosing) {
-//					if (addRowListDialog == null) {
-						int countOfAdded = setupNewRowAndAddToJTable(null);
-						if (countOfAdded > 0) {
-							checkErrorsToUpdate(true, false);
-							messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
-							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-						} else {
-							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage60"));
-						}
-//					} else {
-//						ArrayList<XF310_AddRowListNumber> addRowListNumberList = addRowListDialog.getDefaultRow();
-//						if (addRowListNumberList == null) {
-//							int result = addRowListDialog.requestSelection();
-//							if (result == 0) {
-//								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage33"));
-//							}
-//							if (result == 1) {
-//								addRowListNumberList = addRowListDialog.getSelectionList();
-//							}
-//							if (result == 2) {
-//								setupNewRowAndAddToJTable(null);
-//								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-//							}
-//							if (result == 3) {
-//								closeFunction(); // closing because of internal error //
-//							}
-//						}
-//
-//						if (addRowListNumberList != null) {
-//							int countOfAdded = 0;
-//							for (int i = 0; i < addRowListNumberList.size(); i++) {
-//								countOfAdded = countOfAdded + setupNewRowAndAddToJTable(addRowListNumberList.get(i).getReturnFieldMap());
-//							}
-//							int countOfNotAdded = addRowListNumberList.size() - countOfAdded;
-//							if (countOfNotAdded > 0) {
-//								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage34") + countOfNotAdded + XFUtility.RESOURCE.getString("FunctionMessage35"));
-//							}
-//							checkErrorsToUpdate(true, false);
-//							messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
-//							if (countOfAdded > 0) {
-//								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
-//							}
-//						}
-//					}
+					int countOfAdded = setupNewRowAndAddToJTable(null);
+					if (countOfAdded > 0) {
+						checkErrorsToUpdate(true, false);
+						messageList.remove(XFUtility.RESOURCE.getString("FunctionMessage9"));
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage52"));
+					} else {
+						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage60"));
+					}
 				}
 
 			} catch (Exception e) {
@@ -2136,6 +2093,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			if (cellsEditor.getActiveRowObject() == null) {
 				messageList.add(XFUtility.RESOURCE.getString("FunctionError44"));
 			} else {
+				messageList.clear();
 				cellsEditor.stopCellEditing();
 
 				////////////////////////////////
@@ -2368,7 +2326,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						if (value.toString().contains(";") && !value.toString().equals(";")) {
 							datasourceName = fieldsToGetList_.get(i);
 							multipleValues = value.toString();
-//							break;
+							break;
 						}
 					}
 				}
@@ -6239,6 +6197,9 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
+    private String kubunValue = "";
+	private ArrayList<String> kubunValueList = new ArrayList<String>();
+	private ArrayList<String> kubunTextList = new ArrayList<String>();
 
 	public XF310_CellEditorWithPromptCall(org.w3c.dom.Element fieldElement, String functionID, XF310 dialog){
 		super();
@@ -6302,6 +6263,30 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 			while (workTokenizer.hasMoreTokens()) {
 				fieldsToGetToList_.add(workTokenizer.nextToken());
 			}
+		}
+
+		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
+		if (!wrkStr.equals("")) {
+			JLabel jLabel = new JLabel();
+			FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+			int fieldWidth = jTextField.getWidth();
+			String wrk = "";
+			String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+			String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+			XFTableOperator operator = dialog_.createTableOperator(sql);
+			try {
+				while (operator.next()) {
+					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+					if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
+						fieldWidth = metrics.stringWidth(wrk) + 10;
+					}
+					kubunTextList.add(wrk);
+				}
+			} catch (Exception e1) {
+			}
+			jTextField.setSize(fieldWidth, jTextField.getHeight());
+			jTextField.setEditable(false);
 		}
 
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF310.class.getResource("prompt.png"));
@@ -6437,7 +6422,11 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 				|| dataTypeOptionList.contains("ZIPNO")) {
 			text = XFUtility.getStringNumber(jTextField.getText());
 		} else {
-			text = jTextField.getText();
+			if (kubunValueList.size() > 0) {
+				text = kubunValue;
+			} else {
+				text = jTextField.getText();
+			}
 		}
 		return text;
 	}
@@ -6450,7 +6439,16 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 		if (obj == null) {
 			jTextField.setText("");
 		} else {
-			jTextField.setText(obj.toString());
+			if (kubunValueList.size() > 0) {
+				kubunValue = obj.toString();
+				if (kubunValueList.indexOf(kubunValue) > -1) {
+					jTextField.setText(kubunTextList.get(kubunValueList.indexOf(kubunValue)));
+				} else {
+					jTextField.setText("N/A");
+				}
+			} else {
+				jTextField.setText(obj.toString());
+			}
 		}
 	}
 	
@@ -9548,6 +9546,9 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
+    private String kubunValue = "";
+	private ArrayList<String> kubunValueList = new ArrayList<String>();
+	private ArrayList<String> kubunTextList = new ArrayList<String>();
 
 	public XF310_HeaderPromptCall(org.w3c.dom.Element fieldElement, String functionID, XF310 dialog){
 		super();
@@ -9618,6 +9619,30 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 		xFTextField.setEditable(tableAlias.equals(dialog_.getHeaderTable().getTableID()));
 		xFTextField.setFocusable(tableAlias.equals(dialog_.getHeaderTable().getTableID()));
 		xFTextField.setLocation(5, 0);
+
+		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
+		if (!wrkStr.equals("")) {
+			JLabel jLabel = new JLabel();
+			FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+			int fieldWidth = xFTextField.getWidth();
+			String wrk = "";
+			String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+			String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+			XFTableOperator operator = dialog_.createTableOperator(sql);
+			try {
+				while (operator.next()) {
+					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+					if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
+						fieldWidth = metrics.stringWidth(wrk) + 10;
+					}
+					kubunTextList.add(wrk);
+				}
+			} catch (Exception e1) {
+			}
+			xFTextField.setWidth(fieldWidth);
+			xFTextField.setEditable(false);
+		}
 
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF310.class.getResource("prompt.png"));
 	 	jButton.setIcon(imageIcon);
@@ -9703,7 +9728,11 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 				|| dataTypeOptionList.contains("ZIPNO")) {
 			text = XFUtility.getStringNumber(xFTextField.getText());
 		} else {
-			text = xFTextField.getText();
+			if (kubunValueList.size() > 0) {
+				text = kubunValue;
+			} else {
+				text = xFTextField.getText();
+			}
 		}
 		return text;
 	}
@@ -9728,7 +9757,16 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 		if (obj == null) {
 			xFTextField.setText("");
 		} else {
-			xFTextField.setText(obj.toString());
+			if (kubunValueList.size() > 0) {
+				kubunValue = obj.toString();
+				if (kubunValueList.indexOf(kubunValue) > -1) {
+					xFTextField.setText(kubunTextList.get(kubunValueList.indexOf(kubunValue)));
+				} else {
+					xFTextField.setText("N/A");
+				}
+			} else {
+				xFTextField.setText(obj.toString());
+			}
 		}
 	}
 	

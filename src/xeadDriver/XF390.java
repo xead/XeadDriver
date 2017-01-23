@@ -821,13 +821,19 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 			int countOfRows = 0;
 			int rowNo = 0;
 
-			detailTableArray[index].runScript("BR", ""); /* Script to be run BEFORE READ */
+//			detailTableArray[index].runScript("BR", ""); /* Script to be run BEFORE READ */
 
 			operatorDetail = createTableOperator(detailTableArray[index].getSQLToSelect());
 			while (operatorDetail.next()) {
 
 				for (int i = 0; i < detailColumnListArray[index].size(); i++) {
 					detailColumnListArray[index].get(i).initialize();
+				}
+
+				detailTableArray[index].runScript("BR", ""); /* Script to be run BEFORE READ */
+
+				for (int i = 0; i < detailColumnListArray[index].size(); i++) {
+//					detailColumnListArray[index].get(i).initialize();
 					if (detailColumnListArray[index].get(i).getTableAlias().equals(detailTableArray[index].getTableID())) {
 						detailColumnListArray[index].get(i).setValueOfResultSet(operatorDetail);
 					}

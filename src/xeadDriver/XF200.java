@@ -3559,6 +3559,9 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
+    private String kubunValue = "";
+	private ArrayList<String> kubunValueList = new ArrayList<String>();
+	private ArrayList<String> kubunTextList = new ArrayList<String>();
 
 	public XF200_PromptCallField(org.w3c.dom.Element fieldElement, String functionID, boolean isEditableInEditMode, XF200 dialog){
 		super();
@@ -3628,6 +3631,30 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 			}
 		}
 
+		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
+		if (!wrkStr.equals("")) {
+			JLabel jLabel = new JLabel();
+			FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+			int fieldWidth = xFTextField.getWidth();
+			String wrk = "";
+			String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+			String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+			XFTableOperator operator = dialog_.createTableOperator(sql);
+			try {
+				while (operator.next()) {
+					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+					if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
+						fieldWidth = metrics.stringWidth(wrk) + 10;
+					}
+					kubunTextList.add(wrk);
+				}
+			} catch (Exception e1) {
+			}
+			xFTextField.setWidth(fieldWidth);
+			isEditableInEditMode_ = false;
+		}
+
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF200.class.getResource("prompt.png"));
 	 	jButton.setIcon(imageIcon);
 		jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
@@ -3664,15 +3691,7 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 						for (int i = 0; i < dialog_.getFieldList().size(); i++) {
 							value = fieldsToGetMap.get(dialog_.getFieldList().get(i).getDataSourceName());
 							if (value != null) {
-//								////////////////////////////////////////////////////
-//								// Check if update-control field is being updated //
-//								////////////////////////////////////////////////////
-//								if ((dialog_.getFieldList().get(i).isKey() || dialog_.getFieldList().get(i).isNoUpdate())
-//										&& !dialog_.getFieldList().get(i).getValue().equals(value)) {
-//									JOptionPane.showMessageDialog(null, dialog_.getFieldList().get(i).getDataSourceName()+" is an update-controled field. Unable to accept value.");
-//								} else {
-									dialog_.getFieldList().get(i).setValue(value);
-//								}
+								dialog_.getFieldList().get(i).setValue(value);
 							}
 						}
 					}
@@ -3703,7 +3722,6 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 	}
 
 	public void setEditable(boolean editable) {
-		//if (editable && !isEditControled()) {
 		if (editable) {
 			this.add(jButton, BorderLayout.EAST);
 			xFTextField.setBackground(XFUtility.ACTIVE_COLOR);
@@ -3718,23 +3736,6 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 			isEditable = false;
 		}
 	}
-
-//	private boolean isEditControled() {
-//		boolean reply = false;
-//		for (int i = 0; i < fieldsToGetToList_.size(); i++) {
-//			for (int j = 0; j < dialog_.getFieldList().size(); j++) {
-//				if (dialog_.getFieldList().get(j).isFieldOnPrimaryTable()
-//						&& dialog_.getFieldList().get(j).getDataSourceName().equals(fieldsToGetToList_.get(i))) {
-//					if (dialog_.getPanelMode().equals("EDIT")
-//							&& (dialog_.getFieldList().get(j).isKey() || dialog_.getFieldList().get(j).isNoUpdate())) {
-//						reply = true;
-//						break;
-//					}
-//				}
-//			}
-//		}
-//		return reply;
-//	}
 
 	public void setFollowingField(XFEditableField field) {
 	}
@@ -3757,7 +3758,11 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 				|| dataTypeOptionList.contains("ZIPNO")) {
 			text = XFUtility.getStringNumber(xFTextField.getText());
 		} else {
-			text = xFTextField.getText();
+			if (kubunValueList.size() > 0) {
+				text = kubunValue;
+			} else {
+				text = xFTextField.getText();
+			}
 		}
 		return text;
 	}
@@ -3782,7 +3787,16 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 		if (obj == null) {
 			xFTextField.setText("");
 		} else {
-			xFTextField.setText(obj.toString());
+			if (kubunValueList.size() > 0) {
+				kubunValue = obj.toString();
+				if (kubunValueList.indexOf(kubunValue) > -1) {
+					xFTextField.setText(kubunTextList.get(kubunValueList.indexOf(kubunValue)));
+				} else {
+					xFTextField.setText("N/A");
+				}
+			} else {
+				xFTextField.setText(obj.toString());
+			}
 		}
 	}
 

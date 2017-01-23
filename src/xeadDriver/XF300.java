@@ -92,34 +92,36 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private JPanel jPanelTop = new JPanel();
 	private JPanel jPanelCenter = new JPanel();
 	private JButton jButtonList = new JButton();
-	private JPanel jPanelFilters[] = new JPanel[10];
-	private JScrollPane jScrollPaneFilters[] = new JScrollPane[10];
-	private XF300_Filter firstEditableFilter[] = new XF300_Filter[10];
-	private int rowsOfDisplayedFilters[] = new int[10];
+	private JPanel jPanelFilters[] = new JPanel[20];
+	private JScrollPane jScrollPaneFilters[] = new JScrollPane[20];
+	private XF300_Filter firstEditableFilter[] = new XF300_Filter[20];
+	private int rowsOfDisplayedFilters[] = new int[20];
 	@SuppressWarnings("unchecked")
-	private ArrayList<XF300_Filter> filterListArray[] = new ArrayList[10];
+	private ArrayList<XF300_Filter> filterListArray[] = new ArrayList[20];
 	@SuppressWarnings("unchecked")
-	private ArrayList<XF300_DetailColumn>[] detailColumnListArray = new ArrayList[10];
+	private ArrayList<XF300_DetailColumn>[] detailColumnListArray = new ArrayList[20];
 	@SuppressWarnings("unchecked")
-	private ArrayList<XF300_DetailReferTable>[] detailReferTableListArray = new ArrayList[10];
+	private ArrayList<XF300_DetailReferTable>[] detailReferTableListArray = new ArrayList[20];
 	@SuppressWarnings("unchecked")
-	private ArrayList<WorkingRow>[] workingRowListArray = new ArrayList[10];
+	private ArrayList<WorkingRow>[] workingRowListArray = new ArrayList[20];
 	@SuppressWarnings("unchecked")
-	private HashMap<String, CompiledScript>[] compiledScriptMapArray = new HashMap[10];
-	private XF300_DetailTable[] detailTableArray = new XF300_DetailTable[10];
-	private String[] detailFunctionIDArray = new String[10];
-	private String[] detailParmTypeArray = new String[10];
-	private String[] detailParmAdditionalArray = new String[10];
-	private String[] detailInitialListingArray = new String[10];
-	private TableModelReadOnly[] tableModelMainArray = new TableModelReadOnly[10];
-	private JTable[] jTableMainArray = new JTable[10];
-	private String[] initialMsgArray = new String[10];
-	private String[] listingResultMsgArray = new String[10];
-	private NodeList[] detailReferElementList = new NodeList[10];
-	private Bindings[] detailScriptBindingsArray = new Bindings[10];
-	private TableHeadersRenderer[] headersRenderer = new TableHeadersRenderer[10];
-	private TableCellsRenderer[] cellsRenderer = new TableCellsRenderer[10];
-	private boolean isListingInNormalOrder[] = new boolean[10];
+	private HashMap<String, CompiledScript>[] compiledScriptMapArray = new HashMap[20];
+	private XF300_DetailTable[] detailTableArray = new XF300_DetailTable[20];
+	private String[] detailFunctionIDArray = new String[20];
+	private String[] detailParmTypeArray = new String[20];
+	private String[] detailParmAdditionalArray = new String[20];
+	private String[] detailInitialListingArray = new String[20];
+	private TableModelReadOnly[] tableModelMainArray = new TableModelReadOnly[20];
+	private JTable[] jTableMainArray = new JTable[20];
+	private String[] initialMsgArray = new String[20];
+	private String[] listingResultMsgArray = new String[20];
+	private NodeList[] detailReferElementList = new NodeList[20];
+	private Bindings[] detailScriptBindingsArray = new Bindings[20];
+	private TableHeadersRenderer[] headersRenderer = new TableHeadersRenderer[20];
+	private TableCellsRenderer[] cellsRenderer = new TableCellsRenderer[20];
+	private boolean isListingInNormalOrder[] = new boolean[20];
+	private JPopupMenu jPopupMenuToCall = new JPopupMenu();
+	private JMenuItem jMenuItemToCall = new JMenuItem();
 	private boolean isHeaderResizing = false;
 	private boolean tablesReadyToUse;
 	private JPanel jPanelBottom = new JPanel();
@@ -223,11 +225,12 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		jTextAreaMessages.setLineWrap(true);
 		jTextAreaMessages.setWrapStyleWord(true);
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
+		jTabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		jTabbedPane.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTabbedPane.addKeyListener(new XF300_jTabbedPane_keyAdapter(this));
 		jTabbedPane.addChangeListener(new XF300_jTabbedPane_changeAdapter(this));
 
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 20; i++) {
 			detailTableArray[i] = null;
 			detailReferElementList[i] = null;
 			filterListArray[i] = new ArrayList<XF300_Filter>();
@@ -307,6 +310,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		jScrollPaneTable.getViewport().add(jTableMainArray[0], null);
 		jScrollPaneTable.addMouseListener(new XF300_jScrollPaneTable_mouseAdapter(this));
+		jMenuItemToCall.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jMenuItemToCall.setText(XFUtility.RESOURCE.getString("Open"));
+		jMenuItemToCall.addActionListener(new XF300_jMenuItemToCall_actionAdapter(this));
+		jPopupMenuToCall.add(jMenuItemToCall);
 
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setLayout(new BorderLayout());
@@ -1417,10 +1424,11 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		XFTableOperator detailTableOp, referTableOp;
  
 		try {
+			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 			clearTableRows(index);
 			referOperatorList.clear();
 
-			detailTableArray[index].runScript(index, "BR", ""); /* Script to be run BEFORE READ */
+//			detailTableArray[index].runScript(index, "BR", ""); /* Script to be run BEFORE READ */
 
 			int countOfRows = 0;
 			detailTableOp = createTableOperator(detailTableArray[index].getSelectSQL());
@@ -1430,6 +1438,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					detailColumnListArray[index].get(i).setReadyToValidate(false);
 					detailColumnListArray[index].get(i).initialize();
 				}
+
+				detailTableArray[index].runScript(index, "BR", ""); /* Script to be run BEFORE READ */
 
 				for (int i = 0; i < detailColumnListArray[index].size(); i++) {
 					if (detailColumnListArray[index].get(i).getTableAlias().equals(detailTableArray[index].getTableID())) {
@@ -1569,6 +1579,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			cancelWithScriptException(e, this.getScriptNameRunning());
 		} catch (Exception e) {
 			cancelWithException(e);
+		} finally {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
 	
@@ -1678,6 +1690,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	
 	boolean isForExplosion() {
 		return isForExplosion;
+	}
+	
+	void jMenuItemToCall_actionPerformed(ActionEvent e) {
+		processRow(false);
 	}
 	
 	void jFunctionButton_actionPerformed(ActionEvent e) {
@@ -2806,6 +2822,12 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		if (e.getClickCount() >= 2 && tableModelMainArray[jTabbedPane.getSelectedIndex()].getRowCount() > 0) {
 			if (!detailFunctionIDArray[jTabbedPane.getSelectedIndex()].equals("NONE")) {
 				processRow(false);
+			}
+		} else {
+			if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != InputEvent.BUTTON1_MASK) {
+				int selectedRow = jTableMainArray[jTabbedPane.getSelectedIndex()].rowAtPoint(e.getPoint());
+				jTableMainArray[jTabbedPane.getSelectedIndex()].setRowSelectionInterval(selectedRow, selectedRow);
+				jPopupMenuToCall.show(e.getComponent(), e.getX(), e.getY());
 			}
 		}
 	}
@@ -7538,5 +7560,15 @@ class XF300_jMenuItemTreeNodeImplosion_actionAdapter implements ActionListener {
 	}
 	public void actionPerformed(ActionEvent e) {
 		adaptee.jMenuItemTreeNodeImplosion_actionPerformed(e);
+	}
+}
+
+class XF300_jMenuItemToCall_actionAdapter implements java.awt.event.ActionListener {
+	XF300 adaptee;
+	XF300_jMenuItemToCall_actionAdapter(XF300 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void actionPerformed(ActionEvent e) {
+		adaptee.jMenuItemToCall_actionPerformed(e);
 	}
 }

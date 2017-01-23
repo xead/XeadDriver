@@ -895,7 +895,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			workingRowList.clear();
 			referOperatorList.clear();
 
-			primaryTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
+//			primaryTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
 
 			if (countOfBlockUnit == 0) {
 				primaryTableOp = createTableOperator(primaryTable_.getSelectSQL());
@@ -908,6 +908,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					columnList.get(i).setReadyToValidate(false);
 					columnList.get(i).initialize();
 				}
+
+				primaryTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
 
 				for (int i = 0; i < columnList.size(); i++) {
 					if (columnList.get(i).getTableAlias().equals(primaryTable_.getTableID())) {

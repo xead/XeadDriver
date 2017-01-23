@@ -5281,6 +5281,9 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
+    private String kubunValue = "";
+	private ArrayList<String> kubunValueList = new ArrayList<String>();
+	private ArrayList<String> kubunTextList = new ArrayList<String>();
 
 	public XF110_SubListCellEditorWithPromptCall(org.w3c.dom.Element fieldElement, String functionID, XF110_SubList dialog){
 		super();
@@ -5344,6 +5347,30 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 			while (workTokenizer.hasMoreTokens()) {
 				fieldsToGetToList_.add(workTokenizer.nextToken());
 			}
+		}
+
+		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
+		if (!wrkStr.equals("")) {
+			JLabel jLabel = new JLabel();
+			FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+			int fieldWidth = jTextField.getWidth();
+			String wrk = "";
+			String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+			String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+			XFTableOperator operator = dialog_.createTableOperator(sql);
+			try {
+				while (operator.next()) {
+					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+					if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
+						fieldWidth = metrics.stringWidth(wrk) + 10;
+					}
+					kubunTextList.add(wrk);
+				}
+			} catch (Exception e1) {
+			}
+			jTextField.setSize(fieldWidth, jTextField.getHeight());
+			jTextField.setEditable(false);
 		}
 
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF110.class.getResource("prompt.png"));
@@ -5446,7 +5473,11 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 				|| dataTypeOptionList.contains("ZIPNO")) {
 			text = XFUtility.getStringNumber(jTextField.getText());
 		} else {
-			text = jTextField.getText();
+			if (kubunValueList.size() > 0) {
+				text = kubunValue;
+			} else {
+				text = jTextField.getText();
+			}
 		}
 		return text;
 	}
@@ -5459,7 +5490,16 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 		if (obj == null) {
 			jTextField.setText("");
 		} else {
-			jTextField.setText(obj.toString());
+			if (kubunValueList.size() > 0) {
+				kubunValue = obj.toString();
+				if (kubunValueList.indexOf(kubunValue) > -1) {
+					jTextField.setText(kubunTextList.get(kubunValueList.indexOf(kubunValue)));
+				} else {
+					jTextField.setText("N/A");
+				}
+			} else {
+				jTextField.setText(obj.toString());
+			}
 		}
 	}
 	
@@ -8217,6 +8257,9 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetToList_ = new ArrayList<String>();
+    private String kubunValue = "";
+	private ArrayList<String> kubunValueList = new ArrayList<String>();
+	private ArrayList<String> kubunTextList = new ArrayList<String>();
 
 	public XF110_SubListBatchPromptCall(org.w3c.dom.Element fieldElement, String functionID, XF110_SubList dialog){
 		super();
@@ -8284,6 +8327,30 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 			while (workTokenizer.hasMoreTokens()) {
 				fieldsToGetToList_.add(workTokenizer.nextToken());
 			}
+		}
+
+		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
+		if (!wrkStr.equals("")) {
+			JLabel jLabel = new JLabel();
+			FontMetrics metrics = jLabel.getFontMetrics(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
+			int fieldWidth = xFTextField.getWidth();
+			String wrk = "";
+			String userVariantsTableID = dialog_.getSession().getTableNameOfUserVariants();
+			String sql = "select * from " + userVariantsTableID + " where IDUSERKUBUN = '" + wrkStr + "' order by SQLIST";
+			XFTableOperator operator = dialog_.createTableOperator(sql);
+			try {
+				while (operator.next()) {
+					kubunValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+					wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+					if (metrics.stringWidth(wrk) + 10 > fieldWidth) {
+						fieldWidth = metrics.stringWidth(wrk) + 10;
+					}
+					kubunTextList.add(wrk);
+				}
+			} catch (Exception e1) {
+			}
+			xFTextField.setWidth(fieldWidth);
+			xFTextField.setEditable(false);
 		}
 
 		ImageIcon imageIcon = new ImageIcon(xeadDriver.XF110_SubList.class.getResource("prompt.png"));
@@ -8372,7 +8439,11 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 				|| dataTypeOptionList.contains("ZIPNO")) {
 			text = XFUtility.getStringNumber(xFTextField.getText());
 		} else {
-			text = xFTextField.getText();
+			if (kubunValueList.size() > 0) {
+				text = kubunValue;
+			} else {
+				text = xFTextField.getText();
+			}
 		}
 		return text;
 	}
@@ -8397,7 +8468,16 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 		if (obj == null) {
 			xFTextField.setText("");
 		} else {
-			xFTextField.setText(obj.toString());
+			if (kubunValueList.size() > 0) {
+				kubunValue = obj.toString();
+				if (kubunValueList.indexOf(kubunValue) > -1) {
+					xFTextField.setText(kubunTextList.get(kubunValueList.indexOf(kubunValue)));
+				} else {
+					xFTextField.setText("N/A");
+				}
+			} else {
+				xFTextField.setText(obj.toString());
+			}
 		}
 	}
 	

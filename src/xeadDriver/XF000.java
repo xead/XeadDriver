@@ -308,7 +308,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				FontMetrics metrics = jLabelFunctionID.getFontMetrics(new java.awt.Font("Dialog", 0, FONT_SIZE));
 				jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
 
-				if (functionElement_.getAttribute("TimerOption").contains(":")) {
+				if (functionElement_.getAttribute("TimerOption").contains(":") || functionElement_.getAttribute("TimerOption").equals("NOW")) {
 					setupConsoleWithTimer();
 				} else {
 					if (functionElement_.getAttribute("TimerOption").equals("CONSOLE")) {
@@ -346,16 +346,29 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	}
 	
 	void setupConsoleWithTimer() {
-		jLabelTime.setEnabled(true);
-		jTextFieldTime.setEnabled(true);
-		jTextFieldTime.setText(functionElement_.getAttribute("TimerOption"));
-
-		jCheckBoxRunNow.setSelected(false);
-		jCheckBoxRunNow.setEnabled(true);
-		jCheckBoxRepeat.setSelected(true);
-		jCheckBoxRepeat.setEnabled(true);
-		jCheckBoxRunOffDay.setSelected(false);
-		jCheckBoxRunOffDay.setEnabled(true);
+		if (functionElement_.getAttribute("TimerOption").contains(":")) {
+			jLabelCondition.setEnabled(true);
+			jCheckBoxRunNow.setSelected(false);
+			jCheckBoxRunNow.setEnabled(true);
+			jCheckBoxRepeat.setSelected(true);
+			jCheckBoxRepeat.setEnabled(true);
+			jCheckBoxRunOffDay.setSelected(false);
+			jCheckBoxRunOffDay.setEnabled(true);
+			jLabelTime.setEnabled(true);
+			jTextFieldTime.setText(functionElement_.getAttribute("TimerOption"));
+			jTextFieldTime.setEnabled(true);
+		} else {
+			jLabelCondition.setEnabled(false);
+			jCheckBoxRunNow.setSelected(true);
+			jCheckBoxRunNow.setEnabled(false);
+			jCheckBoxRepeat.setSelected(false);
+			jCheckBoxRepeat.setEnabled(false);
+			jCheckBoxRunOffDay.setSelected(false);
+			jCheckBoxRunOffDay.setEnabled(false);
+			jLabelTime.setEnabled(false);
+			jTextFieldTime.setText("");
+			jTextFieldTime.setEnabled(false);
+		}
 
 		if (functionElement_.getAttribute("TimerMessage").equals("")) {
 			jTextAreaMessages.setText("> " + XFUtility.RESOURCE.getString("FunctionMessage44") + "\n");
@@ -433,11 +446,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			setErrorAndCloseFunction();
 		}
 
-		if (this.isVisible() && returnMap_.get("RETURN_MESSAGE") != null
-				&& !returnMap_.get("RETURN_MESSAGE").equals("")) {
-			jTextAreaMessages.setText(getNewMessage(returnMap_.get("RETURN_MESSAGE").toString(), ""));
-			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
-		}
+//		if (this.isVisible() && returnMap_.get("RETURN_MESSAGE") != null
+//				&& !returnMap_.get("RETURN_MESSAGE").equals("")) {
+//			jTextAreaMessages.setText(getNewMessage(returnMap_.get("RETURN_MESSAGE").toString(), ""));
+//			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
+//		}
 		if (returnMap_.get("RETURN_CODE").equals("99")) {
 			errorHasOccured = true;
 		}

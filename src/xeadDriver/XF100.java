@@ -131,6 +131,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	private boolean isClosing = false;
 	private XF100_Filter firstEditableFilter = null;
 	private HashMap<String, Object> variantMap = new HashMap<String, Object>();
+	private JPopupMenu jPopupMenuToCall = new JPopupMenu();
+	private JMenuItem jMenuItemToCall = new JMenuItem();
 
 	public XF100(Session session, int instanceArrayIndex) {
 		super(session, "", true);
@@ -233,6 +235,10 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		jTableMain.setTableHeader(header);
 		jScrollPaneTable.getViewport().add(jTableMain, null);
 		jScrollPaneTable.addMouseListener(new XF100_jScrollPaneTable_mouseAdapter(this));
+		jMenuItemToCall.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jMenuItemToCall.setText(XFUtility.RESOURCE.getString("Open"));
+		jMenuItemToCall.addActionListener(new XF100_jMenuItemToCall_actionAdapter(this));
+		jPopupMenuToCall.add(jMenuItemToCall);
 
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setLayout(new BorderLayout());
@@ -618,7 +624,11 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			// Add filter fields as HIDDEN columns //
 			// if they are not on the column list  //
 			/////////////////////////////////////////
+			int countOfVisibleFilters = 0;
 			for (int i = 0; i < filterList.size(); i++) {
+				if (!filterList.get(i).isHidden()) {
+					countOfVisibleFilters++;
+				}
 				if (!existsInColumnList(filterList.get(i).getTableID(), filterList.get(i).getTableAlias(), filterList.get(i).getFieldID())) {
 					columnList.add(new XF100_Column(filterList.get(i).getTableID(), filterList.get(i).getTableAlias(), filterList.get(i).getFieldID(), this));
 				}
@@ -626,17 +636,21 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			////////////////////////////////////////////////
 			// Put the panel with filters on jPanelCenter //
 			////////////////////////////////////////////////
-			jPanelFilters.setPreferredSize(new Dimension(filtersWidth, posY + dimOfPriviousField.height));
-			jPanelTop.add(jScrollPaneFilters, BorderLayout.CENTER);
-			if (firstEditableFilter != null) {
-				jPanelTop.add(jButtonList, BorderLayout.EAST);
-				firstEditableFilter.requestFocus();
+			if (countOfVisibleFilters > 0) {
+				jPanelFilters.setPreferredSize(new Dimension(filtersWidth, posY + dimOfPriviousField.height));
+				jPanelTop.add(jScrollPaneFilters, BorderLayout.CENTER);
+				if (firstEditableFilter != null) {
+					jPanelTop.add(jButtonList, BorderLayout.EAST);
+					firstEditableFilter.requestFocus();
+				}
+				jSplitPaneTop.add(jPanelTop, JSplitPane.TOP);
+				jSplitPaneTop.add(jScrollPaneTable, JSplitPane.BOTTOM);
+				jSplitPaneTop.setDividerLocation(jPanelFilters.getPreferredSize().height + 14);
+				jSplitPaneTop.updateUI();
+				jSplitPaneCenter.add(jSplitPaneTop, JSplitPane.TOP);
+			} else {
+				jSplitPaneCenter.add(jScrollPaneTable, JSplitPane.TOP);
 			}
-			jSplitPaneTop.add(jPanelTop, JSplitPane.TOP);
-			jSplitPaneTop.add(jScrollPaneTable, JSplitPane.BOTTOM);
-			jSplitPaneTop.setDividerLocation(jPanelFilters.getPreferredSize().height + 14);
-			jSplitPaneTop.updateUI();
-			jSplitPaneCenter.add(jSplitPaneTop, JSplitPane.TOP);
 		} else {
 			jSplitPaneCenter.add(jScrollPaneTable, JSplitPane.TOP);
 		}
@@ -889,7 +903,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			workingRowList.clear();
 			referOperatorList.clear();
 
-			primaryTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
+//			primaryTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
 
 			if (countOfBlockUnit == 0) {
 				primaryTableOp = createTableOperator(primaryTable_.getSelectSQL());
@@ -902,6 +916,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					columnList.get(i).setReadyToEvaluate(false);
 					columnList.get(i).initialize();
 				}
+
+				primaryTable_.runScript("BR", ""); /* Script to be run BEFORE READ */
 
 				for (int i = 0; i < columnList.size(); i++) {
 					if (columnList.get(i).getTableAlias().equals(primaryTable_.getTableID())) {
@@ -1003,16 +1019,20 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 									blockRows = 0;
 									fromRow = session_.getDialogCheckRead().getNextRow();
 									countOfBlockUnit = session_.getDialogCheckRead().getCountUnit();
-									if (session_.getDialogCheckRead().isRestarting()) {
-										originalFromRow = session_.getDialogCheckRead().getNextRow();
-										rowCount = tableModelMain.getRowCount();
-										for (int i = 0; i < rowCount; i++) {
-											tableModelMain.removeRow(0);
+									if (fromRow >= 0 && countOfBlockUnit >= 1) {
+										if (session_.getDialogCheckRead().isRestarting()) {
+											originalFromRow = session_.getDialogCheckRead().getNextRow();
+											rowCount = tableModelMain.getRowCount();
+											for (int i = 0; i < rowCount; i++) {
+												tableModelMain.removeRow(0);
+											}
+											countOfRows = 0;
+											workingRowList.clear();
 										}
-										countOfRows = 0;
-										workingRowList.clear();
+										primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
+									} else {
+										break;
 									}
-									primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
 								} else {
 									break;
 								}
@@ -1152,6 +1172,10 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			referOperatorList.add(referTableOp);
 		}
 		return referTableOp;
+	}
+	
+	void jMenuItemToCall_actionPerformed(ActionEvent e) {
+		processRow(false);
 	}
 	
 	void jFunctionButton_actionPerformed(ActionEvent e) {
@@ -1744,6 +1768,12 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		if (e.getClickCount() >= 2 && tableModelMain.getRowCount() > 0) {
 			if (!detailFunctionID.equals("NONE")) {
 				processRow(false);
+			}
+		} else {
+			if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != InputEvent.BUTTON1_MASK) {
+				int selectedRow = jTableMain.rowAtPoint(e.getPoint());
+				jTableMain.setRowSelectionInterval(selectedRow, selectedRow);
+				jPopupMenuToCall.show(e.getComponent(), e.getX(), e.getY());
 			}
 		}
 	}
@@ -5317,5 +5347,15 @@ class XF100_FunctionButton_actionAdapter implements java.awt.event.ActionListene
 	}
 	public void actionPerformed(ActionEvent e) {
 		adaptee.jFunctionButton_actionPerformed(e);
+	}
+}
+
+class XF100_jMenuItemToCall_actionAdapter implements java.awt.event.ActionListener {
+	XF100 adaptee;
+	XF100_jMenuItemToCall_actionAdapter(XF100 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void actionPerformed(ActionEvent e) {
+		adaptee.jMenuItemToCall_actionPerformed(e);
 	}
 }

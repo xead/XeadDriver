@@ -52,6 +52,7 @@ import java.net.URI;
 
 import javax.swing.*;
 import javax.swing.event.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
@@ -77,6 +78,7 @@ import org.apache.http.client.*;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -139,6 +141,8 @@ public class Session extends JFrame {
 	private String smtpUser = "";
 	private String smtpPassword = "";
 	private String smtpAdminEmail = "";
+	private String proxyIP = "";
+	private String proxyPort = "";
 
 	private Image imageTitle;
 	private Dimension screenSize = new Dimension(0,0);
@@ -157,6 +161,7 @@ public class Session extends JFrame {
 	private ArrayList<String> loadingFunctionIDList = new ArrayList<String>();
 	private XFCalendar xfCalendar = null;
 	public JFileChooser jFileChooser = new JFileChooser();
+	public FileDialog fileDialog = new FileDialog(this);
 
 	private JLabel jLabelUser = new JLabel();
 	private JLabel jLabelSession = new JLabel();
@@ -544,6 +549,12 @@ public class Session extends JFrame {
 		if (application != null) {
 			application.setProgressValue(5);
 		}
+
+		//////////////////////////
+		// Proxy Configurations //
+		//////////////////////////
+		proxyIP = element.getAttribute("ProxyIP");
+		proxyPort = element.getAttribute("ProxyPort");
 
 		////////////////////
 		// PDF print font //
@@ -1101,6 +1112,114 @@ public class Session extends JFrame {
 
 	public Application getApplication() {
 		return application;
+	}
+
+	public String showDialogToChooseFile(String fileExtention) {
+		return showDialogToChooseFile(fileExtention, "", "");
+	}
+
+	public String showDialogToChooseFile(String fileExtention, String defaultDirectory) {
+		return showDialogToChooseFile(fileExtention, defaultDirectory, "");
+	}
+
+	public String showDialogToChooseFile(String fileExtention, String directory, String defaultFile) {
+		String name = "";
+
+		if (directory.equals("")) {
+			directory = currentFolder;
+		} else {
+			if (directory.contains("<CURRENT>")) {
+				directory = directory.replace("<CURRENT>", currentFolder);
+			}
+		}
+
+		String osName = System.getProperty("os.name").toLowerCase();
+		if (osName.startsWith("mac") && !fileExtention.contains(",")){
+			fileDialog.setTitle(XFUtility.RESOURCE.getString("SelectFileTitle"));
+			if (defaultFile.equals("")) {
+				name = directory + File.separator + "*." + fileExtention;
+			} else {
+				if (defaultFile.endsWith("." + fileExtention)) {
+					name = directory + File.separator + defaultFile;
+				} else {
+					name = directory + File.separator + defaultFile + "." + fileExtention;
+				}
+			}
+			fileDialog.setFile(name);
+			fileDialog.setVisible(true);
+
+			String dir = fileDialog.getDirectory();
+			String fileName = fileDialog.getFile();
+			if (dir != null && fileName != null) {
+				name = dir + File.separator + fileName;
+			} else {
+				name = "";
+			}
+
+		} else {
+			jFileChooser.setDialogTitle(XFUtility.RESOURCE.getString("SelectFileTitle"));
+			jFileChooser.setCurrentDirectory(new File(directory));
+			if (!defaultFile.equals("")) {
+				jFileChooser.setSelectedFile(new File(directory, defaultFile));
+			}
+
+			jFileChooser.resetChoosableFileFilters();
+			ArrayList<String> extentionList = new ArrayList<String>();
+			if (!fileExtention.equals("")) {
+				StringTokenizer workTokenizer = new StringTokenizer(fileExtention, "," );
+				while (workTokenizer.hasMoreTokens()) {
+					String extention = workTokenizer.nextToken();
+					extentionList.add(extention);
+					jFileChooser.setFileFilter(new FileNameExtensionFilter(extention, extention));
+				}
+			}
+
+			int reply = jFileChooser.showOpenDialog(this);
+			if (reply == JFileChooser.APPROVE_OPTION) {
+				File file = new File(jFileChooser.getSelectedFile().getPath());
+				if (getExtention(file) == null) {
+					for (int j = 0; j < extentionList.size(); j++) {
+						file = new File(jFileChooser.getSelectedFile().getPath() + "." + extentionList.get(j));
+						if (file.exists()) {
+							name = file.getPath();
+							break;
+						}
+					}
+					if (name.equals("")) {
+						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SelectFileMessage1"));
+					}
+				} else {
+					for (int j = 0; j < extentionList.size(); j++) {
+						if (getExtention(file).equals(extentionList.get(j))) {
+							name = file.getPath();
+							break;
+						}
+					}
+					if (name.equals("")) {
+						JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SelectFileMessage2"));
+					}
+				}
+			}
+		}
+
+		return name;
+	}
+
+	static String getExtention(File file) {
+		if (file == null) {
+			return null;
+		} else {
+			String name = file.getName();
+			int i = name.lastIndexOf('.');
+			if (i == -1) {
+				return null;
+			}
+			if ((i > 0) && (i< (name.length() - 1))) {
+				return name.substring(i+1).toLowerCase();
+			} else {
+				return null;
+			}
+		}
 	}
 
 	public XFOptionDialog getOptionDialog() {
@@ -2413,7 +2532,10 @@ public class Session extends JFrame {
 			browseHelp();
 		}
 		if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-			logout(null);
+			//logout(null);
+			this.closeSession(true);
+			this.setVisible(false);
+			System.exit(0);
 		}
 		if (((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0)
 				&& e.getKeyCode() == KeyEvent.VK_T) {
@@ -3182,7 +3304,11 @@ public class Session extends JFrame {
 		HttpResponse response = null;
 		InputStream inputStream = null;
 		HttpClient httpClient = new DefaultHttpClient();
+
 		try {
+			if (!proxyIP.equals("")) {
+				httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(proxyIP, Integer.parseInt(proxyPort)));
+			}
 			httpGet.setURI(new URI(ZIP_URL + "zn=" + zipNo_));
 			response = httpClient.execute(httpGet);  
 			if (response.getStatusLine().getStatusCode() < 400){
@@ -3210,8 +3336,18 @@ public class Session extends JFrame {
 					value = state + city + address + company;
 				}
 			}  
+
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
+			if (!proxyIP.equals("")) {
+				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53"));
+			} else {
+				int reply = JOptionPane.showConfirmDialog(null, XFUtility.RESOURCE.getString("FunctionMessage65"));
+				if (reply == 0) {
+					proxyIP = "";
+					proxyPort = "";
+				}
+			}
+
 		} finally {
 			httpClient.getConnectionManager().shutdown();
 			try {
@@ -3220,6 +3356,7 @@ public class Session extends JFrame {
 				}
 			} catch(IOException e) {}
 		}
+
 		return value;
 	}
 
@@ -3256,8 +3393,12 @@ public class Session extends JFrame {
 	}
 
 	public void browseFile(String fileName) {
-		File file = new File(fileName);
-		browseFile(file.toURI());
+		if (fileName.equals("")) {
+			JOptionPane.showMessageDialog(null, "File name not specified.");
+		} else {
+			File file = new File(fileName);
+			browseFile(file.toURI());
+		}
 	}
 
 	public void browseFile(URI uri) {
@@ -3271,8 +3412,12 @@ public class Session extends JFrame {
 
 	public void editFile(String fileName) {
 		try {
-			File file = new File(fileName);
-			desktop.edit(file);
+			if (fileName.equals("")) {
+				JOptionPane.showMessageDialog(null, "File name not specified.");
+			} else {
+				File file = new File(fileName);
+				desktop.edit(file);
+			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(null, ex.getMessage());
@@ -3320,6 +3465,12 @@ public class Session extends JFrame {
 	public boolean copyFile(String originalName, String newName) {
 		boolean result = false;
 		try {
+			if (originalName.contains("<CURRENT>")) {
+				originalName = originalName.replace("<CURRENT>", currentFolder);
+			}
+			if (newName.contains("<CURRENT>")) {
+				newName = newName.replace("<CURRENT>", currentFolder);
+			}
 			File originalFile = new File(originalName);
 			if (!originalFile.exists()) {
 				return result;
@@ -3372,13 +3523,99 @@ public class Session extends JFrame {
 		XFTableOperator operator = null;
 		try {
 			operator = new XFTableOperator(this, null, oparation, tableID, true);
-		} catch (Exception e) {
-		}
+		} catch (Exception e) {}
 		return operator;
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
 		return new XFTableOperator(this, null, sqlText, true);
+	}
+
+	public boolean copyTableRecords(String fromTable, String toTable, String type) {
+		org.w3c.dom.Element workElement; int count;
+
+		XFTableOperator selectFromTable = createTableOperator("SELECT", fromTable);
+		org.w3c.dom.Element tableElementFrom = getTableElement(fromTable);
+		NodeList fieldList = tableElementFrom.getElementsByTagName("Field");
+		ArrayList<String> fieldIDList = new ArrayList<String>();
+		for (int i = 0; i < fieldList.getLength(); i++) {
+			workElement = (org.w3c.dom.Element)fieldList.item(i);
+			fieldIDList.add(workElement.getAttribute("ID"));
+		}
+
+		XFTableOperator selectToTable; XFTableOperator deleteToTable;
+		XFTableOperator updateToTable; XFTableOperator insertToTable;
+		org.w3c.dom.Element tableElementTo = getTableElement(toTable);
+		NodeList keyListToTable = tableElementTo.getElementsByTagName("Key");
+		ArrayList<String> keyFieldIDList = new ArrayList<String>();
+		for (int i = 0; i < keyListToTable.getLength(); i++) {
+			workElement = (org.w3c.dom.Element)keyListToTable.item(i);
+			if (workElement.getAttribute("Type").equals("PK")) {
+				StringTokenizer workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
+				while (workTokenizer.hasMoreTokens()) {
+					keyFieldIDList.add(workTokenizer.nextToken());
+				}
+				break;
+			}
+		}
+
+		try {
+			if (type.equals("REPLACE") || type.equals("ADD")) {
+				if (type.equals("REPLACE")) {
+					deleteToTable = createTableOperator("DELETE", toTable);
+					deleteToTable.execute();
+				}
+				while (selectFromTable.next()) {
+					insertToTable = createTableOperator("INSERT", toTable);
+					for (int i = 0; i < fieldIDList.size(); i++) {
+						insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+					}
+					count = insertToTable.execute();
+					if (count != 1) {
+						commit(false, null); //roll-back//
+						return false;
+					}
+				}
+			}
+			if (type.equals("MERGE")) {
+				while (selectFromTable.next()) {
+					selectToTable = createTableOperator("SELECT", toTable);
+					for (int i = 0; i < keyFieldIDList.size(); i++) {
+						selectToTable.addKeyValue(keyFieldIDList.get(i), selectFromTable.getValueOf(keyFieldIDList.get(i)));
+					}
+					if (selectToTable.next()) {
+						updateToTable = createTableOperator("UPDATE", toTable);
+						for (int i = 0; i < fieldIDList.size(); i++) {
+							updateToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+						}
+						for (int i = 0; i < keyFieldIDList.size(); i++) {
+							updateToTable.addKeyValue(keyFieldIDList.get(i), selectFromTable.getValueOf(keyFieldIDList.get(i)));
+						}
+						count = updateToTable.execute();
+						if (count != 1) {
+							commit(false, null); //roll-back//
+							return false;
+						}
+					} else {
+						insertToTable = createTableOperator("INSERT", toTable);
+						for (int i = 0; i < fieldIDList.size(); i++) {
+							insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+						}
+						count = insertToTable.execute();
+						if (count != 1) {
+							commit(false, null); //roll-back//
+							return false;
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			commit(false, null); //roll-back//
+			return false;
+		}
+
+		return true;
 	}
 
 	org.w3c.dom.Document getDomDocument() {
@@ -3566,6 +3803,7 @@ public class Session extends JFrame {
 		Statement statement = null;
 		HttpPost httpPost = null;
 		String msg = "";
+		boolean isTarget = false;
 
 		if (databaseName.contains("jdbc:derby:")) {
 			try {
@@ -3574,7 +3812,15 @@ public class Session extends JFrame {
 				}
 				for (int i = 0; i < tableList.getLength(); i++) {
 					element = (org.w3c.dom.Element)tableList.item(i);
-					if (element.getAttribute("ID").startsWith(tableID) || tableID.equals("")) {
+					isTarget = false;
+					if (element.getAttribute("ID").equals(tableID) || tableID.equals("")) {
+						isTarget = true;
+					} else {
+						if (tableID.endsWith("*") && element.getAttribute("ID").startsWith(tableID.replace("*", ""))) {
+							isTarget = true;
+						}
+					}
+					if (isTarget) {
 						statementBuf = new StringBuffer();
 						statementBuf.append("CALL SYSCS_UTIL.SYSCS_COMPRESS_TABLE('");
 						statementBuf.append(databaseUser);

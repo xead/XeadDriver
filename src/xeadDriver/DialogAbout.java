@@ -43,11 +43,21 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M11";
-	public static final String VERSION  = "1.3.11";
+	public static final String FULL_VERSION  = "V1.R3.M13";
+	public static final String VERSION  = "1.3.13";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2017 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.13
+	//・メニューを経由せずに特定機能のみを実行できるようにした
+	//・copyTableRecords(...)の仕様を改善した
+	//
+	//1.3.12
+	//・XF310での明細行削除エラーの表示様式を改善した
+	//・copyTableRecords(...)の仕様を改善した
+	//・整数フィールドを「編集なし」に設定した場合、ゼロならばブランク表示させるようにした（整数フィールドをキーとした場合、任意入力の外部キー項目を指定しない場合にブランクで示すため）
+	//・サブDBに接続できなくてもセッションを立ち上げるようにした
+	//
 	//1.3.11
 	//・XF100,110,300,390での、明細テーブル読込前スクリプトの実行タイミングを改善した（以前は、実行前スクリプトで項目値をセットしても、その後で初期化されるタイミングに置かれていた）
 	//・session関数のcompressTable(...)について、テーブルIDの末尾に*を置かねばジェネリック指定できないようにした

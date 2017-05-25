@@ -189,8 +189,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private PrintStream exceptionStream;
 	private String exceptionHeader = "";
 	private int evaluatingScriptTabIndex = -1;
-	private int biggestWidth = 300;
-	private int biggestHeight = 30;
+	private int headerWidth = 300;
+	private int headerHeight = 30;
+	private int totalWidth = 300;
 	private HashMap<String, Object> variantMap = new HashMap<String, Object>();
 	
 	public XF300(Session session, int instanceArrayIndex) {
@@ -459,7 +460,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					if (!functionElement_.getAttribute("StructureTable").equals("")) {
 						strViewWidth = Integer.parseInt(functionElement_.getAttribute("StructureViewWidth"));
 					}
-					int workWidth = biggestWidth + 50 + strViewWidth;
+					int workWidth = totalWidth + 50 + strViewWidth;
 					if (workWidth < 1000) {
 						workWidth = 1000;
 					}
@@ -472,7 +473,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							posX = posX - 10;
 						}
 					}
-					int workHeight = biggestHeight + 500;
+					int workHeight = headerHeight + 500;
 					if (workHeight > (screenRect.height - 60)) {
 						workHeight = screenRect.height - 60;
 						posY = screenRect.y + 30;
@@ -494,8 +495,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			if (detailFunctionIDArray[0].equals("") && jTableMainArray[0].isFocusable()) {
 				returnMap_.put("RETURN_CODE", "01");
 			}
-			jPanelHeaderFields.setPreferredSize(new Dimension(biggestWidth, biggestHeight));
-			jSplitPaneCenter.setDividerLocation(biggestHeight + this.FIELD_VERTICAL_MARGIN + 13);
+			jPanelHeaderFields.setPreferredSize(new Dimension(headerWidth, headerHeight));
+			jSplitPaneCenter.setDividerLocation(headerHeight + this.FIELD_VERTICAL_MARGIN + 13);
 			jSplitPaneCenter.updateUI();
 			jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 150);
 			jSplitPaneMain.updateUI();
@@ -561,6 +562,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				// Show Panel //
 				////////////////
 				setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				session_.setMessageComponent(jScrollPaneMessages);
 				this.setVisible(true);
 			}
 
@@ -652,8 +654,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		Dimension dim = new Dimension(0,0);
 		int posX = 0;
 		int posY = 0;
-		biggestWidth = 300;
-		biggestHeight = 30;
+		headerWidth = 300;
+		headerHeight = 30;
 		boolean firstVisibleField = true;
 		NodeList headerFieldElementList = functionElement_.getElementsByTagName("Field");
 		workSortingList = XFUtility.getSortedListModel(headerFieldElementList, "Order");
@@ -675,11 +677,11 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				dim = headerFieldList.get(i).getPreferredSize();
 				headerFieldList.get(i).setBounds(posX, posY, dim.width, dim.height);
 				jPanelHeaderFields.add(headerFieldList.get(i));
-				if (posX + dim.width > biggestWidth) {
-					biggestWidth = posX + dim.width;
+				if (posX + dim.width > headerWidth) {
+					headerWidth = posX + dim.width;
 				}
-				if (posY + dim.height > biggestHeight) {
-					biggestHeight = posY + dim.height;
+				if (posY + dim.height > headerHeight) {
+					headerHeight = posY + dim.height;
 				}
 				if (headerFieldList.get(i).isHorizontal()) {
 					dimOfPriviousField = new Dimension(dim.width, XFUtility.FIELD_UNIT_HEIGHT);
@@ -688,6 +690,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 		}
+		totalWidth = headerWidth;
 
 		/////////////////////////////////////////////
 		// Add primary table keys as HIDDEN fields //
@@ -778,8 +781,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 
-		jPanelHeaderFields.setPreferredSize(new Dimension(biggestWidth, biggestHeight));
-		jSplitPaneCenter.setDividerLocation(biggestHeight + this.FIELD_VERTICAL_MARGIN + 13);
+		jPanelHeaderFields.setPreferredSize(new Dimension(headerWidth, headerHeight));
+		jSplitPaneCenter.setDividerLocation(headerHeight + this.FIELD_VERTICAL_MARGIN + 13);
 		jSplitPaneMain.setDividerLocation(this.getPreferredSize().height - 125);
 		this.pack();
 
@@ -869,6 +872,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 			jPanelFilters[i].setPreferredSize(new Dimension(filtersWidth, posY + dimOfPriviousField.height));
+			if (filtersWidth > totalWidth) {
+				totalWidth = filtersWidth;
+			}
 
 			///////////////////////////////////////////
 			// Setup components for JTable of Detail //
@@ -898,6 +904,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			column.setHeaderRenderer(headersRenderer[i]);
 			column.setCellRenderer(cellsRenderer[i]);
 			column.setPreferredWidth(headersRenderer[i].getWidth());
+			if (headersRenderer[i].getWidth() + 20 > totalWidth) {
+				totalWidth = headersRenderer[i].getWidth() + 20;
+			}
 
 			//////////////////////////////////////////////////
 			// Add detail table key fields as HIDDEN column //
@@ -1075,6 +1084,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
 			errorLog = exceptionHeader + exceptionLog.toString();
 		}
+		session_.removeMessageComponent(jScrollPaneMessages);
 		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
 		setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		this.setVisible(false);
@@ -1110,6 +1120,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			JOptionPane.showMessageDialog(null, e.getMessage());
 			exceptionHeader = e.getMessage();
 			setErrorAndCloseFunction();
+		}
+	}
+
+	public void setStatusMessage(String message) {
+		if (this.isVisible()) {
+			jTextAreaMessages.setText(message);
+			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 		}
 	}
 	

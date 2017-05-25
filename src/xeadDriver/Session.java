@@ -209,6 +209,8 @@ public class Session extends JFrame {
 	private XFInputDialog inputDialog = null;
 	private XFCheckListDialog checkListDialog = null;
 	private XFLongTextEditor xfLongTextEditor = null;
+	private String specificFunctionID = "";
+	private ArrayList<JScrollPane> messageComponentList = new ArrayList<JScrollPane>();
 
 	//////////////////////////////
 	// Construct Online Session //
@@ -231,27 +233,51 @@ public class Session extends JFrame {
 		// Check the parameters to setup session //
 		///////////////////////////////////////////
 		try {
-			if (args.length >= 1) {
-				fileName =  args[0];
-			}
-			if (args.length >= 2) {
-				if (args[1].equals("SKIP_PRELOAD")) {
+//			if (args.length >= 1) {
+//				fileName =  args[0];
+//			}
+//			if (args.length >= 2) {
+//				if (args[1].equals("SKIP_PRELOAD")) {
+//					skipPreload = true;
+//				} else {
+//					loginUser =  args[1];
+//				}
+//			}
+//			if (args.length >= 3) {
+//				if (args[2].equals("SKIP_PRELOAD")) {
+//					skipPreload = true;
+//				} else {
+//					loginPassword =  args[2];
+//				}
+//			}
+//			if (args.length >= 4) {
+//				if (args[3].equals("SKIP_PRELOAD")) {
+//					skipPreload = true;
+//				}	
+//			}
+			//////////////////////////////
+			// Setup session parameters //
+			//////////////////////////////
+			for (int i= 0; i < args.length; i++) {
+				if (args[i].equals("SKIP_PRELOAD")) {
 					skipPreload = true;
 				} else {
-					loginUser =  args[1];
+					if (args[i].startsWith("FUNCTION=")) {
+						specificFunctionID = args[i].replace("FUNCTION=", "");
+					} else {
+						if (fileName.equals("")) {
+							fileName =  args[i];
+						} else {
+							if (loginUser.equals("")) {
+								loginUser =  args[i];
+							} else {
+								if (loginPassword.equals("")) {
+									loginPassword =  args[i];
+								}
+							}
+						}
+					}
 				}
-			}
-			if (args.length >= 3) {
-				if (args[2].equals("SKIP_PRELOAD")) {
-					skipPreload = true;
-				} else {
-					loginPassword =  args[2];
-				}
-			}
-			if (args.length >= 4) {
-				if (args[3].equals("SKIP_PRELOAD")) {
-					skipPreload = true;
-				}	
 			}
 
 			if (fileName.equals("")) {
@@ -286,7 +312,15 @@ public class Session extends JFrame {
 									application.hideSplash();
 								}
 							});
-							this.setVisible(true);
+
+							if (specificFunctionID.equals("")) {
+								messageComponentList.add(jScrollPaneMessages);
+								this.setVisible(true);
+							} else {
+								executeSpecificFunction();
+								closeSession(true);
+								System.exit(0);
+							}
 
 						}else {
 							closeSession(false);
@@ -310,6 +344,54 @@ public class Session extends JFrame {
 			noErrorsOccured = false;
 			closeSession(false);
 			System.exit(0);
+		}
+	}
+
+	public void setMessageComponent(JScrollPane component) {
+		if (!messageComponentList.contains(component)) {
+			messageComponentList.add(component);
+		}
+	}
+
+	public JScrollPane getMessageComponent() {
+		return messageComponentList.get(messageComponentList.size() - 1);
+	}
+
+	public void removeMessageComponent(JScrollPane component) {
+		if (!messageComponentList.contains(component)) {
+			messageComponentList.remove(component);
+		}
+	}
+
+	private void executeSpecificFunction() {
+		String returnMessage = "";
+		userMenus = "";
+		menuIDUsing = "**";
+		try {
+			HashMap<String, Object> returnMap = functionLauncher.execute(specificFunctionID, new HashMap<String, Object>());
+			if (returnMap != null && returnMap.get("RETURN_CODE") != null) {
+				if (returnMap.get("RETURN_MESSAGE") == null) {
+					returnMessage = XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString());
+				} else {
+					returnMessage = returnMap.get("RETURN_MESSAGE").toString();
+				}
+			}
+			for (;;) {
+				Object[] bts = {XFUtility.RESOURCE.getString("LogOut"), XFUtility.RESOURCE.getString("CheckSession")};
+				int rtn = JOptionPane.showOptionDialog(this, returnMessage,
+						systemName, JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[0]);
+				if (rtn == 1) {
+					HashMap<String, Object> parmMap = new HashMap<String, Object>();
+					parmMap.put("NRSESSION", sessionID);
+					functionLauncher.execute("ZF051", parmMap);
+					returnMessage = XFUtility.RESOURCE.getString("LogOutConfirm");
+				} else {
+					break;
+				}
+			}
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("LogInError3") + "\n" + e.getMessage());
+			noErrorsOccured = false;
 		}
 	}
 
@@ -581,43 +663,63 @@ public class Session extends JFrame {
 	}
 
 	public boolean setupConnectionToDatabase(boolean isToStartSession) {
-		String dbName = "";
+//		String dbName = "";
+//		try {
+		///////////////////////////////////////////////////////////////////////////////
+		// Setup committing connections.                                             //
+		// Note that default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
+		///////////////////////////////////////////////////////////////////////////////
 		try {
-			///////////////////////////////////////////////////////////////////////////////
-			// Setup committing connections.                                             //
-			// Note that default isolation level of JavaDB is TRANSACTION_READ_COMMITTED //
-			///////////////////////////////////////////////////////////////////////////////
-			dbName = databaseName;
+			//dbName = databaseName;
 			XFUtility.loadDriverClass(databaseName);
 			connectionManualCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
 			connectionManualCommit.setAutoCommit(false);
 			connectionAutoCommit = DriverManager.getConnection(databaseName, databaseUser, databasePassword);
 			connectionAutoCommit.setAutoCommit(true);
+		} catch (Exception e) {
+			if (isToStartSession) {
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6"));
+			}
+			return false;
+		}
 
-			////////////////////////////////////////////////////////
-			// Setup read-only connections for Sub-DB definitions //
-			////////////////////////////////////////////////////////
-			Connection subDBConnection = null;
-			subDBConnectionList.clear();
-			for (int i = 0; i < subDBIDList.size(); i++) {
-				dbName = subDBNameList.get(i);
+		////////////////////////////////////////////////////////
+		// Setup read-only connections for Sub-DB definitions //
+		////////////////////////////////////////////////////////
+		int countOfSubDBNotConnected = 0;
+		Connection subDBConnection = null;
+		subDBConnectionList.clear();
+		for (int i = 0; i < subDBIDList.size(); i++) {
+			//dbName = subDBNameList.get(i);
+			try {
 				XFUtility.loadDriverClass(subDBNameList.get(i));
 				subDBConnection = DriverManager.getConnection(subDBNameList.get(i), subDBUserList.get(i), subDBPasswordList.get(i));
 				subDBConnection.setReadOnly(true);
 				subDBConnectionList.add(subDBConnection);
+			} catch (Exception e) {
+				countOfSubDBNotConnected++;
 			}
-			return true;
-
-		} catch (Exception e) {
-			if (isToStartSession) {
-//				if (e.getMessage() != null && e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
-//					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
-//				} else {
-					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + dbName + XFUtility.RESOURCE.getString("SessionError7") + "Message:" + e.getMessage());
-//				}
-			}
-			return false;
 		}
+		if (isToStartSession) {
+			if (countOfSubDBNotConnected == 1) {
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4"));
+			}
+			if (countOfSubDBNotConnected > 1) {
+				JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError5"));
+			}
+		}
+
+		return true;
+//		} catch (Exception e) {
+//			if (isToStartSession) {
+////				if (e.getMessage() != null && e.getMessage().contains("java.net.ConnectException") && databaseName.contains("derby:")) {
+////					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError4") + systemName + XFUtility.RESOURCE.getString("SessionError5"));
+////				} else {
+//					JOptionPane.showMessageDialog(this, XFUtility.RESOURCE.getString("SessionError6") + dbName + XFUtility.RESOURCE.getString("SessionError7") + "Message:" + e.getMessage());
+////				}
+//			}
+//			return false;
+//		}
 	}
 
 	
@@ -682,84 +784,88 @@ public class Session extends JFrame {
 
 	private void setupMenusAndComponents() throws Exception {
 		if (application != null) {
-			application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2"));
+			if (specificFunctionID.equals("")) {
+				application.setTextOnSplash(XFUtility.RESOURCE.getString("SplashMessage2"));
+			}
 			application.setProgressMax(5);
 			application.setProgressValue(0);
 		}
 
-		jTabbedPaneMenu.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE+2));
-		jTabbedPaneMenu.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-		jTabbedPaneMenu.addKeyListener(new Session_keyAdapter(this));
-		jTabbedPaneMenu.requestFocus();
-		jTabbedPaneMenu.addChangeListener(new Session_jTabbedPaneMenu_changeAdapter(this));
-		jLabelUser.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
-		jLabelSession.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
-
 		screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
-		jEditorPaneNews.setBorder(BorderFactory.createEtchedBorder());
-		jEditorPaneNews.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
-		jEditorPaneNews.setEditable(false);
-		jEditorPaneNews.setContentType("text/html");
-		jEditorPaneNews.addHyperlinkListener(new Session_jEditorPane_actionAdapter(this));
-		jEditorPaneNews.setFocusable(false);
-		editorKit.install(jEditorPaneNews);
-		jEditorPaneNews.setEditorKit(editorKit);
-		jScrollPaneNews.getViewport().add(jEditorPaneNews);
-		boolean isValidURL = false;
-		if (!welcomePageURL.equals("")) {
-			try {
-				final URLConnection connection = new URL(welcomePageURL).openConnection();
-			    connection.connect();
-				isValidURL = true;
-			} catch (Exception ex) {
-			}
-		}
-		if (isValidURL) {
-			jEditorPaneNews.setPage(welcomePageURL);
-		} else{
-			String defaultImageFileName = "";
-			if (currentFolder.equals("")) {
-				defaultImageFileName = "WelcomePageDefaultImage.jpg";
-			} else {
-				defaultImageFileName = currentFolder + File.separator + "WelcomePageDefaultImage.jpg";
-			}
-			File imageFile = new File(defaultImageFileName);
-			if (imageFile.exists()) {
-				BufferedImage image = ImageIO.read(imageFile);
-				if (image.getWidth() > Math.round(screenSize.width * 0.8)) {
-					imageIcon = new ImageIcon(image);
-					JLabel labelImage = new JLabel("", imageIcon, JLabel.CENTER);
-					jScrollPaneNews.getViewport().add(labelImage);
-				} else {
-					BufferedImage normalLightImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-					Color c;
-					int rgb, a, r, g, b;
-					for(int y=0; y < image.getHeight(); y++) {
-						for(int x=0; x < image.getWidth(); x++) {
-							rgb = image.getRGB(x, y);
-							c = new Color(rgb, true);
-							a = c.getAlpha();
-							r = (c.getRed()   + 255) / 2;
-							g = (c.getGreen()   + 255) / 2;
-							b = (c.getBlue()   + 255) / 2;
-							normalLightImage.setRGB(x, y, new Color(r, g, b, a).getRGB());
-						}
-					}
-					int adjustedWidth = Math.round(screenSize.width * 0.98f);
-					int adjustedHeight = Math.round(image.getHeight() * adjustedWidth / image.getWidth());
-					BufferedImage extendedLightImage = new BufferedImage(adjustedWidth, adjustedHeight, BufferedImage.TYPE_INT_ARGB);
-					extendedLightImage.getGraphics().drawImage(normalLightImage, 0, 0, adjustedWidth, adjustedHeight, this);
-					extendedLightImage.getGraphics().drawImage(image, (adjustedWidth-image.getWidth())/2, 0, image.getWidth(), image.getHeight(), this);
-					imageIcon = new ImageIcon(extendedLightImage);
-					JLabel jLabelImage = new JLabel("", imageIcon, JLabel.CENTER);
-					jScrollPaneNews.getViewport().add(jLabelImage);
+		if (specificFunctionID.equals("")) {
+			jTabbedPaneMenu.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE+2));
+			jTabbedPaneMenu.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+			jTabbedPaneMenu.addKeyListener(new Session_keyAdapter(this));
+			jTabbedPaneMenu.requestFocus();
+			jTabbedPaneMenu.addChangeListener(new Session_jTabbedPaneMenu_changeAdapter(this));
+			jLabelUser.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
+			jLabelSession.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
+
+			jEditorPaneNews.setBorder(BorderFactory.createEtchedBorder());
+			jEditorPaneNews.setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE));
+			jEditorPaneNews.setEditable(false);
+			jEditorPaneNews.setContentType("text/html");
+			jEditorPaneNews.addHyperlinkListener(new Session_jEditorPane_actionAdapter(this));
+			jEditorPaneNews.setFocusable(false);
+			editorKit.install(jEditorPaneNews);
+			jEditorPaneNews.setEditorKit(editorKit);
+			jScrollPaneNews.getViewport().add(jEditorPaneNews);
+			boolean isValidURL = false;
+			if (!welcomePageURL.equals("")) {
+				try {
+					final URLConnection connection = new URL(welcomePageURL).openConnection();
+					connection.connect();
+					isValidURL = true;
+				} catch (Exception ex) {
 				}
-			} else {
-				if (welcomePageURL.equals("")) {
-					jEditorPaneNews.setText(XFUtility.RESOURCE.getString("SessionError10"));
+			}
+			if (isValidURL) {
+				jEditorPaneNews.setPage(welcomePageURL);
+			} else{
+				String defaultImageFileName = "";
+				if (currentFolder.equals("")) {
+					defaultImageFileName = "WelcomePageDefaultImage.jpg";
 				} else {
-					jEditorPaneNews.setText(XFUtility.RESOURCE.getString("SessionError11") + welcomePageURL + XFUtility.RESOURCE.getString("SessionError12"));
+					defaultImageFileName = currentFolder + File.separator + "WelcomePageDefaultImage.jpg";
+				}
+				File imageFile = new File(defaultImageFileName);
+				if (imageFile.exists()) {
+					BufferedImage image = ImageIO.read(imageFile);
+					if (image.getWidth() > Math.round(screenSize.width * 0.8)) {
+						imageIcon = new ImageIcon(image);
+						JLabel labelImage = new JLabel("", imageIcon, JLabel.CENTER);
+						jScrollPaneNews.getViewport().add(labelImage);
+					} else {
+						BufferedImage normalLightImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+						Color c;
+						int rgb, a, r, g, b;
+						for(int y=0; y < image.getHeight(); y++) {
+							for(int x=0; x < image.getWidth(); x++) {
+								rgb = image.getRGB(x, y);
+								c = new Color(rgb, true);
+								a = c.getAlpha();
+								r = (c.getRed()   + 255) / 2;
+								g = (c.getGreen()   + 255) / 2;
+								b = (c.getBlue()   + 255) / 2;
+								normalLightImage.setRGB(x, y, new Color(r, g, b, a).getRGB());
+							}
+						}
+						int adjustedWidth = Math.round(screenSize.width * 0.98f);
+						int adjustedHeight = Math.round(image.getHeight() * adjustedWidth / image.getWidth());
+						BufferedImage extendedLightImage = new BufferedImage(adjustedWidth, adjustedHeight, BufferedImage.TYPE_INT_ARGB);
+						extendedLightImage.getGraphics().drawImage(normalLightImage, 0, 0, adjustedWidth, adjustedHeight, this);
+						extendedLightImage.getGraphics().drawImage(image, (adjustedWidth-image.getWidth())/2, 0, image.getWidth(), image.getHeight(), this);
+						imageIcon = new ImageIcon(extendedLightImage);
+						JLabel jLabelImage = new JLabel("", imageIcon, JLabel.CENTER);
+						jScrollPaneNews.getViewport().add(jLabelImage);
+					}
+				} else {
+					if (welcomePageURL.equals("")) {
+						jEditorPaneNews.setText(XFUtility.RESOURCE.getString("SessionError10"));
+					} else {
+						jEditorPaneNews.setText(XFUtility.RESOURCE.getString("SessionError11") + welcomePageURL + XFUtility.RESOURCE.getString("SessionError12"));
+					}
 				}
 			}
 		}
@@ -767,53 +873,55 @@ public class Session extends JFrame {
 			application.setProgressValue(1);
 		}
 
-		jScrollPaneMenu.getViewport().add(jPanelMenu, null);
-		jPanelMenuTopMargin.setPreferredSize(new Dimension(20, 20));
-		jPanelMenuTopMargin.setOpaque(false);
-		jPanelMenuLeftMargin.setPreferredSize(new Dimension(80, 80));
-		jPanelMenuLeftMargin.setOpaque(false);
-		jPanelMenuRightMargin.setPreferredSize(new Dimension(80, 80));
-		jPanelMenuRightMargin.setOpaque(false);
-		jPanelMenuBottomMargin.setPreferredSize(new Dimension(20, 20));
-		jPanelMenuBottomMargin.setOpaque(false);
-		jPanelMenuCenter.setOpaque(false);
-		jPanelMenu.setLayout(new BorderLayout());
-		jPanelMenu.add(jPanelMenuTopMargin, BorderLayout.NORTH);
-		jPanelMenu.add(jPanelMenuLeftMargin, BorderLayout.WEST);
-		jPanelMenu.add(jPanelMenuRightMargin, BorderLayout.EAST);
-		jPanelMenu.add(jPanelMenuBottomMargin, BorderLayout.SOUTH);
-		jPanelMenu.add(jPanelMenuCenter, BorderLayout.CENTER);
-		jPanelMenuCenter.setLayout(gridLayoutMenuButtons);
-		gridLayoutMenuButtons.setColumns(2);
-		gridLayoutMenuButtons.setRows(10);
-		gridLayoutMenuButtons.setHgap(80);
-		gridLayoutMenuButtons.setVgap(20);
-		for (int i = 0; i < 20; i++) {
-			jButtonMenuOptionArray[i] = new JButton();
-			jButtonMenuOptionArray[i].setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE+2));
-			jButtonMenuOptionArray[i].addActionListener(new Session_jButton_actionAdapter(this));
-			jButtonMenuOptionArray[i].addKeyListener(new Session_keyAdapter(this));
+		if (specificFunctionID.equals("")) {
+			jScrollPaneMenu.getViewport().add(jPanelMenu, null);
+			jPanelMenuTopMargin.setPreferredSize(new Dimension(20, 20));
+			jPanelMenuTopMargin.setOpaque(false);
+			jPanelMenuLeftMargin.setPreferredSize(new Dimension(80, 80));
+			jPanelMenuLeftMargin.setOpaque(false);
+			jPanelMenuRightMargin.setPreferredSize(new Dimension(80, 80));
+			jPanelMenuRightMargin.setOpaque(false);
+			jPanelMenuBottomMargin.setPreferredSize(new Dimension(20, 20));
+			jPanelMenuBottomMargin.setOpaque(false);
+			jPanelMenuCenter.setOpaque(false);
+			jPanelMenu.setLayout(new BorderLayout());
+			jPanelMenu.add(jPanelMenuTopMargin, BorderLayout.NORTH);
+			jPanelMenu.add(jPanelMenuLeftMargin, BorderLayout.WEST);
+			jPanelMenu.add(jPanelMenuRightMargin, BorderLayout.EAST);
+			jPanelMenu.add(jPanelMenuBottomMargin, BorderLayout.SOUTH);
+			jPanelMenu.add(jPanelMenuCenter, BorderLayout.CENTER);
+			jPanelMenuCenter.setLayout(gridLayoutMenuButtons);
+			gridLayoutMenuButtons.setColumns(2);
+			gridLayoutMenuButtons.setRows(10);
+			gridLayoutMenuButtons.setHgap(80);
+			gridLayoutMenuButtons.setVgap(20);
+			for (int i = 0; i < 20; i++) {
+				jButtonMenuOptionArray[i] = new JButton();
+				jButtonMenuOptionArray[i].setFont(new java.awt.Font(systemFont, 0, XFUtility.FONT_SIZE+2));
+				jButtonMenuOptionArray[i].addActionListener(new Session_jButton_actionAdapter(this));
+				jButtonMenuOptionArray[i].addKeyListener(new Session_keyAdapter(this));
+			}
+			jPanelMenuCenter.add(jButtonMenuOptionArray[0]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[10]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[1]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[11]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[2]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[12]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[3]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[13]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[4]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[14]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[5]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[15]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[6]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[16]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[7]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[17]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[8]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[18]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[9]);
+			jPanelMenuCenter.add(jButtonMenuOptionArray[19]);
 		}
-		jPanelMenuCenter.add(jButtonMenuOptionArray[0]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[10]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[1]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[11]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[2]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[12]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[3]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[13]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[4]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[14]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[5]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[15]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[6]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[16]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[7]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[17]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[8]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[18]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[9]);
-		jPanelMenuCenter.add(jButtonMenuOptionArray[19]);
 		if (application != null) {
 			application.setProgressValue(2);
 		}
@@ -868,9 +976,11 @@ public class Session extends JFrame {
 			application.setProgressValue(3);
 		}
 
-		for (int i = 0; i < 20; i++) {
-			for (int j = 0; j < 20; j++) {
-				menuOptionArray[i][j] = null;
+		if (specificFunctionID.equals("")) {
+			for (int i = 0; i < 20; i++) {
+				for (int j = 0; j < 20; j++) {
+					menuOptionArray[i][j] = null;
+				}
 			}
 		}
 
@@ -883,19 +993,21 @@ public class Session extends JFrame {
 		///////////////////////////////////////////////
 		// Setup elements on menu and show first tab //
 		///////////////////////////////////////////////
-		jLabelUser.setText("User " + userName);
-		if (userMenus.equals("ALL")) {
-			jLabelSession.setText("<html><u><font color='blue'>Session " + sessionID);
-			jLabelSession.addMouseListener(new Session_jLabelSession_mouseAdapter(this));
-			buildMenuWithID("");
-		} else {
-			jLabelSession.setText("Session " + sessionID);
-			StringTokenizer workTokenizer = new StringTokenizer(userMenus, "," );
-			while (workTokenizer.hasMoreTokens()) {
-				buildMenuWithID(workTokenizer.nextToken());
+		if (specificFunctionID.equals("")) {
+			jLabelUser.setText("User " + userName);
+			if (userMenus.equals("ALL")) {
+				jLabelSession.setText("<html><u><font color='blue'>Session " + sessionID);
+				jLabelSession.addMouseListener(new Session_jLabelSession_mouseAdapter(this));
+				buildMenuWithID("");
+			} else {
+				jLabelSession.setText("Session " + sessionID);
+				StringTokenizer workTokenizer = new StringTokenizer(userMenus, "," );
+				while (workTokenizer.hasMoreTokens()) {
+					buildMenuWithID(workTokenizer.nextToken());
+				}
 			}
+			setupOptionsOfMenuWithTabNo(0);
 		}
-		setupOptionsOfMenuWithTabNo(0);
 		if (application != null) {
 			application.setProgressValue(5);
 		}
@@ -2454,7 +2566,7 @@ public class Session extends JFrame {
 								jTextAreaMessages.setText(returnMap.get("RETURN_MESSAGE").toString());
 							}
 						}
-						if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+						if (returnMap != null && returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
 							jTextAreaMessages.setText(XFUtility.RESOURCE.getString("SessionMessage3"));
 						}
 					}
@@ -3148,7 +3260,7 @@ public class Session extends JFrame {
 			httpResponse = httpClient.execute(httpGet);
 			response = EntityUtils.toString(httpResponse.getEntity(), encoding);
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53") + "\n" + ex.getMessage());
+			JOptionPane.showMessageDialog(null, uri + "\n" + XFUtility.RESOURCE.getString("FunctionMessage53"));
 		} finally {
 			httpClient.getConnectionManager().shutdown();
 			try {
@@ -3339,7 +3451,7 @@ public class Session extends JFrame {
 
 		} catch (Exception ex) {
 			if (!proxyIP.equals("")) {
-				JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage53"));
+				JOptionPane.showMessageDialog(null, ZIP_URL + " " + XFUtility.RESOURCE.getString("FunctionMessage53"));
 			} else {
 				int reply = JOptionPane.showConfirmDialog(null, XFUtility.RESOURCE.getString("FunctionMessage65"));
 				if (reply == 0) {
@@ -3531,35 +3643,64 @@ public class Session extends JFrame {
 		return new XFTableOperator(this, null, sqlText, true);
 	}
 
-	public boolean copyTableRecords(String fromTable, String toTable, String type) {
-		org.w3c.dom.Element workElement; int count;
+	public int copyTableRecords(String fromTable, String toTable, String type) {
+		return 	copyTableRecords(fromTable, toTable, type, 0, false);
+	}
 
-		XFTableOperator selectFromTable = createTableOperator("SELECT", fromTable);
-		org.w3c.dom.Element tableElementFrom = getTableElement(fromTable);
-		NodeList fieldList = tableElementFrom.getElementsByTagName("Field");
-		ArrayList<String> fieldIDList = new ArrayList<String>();
-		for (int i = 0; i < fieldList.getLength(); i++) {
-			workElement = (org.w3c.dom.Element)fieldList.item(i);
-			fieldIDList.add(workElement.getAttribute("ID"));
-		}
-
-		XFTableOperator selectToTable; XFTableOperator deleteToTable;
-		XFTableOperator updateToTable; XFTableOperator insertToTable;
-		org.w3c.dom.Element tableElementTo = getTableElement(toTable);
-		NodeList keyListToTable = tableElementTo.getElementsByTagName("Key");
-		ArrayList<String> keyFieldIDList = new ArrayList<String>();
-		for (int i = 0; i < keyListToTable.getLength(); i++) {
-			workElement = (org.w3c.dom.Element)keyListToTable.item(i);
-			if (workElement.getAttribute("Type").equals("PK")) {
-				StringTokenizer workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
-				while (workTokenizer.hasMoreTokens()) {
-					keyFieldIDList.add(workTokenizer.nextToken());
-				}
-				break;
-			}
-		}
+	public int copyTableRecords(String fromTable, String toTable, String type, int recordCount) {
+		return 	copyTableRecords(fromTable, toTable, type, recordCount, false);
+	}
+	
+	public int copyTableRecords(String fromTable, String toTable, String type, int recordCount, boolean isToCommitEachTime) {
+		org.w3c.dom.Element workElement; int count; int totalCount = 0;
+		String dataTypeOptions;
+		ArrayList<String> dataTypeOptionList;
 
 		try {
+			if (!type.equals("REPLACE") && !type.equals("ADD") && !type.equals("MERGE")) {
+				return -1;
+			}
+
+			XFTableOperator selectFromTable = createTableOperator("SELECT", fromTable);
+			org.w3c.dom.Element tableElementFrom = getTableElement(fromTable);
+			NodeList fieldList = tableElementFrom.getElementsByTagName("Field");
+			ArrayList<String> fieldIDList = new ArrayList<String>();
+			for (int i = 0; i < fieldList.getLength(); i++) {
+				workElement = (org.w3c.dom.Element)fieldList.item(i);
+				dataTypeOptions = workElement.getAttribute("TypeOptions");
+				dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
+				if (!dataTypeOptionList.contains("VRITUAL")) {
+					fieldIDList.add(workElement.getAttribute("ID"));
+				}
+			}
+
+			XFTableOperator selectToTable; XFTableOperator deleteToTable;
+			XFTableOperator updateToTable; XFTableOperator insertToTable;
+			org.w3c.dom.Element tableElementTo = getTableElement(toTable);
+			NodeList keyListToTable = tableElementTo.getElementsByTagName("Key");
+			ArrayList<String> keyFieldIDList = new ArrayList<String>();
+			for (int i = 0; i < keyListToTable.getLength(); i++) {
+				workElement = (org.w3c.dom.Element)keyListToTable.item(i);
+				if (workElement.getAttribute("Type").equals("PK")) {
+					StringTokenizer workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
+					while (workTokenizer.hasMoreTokens()) {
+						keyFieldIDList.add(workTokenizer.nextToken());
+					}
+					break;
+				}
+			}
+
+			NodeList fieldToList = tableElementTo.getElementsByTagName("Field");
+			ArrayList<String> fieldIDToList = new ArrayList<String>();
+			for (int i = 0; i < fieldToList.getLength(); i++) {
+				workElement = (org.w3c.dom.Element)fieldToList.item(i);
+				dataTypeOptions = workElement.getAttribute("TypeOptions");
+				dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
+				if (!dataTypeOptionList.contains("VRITUAL")) {
+					fieldIDToList.add(workElement.getAttribute("ID"));
+				}
+			}
+
 			if (type.equals("REPLACE") || type.equals("ADD")) {
 				if (type.equals("REPLACE")) {
 					deleteToTable = createTableOperator("DELETE", toTable);
@@ -3568,15 +3709,24 @@ public class Session extends JFrame {
 				while (selectFromTable.next()) {
 					insertToTable = createTableOperator("INSERT", toTable);
 					for (int i = 0; i < fieldIDList.size(); i++) {
-						insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+						//insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+						if (fieldIDToList.contains(fieldIDList.get(i))) {
+							insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+						}
 					}
 					count = insertToTable.execute();
-					if (count != 1) {
+					if (count == 1) {
+						totalCount++;
+						if (recordCount > 0 && totalCount == recordCount) {
+							break;
+						}
+					} else {
 						commit(false, null); //roll-back//
-						return false;
+						return -1;
 					}
 				}
 			}
+
 			if (type.equals("MERGE")) {
 				while (selectFromTable.next()) {
 					selectToTable = createTableOperator("SELECT", toTable);
@@ -3586,36 +3736,56 @@ public class Session extends JFrame {
 					if (selectToTable.next()) {
 						updateToTable = createTableOperator("UPDATE", toTable);
 						for (int i = 0; i < fieldIDList.size(); i++) {
-							updateToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+							//updateToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+							if (fieldIDToList.contains(fieldIDList.get(i))) {
+								updateToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+							}
 						}
 						for (int i = 0; i < keyFieldIDList.size(); i++) {
 							updateToTable.addKeyValue(keyFieldIDList.get(i), selectFromTable.getValueOf(keyFieldIDList.get(i)));
 						}
 						count = updateToTable.execute();
-						if (count != 1) {
+						if (count == 1) {
+							totalCount++;
+							if (recordCount > 0 && totalCount == recordCount) {
+								break;
+							}
+						} else {
 							commit(false, null); //roll-back//
-							return false;
+							return -1;
 						}
 					} else {
 						insertToTable = createTableOperator("INSERT", toTable);
 						for (int i = 0; i < fieldIDList.size(); i++) {
-							insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+							//insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+							if (fieldIDToList.contains(fieldIDList.get(i))) {
+								insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+							}
 						}
 						count = insertToTable.execute();
-						if (count != 1) {
+						if (count == 1) {
+							if (isToCommitEachTime) {
+								this.commit();
+							}
+							totalCount++;
+							if (recordCount > 0 && totalCount == recordCount) {
+								break;
+							}
+						} else {
 							commit(false, null); //roll-back//
-							return false;
+							return -1;
 						}
 					}
 				}
 			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			commit(false, null); //roll-back//
-			return false;
+			return -1;
 		}
 
-		return true;
+		return totalCount;
 	}
 
 	org.w3c.dom.Document getDomDocument() {

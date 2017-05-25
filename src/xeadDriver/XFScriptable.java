@@ -59,4 +59,5 @@ public interface XFScriptable {
 	public void setVariant(String variantID, Object value);
 	public PrintStream getExceptionStream();
 	public void setErrorAndCloseFunction();
+	public void setStatusMessage(String message);
 }

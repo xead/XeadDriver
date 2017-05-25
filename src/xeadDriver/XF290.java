@@ -360,6 +360,9 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 			setErrorAndCloseFunction();
 		}
 	}
+
+	public void setStatusMessage(String message) {
+	}
 	
 	public void startProgress(String text, int maxValue) {
 	}

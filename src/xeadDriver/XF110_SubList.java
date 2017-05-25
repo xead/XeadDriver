@@ -811,6 +811,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		// Show Panel //
 		////////////////
 		if (readyToShowDialog) {
+			session_.setMessageComponent(jScrollPaneMessages);
 			this.setVisible(true);
 		}
 
@@ -878,6 +879,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	public void setErrorAndCloseFunction() {
 		reply_ = "ERROR";
 		if (this.isVisible()) {
+			session_.removeMessageComponent(jScrollPaneMessages);
 			this.setVisible(false);
 		} else {
 			readyToShowDialog = false;
@@ -885,12 +887,14 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	}
 
 	void returnToMenu() {
+		session_.removeMessageComponent(jScrollPaneMessages);
 		this.setVisible(false);
 		dialog_.returnToMenu();
 	}
 
 	void closeFunction(String code) {
 		reply_ = code;
+		session_.removeMessageComponent(jScrollPaneMessages);
 		this.setVisible(false);
 	}
 
@@ -936,6 +940,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		}
 		reply_ = "EXIT";
 		if (this.isVisible()) {
+			session_.removeMessageComponent(jScrollPaneMessages);
 			this.setVisible(false);
 		}
 	}
@@ -962,6 +967,13 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			JOptionPane.showMessageDialog(null, e.getMessage());
 			dialog_.setExceptionHeader(e.getMessage());
 			setErrorAndCloseFunction();
+		}
+	}
+
+	public void setStatusMessage(String message) {
+		if (this.isVisible()) {
+			jTextAreaMessages.setText(message);
+			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 		}
 	}
 	
@@ -1556,6 +1568,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	
 	void returnToMainList() {
 		reply_ = "PREV";
+		session_.removeMessageComponent(jScrollPaneMessages);
 		this.setVisible(false);
 	}
 
@@ -5779,10 +5792,6 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 					break;
 				}
 			}
-//		} else {
-//			if (!fieldOptionList.contains("PROMPT_LIST")) {
-//				isNonEditableField = true;
-//			}
 		}
 		if (isFieldOnDetailTable) {
 			for (int i = 0; i < dialog_.getDetailTable().getBatchTableWithKeyFieldIDList().size(); i++) {
@@ -7121,8 +7130,7 @@ class XF110_SubListDetailTable extends Object {
 				if (workElement.getAttribute("Type").equals("PK")) {
 					workTokenizer1 = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
 					while (workTokenizer1.hasMoreTokens()) {
-						wrkStr = workTokenizer1.nextToken();
-						keyFieldIDList.add(wrkStr);
+						keyFieldIDList.add(workTokenizer1.nextToken());
 					}
 					break;
 				}
@@ -7134,9 +7142,9 @@ class XF110_SubListDetailTable extends Object {
 			}
 		}
 
-		NodeList nodeList = tableElement.getElementsByTagName("Key");
-		for (int i = 0; i < nodeList.getLength(); i++) {
-			workElement = (org.w3c.dom.Element)nodeList.item(i);
+		NodeList keyList = tableElement.getElementsByTagName("Key");
+		for (int i = 0; i < keyList.getLength(); i++) {
+			workElement = (org.w3c.dom.Element)keyList.item(i);
 			if (workElement.getAttribute("Type").equals("SK")) {
 				uniqueKeyList.add(workElement.getAttribute("Fields"));
 			}
@@ -7530,13 +7538,14 @@ class XF110_SubListDetailReferTable extends Object {
 			tableAlias = tableID;
 		}
 
+		org.w3c.dom.Element workElement;
 		StringTokenizer workTokenizer = new StringTokenizer(referElement_.getAttribute("Fields"), ";" );
 		while (workTokenizer.hasMoreTokens()) {
 			fieldIDList.add(workTokenizer.nextToken());
 		}
 
 		if (referElement_.getAttribute("ToKeyFields").equals("")) {
-			org.w3c.dom.Element workElement = dialog.getSession().getTablePKElement(tableID);
+			workElement = dialog.getSession().getTablePKElement(tableID);
 			workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
 			while (workTokenizer.hasMoreTokens()) {
 				toKeyFieldIDList.add(workTokenizer.nextToken());

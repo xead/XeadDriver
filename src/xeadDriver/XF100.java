@@ -458,6 +458,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 			if (!isClosing) {
+				session_.setMessageComponent(jScrollPaneMessages);
 				this.setVisible(true);
 			}
 		}
@@ -755,6 +756,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
 			errorLog = exceptionHeader + exceptionLog.toString();
 		}
+		session_.removeMessageComponent(jScrollPaneMessages);
 		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
 		isClosing = true;
 		this.setVisible(false);
@@ -789,6 +791,13 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			JOptionPane.showMessageDialog(null, e.getMessage());
 			exceptionHeader = e.getMessage();
 			setErrorAndCloseFunction();
+		}
+	}
+
+	public void setStatusMessage(String message) {
+		if (this.isVisible()) {
+			jTextAreaMessages.setText(message);
+			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 		}
 	}
 	
@@ -4649,6 +4658,7 @@ class XF100_PrimaryTable extends Object {
 	private String tableID = "";
 	private String fixedWhere = "";
 	private ArrayList<String> keyFieldIDList = new ArrayList<String>();
+	private ArrayList<String> fieldIDList = new ArrayList<String>();
 	private ArrayList<String> orderByFieldIDList = new ArrayList<String>();
 	private ArrayList<XFScript> scriptList = new ArrayList<XFScript>();
 	private XF100 dialog_;
@@ -4664,25 +4674,30 @@ class XF100_PrimaryTable extends Object {
 		tableID = functionElement.getAttribute("PrimaryTable");
 		tableElement = dialog_.getSession().getTableElement(tableID);
 
+		int pos1, pos2;
+		String wrkStr1, wrkStr2, wrkStr3;
+		org.w3c.dom.Element workElement;
+
+		NodeList nodeList = tableElement.getElementsByTagName("Field");
+		for (int i = 0; i < nodeList.getLength(); i++) {
+			workElement = (org.w3c.dom.Element)nodeList.item(i);
+			fieldIDList.add(workElement.getAttribute("ID"));
+		}
+
 		if (tableElement.getAttribute("DB").equals("")) {
 			databaseName = dialog_.getSession().getDatabaseName();
 		} else {
 			databaseName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
 		}
 
-		int pos1, pos2;
-		String wrkStr1, wrkStr2, wrkStr3;
-		org.w3c.dom.Element workElement;
-
 		if (functionElement_.getAttribute("KeyFields").equals("")) {
-			NodeList nodeList = tableElement.getElementsByTagName("Key");
+			nodeList = tableElement.getElementsByTagName("Key");
 			for (int i = 0; i < nodeList.getLength(); i++) {
 				workElement = (org.w3c.dom.Element)nodeList.item(i);
 				if (workElement.getAttribute("Type").equals("PK")) {
 					workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
 					while (workTokenizer.hasMoreTokens()) {
-						wrkStr1 = workTokenizer.nextToken();
-						keyFieldIDList.add(wrkStr1);
+						keyFieldIDList.add(workTokenizer.nextToken());
 					}
 					break;
 				}
@@ -4909,7 +4924,6 @@ class XF100_PrimaryTable extends Object {
 		if (!fixedWhere.equals("")) {
 			buf.append(" where ((");
 			buf.append(fixedWhere);
-			//buf.append(")");
 			count++;
 		}
 		for (int i = 0; i < dialog_.getFilterList().size(); i++) {

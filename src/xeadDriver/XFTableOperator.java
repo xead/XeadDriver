@@ -71,6 +71,7 @@ public class XFTableOperator {
     private String orderBy_ = "";
     private String sqlText_ = "";
     private ArrayList<String> fieldIDList_ = new ArrayList<String>();
+    //private ArrayList<String> physicalIDList_ = new ArrayList<String>();
     private ArrayList<Object> fieldValueList_ = new ArrayList<Object>();
     private ArrayList<String> withKeyList_ = new ArrayList<String>();
     private StringBuffer logBuf_ = null;
@@ -206,7 +207,12 @@ public class XFTableOperator {
     		fieldValueList_.remove(index);
     	}
 
-    	fieldIDList_.add(fieldID);
+		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID);
+		if (workElement == null || workElement.getAttribute("PhysicalID").equals("")) {
+	    	fieldIDList_.add(fieldID);
+		} else {
+	    	fieldIDList_.add(workElement.getAttribute("PhysicalID"));
+		}
     	if (value.toString().trim().startsWith("'") && value.toString().trim().endsWith("'")) {
     		if (value.toString().contains("''")) {
         		fieldValueList_.add(value.toString());
@@ -217,7 +223,6 @@ public class XFTableOperator {
     			fieldValueList_.add("'" + strValue + "'");
     		}
     	} else {
-    		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID);
     		if (workElement == null) { //UPDCOUNTER //
 				fieldValueList_.add(value);
     		} else {
@@ -268,14 +273,17 @@ public class XFTableOperator {
     		}
     	}
 		fieldID_ = fieldID_.trim();
+		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID_);
+		if (workElement != null && !workElement.getAttribute("PhysicalID").equals("")) {
+	    	fieldID_ = workElement.getAttribute("PhysicalID");
+		}
 
-    	if (withKeyList_.size() > 0) {
+		if (withKeyList_.size() > 0) {
         	withKeyList_.add(" and ");
     	}
 		if (value.toString().trim().startsWith("'") && value.toString().trim().endsWith("'")) {
 	    	withKeyList_.add(fieldID_ + operand_ + value);
 		} else {
-			org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID_);
     		if (workElement == null) { //UPDCOUNTER//
 				withKeyList_.add(fieldID_ + operand_ + value);
     		} else {
@@ -342,11 +350,14 @@ public class XFTableOperator {
     		}
     	}
 		fieldID_ = fieldID_.trim();
+		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID_);
+		if (workElement != null && !workElement.getAttribute("PhysicalID").equals("")) {
+	    	fieldID_ = workElement.getAttribute("PhysicalID");
+		}
 
 		if (value.toString().trim().startsWith("'") && value.toString().trim().endsWith("'")) {
 	    	withKeyList_.add(prefix + " " + fieldID_ + operand_ + value + " " + postfix);
 		} else {
-			org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID_);
     		if (workElement == null) { //UPDCOUNTER//
 				withKeyList_.add(prefix + " " + fieldID_ + operand_ + value + " " + postfix);
     		} else {
@@ -363,7 +374,6 @@ public class XFTableOperator {
     				}
     			} else {
     				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-//					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
     				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
     					int length = Integer.parseInt(workElement.getAttribute("Size"));
     					withKeyList_.add(prefix + " " + fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length) + " " + postfix);
@@ -934,6 +944,10 @@ public class XFTableOperator {
     public Object getValueOf(String fieldID) throws Exception {
     	Object value = "";
     	if (relation_ != null) {
+    		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID);
+    		if (workElement != null && !workElement.getAttribute("PhysicalID").equals("")) {
+    	    	fieldID = workElement.getAttribute("PhysicalID");
+    		}
     		value = relation_.getValueOf(fieldID);
     	}
     	if (value == null) {
@@ -954,6 +968,10 @@ public class XFTableOperator {
     		if (relation_ == null) {
     			return false;
     		} else {
+        		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID);
+        		if (workElement != null && !workElement.getAttribute("PhysicalID").equals("")) {
+        	    	fieldID = workElement.getAttribute("PhysicalID");
+        		}
     			return relation_.hasValueOf(fieldID);
     		}
     	} else {

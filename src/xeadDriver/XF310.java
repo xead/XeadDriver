@@ -414,8 +414,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						strViewWidth = Integer.parseInt(functionElement_.getAttribute("StructureViewWidth"));
 					}
 					int workWidth = biggestWidth + 50 + strViewWidth;
-					if (workWidth < 1000) {
-						workWidth = 1000;
+					//if (workWidth < 1000) {
+					//	workWidth = 1000;
+					//}
+					if ((headersRenderer.getWidth() + 30) > workWidth) {
+						workWidth = headersRenderer.getWidth() + 30;
 					}
 					if (workWidth > screenRect.width) {
 						workWidth = screenRect.width;
@@ -529,6 +532,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 			if (!this.isClosing) {
+				session_.setMessageComponent(jScrollPaneMessages);
 				this.setVisible(true);
 			}
 		}
@@ -1033,6 +1037,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		if (exceptionLog.size() > 0 || !exceptionHeader.equals("")) {
 			errorLog = exceptionHeader + exceptionLog.toString();
 		}
+		session_.removeMessageComponent(jScrollPaneMessages);
 		session_.writeLogOfFunctionClosed(programSequence, returnMap_.get("RETURN_CODE").toString(), processLog.toString(), errorLog);
 		this.setVisible(false);
 	}
@@ -1067,6 +1072,13 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			JOptionPane.showMessageDialog(null, e.getMessage());
 			exceptionHeader = e.getMessage();
 			setErrorAndCloseFunction();
+		}
+	}
+
+	public void setStatusMessage(String message) {
+		if (this.isVisible()) {
+			jTextAreaMessages.setText(message);
+			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 		}
 	}
 	

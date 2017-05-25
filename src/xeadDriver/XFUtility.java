@@ -221,19 +221,25 @@ public class XFUtility {
 		wrkValue = wrkValue.replace("-", "");
 
 		if (dataTypeOptionList.contains("NO_EDIT")) {
-			StringBuffer bf = new StringBuffer();
-			if (value.startsWith("-")) {
-				bf.append("-");
+			int intValue = Integer.parseInt(wrkValue);
+			if (intValue == 0) {
+				returnValue = "";
+				
+			} else {
+				StringBuffer bf = new StringBuffer();
+				if (value.startsWith("-")) {
+					bf.append("-");
+				}
+				int extra = size - wrkValue.length();
+				for (int i = 0; i < extra; i++) {
+					bf.append("0");
+				}
+				bf.append(wrkValue);
+				if (value.endsWith("-")) {
+					bf.append("-");
+				}
+				returnValue = bf.toString();
 			}
-			int extra = size - wrkValue.length();
-			for (int i = 0; i < extra; i++) {
-				bf.append("0");
-			}
-			bf.append(wrkValue);
-			if (value.endsWith("-")) {
-				bf.append("-");
-			}
-			returnValue = bf.toString();
 
 		} else {
 			if (dataTypeOptionList.contains("ZERO_SUPPRESS")) {

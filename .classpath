@@ -28,7 +28,7 @@
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/h2-1.4.187.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/commons-lang-2.6.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/hsqldb.jar"/>
-	<classpathentry kind="lib" path="C:/XeadProject/Driver/postgresql-9.4-1201.jdbc41.jar"/>
+	<classpathentry kind="lib" path="C:/XeadProject/Driver/postgresql-42.1.1.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/jackcess-2.1.3.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/ucanaccess-3.0.6.jar"/>
 	<classpathentry kind="lib" path="C:/XeadProject/Driver/xteasrv.jar"/>

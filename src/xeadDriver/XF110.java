@@ -384,9 +384,9 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 						maxWidth = filtersWidth;
 					}
 					
-					if (maxWidth < 1000) {
-						maxWidth = 1000;
-					}
+					//if (maxWidth < 1000) {
+					//	maxWidth = 1000;
+					//}
 					if (maxWidth > screenRect.width) {
 						maxWidth = screenRect.width;
 					}

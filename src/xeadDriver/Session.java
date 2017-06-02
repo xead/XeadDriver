@@ -233,28 +233,7 @@ public class Session extends JFrame {
 		// Check the parameters to setup session //
 		///////////////////////////////////////////
 		try {
-//			if (args.length >= 1) {
-//				fileName =  args[0];
-//			}
-//			if (args.length >= 2) {
-//				if (args[1].equals("SKIP_PRELOAD")) {
-//					skipPreload = true;
-//				} else {
-//					loginUser =  args[1];
-//				}
-//			}
-//			if (args.length >= 3) {
-//				if (args[2].equals("SKIP_PRELOAD")) {
-//					skipPreload = true;
-//				} else {
-//					loginPassword =  args[2];
-//				}
-//			}
-//			if (args.length >= 4) {
-//				if (args[3].equals("SKIP_PRELOAD")) {
-//					skipPreload = true;
-//				}	
-//			}
+
 			//////////////////////////////
 			// Setup session parameters //
 			//////////////////////////////
@@ -316,8 +295,10 @@ public class Session extends JFrame {
 							if (specificFunctionID.equals("")) {
 								messageComponentList.add(jScrollPaneMessages);
 								this.setVisible(true);
+
 							} else {
-								executeSpecificFunction();
+								this.setVisible(true);
+						        executeSpecificFunction();
 								closeSession(true);
 								System.exit(0);
 							}
@@ -346,6 +327,25 @@ public class Session extends JFrame {
 			System.exit(0);
 		}
 	}
+
+//	public void setVisible(boolean visible) {
+//		if (visible) {
+//		if (specificFunctionID.equals("")) {
+//			//messageComponentList.add(jScrollPaneMessages);
+//			super.setVisible(true);
+//
+//		} else {
+//			setUndecorated(true);
+//	        setLocationRelativeTo(null);
+//	        super.setVisible(true);
+//	        executeSpecificFunction();
+//			closeSession(true);
+//			System.exit(0);
+//		}
+//		} else {
+//			setVisible(false);
+//		}
+//	}
 
 	public void setMessageComponent(JScrollPane component) {
 		if (!messageComponentList.contains(component)) {
@@ -966,9 +966,12 @@ public class Session extends JFrame {
 				jSplitPane1.setDividerLocation(getHeight() - (getHeight() / 7));
 			}
 		});
-		this.getContentPane().setFocusable(false);
-		this.getContentPane().add(jPanelTop, BorderLayout.NORTH);
-		this.getContentPane().add(jSplitPane1, BorderLayout.CENTER);
+
+		if (specificFunctionID.equals("")) {
+			this.getContentPane().setFocusable(false);
+			this.getContentPane().add(jPanelTop, BorderLayout.NORTH);
+			this.getContentPane().add(jSplitPane1, BorderLayout.CENTER);
+		}
 		this.pack();
 		this.validate();
 		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -3644,15 +3647,15 @@ public class Session extends JFrame {
 	}
 
 	public int copyTableRecords(String fromTable, String toTable, String type) {
-		return 	copyTableRecords(fromTable, toTable, type, 0, false);
+		return 	copyTableRecords(fromTable, toTable, type, 0, true);
 	}
 
 	public int copyTableRecords(String fromTable, String toTable, String type, int recordCount) {
-		return 	copyTableRecords(fromTable, toTable, type, recordCount, false);
+		return 	copyTableRecords(fromTable, toTable, type, recordCount, true);
 	}
 	
 	public int copyTableRecords(String fromTable, String toTable, String type, int recordCount, boolean isToCommitEachTime) {
-		org.w3c.dom.Element workElement; int count; int totalCount = 0;
+		org.w3c.dom.Element workElement; int count; int totalCount = 0; int index = 0;
 		String dataTypeOptions;
 		ArrayList<String> dataTypeOptionList;
 
@@ -3661,61 +3664,115 @@ public class Session extends JFrame {
 				return -1;
 			}
 
-			XFTableOperator selectFromTable = createTableOperator("SELECT", fromTable);
 			org.w3c.dom.Element tableElementFrom = getTableElement(fromTable);
-			NodeList fieldList = tableElementFrom.getElementsByTagName("Field");
-			ArrayList<String> fieldIDList = new ArrayList<String>();
-			for (int i = 0; i < fieldList.getLength(); i++) {
-				workElement = (org.w3c.dom.Element)fieldList.item(i);
+			NodeList fieldListFrom = tableElementFrom.getElementsByTagName("Field");
+			XFTableOperator selectFromTable = createTableOperator("SELECT", fromTable);
+
+			org.w3c.dom.Element tableElementTo = getTableElement(toTable);
+			NodeList fieldListTo = tableElementTo.getElementsByTagName("Field");
+			NodeList keyListTo = tableElementTo.getElementsByTagName("Key");
+			XFTableOperator selectToTable;
+			XFTableOperator deleteToTable;
+			XFTableOperator updateToTable;
+			XFTableOperator insertToTable;
+
+			///////////////////////////////////////////////////
+			// Collect field attributes of table copied from //
+			///////////////////////////////////////////////////
+			ArrayList<String> fieldIDListFrom = new ArrayList<String>();
+			ArrayList<String> fieldTypeListFrom = new ArrayList<String>();
+			ArrayList<Integer> fieldLengthListFrom = new ArrayList<Integer>();
+			for (int i = 0; i < fieldListFrom.getLength(); i++) {
+				workElement = (org.w3c.dom.Element)fieldListFrom.item(i);
 				dataTypeOptions = workElement.getAttribute("TypeOptions");
 				dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
-				if (!dataTypeOptionList.contains("VRITUAL")) {
-					fieldIDList.add(workElement.getAttribute("ID"));
+				if (!dataTypeOptionList.contains("VIRTUAL")) {
+					fieldIDListFrom.add(workElement.getAttribute("ID"));
+					fieldTypeListFrom.add(workElement.getAttribute("Type"));
+					fieldLengthListFrom.add(Integer.parseInt(workElement.getAttribute("Size")));
 				}
 			}
 
-			XFTableOperator selectToTable; XFTableOperator deleteToTable;
-			XFTableOperator updateToTable; XFTableOperator insertToTable;
-			org.w3c.dom.Element tableElementTo = getTableElement(toTable);
-			NodeList keyListToTable = tableElementTo.getElementsByTagName("Key");
-			ArrayList<String> keyFieldIDList = new ArrayList<String>();
-			for (int i = 0; i < keyListToTable.getLength(); i++) {
-				workElement = (org.w3c.dom.Element)keyListToTable.item(i);
+			/////////////////////////////////////////////
+			// Collect key field ID of table copied To //
+			/////////////////////////////////////////////
+			ArrayList<String> keyFieldIDListTo = new ArrayList<String>();
+			for (int i = 0; i < keyListTo.getLength(); i++) {
+				workElement = (org.w3c.dom.Element)keyListTo.item(i);
 				if (workElement.getAttribute("Type").equals("PK")) {
 					StringTokenizer workTokenizer = new StringTokenizer(workElement.getAttribute("Fields"), ";" );
 					while (workTokenizer.hasMoreTokens()) {
-						keyFieldIDList.add(workTokenizer.nextToken());
+						keyFieldIDListTo.add(workTokenizer.nextToken());
 					}
 					break;
 				}
 			}
 
-			NodeList fieldToList = tableElementTo.getElementsByTagName("Field");
-			ArrayList<String> fieldIDToList = new ArrayList<String>();
-			for (int i = 0; i < fieldToList.getLength(); i++) {
-				workElement = (org.w3c.dom.Element)fieldToList.item(i);
+			/////////////////////////////////////////////////
+			// Collect field attributes of table copied to //
+			/////////////////////////////////////////////////
+			ArrayList<String> fieldIDListTo = new ArrayList<String>();
+			ArrayList<String> fieldTypeListTo = new ArrayList<String>();
+			ArrayList<Integer> fieldLengthListTo = new ArrayList<Integer>();
+			ArrayList<String> fieldNullableListTo = new ArrayList<String>();
+			for (int i = 0; i < fieldListTo.getLength(); i++) {
+				workElement = (org.w3c.dom.Element)fieldListTo.item(i);
 				dataTypeOptions = workElement.getAttribute("TypeOptions");
 				dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
-				if (!dataTypeOptionList.contains("VRITUAL")) {
-					fieldIDToList.add(workElement.getAttribute("ID"));
+				if (!dataTypeOptionList.contains("VIRTUAL")) {
+					fieldIDListTo.add(workElement.getAttribute("ID"));
+					fieldTypeListTo.add(workElement.getAttribute("Type"));
+					fieldLengthListTo.add(Integer.parseInt(workElement.getAttribute("Size")));
+					fieldNullableListTo.add(workElement.getAttribute("Nullable"));
 				}
 			}
 
+			/////////////////////////////////////////////////////////////
+			// Match field definitions to cancel process if it differs //
+			/////////////////////////////////////////////////////////////
+			for (int i = 0; i < fieldIDListTo.size(); i++) {
+				index = fieldIDListFrom.indexOf(fieldIDListTo.get(i));
+				if (index == -1) {
+					if (fieldNullableListTo.get(i).equals("F")) {
+						return -1; //Unable to copy as NOT NULL unmatched
+					}
+				} else {
+					if (fieldTypeListFrom.get(index).equals(fieldTypeListTo.get(i))) {
+						if ((fieldTypeListFrom.get(index).equals("CHAR") || fieldTypeListFrom.get(index).equals("TEXT"))
+								&& (fieldLengthListFrom.get(index) > fieldLengthListTo.get(i))) {
+							return -1; //Unable to copy as field length in short
+						}
+					} else {
+						return -1; //Unable to copy as data type unmatched
+					}
+				}
+			}
+
+			////////////////////////////////////
+			// Copy records to replace or add //
+			////////////////////////////////////
 			if (type.equals("REPLACE") || type.equals("ADD")) {
+
 				if (type.equals("REPLACE")) {
 					deleteToTable = createTableOperator("DELETE", toTable);
 					deleteToTable.execute();
+					if (isToCommitEachTime) {
+						this.commit();
+					}
 				}
+
 				while (selectFromTable.next()) {
 					insertToTable = createTableOperator("INSERT", toTable);
-					for (int i = 0; i < fieldIDList.size(); i++) {
-						//insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
-						if (fieldIDToList.contains(fieldIDList.get(i))) {
-							insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+					for (int i = 0; i < fieldIDListFrom.size(); i++) {
+						if (fieldIDListTo.contains(fieldIDListFrom.get(i))) {
+							insertToTable.addValue(fieldIDListFrom.get(i), selectFromTable.getValueOf(fieldIDListFrom.get(i)));
 						}
 					}
 					count = insertToTable.execute();
 					if (count == 1) {
+						if (isToCommitEachTime) {
+							this.commit();
+						}
 						totalCount++;
 						if (recordCount > 0 && totalCount == recordCount) {
 							break;
@@ -3727,25 +3784,32 @@ public class Session extends JFrame {
 				}
 			}
 
+			///////////////////////////
+			// Copy records to merge //
+			///////////////////////////
 			if (type.equals("MERGE")) {
+
 				while (selectFromTable.next()) {
+
 					selectToTable = createTableOperator("SELECT", toTable);
-					for (int i = 0; i < keyFieldIDList.size(); i++) {
-						selectToTable.addKeyValue(keyFieldIDList.get(i), selectFromTable.getValueOf(keyFieldIDList.get(i)));
+					for (int i = 0; i < keyFieldIDListTo.size(); i++) {
+						selectToTable.addKeyValue(keyFieldIDListTo.get(i), selectFromTable.getValueOf(keyFieldIDListTo.get(i)));
 					}
 					if (selectToTable.next()) {
 						updateToTable = createTableOperator("UPDATE", toTable);
-						for (int i = 0; i < fieldIDList.size(); i++) {
-							//updateToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
-							if (fieldIDToList.contains(fieldIDList.get(i))) {
-								updateToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+						for (int i = 0; i < fieldIDListFrom.size(); i++) {
+							if (fieldIDListTo.contains(fieldIDListFrom.get(i))) {
+								updateToTable.addValue(fieldIDListFrom.get(i), selectFromTable.getValueOf(fieldIDListFrom.get(i)));
 							}
 						}
-						for (int i = 0; i < keyFieldIDList.size(); i++) {
-							updateToTable.addKeyValue(keyFieldIDList.get(i), selectFromTable.getValueOf(keyFieldIDList.get(i)));
+						for (int i = 0; i < keyFieldIDListTo.size(); i++) {
+							updateToTable.addKeyValue(keyFieldIDListTo.get(i), selectFromTable.getValueOf(keyFieldIDListTo.get(i)));
 						}
 						count = updateToTable.execute();
 						if (count == 1) {
+							if (isToCommitEachTime) {
+								this.commit();
+							}
 							totalCount++;
 							if (recordCount > 0 && totalCount == recordCount) {
 								break;
@@ -3754,12 +3818,12 @@ public class Session extends JFrame {
 							commit(false, null); //roll-back//
 							return -1;
 						}
+
 					} else {
 						insertToTable = createTableOperator("INSERT", toTable);
-						for (int i = 0; i < fieldIDList.size(); i++) {
-							//insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
-							if (fieldIDToList.contains(fieldIDList.get(i))) {
-								insertToTable.addValue(fieldIDList.get(i), selectFromTable.getValueOf(fieldIDList.get(i)));
+						for (int i = 0; i < fieldIDListFrom.size(); i++) {
+							if (fieldIDListTo.contains(fieldIDListFrom.get(i))) {
+								insertToTable.addValue(fieldIDListFrom.get(i), selectFromTable.getValueOf(fieldIDListFrom.get(i)));
 							}
 						}
 						count = insertToTable.execute();
@@ -3931,23 +3995,28 @@ public class Session extends JFrame {
 	}
 
 	Rectangle getMenuRectangle() {
-		int x = this.getX();
-		if (x < 0) {
-			x = 0;
+		if (this.isVisible()) {
+			int x = this.getX();
+			if (x < 0) {
+				x = 0;
+			}
+			int y = this.getY();
+			if (y < 0) {
+				y = 0;
+			}
+			int w = this.getWidth();
+			if (w > screenSize.width) {
+				w = screenSize.width;
+			}
+			int h = this.getHeight();
+			if (h > screenSize.height) {
+				h = screenSize.height;
+			}
+			return new Rectangle(x, y, w, h);
+		} else {
+			Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+			return new Rectangle(0, 0, dim.width, dim.height);
 		}
-		int y = this.getY();
-		if (y < 0) {
-			y = 0;
-		}
-		int w = this.getWidth();
-		if (w > screenSize.width) {
-			w = screenSize.width;
-		}
-		int h = this.getHeight();
-		if (h > screenSize.height) {
-			h = screenSize.height;
-		}
-		return new Rectangle(x, y, w, h);
 	}
 
 	int getNextSQPROGRAM() {

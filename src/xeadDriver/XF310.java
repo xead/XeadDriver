@@ -3859,7 +3859,7 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
+		fieldRemarks = XFUtility.getLayoutedString(workElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -6814,7 +6814,7 @@ class XF310_DetailColumn implements XFFieldScriptable {
 			JOptionPane.showMessageDialog(null, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
+		fieldRemarks = XFUtility.getLayoutedString(workElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -9430,6 +9430,15 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	public void setBackground(Color color) {
 		if (jComboBox != null) {
 			jComboBox.setBackground(color);
+		}
+	}
+
+	public void setForeground(Color color) {
+		if (jTextField != null) {
+			jTextField.setForeground(color);
+		}
+		if (jComboBox != null) {
+			jComboBox.setForeground(color);
 		}
 	}
 

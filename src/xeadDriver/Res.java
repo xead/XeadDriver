@@ -34,6 +34,8 @@ package xeadDriver;
 public class Res extends java.util.ListResourceBundle {
 	private static final Object[][] contents = new String[][]{
 		{ "Add", "Add" },
+		{ "AddRow", "Add" },
+		{ "ApproveButtonText", "Approve" },
 		{ "Asterisk", "* " },
 		{ "ByteaFieldMessage1", "Browse Content" },
 		{ "ByteaFieldMessage2", "Upload File" },
@@ -267,6 +269,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "ReturnMessage99", "* Processing is aborted. Refer to the logs for the details." },
 		{ "Search", "List" },
 		{ "Sel", "Sel" },
+		{ "Select", "Select" },
 		{ "SelectFile", "Select File" },
 		{ "SelectFileMessage1", "File with specified name and the valid extention is not found." },
 		{ "SelectFileMessage2", "Extention of the file is invalid." },

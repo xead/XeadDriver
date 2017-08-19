@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2017 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -131,8 +131,11 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	private boolean isClosing = false;
 	private XF100_Filter firstEditableFilter = null;
 	private HashMap<String, Object> variantMap = new HashMap<String, Object>();
-	private JPopupMenu jPopupMenuToCall = new JPopupMenu();
-	private JMenuItem jMenuItemToCall = new JMenuItem();
+	private JPopupMenu jPopupMenu = new JPopupMenu();
+	private JMenuItem jMenuItemToSelect = new JMenuItem();
+	private JMenuItem jMenuItemToCallToAdd = new JMenuItem();
+	private JMenuItem jMenuItemToOutput = new JMenuItem();
+	private String actionToCallToAdd = "";
 
 	public XF100(Session session, int instanceArrayIndex) {
 		super(session, "", true);
@@ -235,10 +238,14 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		jTableMain.setTableHeader(header);
 		jScrollPaneTable.getViewport().add(jTableMain, null);
 		jScrollPaneTable.addMouseListener(new XF100_jScrollPaneTable_mouseAdapter(this));
-		jMenuItemToCall.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
-		jMenuItemToCall.setText(XFUtility.RESOURCE.getString("Open"));
-		jMenuItemToCall.addActionListener(new XF100_jMenuItemToCall_actionAdapter(this));
-		jPopupMenuToCall.add(jMenuItemToCall);
+		jMenuItemToSelect.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jMenuItemToSelect.setText(XFUtility.RESOURCE.getString("Select"));
+		jMenuItemToSelect.addActionListener(new XF100_jMenuItemToCall_actionAdapter(this));
+		jPopupMenu.add(jMenuItemToSelect);
+		jMenuItemToCallToAdd.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jMenuItemToCallToAdd.addActionListener(new XF100_jMenuItemToCallToAdd_actionAdapter(this));
+		jMenuItemToOutput.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jMenuItemToOutput.addActionListener(new XF100_jMenuItemToOutput_actionAdapter(this));
 
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setLayout(new BorderLayout());
@@ -869,6 +876,16 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					jButtonArray[workIndex].setToolTipText(detailFunctionID + " " + functionName);
 				}
 			}
+			if (element.getAttribute("Action").equals("ADD")
+					|| element.getAttribute("Caption").equals(XFUtility.RESOURCE.getString("AddRow"))) {
+				jMenuItemToCallToAdd.setText(element.getAttribute("Caption"));
+				jPopupMenu.add(jMenuItemToCallToAdd);
+				actionToCallToAdd = element.getAttribute("Action");
+			}
+			if (element.getAttribute("Action").equals("OUTPUT")) {
+				jMenuItemToOutput.setText(element.getAttribute("Caption"));
+				jPopupMenu.add(jMenuItemToOutput);
+			}
 			inputMap.put(XFUtility.getKeyStroke(element.getAttribute("Number")), "actionButton" + workIndex);
 			actionMap.put("actionButton" + workIndex, actionButtonArray[workIndex]);
 
@@ -1185,6 +1202,14 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	
 	void jMenuItemToCall_actionPerformed(ActionEvent e) {
 		processRow(false);
+	}
+	
+	void jMenuItemToCallToAdd_actionPerformed(ActionEvent e) {
+		doButtonAction(actionToCallToAdd);
+	}
+	
+	void jMenuItemToOutput_actionPerformed(ActionEvent e) {
+		doButtonAction("OUTPUT");
 	}
 	
 	void jFunctionButton_actionPerformed(ActionEvent e) {
@@ -1747,6 +1772,18 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		jTableMain.requestFocus();
 	}
 
+	void jScrollPaneTable_mouseClicked(MouseEvent e) {
+		if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != InputEvent.BUTTON1_MASK) {
+			int selectedRow = jTableMain.getSelectedRow();
+			if (selectedRow == -1) {
+				jMenuItemToSelect.setEnabled(false);
+			} else {
+				jMenuItemToSelect.setEnabled(true);
+			}
+			jPopupMenu.show(e.getComponent(), e.getX(), e.getY());
+		}
+	}
+
 	void component_keyPressed(KeyEvent e) {
 		//////////////////////////////////////
 		// Steps to control listing request //
@@ -1782,7 +1819,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != InputEvent.BUTTON1_MASK) {
 				int selectedRow = jTableMain.rowAtPoint(e.getPoint());
 				jTableMain.setRowSelectionInterval(selectedRow, selectedRow);
-				jPopupMenuToCall.show(e.getComponent(), e.getX(), e.getY());
+				jMenuItemToSelect.setEnabled(true);
+				jPopupMenu.show(e.getComponent(), e.getX(), e.getY());
 			}
 		}
 	}
@@ -2431,7 +2469,7 @@ class XF100_Filter extends JPanel {
 			JOptionPane.showMessageDialog(this, tableID + "." + fieldID + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
+		fieldRemarks = XFUtility.getLayoutedString(workElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -4140,7 +4178,7 @@ class XF100_Column implements XFFieldScriptable {
 			JOptionPane.showMessageDialog(null, tableID + "." + fieldID + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");;
+		fieldRemarks = XFUtility.getLayoutedString(workElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);;
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -5336,6 +5374,9 @@ class XF100_jScrollPaneTable_mouseAdapter extends java.awt.event.MouseAdapter {
 	public void mousePressed(MouseEvent e) {
 		adaptee.jScrollPaneTable_mousePressed(e);
 	}
+	public void mouseClicked(MouseEvent e) {
+		adaptee.jScrollPaneTable_mouseClicked(e);
+	}
 }
 
 class XF100_jButtonList_actionAdapter implements java.awt.event.ActionListener {
@@ -5371,5 +5412,25 @@ class XF100_jMenuItemToCall_actionAdapter implements java.awt.event.ActionListen
 	}
 	public void actionPerformed(ActionEvent e) {
 		adaptee.jMenuItemToCall_actionPerformed(e);
+	}
+}
+
+class XF100_jMenuItemToCallToAdd_actionAdapter implements java.awt.event.ActionListener {
+	XF100 adaptee;
+	XF100_jMenuItemToCallToAdd_actionAdapter(XF100 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void actionPerformed(ActionEvent e) {
+		adaptee.jMenuItemToCallToAdd_actionPerformed(e);
+	}
+}
+
+class XF100_jMenuItemToOutput_actionAdapter implements java.awt.event.ActionListener {
+	XF100 adaptee;
+	XF100_jMenuItemToOutput_actionAdapter(XF100 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void actionPerformed(ActionEvent e) {
+		adaptee.jMenuItemToOutput_actionPerformed(e);
 	}
 }

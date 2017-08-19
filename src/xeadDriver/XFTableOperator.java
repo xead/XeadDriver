@@ -573,30 +573,34 @@ public class XFTableOperator {
 					}
 
 				} catch (SQLException e) {
+					if (session_.isClientSession()) {
+						JOptionPane.showMessageDialog(null, "SQL error detected. Process will be canceled.\n" + e.getMessage());
+					}
 					if (logBuf_ != null) {
 						XFUtility.appendLog(e.getMessage(), logBuf_);
 					}
-					try {
-						statement.executeQuery("SELECT * FROM " + session_.taxTable);
-						throw new Exception(e.getMessage());
-					} catch (SQLException e1) {
-						if (session_.isClientSession()) {
-							Object[] bts = {XFUtility.RESOURCE.getString("DBConnectMessage1"), XFUtility.RESOURCE.getString("DBConnectMessage2")};
-							int reply = JOptionPane.showOptionDialog(null, XFUtility.RESOURCE.getString("DBConnectMessage3"),
-									XFUtility.RESOURCE.getString("DBConnectMessage4"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[1]);
-							if (reply == 0) {
-								System.exit(0);
-							}
-							if (reply == 1) {
-								boolean isOkay = session_.setupConnectionToDatabase(false);
-								if (isOkay) {
-									break;
-								}
-							}
-						} else {
-							System.exit(0);
-						}
-					}
+					throw e;
+//					try {
+//						statement.executeQuery("SELECT * FROM " + session_.taxTable);
+//						throw new Exception(e.getMessage());
+//					} catch (SQLException e1) {
+//						if (session_.isClientSession()) {
+//							Object[] bts = {XFUtility.RESOURCE.getString("DBConnectMessage1"), XFUtility.RESOURCE.getString("DBConnectMessage2")};
+//							int reply = JOptionPane.showOptionDialog(null, XFUtility.RESOURCE.getString("DBConnectMessage3"),
+//									XFUtility.RESOURCE.getString("DBConnectMessage4"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, bts, bts[1]);
+//							if (reply == 0) {
+//								System.exit(0);
+//							}
+//							if (reply == 1) {
+//								boolean isOkay = session_.setupConnectionToDatabase(false);
+//								if (isOkay) {
+//									break;
+//								}
+//							}
+//						} else {
+//							System.exit(0);
+//						}
+//					}
 
 				} catch (OutOfMemoryError e) {
 					if (logBuf_ != null) {

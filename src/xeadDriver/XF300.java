@@ -120,8 +120,11 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private TableHeadersRenderer[] headersRenderer = new TableHeadersRenderer[20];
 	private TableCellsRenderer[] cellsRenderer = new TableCellsRenderer[20];
 	private boolean isListingInNormalOrder[] = new boolean[20];
-	private JPopupMenu jPopupMenuToCall = new JPopupMenu();
-	private JMenuItem jMenuItemToCall = new JMenuItem();
+	private JPopupMenu[] jPopupMenu = new JPopupMenu[20];
+	private JMenuItem[] jMenuItemToSelect = new JMenuItem[20];
+	private JMenuItem[] jMenuItemToCallToAdd = new JMenuItem[20];
+	private JMenuItem[] jMenuItemToOutput = new JMenuItem[20];
+	private String[] actionToCallToAdd = new String[20];
 	private boolean isHeaderResizing = false;
 	private boolean tablesReadyToUse;
 	private JPanel jPanelBottom = new JPanel();
@@ -308,13 +311,22 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			});
 			jTableMainArray[i].setTableHeader(header);
+
+			jMenuItemToSelect[i] = new JMenuItem();
+			jMenuItemToSelect[i].setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+			jMenuItemToSelect[i].setText(XFUtility.RESOURCE.getString("Select"));
+			jMenuItemToSelect[i].addActionListener(new XF300_jMenuItemToSelect_actionAdapter(this));
+			jPopupMenu[i] = new JPopupMenu();
+			jPopupMenu[i].add(jMenuItemToSelect[i]);
+			jMenuItemToCallToAdd[i] = new JMenuItem();
+			jMenuItemToCallToAdd[i].setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+			jMenuItemToCallToAdd[i].addActionListener(new XF300_jMenuItemToCallToAdd_actionAdapter(this));
+			jMenuItemToOutput[i] = new JMenuItem();
+			jMenuItemToOutput[i].setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+			jMenuItemToOutput[i].addActionListener(new XF300_jMenuItemToOutput_actionAdapter(this));
 		}
 		jScrollPaneTable.getViewport().add(jTableMainArray[0], null);
 		jScrollPaneTable.addMouseListener(new XF300_jScrollPaneTable_mouseAdapter(this));
-		jMenuItemToCall.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
-		jMenuItemToCall.setText(XFUtility.RESOURCE.getString("Open"));
-		jMenuItemToCall.addActionListener(new XF300_jMenuItemToCall_actionAdapter(this));
-		jPopupMenuToCall.add(jMenuItemToCall);
 
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setLayout(new BorderLayout());
@@ -1397,6 +1409,16 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					jButtonArray[workIndex].setToolTipText(detailFunctionIDArray[tabIndex] + " " + functionName);
 				}
 			}
+			if (element.getAttribute("Action").equals("ADD")
+					|| element.getAttribute("Caption").equals(XFUtility.RESOURCE.getString("AddRow"))) {
+				jMenuItemToCallToAdd[tabIndex].setText(element.getAttribute("Caption"));
+				jPopupMenu[tabIndex].add(jMenuItemToCallToAdd[tabIndex]);
+				actionToCallToAdd[tabIndex] = element.getAttribute("Action");
+			}
+			if (element.getAttribute("Action").equals("OUTPUT")) {
+				jMenuItemToOutput[tabIndex].setText(element.getAttribute("Caption"));
+				jPopupMenu[tabIndex].add(jMenuItemToOutput[tabIndex]);
+			}
 			if (element.getAttribute("Action").equals("HEADER")) {
 				String functionName = session_.getFunctionName(headerFunctionID);
 				if (!functionName.equals("")) {
@@ -1709,8 +1731,16 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		return isForExplosion;
 	}
 	
-	void jMenuItemToCall_actionPerformed(ActionEvent e) {
+	void jMenuItemToSelect_actionPerformed(ActionEvent e) {
 		processRow(false);
+	}
+	
+	void jMenuItemToCallToAdd_actionPerformed(ActionEvent e) {
+		doButtonAction("ADD");
+	}
+	
+	void jMenuItemToOutput_actionPerformed(ActionEvent e) {
+		doButtonAction("OUTPUT");
 	}
 	
 	void jFunctionButton_actionPerformed(ActionEvent e) {
@@ -2695,6 +2725,18 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		jTableMainArray[jTabbedPane.getSelectedIndex()].requestFocus();
 	}
 
+	void jScrollPaneTable_mouseClicked(MouseEvent e) {
+		if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != InputEvent.BUTTON1_MASK) {
+			int selectedRow = jTableMainArray[jTabbedPane.getSelectedIndex()].getSelectedRow();
+			if (selectedRow == -1) {
+				jMenuItemToSelect[jTabbedPane.getSelectedIndex()].setEnabled(false);
+			} else {
+				jMenuItemToSelect[jTabbedPane.getSelectedIndex()].setEnabled(true);
+			}
+			jPopupMenu[jTabbedPane.getSelectedIndex()].show(e.getComponent(), e.getX(), e.getY());
+		}
+	}
+
 	void jTabbedPane_keyPressed(KeyEvent e) {
 		//////////////////////////////////////////////
 		// Steps to control focus from tab to table //
@@ -2844,7 +2886,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != InputEvent.BUTTON1_MASK) {
 				int selectedRow = jTableMainArray[jTabbedPane.getSelectedIndex()].rowAtPoint(e.getPoint());
 				jTableMainArray[jTabbedPane.getSelectedIndex()].setRowSelectionInterval(selectedRow, selectedRow);
-				jPopupMenuToCall.show(e.getComponent(), e.getX(), e.getY());
+				jPopupMenu[jTabbedPane.getSelectedIndex()].show(e.getComponent(), e.getX(), e.getY());
 			}
 		}
 	}
@@ -3159,6 +3201,17 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		return headerField;
 	}
 
+	public Object getValueOfHeaderFieldByName(String dataSourceName) {
+		Object obj = null;
+		for (int i = 0; i < headerFieldList.size(); i++) {
+			if (headerFieldList.get(i).getDataSourceName().equals(dataSourceName)) {
+				obj = headerFieldList.get(i).getInternalValue();
+				break;
+			}
+		}
+		return obj;
+	}
+
 	public boolean containsHeaderField(String tableID, String tableAlias, String fieldID) {
 		boolean result = false;
 		for (int i = 0; i < headerFieldList.size(); i++) {
@@ -3418,7 +3471,7 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 			JOptionPane.showMessageDialog(this, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
+		fieldRemarks = XFUtility.getLayoutedString(workElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -3947,6 +4000,187 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 	}
 }
 
+class XF300_LinkedField extends JPanel implements XFEditableField {
+	private static final long serialVersionUID = 1L;
+	private JTextField jTextField = new JTextField();
+	private JLabel jLabel = new JLabel();
+	private int rows_ = 1;
+	private String oldValue = "";
+    private String functionID_;
+    private ArrayList<String> fieldsToPutList_ = new ArrayList<String>();
+    private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
+	private XF300 dialog_ = null;
+
+	public XF300_LinkedField(int digits, String fieldOptions, String fontName, XF300 dialog){
+		super();
+
+		jTextField.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
+		jTextField.setEditable(false);
+		Font labelFont = new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE);
+		jLabel.setFont(labelFont);
+		jLabel.setForeground(Color.blue);
+		jLabel.setHorizontalAlignment(SwingConstants.LEFT);
+		jLabel.addMouseListener(new jLabel_mouseAdapter(this));
+		jLabel.setBorder(jTextField.getBorder());
+		jLabel.setFocusable(false);
+		this.setLayout(new BorderLayout());
+		this.add(jLabel, BorderLayout.CENTER);
+		dialog_ = dialog;
+
+		int fieldWidth,  fieldHeight;
+		String wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "WIDTH");
+		if (!wrkStr.equals("")) {
+			fieldWidth = Integer.parseInt(wrkStr);
+		} else {
+			fieldWidth = digits * (XFUtility.FONT_SIZE/2) + 10;
+		}
+		if (fieldWidth > 800) {
+			fieldWidth = 800;
+		}
+		fieldHeight = XFUtility.FIELD_UNIT_HEIGHT;
+
+		StringTokenizer workTokenizer;
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "LINKED_CALL_TO_PUT");
+		if (!wrkStr.equals("")) {
+			workTokenizer = new StringTokenizer(wrkStr, ";" );
+			while (workTokenizer.hasMoreTokens()) {
+				fieldsToPutList_.add(workTokenizer.nextToken());
+			}
+		}
+		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "LINKED_CALL_TO_PUT_TO");
+		if (!wrkStr.equals("")) {
+			workTokenizer = new StringTokenizer(wrkStr, ";" );
+			while (workTokenizer.hasMoreTokens()) {
+				fieldsToPutToList_.add(workTokenizer.nextToken());
+			}
+		}
+		functionID_ = XFUtility.getOptionValueWithKeyword(fieldOptions, "LINKED_CALL");
+		
+		this.setSize(fieldWidth, fieldHeight);
+	}
+	
+	public void setWidth(int width) {
+		this.setSize(width, this.getHeight());
+	}
+
+	public void exitFromComponent() {
+		jTextField.transferFocus();
+	}
+
+	public boolean isEditable() {
+		return jTextField.isEditable();
+	}
+
+	public boolean isFocusable() {
+		return false;
+	}
+
+	public boolean isComponentFocusable() {
+		return jTextField.isFocusable();
+	}
+
+	public void setForeground(Color color) {
+		if (jTextField != null) {
+			jTextField.setForeground(color);
+		}
+	}
+
+	public void setBackground(Color color) {
+		if (jTextField != null) {
+			jTextField.setBackground(color);
+		}
+	}
+
+	public void setValue(Object obj) {
+		String text = (String)obj;
+		text = text.trim();
+		jLabel.setText("<html><u>" + text);
+		jTextField.setText(text);
+	}
+
+	public String getInternalValue() {
+		return jTextField.getText();
+	}
+
+	public Object getExternalValue() {
+		return this.getInternalValue();
+	}
+	
+	public void setOldValue(Object obj) {
+		oldValue = (String)obj;
+	}
+
+	public Object getOldValue() {
+		return oldValue;
+	}
+
+	public void requestFocus() {
+		jTextField.requestFocus();
+	}
+	
+	public void setEditable(boolean editable) {
+		if (editable) {
+			this.removeAll();
+			this.setLayout(new BorderLayout());
+			this.add(jTextField, BorderLayout.CENTER);
+		}
+		jTextField.setEditable(editable);
+		jTextField.setFocusable(editable);
+	}
+	
+	public void setToolTipText(String text) {
+		jTextField.setToolTipText(text);
+	}
+
+	class jLabel_mouseAdapter extends java.awt.event.MouseAdapter {
+		XF300_LinkedField adaptee;
+		jLabel_mouseAdapter(XF300_LinkedField adaptee) {
+			this.adaptee = adaptee;
+		}
+		public void mousePressed(MouseEvent e) {
+			if (!jTextField.getText().equals("")) {
+				Object value;
+				try {
+					setCursor(new Cursor(Cursor.WAIT_CURSOR));
+
+					HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
+					for (int i = 0; i < fieldsToPutList_.size(); i++) {
+						value = dialog_.getValueOfHeaderFieldByName(fieldsToPutList_.get(i));
+						if (value == null) {
+							JOptionPane.showMessageDialog(null, "Unable to send the value of field " + fieldsToPutList_.get(i));
+						} else {
+							fieldValuesMap.put(fieldsToPutToList_.get(i), value);
+						}
+					}
+
+					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
+					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
+						dialog_.returnToMenu();
+					}
+				} catch (Exception ex) {
+					JOptionPane.showMessageDialog(null, ex.getMessage());
+				} finally {
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+			}
+		}
+		public void mouseReleased(MouseEvent e) {
+		}
+		public void mouseEntered(MouseEvent e) {
+			if (!jTextField.getText().equals("")) {
+				setCursor(new Cursor(Cursor.HAND_CURSOR));
+			}
+		}
+		public void mouseExited(MouseEvent e) {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		}
+	}
+
+	public int getRows() {
+		return rows_;
+	}
+}
+
 class XF300_DetailRowNumber extends Object {
 	private int number_;
 	private HashMap<String, Object> keyMap_ = new HashMap<String, Object>();
@@ -4021,7 +4255,7 @@ class XF300_DetailColumn implements XFFieldScriptable {
 			JOptionPane.showMessageDialog(null, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
+		fieldRemarks = XFUtility.getLayoutedString(workElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -4563,7 +4797,7 @@ class XF300_Filter extends JPanel {
 			JOptionPane.showMessageDialog(this, tableID + "." + fieldID + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
+		fieldRemarks = XFUtility.getLayoutedString(workElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
@@ -7478,6 +7712,9 @@ class XF300_jScrollPaneTable_mouseAdapter extends java.awt.event.MouseAdapter {
 	public void mousePressed(MouseEvent e) {
 		adaptee.jScrollPaneTable_mousePressed(e);
 	}
+	public void mouseClicked(MouseEvent e) {
+		adaptee.jScrollPaneTable_mouseClicked(e);
+	}
 }
 
 class XF300_FunctionButton_actionAdapter implements java.awt.event.ActionListener {
@@ -7580,12 +7817,31 @@ class XF300_jMenuItemTreeNodeImplosion_actionAdapter implements ActionListener {
 	}
 }
 
-class XF300_jMenuItemToCall_actionAdapter implements java.awt.event.ActionListener {
+class XF300_jMenuItemToSelect_actionAdapter implements java.awt.event.ActionListener {
 	XF300 adaptee;
-	XF300_jMenuItemToCall_actionAdapter(XF300 adaptee) {
+	XF300_jMenuItemToSelect_actionAdapter(XF300 adaptee) {
 		this.adaptee = adaptee;
 	}
 	public void actionPerformed(ActionEvent e) {
-		adaptee.jMenuItemToCall_actionPerformed(e);
+		adaptee.jMenuItemToSelect_actionPerformed(e);
+	}
+}
+
+class XF300_jMenuItemToCallToAdd_actionAdapter implements java.awt.event.ActionListener {
+	XF300 adaptee;
+	XF300_jMenuItemToCallToAdd_actionAdapter(XF300 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void actionPerformed(ActionEvent e) {
+		adaptee.jMenuItemToCallToAdd_actionPerformed(e);
+	}
+}
+class XF300_jMenuItemToOutput_actionAdapter implements java.awt.event.ActionListener {
+	XF300 adaptee;
+	XF300_jMenuItemToOutput_actionAdapter(XF300 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void actionPerformed(ActionEvent e) {
+		adaptee.jMenuItemToOutput_actionPerformed(e);
 	}
 }

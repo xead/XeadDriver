@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -41,7 +42,7 @@ public class XFInputDialogField extends JPanel {
 	private XFInputDialog dialog_ = null;
 	private String functionID_ = "";
 	private JFileChooser jFileChooser = null;
-	private String jFileChooserTitle = "";
+	//private String jFileChooserTitle = "";
     private ArrayList<String> fieldsToPutList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
@@ -429,17 +430,26 @@ public class XFInputDialogField extends JPanel {
 			});
 		}
    }
-   
    public void setFileChooser(String title, String extentions) {
+	   setFileChooser(title, extentions, "");
+   }
+   
+   public void setFileChooser(String title, String extentions, String currentFolder) {
 		if (inputType_.equals("ALPHA")) {
-			jFileChooserTitle = title;
 			jFileChooser = new JFileChooser();
+			jFileChooser.setDialogTitle(title);
 			if (!extentions.equals("")) {
 				StringTokenizer workTokenizer = new StringTokenizer(extentions, ";" );
 				while (workTokenizer.hasMoreTokens()) {
 					String extention = workTokenizer.nextToken();
 					jFileChooser.setFileFilter(new FileNameExtensionFilter(extention, extention));
 				}
+			}
+			if (!currentFolder.equals("")) {
+				try {
+					File folder = new File(currentFolder);
+					jFileChooser.setCurrentDirectory(folder);
+				} catch (Exception e1) {}
 			}
 			jButton = new JButton();
 			ImageIcon imageIcon = new ImageIcon(xeadDriver.XFInputDialogField.class.getResource("prompt.png"));
@@ -456,7 +466,7 @@ public class XFInputDialogField extends JPanel {
    }
 
    public void jFileChooser_actionPerformed(ActionEvent e) {
-	   int reply = jFileChooser.showDialog(dialog_, jFileChooserTitle);
+	   int reply = jFileChooser.showDialog(dialog_, XFUtility.RESOURCE.getString("ApproveButtonText"));
 	   if (reply == JFileChooser.APPROVE_OPTION) {
 		   this.setValue(jFileChooser.getSelectedFile().getPath());
 	   }

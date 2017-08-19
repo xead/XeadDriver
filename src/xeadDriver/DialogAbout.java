@@ -43,11 +43,23 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M13";
-	public static final String VERSION  = "1.3.13";
+	public static final String FULL_VERSION  = "V1.R3.M15";
+	public static final String VERSION  = "1.3.15";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2017 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.15
+	//・InputDialogのsetFileChooser(...)でCurrentDirectoryを指定できるようにした
+	//・TextFileOperatorにresetCursor()のメソッドを組み込んだ
+	//・XF100,300での明細行上のポップアップメニューの仕様を改善した
+	//・更新系機能タイプで、日時項目がNULL不可でも登録時にエラーにならないバグを修正した
+	//
+	//1.3.14
+	//・Excel操作オブジェクトに、シートのデータ行数を得るためのメソッドを組み込んだ
+	//・Table操作オブジェクトでのエラーハンドリングを改善した
+	//・XF000でのメッセージハンドリングを改善した
+	//・XF100,110,200,300,310で、項目にマウスを置いた際の説明表示仕様を改善した
+	//
 	//1.3.13
 	//・メニューを経由せずに特定機能のみを実行できるようにした
 	//・copyTableRecords(...)の仕様を改善した

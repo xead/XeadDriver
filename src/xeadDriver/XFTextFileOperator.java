@@ -147,6 +147,10 @@ public class XFTextFileOperator {
        	return isValidCursorPos();
     }
 
+    public void resetCursor() {
+		cursorPos = -1;
+    }
+
     private boolean isValidCursorPos() {
     	if (operation_.equals("Read")) {
     		columnList.clear();

@@ -34,6 +34,8 @@ package xeadDriver;
 public class Res_ja extends java.util.ListResourceBundle {
 	private static final Object[][] contents = new String[][]{
 		{ "Add", "登録" },
+		{ "AddRow", "追加" },
+		{ "ApproveButtonText", "選択" },
 		{ "Asterisk", "＊" },
 		{ "ByteaFieldMessage1", "コンテンツの表示" },
 		{ "ByteaFieldMessage2", "ファイルのアップロード" },
@@ -267,6 +269,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "ReturnMessage99", "＊処理が異常終了しました。セッション情報のエラーログを確認してください。" },
 		{ "Search", "検索" },
 		{ "Sel", "選" },
+		{ "Select", "選択" },
 		{ "SelectFileMessage1", "有効な拡張子を持つ指定名のファイルが見つかりません。" },
 		{ "SelectFileMessage2", "指定ファイルの拡張子が無効です。" },
 		{ "SelectFileTitle", "ファイル選択" },

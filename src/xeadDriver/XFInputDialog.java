@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2017 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -32,10 +32,8 @@ package xeadDriver;
  */
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -63,7 +61,6 @@ public class XFInputDialog extends JDialog {
     private JButton jButtonOK = new JButton();
     private JTextArea jTextArea = new JTextArea();
     private JScrollPane jScrollPane = new JScrollPane();
-    private Component parent_;
     private Dimension scrSize, dlgSize;
     private ArrayList<XFInputDialogField> fieldList = new ArrayList<XFInputDialogField>();
     private ArrayList<Integer> areaIndexList = new ArrayList<Integer>();
@@ -77,7 +74,6 @@ public class XFInputDialog extends JDialog {
     public XFInputDialog(Session session) {
 		super();
 		this.setModal(true);
-		this.parent_ = session;
 		this.session_ = session;
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		jPanelMain.setLayout(new BorderLayout());
@@ -248,19 +244,7 @@ public class XFInputDialog extends JDialog {
 		}
 		jPanelMain.setPreferredSize(dlgSize);
     	this.setTitle(title);
-    	if (parent_ != null && parent_.isValid()) {
-    		int posY, posX;
-    		Rectangle rec = parent_.getBounds();
-    		Point point = parent_.getLocationOnScreen();
-    		posX = point.x;
-    		posY = point.y + rec.height;
-    		if (posY + dlgSize.height > scrSize.height) {
-    			posY = point.y - dlgSize.height;
-    		}
-    		this.setLocation(posX, posY);
-    	} else {
-    		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
-    	}
+   		this.setLocation((scrSize.width - dlgSize.width) / 2, (scrSize.height - dlgSize.height) / 2);
 		this.pack();
     	this.setVisible(true);
 

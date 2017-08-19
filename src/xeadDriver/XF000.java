@@ -98,6 +98,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	private TimerTaskScript task = null;
 	private boolean alreadyRun = false;
 	private boolean errorHasOccured = false;
+	private String errorMessage = "";
 	private boolean isExecuted = false;
 	private GridLayout gridLayoutInfo = new GridLayout();
 	private JLabel jLabelFunctionID = new JLabel();
@@ -532,6 +533,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	public void cancelWithMessage(String message) {
 		if (!message.equals("")) {
 			JOptionPane.showMessageDialog(null, message);
+			errorMessage = message;
 		}
 		errorHasOccured = true;
 	}
@@ -682,7 +684,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 						jTextAreaMessages.setText(getNewMessage(returnMap_.get("RETURN_MESSAGE").toString(), ""));
 						returnMap_.remove("RETURN_MESSAGE");
 					} else {
-						jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage51"), "") + "\n");
+						jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage51"), errorMessage) + "\n");
 					}
 				}
 			} else {
@@ -691,7 +693,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 						jTextAreaMessages.setText(getNewMessage(returnMap_.get("RETURN_MESSAGE").toString(), ""));
 						returnMap_.remove("RETURN_MESSAGE");
 					} else {
-						jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage48"), "") + "\n");
+						if (errorHasOccured) {
+							jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage51"), errorMessage) + "\n");
+						} else {
+							jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage48"), "") + "\n");
+						}
 					}
 				}
 			}

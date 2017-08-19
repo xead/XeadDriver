@@ -38,7 +38,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Calendar;
 import javax.swing.JOptionPane;
-
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
@@ -81,7 +80,18 @@ public class XFExcelFileOperator {
     	}
     	return isError;
     }
-    
+
+    public int getLastRowIndex(int indexOfSheet) {
+    	int num = 0;
+    	try {
+    		Sheet sheet = workbook_.getSheetAt(indexOfSheet);
+    		num = sheet.getLastRowNum();
+    	} catch (Exception e) {
+    		num = -1;
+    	}
+		return num;
+    }
+
     public Object getValueAt(int indexOfSheet, int indexOfRow, int indexOfColumn) {
     	Object value = "";
     	try {
@@ -93,7 +103,28 @@ public class XFExcelFileOperator {
 			}
 			if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
 				if(DateUtil.isCellDateFormatted(cell)) {
-					value = cell.getDateCellValue();
+					java.util.Date date = cell.getDateCellValue();
+
+					Calendar cal = Calendar.getInstance();
+					cal.setTime(date);
+					cal.set(Calendar.HOUR_OF_DAY, 0);
+					cal.set(Calendar.MINUTE, 0);
+					cal.set(Calendar.SECOND, 0);
+					cal.set(Calendar.MILLISECOND, 0);
+
+					String yearStr = Integer.toString(cal.get(Calendar.YEAR));
+				    int month = cal.get(Calendar.MONTH) + 1;
+				    String monthStr = Integer.toString(month);
+				    if (month < 9) {
+				    	monthStr = "0" + monthStr;
+				    }
+				    int day = cal.get(Calendar.DATE);
+				    String dayStr = Integer.toString(day);
+				    if (day < 9) {
+				    	dayStr = "0" + dayStr;
+				    }
+					value = yearStr + "-" + monthStr + "-" + dayStr;
+					
 				} else {
 					value = cell.getNumericCellValue();
 				}

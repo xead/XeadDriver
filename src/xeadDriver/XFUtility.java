@@ -1325,6 +1325,54 @@ public class XFUtility {
 		return processedString.toString();
 	}
 
+	public static String getLayoutedString(String originalString, String stringToBeInserted, String fontName) {
+		StringBuffer processedString = new StringBuffer();
+		int lastEnd = 0;
+		int maxRowLength = 0;
+		int pixcelLengthOfFirstRow = 0;
+		String wrkStr;
+		JLabel label = new JLabel();
+		FontMetrics metrics = label.getFontMetrics(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
+		
+		if ((originalString.getBytes().length) == originalString.length()) {
+			maxRowLength = 40;
+		} else {
+			maxRowLength = 30;
+		}
+
+		String adjustedString = originalString.replaceAll("#EOL#", "");
+		if (adjustedString.length() > maxRowLength) {
+			wrkStr = adjustedString.substring(0, maxRowLength);
+			pixcelLengthOfFirstRow = metrics.stringWidth(wrkStr);
+
+			adjustedString = originalString.replaceAll("#EOL#", "\n");
+			for (int i = 0; i < adjustedString.length(); i++) {
+				wrkStr = adjustedString.substring(lastEnd, i+1);
+				if (metrics.stringWidth(wrkStr) < pixcelLengthOfFirstRow) {
+					if (i == (adjustedString.length()-1)) {
+						wrkStr = adjustedString.substring(lastEnd, i+1);
+						processedString.append(adjustedString.substring(lastEnd, i+1));
+						lastEnd = i;
+					} else {
+						if (adjustedString.substring(i, i+1).equals("\n")) {
+							wrkStr = adjustedString.substring(lastEnd, i);
+							processedString.append(wrkStr + stringToBeInserted);
+							lastEnd = i+1;
+						}
+					}
+				} else {
+					wrkStr = adjustedString.substring(lastEnd, i);
+					processedString.append(wrkStr + stringToBeInserted);
+					lastEnd = i;
+				}
+			}
+		} else {
+			processedString.append(adjustedString.replaceAll("\n", stringToBeInserted));
+		}
+
+		return processedString.toString();
+	}
+
 	static String getEditValueOfLong(long value, String editCode, int size) {
 		DecimalFormat integerFormat = new DecimalFormat("#,##0;#,##0-");
 

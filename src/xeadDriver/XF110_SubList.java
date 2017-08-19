@@ -2982,7 +2982,7 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 		}
 
 		fieldName = fieldElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(fieldElement.getAttribute("Remarks"), "<br>");
+		fieldRemarks = XFUtility.getLayoutedString(fieldElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);
 		dataType = fieldElement.getAttribute("Type");
 		if (fieldElement.getAttribute("Name").equals("")) {
 			fieldCaption = fieldElement.getAttribute("ID");
@@ -5806,7 +5806,7 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 			JOptionPane.showMessageDialog(null, tableID_ + "." + fieldID_ + XFUtility.RESOURCE.getString("FunctionError11"));
 		}
 		fieldName = workElement.getAttribute("Name");
-		fieldRemarks = XFUtility.substringLinesWithTokenOfEOL(workElement.getAttribute("Remarks"), "<br>");
+		fieldRemarks = XFUtility.getLayoutedString(workElement.getAttribute("Remarks"), "<br>", dialog_.getSession().systemFont);
 		dataType = workElement.getAttribute("Type");
 		dataTypeOptions = workElement.getAttribute("TypeOptions");
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);

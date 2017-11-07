@@ -3281,12 +3281,21 @@ public class Session extends JFrame {
 		return new XFHttpRequest(uri, encoding);
 	}
 
-	public Document parseStringToGetXmlDocument(String data) throws Exception {
-		return parseStringToGetXmlDocument(data, "UTF-8");
+	public Document parseStringToGetXmlDocument(String data) {
+		Document doc = null;
+		try {
+			domParser.parse(new InputSource(new ByteArrayInputStream(data.getBytes("UTF-8"))));
+			doc = domParser.getDocument();
+		} catch (Exception e) {}
+		return doc;
 	}
-	public Document parseStringToGetXmlDocument(String data, String encoding) throws Exception {
-		domParser.parse(new InputSource(new ByteArrayInputStream(data.getBytes(encoding))));
-		return domParser.getDocument();
+	public Document parseStringToGetXmlDocument(String data, String encoding) {
+		Document doc = null;
+		try {
+			domParser.parse(new InputSource(new ByteArrayInputStream(data.getBytes(encoding))));
+			doc = domParser.getDocument();
+		} catch (Exception e) {}
+		return doc;
 	}
 	public String parseXmlDocumentToGetString(Document document) throws Exception {
 		StringWriter sw = new StringWriter();
@@ -3338,14 +3347,22 @@ public class Session extends JFrame {
 		return workElement.getTextContent();
 	}
 
-	public JSONObject createJsonObject(String text) throws Exception {
-		return new JSONObject(text);
+	public JSONObject createJsonObject(String text) {
+		JSONObject obj = null;
+		try {
+			obj = new JSONObject(text);
+		} catch (Exception e) {}
+		return obj;
 	}
 	public JSONObject createJsonObject() throws Exception {
 		return new JSONObject();
 	}
-	public JSONArray createJsonArray(String text) throws Exception {
-		return new JSONArray(text);
+	public JSONArray createJsonArray(String text) {
+		JSONArray array = null;
+		try {
+			array = new JSONArray(text);
+		} catch (Exception e) {}
+		return array;
 	}
 	public JSONArray createJsonArray() throws Exception {
 		return new JSONArray();
@@ -3669,6 +3686,12 @@ public class Session extends JFrame {
 			XFTableOperator selectFromTable = createTableOperator("SELECT", fromTable);
 
 			org.w3c.dom.Element tableElementTo = getTableElement(toTable);
+			if (!tableElementTo.getAttribute("DB").equals("")) {
+				if (isClientSession) {
+					JOptionPane.showMessageDialog(this, "You can not update read-only table.");
+				}
+				return -1;
+			}
 			NodeList fieldListTo = tableElementTo.getElementsByTagName("Field");
 			NodeList keyListTo = tableElementTo.getElementsByTagName("Key");
 			XFTableOperator selectToTable;

@@ -2909,7 +2909,7 @@ class XF100_Filter extends JPanel {
 				isValidated = false;
 			}
 		} else {
-			if (!this.isEditable_) {
+			if (!this.isEditable_ && !this.isValueSpecified()) {
 				isValidated = false;
 			}
 		}

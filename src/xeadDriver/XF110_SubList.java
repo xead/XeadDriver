@@ -3053,7 +3053,7 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 						component.setLocation(5, 0);
 					} else {
 						if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-							component = new XFTextArea(dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
+							component = new XFTextArea(dataSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 							component.setLocation(5, 0);
 							component.setEditable(false);
 						} else {
@@ -5153,13 +5153,13 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 				tableKeyValuesList.clear();
 				jComboBox.removeAllItems();
 
-				boolean blankItemRequired = false;
+				//boolean blankItemRequired = false;
 				XFHashMap blankKeyValues = new XFHashMap();
 				for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 					for (int j = 0; j < dialog_.getDetailColumnList().size(); j++) {
 						if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getDetailColumnList().get(j).getTableAlias() + "." + dialog_.getDetailColumnList().get(j).getFieldID())) {
 							if (dialog_.getDetailColumnList().get(j).isNullable()) {
-								blankItemRequired = true;
+								//blankItemRequired = true;
 								if (dialog_.getDetailColumnList().get(j).isVisibleOnPanel()) {
 									blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getDetailColumnList().get(j).getValue());
 								} else {
@@ -5171,10 +5171,10 @@ class XF110_SubListCellEditorWithComboBox extends JPanel implements XFTableColum
 						}
 					}
 				}
-				if (blankItemRequired) {
+				//if (blankItemRequired) {
 					tableKeyValuesList.add(blankKeyValues);
 					jComboBox.addItem("");
-				}
+				//}
 
 				String wrk;
 				XFHashMap keyValues;
@@ -7982,13 +7982,13 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
 
-			boolean blankItemRequired = false;
+			//boolean blankItemRequired = false;
 			XFHashMap blankKeyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 				for (int j = 0; j < dialog_.getBatchFieldList().size(); j++) {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getBatchFieldList().get(j).getTableAlias() + "." + dialog_.getBatchFieldList().get(j).getFieldID())) {
 						if (dialog_.getBatchFieldList().get(j).isNullable()) {
-							blankItemRequired = true;
+							//blankItemRequired = true;
 							if (dialog_.getBatchFieldList().get(j).isVisibleOnPanel()
 								|| dialog_.getBatchFieldList().get(j).isControledByFieldOtherThan(this)) {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getBatchFieldList().get(j).getValue());
@@ -8001,10 +8001,10 @@ class XF110_SubListBatchComboBox extends JPanel implements XFEditableField {
 					}
 				}
 			}
-			if (blankItemRequired) {
+			//if (blankItemRequired) {
 				tableKeyValuesList.add(blankKeyValues);
 				jComboBox.addItem("");
-			}
+			//}
 
 			try {
 				String wrk = "";

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2017 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -43,11 +43,19 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M15";
-	public static final String VERSION  = "1.3.15";
+	public static final String FULL_VERSION  = "V1.R3.M17";
+	public static final String VERSION  = "1.3.17";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2017 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.17
+	//・XF110,200,310のマスター系プロンプトリストに常にブランク行を入れるようにした（ユーザに明示的に選択してもらうため）
+	//
+	//1.3.16
+	//・XF100,110,300で検索条件にセッション属性を設定して入力不可にするとエラーになる問題を修正した
+	//・更新不可テーブルをCopyTableRecords(...)で扱えないようにした
+	//・varchar項目での上限サイズチェックがはずれていた問題を修正した
+	//
 	//1.3.15
 	//・InputDialogのsetFileChooser(...)でCurrentDirectoryを指定できるようにした
 	//・TextFileOperatorにresetCursor()のメソッドを組み込んだ

@@ -3505,7 +3505,7 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 		}
 
 		if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-			xFTextArea = new XFTextArea("", fieldOptions, dialog_.getSession().systemFont);
+			xFTextArea = new XFTextArea(dataSize, "", fieldOptions, dialog_.getSession().systemFont);
 			xFTextArea.setLocation(5, 0);
 			xFTextArea.setEditable(false);
 			component = xFTextArea;
@@ -5270,15 +5270,96 @@ class XF300_Filter extends JPanel {
 			if (componentType.equals("PROMPT_CALL")) {
 				xFPromptCall.setValue(mapValue.toString());
 			}
-			if (mapValue.toString().equals("")) {
+			if (!this.isEditable_ && mapValue.toString().equals("")) {
 				isValidated = false;
 			}
 		} else {
-			if (!this.isEditable_) {
+			if (!this.isEditable_ && !this.isValueSpecified()) {
 				isValidated = false;
 			}
 		}
 		return isValidated;
+	}
+	
+	public boolean isValueSpecified() {
+		boolean result = false;
+		String wrkStr = "";
+		if (componentType.equals("TEXTFIELD") || componentType.equals("ASSISTFIELD")) {
+			if (componentType.equals("TEXTFIELD")) {
+				wrkStr = (String)xFTextField.getInternalValue();
+			}
+			if (componentType.equals("ASSISTFIELD")) {
+				wrkStr = (String)xFInputAssistField.getInternalValue();
+			}
+			if (!wrkStr.equals("")) {
+				if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+					if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+						result = true;
+					}
+				} else {
+					result = true;
+				}
+			}
+		}
+		if (componentType.equals("KUBUN_LIST")) {
+			if (jComboBox.getSelectedIndex() >= 0) {
+				wrkStr = (String)keyValueList.get(jComboBox.getSelectedIndex());
+				if (!wrkStr.equals("")) {
+					result = true;
+				}
+			}
+		}
+		if (componentType.equals("VALUES_LIST") || componentType.equals("RECORDS_LIST")) {
+			if (jComboBox.getSelectedIndex() >= 0) {
+				wrkStr = (String)jComboBox.getSelectedItem();
+				if (!wrkStr.equals("")) {
+					result = true;
+				}
+			}
+		}
+		if (componentType.equals("PROMPT_CALL")) {
+			wrkStr = (String)xFPromptCall.getInternalValue();
+			if (!wrkStr.equals("")) {
+				if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+					if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+						result = true;
+					}
+				} else {
+					result = true;
+				}
+			}
+		}
+		if (componentType.equals("BOOLEAN")) {
+			wrkStr = (String)xFCheckBox.getInternalValue();
+			if (!wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("DATE")) {
+			wrkStr = (String)xFDateField.getInternalValue();
+			if (wrkStr != null && !wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("YMONTH")) {
+			wrkStr = (String)xFYMonthBox.getInternalValue();
+			if (!wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("MSEQ")) {
+			wrkStr = (String)xFMSeqBox.getInternalValue();
+			if (!wrkStr.equals("0")) {
+				result = true;
+			}
+		}
+		if (componentType.equals("FYEAR")) {
+			wrkStr = (String)xFFYearBox.getInternalValue();
+			if (!wrkStr.equals("")) {
+				result = true;
+			}
+		}
+		return result;
 	}
 
 	public void setValue(Object value){

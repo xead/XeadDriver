@@ -2329,7 +2329,7 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 						component.setLocation(5, 0);
 					} else {
 						if (dataType.equals("VARCHAR") || dataType.equals("LONG VARCHAR")) {
-							component = new XFTextArea(dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
+							component = new XFTextArea(dataSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
 							component.setLocation(5, 0);
 						} else {
 							if (dataTypeOptionList.contains("URL")) {
@@ -3272,13 +3272,13 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 			tableKeyValuesList.clear();
 			jComboBox.removeAllItems();
 
-			boolean blankItemRequired = false;
+			//boolean blankItemRequired = false;
 			XFHashMap blankKeyValues = new XFHashMap();
 			for (int i = 0; i < referTable_.getWithKeyFieldIDList().size(); i++) {
 				for (int j = 0; j < dialog_.getFieldList().size(); j++) {
 					if (referTable_.getWithKeyFieldIDList().get(i).equals(dialog_.getFieldList().get(j).getTableAlias() + "." + dialog_.getFieldList().get(j).getFieldID())) {
 						if (dialog_.getFieldList().get(j).isNullable()) {
-							blankItemRequired = true;
+							//blankItemRequired = true;
 							if (dialog_.getFieldList().get(j).isVisibleOnPanel()
 								|| dialog_.getFieldList().get(j).isControledByFieldOtherThan(this)) {
 								blankKeyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), dialog_.getFieldList().get(j).getValue());
@@ -3291,10 +3291,10 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 					}
 				}
 			}
-			if (blankItemRequired) {
+			//if (blankItemRequired) {
 				tableKeyValuesList.add(blankKeyValues);
 				jComboBox.addItem("");
-			}
+			//}
 
 			try {
 				XFHashMap keyValues;
@@ -3302,7 +3302,6 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 				while (operator.next()) {
 					keyValues = new XFHashMap();
 					for (int i = 0; i < keyFieldList.size(); i++) {
-						//keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), operator.getValueOf(keyFieldList.get(i)).toString());
 						keyValues.addValue(referTable_.getWithKeyFieldIDList().get(i), operator.getValueOf(keyFieldList.get(i)).toString());
 					}
 					tableKeyValuesList.add(keyValues);

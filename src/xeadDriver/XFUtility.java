@@ -5302,10 +5302,15 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 	private ArrayList<String> dataTypeOptionList;
 	private JTextArea jTextArea = new JTextArea();
 	private int rows_ = 2;
+	private int digits_ = 5;
 	private String oldValue = "";
 
-	public XFTextArea(String dataTypeOptions, String fieldOptions, String fontName){
+	public XFTextArea(int digits, String dataTypeOptions, String fieldOptions, String fontName){
 		super();
+		digits_ = digits;
+		if (digits_ == 0) {
+			digits_ = 2147483647;
+		}
 		String wrkStr;
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		fieldOptions_ = fieldOptions;
@@ -5340,6 +5345,7 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		jTextArea.setFont(new java.awt.Font(fontName, 0, XFUtility.FONT_SIZE));
 		jTextArea.setLineWrap(true);
 		jTextArea.setWrapStyleWord(false);
+		jTextArea.setDocument(new LimitedDocument(this));
 		this.getViewport().add(jTextArea, null);
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ROWS");
@@ -5355,7 +5361,8 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 
 		int fieldHeight = rows_ * XFUtility.FIELD_UNIT_HEIGHT + (rows_-1) * XFUtility.FIELD_VERTICAL_MARGIN;
 		if (rows_ == 1) {
-			fieldHeight = XFUtility.FIELD_UNIT_HEIGHT + XFUtility.FIELD_VERTICAL_MARGIN;
+			//fieldHeight = XFUtility.FIELD_UNIT_HEIGHT + XFUtility.FIELD_VERTICAL_MARGIN;
+			fieldHeight = XFUtility.FIELD_UNIT_HEIGHT;
 		}
 		this.setSize(fieldWidth, fieldHeight);
 		this.addFocusListener(new ScrollPaneFocusListener());
@@ -5472,22 +5479,25 @@ class XFTextArea extends JScrollPane implements XFEditableField {
 		return rows_;
 	}
 
-//	class LimitedDocument extends PlainDocument {
-//		private static final long serialVersionUID = 1L;
-//		XFTextArea adaptee;
-//		LimitedDocument(XFTextArea adaptee) {
-//		  this.adaptee = adaptee;
-//		}
-//		public void insertString(int offset, String str, AttributeSet a) {
-//			try {
+	class LimitedDocument extends PlainDocument {
+		private static final long serialVersionUID = 1L;
+		XFTextArea adaptee;
+		LimitedDocument(XFTextArea adaptee) {
+		  this.adaptee = adaptee;
+		}
+		public void insertString(int offset, String str, AttributeSet a) {
+			try {
 //				if (offset < adaptee.digits_ && super.getLength() < adaptee.digits_) {
 //					super.insertString( offset, str, a );
 //				}
-//			} catch (BadLocationException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//	}
+				if (offset + str.length() <= adaptee.digits_ && super.getLength() + str.length() <= adaptee.digits_ ) {
+					super.insertString( offset, str, a );
+				}
+			} catch (BadLocationException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }
 
 class XFInputAssistField extends JComboBox implements XFEditableField {

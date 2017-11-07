@@ -38,7 +38,6 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 ////////////////////////////////////////////////////////////////////
 // This is a public class that can be used in Table-Script.       //
@@ -133,6 +132,10 @@ public class XFTextFileOperator {
        	return isValidCursorPos();
     }
     
+    public int getRowCount() {
+    	return rowList.size();
+    }
+    
     public int getRowIndex() {
     	return cursorPos;
     }
@@ -170,10 +173,14 @@ public class XFTextFileOperator {
     	if (separator_.equals("")) {
     		array.add(rowData);
     	} else {
-    		StringTokenizer tokenizer = new StringTokenizer(rowData, separator_);
-    		while (tokenizer.hasMoreTokens()) {
-        		array.add(tokenizer.nextToken());
-    		}
+//    		StringTokenizer tokenizer = new StringTokenizer(rowData, separator_);
+//    		while (tokenizer.hasMoreTokens()) {
+//        		array.add(tokenizer.nextToken());
+//    		}
+    		String[] strValue = rowData.split(separator_, -1);
+    		for (int i = 0 ; i < strValue.length ; i++){
+        		array.add(strValue[i]);
+  		    }
     	}
     	return array;
     }

@@ -2843,11 +2843,11 @@ class XF110_Filter extends JPanel {
 			if (componentType.equals("PROMPT_CALL")) {
 				xFPromptCall.setValue(mapValue.toString());
 			}
-			if (mapValue.toString().equals("")) {
+			if (!this.isEditable_ && mapValue.toString().equals("")) {
 				isValidated = false;
 			}
 		} else {
-			if (!this.isEditable_) {
+			if (!this.isEditable_ && !this.isValueSpecified()) {
 				isValidated = false;
 			}
 		}

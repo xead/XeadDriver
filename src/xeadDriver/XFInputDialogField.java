@@ -145,7 +145,7 @@ public class XFInputDialogField extends JPanel {
 			}
 		}
 		if (inputType_.equals("LISTBOX")) {
-			((JComboBox)component).setEditable(isEditable_);
+			((JComboBox)component).setEnabled(isEditable_);
 			((JComboBox)component).setFocusable(isEditable_);
 		}
 		if (inputType_.equals("CHECKBOX")) {
@@ -430,6 +430,7 @@ public class XFInputDialogField extends JPanel {
 			});
 		}
    }
+
    public void setFileChooser(String title, String extentions) {
 	   setFileChooser(title, extentions, "");
    }
@@ -445,6 +446,35 @@ public class XFInputDialogField extends JPanel {
 					jFileChooser.setFileFilter(new FileNameExtensionFilter(extention, extention));
 				}
 			}
+			if (!currentFolder.equals("")) {
+				try {
+					File folder = new File(currentFolder);
+					jFileChooser.setCurrentDirectory(folder);
+				} catch (Exception e1) {}
+			}
+			jButton = new JButton();
+			ImageIcon imageIcon = new ImageIcon(xeadDriver.XFInputDialogField.class.getResource("prompt.png"));
+		 	jButton.setIcon(imageIcon);
+			jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
+			this.add(jButton, BorderLayout.EAST);
+			this.setBounds(this.getBounds().x, this.getBounds().y, this.getBounds().width + 26, this.getBounds().height);
+			jButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					jFileChooser_actionPerformed(e);
+				}
+			});
+		}
+   }
+
+   public void setDirectoryChooser(String title) {
+	   setDirectoryChooser(title, "");
+   }
+   
+   public void setDirectoryChooser(String title, String currentFolder) {
+		if (inputType_.equals("ALPHA")) {
+			jFileChooser = new JFileChooser();
+			jFileChooser.setDialogTitle(title);
+			jFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			if (!currentFolder.equals("")) {
 				try {
 					File folder = new File(currentFolder);

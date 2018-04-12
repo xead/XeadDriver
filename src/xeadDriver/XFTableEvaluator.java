@@ -253,6 +253,9 @@ public class XFTableEvaluator {
     				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
     				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
     					int length = Integer.parseInt(workElement.getAttribute("Size"));
+    					if (workElement.getAttribute("Type").contains("VARCHAR")) {
+    						length = value.toString().length();
+    					}
     					withKeyList_.add(fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length));
     				} else {
     					withKeyList_.add(fieldID_ + operand_ + value);
@@ -334,6 +337,9 @@ public class XFTableEvaluator {
 //					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
     				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
     					int length = Integer.parseInt(workElement.getAttribute("Size"));
+    					if (workElement.getAttribute("Type").contains("VARCHAR")) {
+    						length = value.toString().length();
+    					}
     					withKeyList_.add(prefix + " " + fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length) + " " + postfix);
     				} else {
     					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);

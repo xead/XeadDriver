@@ -325,7 +325,28 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		//////////////////////////////
 		// Set panel configurations //
 		//////////////////////////////
-		jLabelSessionID.setText(session_.getSessionID());
+		if (session_.userMenus.equals("ALL")) {
+			jLabelSessionID.setText("<html><u><font color='blue'>" + session_.getSessionID());
+			jLabelSessionID.addMouseListener(new MouseAdapter() {
+				@Override public void mouseClicked(MouseEvent e) {
+					try {
+						HashMap<String, Object> parmMap = new HashMap<String, Object>();
+						parmMap.put("NRSESSION", session_.getSessionID());
+						session_.executeFunction("ZF051", parmMap);
+					} catch (Exception e1) {
+						JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
+					}
+				}
+				@Override public void mouseEntered(MouseEvent e) {
+					setCursor(session_.editorKit.getLinkCursor());
+				}
+				@Override public void mouseExited(MouseEvent e) {
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+			});
+		} else {
+			jLabelSessionID.setText(session_.getSessionID());
+		}
 		jLabelFunctionID.setText(dialog_.jLabelFunctionID.getText());
 		FontMetrics metrics = jLabelFunctionID.getFontMetrics(jLabelFunctionID.getFont());
 		jPanelInfo.setPreferredSize(new Dimension(metrics.stringWidth(jLabelFunctionID.getText()), 35));
@@ -3136,10 +3157,10 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
 			jLabelFieldComment.setText(wrkStr);
-			jLabelFieldComment.setForeground(Color.blue);
+			//jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
-			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 6, this.getPreferredSize().height));
+			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr.replaceAll("<.+?>", "")) + 6, this.getPreferredSize().height));
 		}
 
 		if (dataTypeOptionList.contains("ZIPADRS")) {

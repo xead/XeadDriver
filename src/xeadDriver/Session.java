@@ -114,7 +114,7 @@ public class Session extends JFrame {
 	private String digestAlgorithmForUser = "MD5";
 	private int countOfExpandForUser = 1;
 	private boolean isValueSaltedForUser = false;
-	private String userMenus = "";
+	public String userMenus = "";
 	private String userTable = "";
 	private String userFilterValueTable = "";
 	private String variantsTable = "";
@@ -179,7 +179,7 @@ public class Session extends JFrame {
 	private JScrollPane jScrollPaneMenu = new JScrollPane();
 	private JTabbedPane jTabbedPaneMenu = new JTabbedPane();
 	private JEditorPane jEditorPaneNews = new JEditorPane();
-	private HTMLEditorKit editorKit = new HTMLEditorKit();
+	public HTMLEditorKit editorKit = new HTMLEditorKit();
 	private ImageIcon imageIcon = null;
 	private JTextArea jTextAreaMessages = new JTextArea();
 	private JScrollPane jScrollPaneMessages = new JScrollPane();
@@ -2263,7 +2263,11 @@ public class Session extends JFrame {
 						break;
 					}
 				}
-				taxAmount = (int)Math.floor(amount * rate);
+				if (amount >= 0) {
+					taxAmount = (int)Math.floor(amount * rate);
+				} else {
+					taxAmount = (int)Math.ceil(amount * rate);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -2287,7 +2291,11 @@ public class Session extends JFrame {
 						break;
 					}
 				}
-				taxAmount = (int)Math.floor(amount * rate);
+				if (amount >= 0) {
+					taxAmount = (int)Math.floor(amount * rate);
+				} else {
+					taxAmount = (int)Math.ceil(amount * rate);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

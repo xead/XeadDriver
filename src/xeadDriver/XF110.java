@@ -640,7 +640,28 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		} else {
 			initialReadCount = Integer.parseInt(functionElement_.getAttribute("InitialReadCount"));
 		}
-		jLabelSessionID.setText(session_.getSessionID());
+		if (session_.userMenus.equals("ALL")) {
+			jLabelSessionID.setText("<html><u><font color='blue'>" + session_.getSessionID());
+			jLabelSessionID.addMouseListener(new MouseAdapter() {
+				@Override public void mouseClicked(MouseEvent e) {
+					try {
+						HashMap<String, Object> parmMap = new HashMap<String, Object>();
+						parmMap.put("NRSESSION", session_.getSessionID());
+						session_.executeFunction("ZF051", parmMap);
+					} catch (Exception e1) {
+						JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
+					}
+				}
+				@Override public void mouseEntered(MouseEvent e) {
+					setCursor(session_.editorKit.getLinkCursor());
+				}
+				@Override public void mouseExited(MouseEvent e) {
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+			});
+		} else {
+			jLabelSessionID.setText(session_.getSessionID());
+		}
 		if (instanceArrayIndex_ >= 0) {
 			jLabelFunctionID.setText("110" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
 		} else {

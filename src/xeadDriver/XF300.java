@@ -97,7 +97,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private XF300_Filter firstEditableFilter[] = new XF300_Filter[20];
 	private int rowsOfDisplayedFilters[] = new int[20];
 	@SuppressWarnings("unchecked")
-	private ArrayList<XF300_Filter> filterListArray[] = new ArrayList[20];
+	public ArrayList<XF300_Filter> filterListArray[] = new ArrayList[20];
 	@SuppressWarnings("unchecked")
 	private ArrayList<XF300_DetailColumn>[] detailColumnListArray = new ArrayList[20];
 	@SuppressWarnings("unchecked")
@@ -125,6 +125,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private JMenuItem[] jMenuItemToCallToAdd = new JMenuItem[20];
 	private JMenuItem[] jMenuItemToOutput = new JMenuItem[20];
 	private String[] actionToCallToAdd = new String[20];
+	private int initialReadCountArray[] = new int[20];
 	private boolean isHeaderResizing = false;
 	private boolean tablesReadyToUse;
 	private JPanel jPanelBottom = new JPanel();
@@ -620,7 +621,28 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		//////////////////////////////
 		// Set panel configurations //
 		//////////////////////////////
-		jLabelSessionID.setText(session_.getSessionID());
+		if (session_.userMenus.equals("ALL")) {
+			jLabelSessionID.setText("<html><u><font color='blue'>" + session_.getSessionID());
+			jLabelSessionID.addMouseListener(new MouseAdapter() {
+				@Override public void mouseClicked(MouseEvent e) {
+					try {
+						HashMap<String, Object> parmMap = new HashMap<String, Object>();
+						parmMap.put("NRSESSION", session_.getSessionID());
+						session_.executeFunction("ZF051", parmMap);
+					} catch (Exception e1) {
+						JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
+					}
+				}
+				@Override public void mouseEntered(MouseEvent e) {
+					setCursor(session_.editorKit.getLinkCursor());
+				}
+				@Override public void mouseExited(MouseEvent e) {
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+			});
+		} else {
+			jLabelSessionID.setText(session_.getSessionID());
+		}
 		if (instanceArrayIndex_ >= 0) {
 			jLabelFunctionID.setText("300" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
 		} else {
@@ -827,6 +849,11 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				detailReferTableListArray[i].add(new XF300_DetailReferTable((org.w3c.dom.Element)workSortingList.getElementAt(j), i, this));
 			}
 			initialMsgArray[i] = workElement.getAttribute("InitialMsg");
+			if (workElement.getAttribute("InitialReadCount").equals("")) {
+				initialReadCountArray[i] = 0;
+			} else {
+				initialReadCountArray[i] = Integer.parseInt(workElement.getAttribute("InitialReadCount"));
+			}
 			compiledScriptMapArray[i] = new HashMap<String, CompiledScript>();
 
 			////////////////////////////////////////////
@@ -1461,16 +1488,26 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		boolean readyToValidate;
 		boolean toBeSelected;
 		XFTableOperator detailTableOp, referTableOp;
+		int rowCount = 0;
+		int blockRows = 0;
+		int originalFromRow = 0;
+		int fromRow = originalFromRow;
  
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
 			clearTableRows(index);
 			referOperatorList.clear();
+			int countOfBlockUnit = initialReadCountArray[index];
 
 //			detailTableArray[index].runScript(index, "BR", ""); /* Script to be run BEFORE READ */
 
+			boolean dialogCheckReadRequested = false;
 			int countOfRows = 0;
-			detailTableOp = createTableOperator(detailTableArray[index].getSelectSQL());
+			if (countOfBlockUnit == 0) {
+				detailTableOp = createTableOperator(detailTableArray[index].getSelectSQL());
+			} else {
+				detailTableOp = createTableOperator(detailTableArray[index].getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
+			}
 			while (detailTableOp.next()) {
 
 				for (int i = 0; i < detailColumnListArray[index].size(); i++) {
@@ -1572,6 +1609,39 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 								workingRowListArray[index].add(new WorkingRow(index, cellObjectList, keyMap, columnMap, orderByValueList, orderByFieldTypeList));
 							}
 							countOfRows++;
+							blockRows++;
+							if (countOfBlockUnit > 0 && blockRows == countOfBlockUnit) {
+								detailTableOp = null; //clear heap//
+								dialogCheckReadRequested = true;
+								if (countOfRows > 0) {
+									jTableMainArray[index].scrollRectToVisible(jTableMainArray[index].getCellRect(countOfRows-1, 0, true));
+								}
+								//////////////////////////////////////
+								// row number of the first row is 0 //
+								//////////////////////////////////////
+								boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, countOfRows, fromRow+countOfBlockUnit, countOfBlockUnit);
+								if (repliedOK) {
+									blockRows = 0;
+									fromRow = session_.getDialogCheckRead().getNextRow();
+									countOfBlockUnit = session_.getDialogCheckRead().getCountUnit();
+									if (fromRow >= 0 && countOfBlockUnit >= 1) {
+										if (session_.getDialogCheckRead().isRestarting()) {
+											originalFromRow = session_.getDialogCheckRead().getNextRow();
+											rowCount = tableModelMainArray[index].getRowCount();
+											for (int i = 0; i < rowCount; i++) {
+												tableModelMainArray[index].removeRow(0);
+											}
+											countOfRows = 0;
+											workingRowListArray[index].clear();
+										}
+										detailTableOp = createTableOperator(detailTableArray[index].getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
+									} else {
+										break;
+									}
+								} else {
+									break;
+								}
+							}
 						}
 					}
 				}
@@ -1592,7 +1662,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			if (isToOverrideMessage) {
 				messageList.clear();
 				if (countOfRows > 0) {
-					jTableMainArray[index].setRowSelectionInterval(0, 0);
+					if (dialogCheckReadRequested) {
+						jTableMainArray[index].scrollRectToVisible(jTableMainArray[index].getCellRect(jTableMainArray[index].getModel().getRowCount()-1, 0, true));
+					} else {
+						jTableMainArray[index].scrollRectToVisible(jTableMainArray[index].getCellRect(0, 0, true));
+						jTableMainArray[index].setRowSelectionInterval(0, 0);
+					}
+					//jTableMainArray[index].setRowSelectionInterval(0, 0);
 					jTableMainArray[index].requestFocus();
 					if (detailFunctionIDArray[index].equals("NONE")) {
 						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage57"));
@@ -3363,7 +3439,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		boolean isToBeSelectedInFilterGroup = false;
 		String filterGroupID = "";
 		for (int i = 0; i < filterListArray[index].size(); i++) {
-			if (!filterListArray[index].get(i).getStringValue().equals("")) {
+			if (!filterListArray[index].get(i).isNative() && !filterListArray[index].get(i).getStringValue().equals("")) {
 				if (!filterGroupID.equals(filterListArray[index].get(i).getFilterGroupID())) {
 					if (!filterGroupID.equals("") && isToBeSelected) {
 						isToBeSelected = isToBeSelectedInFilterGroup;
@@ -3406,6 +3482,7 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 	private JLabel jLabelField = new JLabel();
 	private JLabel jLabelFieldComment = new JLabel();
 	private XFTextField xFTextField = null;
+	private XF300_LinkedField xFLinkedField = null;
 	private XFCheckBox xFCheckBox = null;
 	private XFDateField xFDateField = null;
 	private XFTextArea xFTextArea = null;
@@ -3560,33 +3637,40 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 											component = new XFByteaField(byteaTypeFieldID, fieldOptions, dialog_.getSession());
 											component.setLocation(5, 0);
 										} else {
-											xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
-											xFTextField.setLocation(5, 0);
-											xFTextField.setEditable(false);
-											wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
-											if (!wrkStr.equals("")) {
-												String wrk;
-												int fieldWidth = 0;
-												FontMetrics metrics = xFTextField.getFontMetrics(xFTextField.getFont());
-												try {
-													XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
-													operator.addKeyValue("IDUSERKUBUN", wrkStr);
-													operator.setOrderBy("SQLIST");
-													while (operator.next()) {
-														keyValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
-														wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
-														textValueList.add(wrk);
-														if (metrics.stringWidth(wrk) > fieldWidth) {
-															fieldWidth = metrics.stringWidth(wrk);
+											if (fieldOptions.contains("LINKED_CALL(")) {
+												xFLinkedField = new XF300_LinkedField(dataSize, fieldOptions, dialog_.getSession().systemFont, dialog_);
+												xFLinkedField.setLocation(5, 0);
+												xFLinkedField.setEditable(false);
+												component = xFLinkedField;
+											} else {
+												xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
+												xFTextField.setLocation(5, 0);
+												xFTextField.setEditable(false);
+												wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
+												if (!wrkStr.equals("")) {
+													String wrk;
+													int fieldWidth = 0;
+													FontMetrics metrics = xFTextField.getFontMetrics(xFTextField.getFont());
+													try {
+														XFTableOperator operator = dialog_.createTableOperator("Select", dialog_.getSession().getTableNameOfUserVariants());
+														operator.addKeyValue("IDUSERKUBUN", wrkStr);
+														operator.setOrderBy("SQLIST");
+														while (operator.next()) {
+															keyValueList.add(operator.getValueOf("KBUSERKUBUN").toString().trim());
+															wrk = operator.getValueOf("TXUSERKUBUN").toString().trim();
+															textValueList.add(wrk);
+															if (metrics.stringWidth(wrk) > fieldWidth) {
+																fieldWidth = metrics.stringWidth(wrk);
+															}
 														}
+														xFTextField.setSize(fieldWidth + 10, xFTextField.getHeight());
+													} catch (Exception e) {
+														e.printStackTrace(dialog_.getExceptionStream());
+														dialog_.setErrorAndCloseFunction();
 													}
-													xFTextField.setSize(fieldWidth + 10, xFTextField.getHeight());
-												} catch (Exception e) {
-													e.printStackTrace(dialog_.getExceptionStream());
-													dialog_.setErrorAndCloseFunction();
 												}
+												component = xFTextField;
 											}
-											component = xFTextField;
 										}
 									}
 								}
@@ -3620,10 +3704,10 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
 			jLabelFieldComment.setText(wrkStr);
-			jLabelFieldComment.setForeground(Color.blue);
+			//jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
-			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 5, this.getPreferredSize().height));
+			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr.replaceAll("<.+?>", "")) + 5, this.getPreferredSize().height));
 			this.add(jLabelFieldComment, BorderLayout.EAST);
 		}
 
@@ -4754,6 +4838,7 @@ class XF300_Filter extends JPanel {
 	private ArrayList<String> fieldOptionList;
 	private String componentType = "";
 	private String operandType = "";
+	private String operand = "";
 	private int dataSize = 5;
 	private int decimalSize = 0;
 	private JPanel jPanelField = new JPanel();
@@ -4775,6 +4860,7 @@ class XF300_Filter extends JPanel {
 	private boolean isReflect = false;
 	private boolean isEditable_ = true;
 	private boolean isHidden = false;
+	private boolean isNative = false;
 	private int index_ = 0;
 	private String filterGroupID = "";
 
@@ -4813,7 +4899,10 @@ class XF300_Filter extends JPanel {
 		if (!workElement.getAttribute("Decimal").equals("")) {
 			decimalSize = Integer.parseInt(workElement.getAttribute("Decimal"));
 		}
-
+		if (!dataTypeOptionList.contains("VIRTUAL") && tableID.equals(dialog_.getDetailTable(index).getTableID())) {
+			isNative = true;
+		}
+		
 		if (fieldOptionList.contains("VERTICAL")) {
 			isVertical = true;
 		}
@@ -4828,26 +4917,34 @@ class XF300_Filter extends JPanel {
 		}
 
 		operandType = "EQ";
+		operand = " = ";
 		if (fieldOptionList.contains("GE")) {
 			operandType = "GE";
+			operand = " >= ";
 		}
 		if (fieldOptionList.contains("GT")) {
 			operandType = "GT";
+			operand = " > ";
 		}
 		if (fieldOptionList.contains("LE")) {
 			operandType = "LE";
+			operand = " <= ";
 		}
 		if (fieldOptionList.contains("LT")) {
 			operandType = "LT";
+			operand = " < ";
 		}
 		if (fieldOptionList.contains("SCAN")) {
 			operandType = "SCAN";
+			operand = " LIKE ";
 		}
 		if (fieldOptionList.contains("GENERIC")) {
 			operandType = "GENERIC";
+			operand = " LIKE ";
 		}
 		if (fieldOptionList.contains("REFLECT")) {
 			operandType = "REFLECT";
+			operand = "";
 		}
 		if (operandType.equals("REFLECT")) {
 			isReflect = true;
@@ -5113,6 +5210,10 @@ class XF300_Filter extends JPanel {
 	
 	public boolean isHidden() {
 		return isHidden;
+	}
+	
+	public boolean isNative() {
+		return isNative;
 	}
 
 	public boolean isVerticalPosition(){
@@ -5400,7 +5501,7 @@ class XF300_Filter extends JPanel {
 		}
 	}
 	
-	public Object getValue(){
+	public Object getValue() {
 		Object value = "";
 		String wrkStr = "";
 		if (componentType.equals("TEXTFIELD") || componentType.equals("ASSISTFIELD")) {
@@ -5464,6 +5565,125 @@ class XF300_Filter extends JPanel {
 		}
 		if (componentType.equals("FYEAR")) {
 			value = (String)xFFYearBox.getInternalValue();
+		}
+		return value;
+	}
+
+	public String getSQLWhereValue(){
+		String value = "";
+		String wrkStr = "";
+		if (!operandType.equals("")) {
+
+			if (componentType.equals("TEXTFIELD") || componentType.equals("ASSISTFIELD")) {
+				if (componentType.equals("TEXTFIELD")) {
+					wrkStr = (String)xFTextField.getInternalValue();
+				}
+				if (componentType.equals("ASSISTFIELD")) {
+					wrkStr = (String)xFInputAssistField.getInternalValue();
+				}
+				if (!wrkStr.equals("")) {
+					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+						if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+							value = fieldID + operand + wrkStr;
+						}
+					} else {
+						if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME")) {
+							wrkStr = wrkStr.replace("-", "");
+							wrkStr = wrkStr.replace("/", "");
+							value = fieldID + operand + wrkStr;
+						} else {
+							if (this.getBasicType().equals("DATETIME")) {
+								String whereValue = XFUtility.getWhereValueOfDateTimeSegment(operandType, wrkStr);
+								if (whereValue.equals("")) {
+									JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("FunctionMessage62") + wrkStr + XFUtility.RESOURCE.getString("FunctionMessage63"));
+								} else {
+									value = fieldID + whereValue;
+								}
+							} else {
+								if (operandType.equals("SCAN")) {
+									value = "UPPER(" + fieldID + ") LIKE UPPER('%" + wrkStr + "%')";
+								} else {
+									if (operandType.equals("GENERIC")) {
+										value = "UPPER(" + fieldID + ") LIKE UPPER('" + wrkStr + "%')";
+									} else {
+										value = fieldID + operand + "'" + wrkStr + "'";
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (componentType.equals("KUBUN_LIST")) {
+				wrkStr = (String)keyValueList.get(jComboBox.getSelectedIndex());
+				if (!wrkStr.equals("")) {
+					value = fieldID + operand + "'" + wrkStr + "'";
+				}
+			}
+			if (componentType.equals("VALUES_LIST")) {
+				wrkStr = (String)jComboBox.getSelectedItem();
+				if (!wrkStr.equals("")) {
+					value = fieldID + operand + "'" + wrkStr + "'";
+				}
+			}
+			if (componentType.equals("PROMPT_CALL")) {
+				wrkStr = (String)xFPromptCall.getInternalValue();
+				if (!wrkStr.equals("")) {
+					if (wrkStr.contains(";")) {
+						StringBuffer bf = new StringBuffer();
+						StringTokenizer workTokenizer = new StringTokenizer(wrkStr, ";" );
+						while (workTokenizer.hasMoreTokens()) {
+							if (!bf.toString().equals("")) {
+								bf.append(" or ");
+							}
+							bf.append(fieldID + operand + "'" + workTokenizer.nextToken() + "'");
+						}
+						value = bf.toString();
+					} else {
+						if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
+							if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+								value = fieldID + operand + wrkStr;
+							}
+						} else {
+							if (operand.equals(" LIKE ")) {
+								value = fieldID + operand + "'%" + wrkStr + "%'";
+							} else {
+								value = fieldID + operand + "'" + wrkStr + "'";
+							}
+						}
+					}
+				}
+			}
+			if (componentType.equals("BOOLEAN")) {
+				wrkStr = (String)xFCheckBox.getInternalValue();
+				if (!wrkStr.equals("")) {
+					value = fieldID + operand + "'" + wrkStr + "'";
+				}
+			}
+			if (componentType.equals("DATE")) {
+				wrkStr = (String)xFDateField.getInternalValue();
+				if (wrkStr != null && !wrkStr.equals("")) {
+					value = fieldID + operand + "'" + wrkStr + "'";
+				}
+			}
+			if (componentType.equals("YMONTH")) {
+				wrkStr = (String)xFYMonthBox.getInternalValue();
+				if (!wrkStr.equals("")) {
+					value = fieldID + operand + "'" + wrkStr + "'";
+				}
+			}
+			if (componentType.equals("MSEQ")) {
+				wrkStr = (String)xFMSeqBox.getInternalValue();
+				if (!wrkStr.equals("0")) {
+					value = fieldID + operand + wrkStr;
+				}
+			}
+			if (componentType.equals("FYEAR")) {
+				wrkStr = (String)xFFYearBox.getInternalValue();
+				if (!wrkStr.equals("")) {
+					value = fieldID + operand + wrkStr;
+				}
+			}
 		}
 		return value;
 	}
@@ -7102,6 +7322,161 @@ class XF300_DetailTable extends Object {
 	        scriptList.add(new XFScript(tableID, element, dialog_.getSession().getTableNodeList()));
 		}
 	}
+	public String getSelectSQL(int fromRow, int thruRow){
+		StringBuffer buf = new StringBuffer();
+		XF300_HeaderField headerField;
+		ArrayList<String> fieldIDList = new ArrayList<String>();
+
+		if (dbName.contains("postgresql:") || dbName.contains("mysql:")) {
+
+			/////////////////////////////////////////////////////
+			// SELECT fields FROM table WHERE ... ORDER BY ... //
+			//   LIMIT (thruRow-fromRow+1) OFFSET fromRow      //
+			/////////////////////////////////////////////////////
+			buf.append(getSelectSQL());
+			buf.append(" limit ");
+			buf.append(thruRow - fromRow + 1);
+			buf.append(" offset ");
+			buf.append(fromRow);
+
+		} else {
+
+			if (dbName.contains("derby:")) {
+
+				////////////////////////////////////////////////////////////////////
+				// SELECT fields FROM table WHERE ... ORDER BY ...                //
+				//   OFFSET fromRow ROWS FETCH NEXT (thruRow-fromRow+1) ROWS ONLY //
+				////////////////////////////////////////////////////////////////////
+				buf.append(getSelectSQL());
+				buf.append(" offset ");
+				buf.append(fromRow);
+				buf.append(" rows fetch next ");
+				buf.append(thruRow - fromRow + 1);
+				buf.append(" rows only");
+
+			} else {
+
+				////////////////////////////////////////////////////////////////////////////
+				// SELECT * FROM (SELECT fields, row_number() OVER (ORDER BY ...) rNum    //
+				//	 FROM table WHERE ... )t WHERE t.rNum >= fromRow AND t.rNum < thruRow //
+				////////////////////////////////////////////////////////////////////////////
+
+				///////////////////////////
+				// Fields to be selected //
+				///////////////////////////
+				int count = 0;
+				buf.append("select * from (select ");
+				for (int i = 0; i < dialog_.getDetailColumnList(tabIndex_).size(); i++) {
+					if (dialog_.getDetailColumnList(tabIndex_).get(i).getTableID().equals(tableID)
+							&& !dialog_.getDetailColumnList(tabIndex_).get(i).isVirtualField()
+							&& !dialog_.getDetailColumnList(tabIndex_).get(i).getBasicType().equals("BYTEA")) {
+						if (!fieldIDList.contains(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID())) {
+							if (count > 0) {
+								buf.append(", ");
+							}
+							count++;
+							buf.append(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID());
+							fieldIDList.add(dialog_.getDetailColumnList(tabIndex_).get(i).getFieldID());
+						}
+					}
+				}
+				buf.append(", row_number() over ");
+
+				//////////////////////
+				// Order-by section //
+				//////////////////////
+				if (this.hasOrderByAsItsOwnFields) {
+					ArrayList<String> orderByFieldList = getOrderByFieldIDList(dialog_.isListingInNormalOrder(tabIndex_));
+					if (orderByFieldList.size() > 0) {
+						int pos0,pos1;
+						buf.append("(order by ");
+						for (int i = 0; i < orderByFieldList.size(); i++) {
+							if (i > 0) {
+								buf.append(",");
+							}
+							pos0 = orderByFieldList.get(i).indexOf(".");
+							pos1 = orderByFieldList.get(i).indexOf("(A)");
+							if (pos1 >= 0) {
+								buf.append(orderByFieldList.get(i).substring(pos0+1, pos1));
+							} else {
+								pos1 = orderByFieldList.get(i).indexOf("(D)");
+								if (pos1 >= 0) {
+									buf.append(orderByFieldList.get(i).substring(pos0+1, pos1));
+									buf.append(" DESC ");
+								} else {
+									buf.append(orderByFieldList.get(i).substring(pos0+1, orderByFieldList.get(i).length()));
+								}
+							}
+						}
+					} else {
+						buf.append("(order by ");
+						for (int i = 0; i < keyFieldIDList.size(); i++) {
+							if (i > 0) {
+								buf.append(",");
+							}
+							buf.append(keyFieldIDList.get(i));
+							if (!dialog_.isListingInNormalOrder(tabIndex_)) {
+								buf.append(" DESC ");
+							}
+						}
+					}
+					buf.append(") rNum");
+				}
+
+				//////////////
+				// Table ID //
+				//////////////
+				buf.append(" from ");
+				buf.append(tableID);
+
+				///////////////////
+				// where section //
+				///////////////////
+				fixedWhere = XFUtility.getFixedWhereValue(detailTableElement_.getAttribute("FixedWhere"), dialog_.getSession());
+				buf.append(" where (") ;
+				count = -1;
+				for (int i = 0; i < headerKeyFieldIDList.size(); i++) {
+					count++;
+					if (count > 0) {
+						buf.append(" and (") ;
+					}
+					buf.append(keyFieldIDList.get(i)) ;
+					buf.append("=") ;
+					headerField = dialog_.getHeaderFieldObjectByID(dialog_.getHeaderTable().getTableID(), "", headerKeyFieldIDList.get(i));
+					buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(), headerField.getInternalValue(), dbName)) ;
+					buf.append(")") ;
+				}
+				String filterGroupID = "";
+				for (int i = 0; i < dialog_.filterListArray[tabIndex_].size(); i++) {
+					if (dialog_.filterListArray[tabIndex_].get(i).isNative() && !dialog_.filterListArray[tabIndex_].get(i).getStringValue().equals("")) {
+						count++;
+						if (filterGroupID.equals(dialog_.filterListArray[tabIndex_].get(i).getFilterGroupID())
+								&& !filterGroupID.equals("")) {
+							buf.append(" or ");
+							buf.append(dialog_.filterListArray[tabIndex_].get(i).getSQLWhereValue());
+						} else {
+							if (count > 0) {
+								buf.append(" and (");
+							}
+							filterGroupID = dialog_.filterListArray[tabIndex_].get(i).getFilterGroupID();
+							buf.append(dialog_.filterListArray[tabIndex_].get(i).getSQLWhereValue());
+							buf.append(")") ;
+						}
+					}
+				}
+				if (!fixedWhere.equals("")) {
+					buf.append(" and (");
+					buf.append(fixedWhere);
+					buf.append(") ");
+				}
+				buf.append(" ) t where t.rNum >= ");
+				buf.append(fromRow);
+				buf.append(" and t.rNum < ");
+				buf.append(thruRow);
+			}
+		}
+		return buf.toString();
+	}
 	
 	public String getSelectSQL(){
 		int count;
@@ -7143,17 +7518,36 @@ class XF300_DetailTable extends Object {
 		// Where section //
 		///////////////////
 		fixedWhere = XFUtility.getFixedWhereValue(detailTableElement_.getAttribute("FixedWhere"), dialog_.getSession());
-		buf.append(" where ") ;
+		buf.append(" where (") ;
 		count = -1;
 		for (int i = 0; i < headerKeyFieldIDList.size(); i++) {
 			count++;
 			if (count > 0) {
-				buf.append(" and ") ;
+				buf.append(" and (") ;
 			}
 			buf.append(keyFieldIDList.get(i)) ;
 			buf.append("=") ;
 			headerField = dialog_.getHeaderFieldObjectByID(dialog_.getHeaderTable().getTableID(), "", headerKeyFieldIDList.get(i));
 			buf.append(XFUtility.getTableOperationValue(headerField.getBasicType(), headerField.getInternalValue(), dbName)) ;
+			buf.append(")") ;
+		}
+		String filterGroupID = "";
+		for (int i = 0; i < dialog_.filterListArray[tabIndex_].size(); i++) {
+			if (dialog_.filterListArray[tabIndex_].get(i).isNative() && !dialog_.filterListArray[tabIndex_].get(i).getStringValue().equals("")) {
+				count++;
+				if (filterGroupID.equals(dialog_.filterListArray[tabIndex_].get(i).getFilterGroupID())
+						&& !filterGroupID.equals("")) {
+					buf.append(" or ");
+					buf.append(dialog_.filterListArray[tabIndex_].get(i).getSQLWhereValue());
+				} else {
+					if (count > 0) {
+						buf.append(" and (");
+					}
+					filterGroupID = dialog_.filterListArray[tabIndex_].get(i).getFilterGroupID();
+					buf.append(dialog_.filterListArray[tabIndex_].get(i).getSQLWhereValue());
+					buf.append(")") ;
+				}
+			}
 		}
 		if (!fixedWhere.equals("")) {
 			buf.append(" and (");

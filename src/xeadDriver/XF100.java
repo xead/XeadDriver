@@ -666,7 +666,28 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		////////////////////////////////
 		// Setup Panel Configurations //
 		////////////////////////////////
-		jLabelSessionID.setText(session_.getSessionID());
+		if (session_.userMenus.equals("ALL")) {
+			jLabelSessionID.setText("<html><u><font color='blue'>" + session_.getSessionID());
+			jLabelSessionID.addMouseListener(new MouseAdapter() {
+				@Override public void mouseClicked(MouseEvent e) {
+					try {
+						HashMap<String, Object> parmMap = new HashMap<String, Object>();
+						parmMap.put("NRSESSION", session_.getSessionID());
+						session_.executeFunction("ZF051", parmMap);
+					} catch (Exception e1) {
+						JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
+					}
+				}
+				@Override public void mouseEntered(MouseEvent e) {
+					setCursor(session_.editorKit.getLinkCursor());
+				}
+				@Override public void mouseExited(MouseEvent e) {
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+			});
+		} else {
+			jLabelSessionID.setText(session_.getSessionID());
+		}
 		if (instanceArrayIndex_ >= 0) {
 			jLabelFunctionID.setText("100" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
 		} else {
@@ -2939,7 +2960,9 @@ class XF100_Filter extends JPanel {
 			xFFYearBox.setValue(value.toString());
 		}
 		if (componentType.equals("KUBUN_LIST")) {
-			jComboBox.setSelectedIndex(keyValueList.indexOf(value.toString()));
+			if (keyValueList.indexOf(value.toString()) != -1) {
+				jComboBox.setSelectedIndex(keyValueList.indexOf(value.toString()));
+			}
 		}
 		if (componentType.equals("VALUES_LIST") || componentType.equals("RECORDS_LIST")) {
 			for (int i = 0; i < jComboBox.getItemCount(); i++) {
@@ -3704,7 +3727,12 @@ class XF100_Filter extends JPanel {
 			}
 		}
 		if (componentType.equals("KUBUN_LIST")) {
-			value = (String)keyValueList.get(jComboBox.getSelectedIndex());
+			//if (jComboBox.getSelectedIndex() == -1) {
+			//	jComboBox.setSelectedIndex(0);
+			//	value = (String)keyValueList.get(0);
+			//} else {
+				value = (String)keyValueList.get(jComboBox.getSelectedIndex());
+			//}
 		}
 		if (componentType.equals("VALUES_LIST")) {
 			value = (String)jComboBox.getSelectedItem();

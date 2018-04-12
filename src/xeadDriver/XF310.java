@@ -555,7 +555,28 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		///////////////////////////////////////
 		// Set variants for panel components //
 		///////////////////////////////////////
-		jLabelSessionID.setText(session_.getSessionID());
+		if (session_.userMenus.equals("ALL")) {
+			jLabelSessionID.setText("<html><u><font color='blue'>" + session_.getSessionID());
+			jLabelSessionID.addMouseListener(new MouseAdapter() {
+				@Override public void mouseClicked(MouseEvent e) {
+					try {
+						HashMap<String, Object> parmMap = new HashMap<String, Object>();
+						parmMap.put("NRSESSION", session_.getSessionID());
+						session_.executeFunction("ZF051", parmMap);
+					} catch (Exception e1) {
+						JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
+					}
+				}
+				@Override public void mouseEntered(MouseEvent e) {
+					setCursor(session_.editorKit.getLinkCursor());
+				}
+				@Override public void mouseExited(MouseEvent e) {
+					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+			});
+		} else {
+			jLabelSessionID.setText(session_.getSessionID());
+		}
 		if (instanceArrayIndex_ >= 0) {
 			jLabelFunctionID.setText("310" + "-" + instanceArrayIndex_ + "-" + functionElement_.getAttribute("ID"));
 		} else {
@@ -4033,10 +4054,10 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "COMMENT");
 		if (!wrkStr.equals("")) {
 			jLabelFieldComment.setText(wrkStr);
-			jLabelFieldComment.setForeground(Color.blue);
+			//jLabelFieldComment.setForeground(Color.blue);
 			jLabelFieldComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 			FontMetrics metrics = jLabelFieldComment.getFontMetrics(jLabelFieldComment.getFont());
-			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr) + 6, this.getPreferredSize().height));
+			this.setPreferredSize(new Dimension(this.getPreferredSize().width + metrics.stringWidth(wrkStr.replaceAll("<.+?>", "")) + 6, this.getPreferredSize().height));
 		}
 
 		if (dataTypeOptionList.contains("ZIPADRS")) {

@@ -396,7 +396,7 @@ public class XFInputDialogField extends JPanel {
 					Object value;
 					try {
 						setCursor(new Cursor(Cursor.WAIT_CURSOR));
-						//
+
 						HashMap<String, Object> fieldValuesMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToPutList_.size(); i++) {
 							value = dialog_.getValueOfFieldByParmID(fieldsToPutList_.get(i));
@@ -404,8 +404,12 @@ public class XFInputDialogField extends JPanel {
 								fieldValuesMap.put(fieldsToPutToList_.get(i), value);
 							}
 						}
-						//
+						fieldValuesMap.put("RETURN_TO", functionID_);
+
 						HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
+						if (returnMap.get("RETURN_TO") != null) {
+							dialog_.returnTo(returnMap.get("RETURN_TO").toString());
+						}
 						if (!returnMap.get("RETURN_CODE").equals("99")) {
 							HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 							for (int i = 0; i < fieldsToGetList_.size(); i++) {
@@ -432,7 +436,9 @@ public class XFInputDialogField extends JPanel {
    }
 
    public void setFileChooser(String title, String extentions) {
-	   setFileChooser(title, extentions, "");
+		if (inputType_.equals("ALPHA")) {
+			setFileChooser(title, extentions, ((JTextField)component).getText());
+		}
    }
    
    public void setFileChooser(String title, String extentions, String currentFolder) {
@@ -467,7 +473,9 @@ public class XFInputDialogField extends JPanel {
    }
 
    public void setDirectoryChooser(String title) {
-	   setDirectoryChooser(title, "");
+		if (inputType_.equals("ALPHA")) {
+			setDirectoryChooser(title, ((JTextField)component).getText());
+		}
    }
    
    public void setDirectoryChooser(String title, String currentFolder) {

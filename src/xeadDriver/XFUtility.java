@@ -4779,13 +4779,31 @@ class XFTextField extends JPanel implements XFEditableField {
 		decimal_ = decimal;
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		fieldOptions_ = fieldOptions;
+		String alignment = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ALIGNMENT");
 
 		if (basicType_.equals("INTEGER")) {
-			jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+			if (alignment.equals("") || alignment.equals("RIGHT")) {
+				jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+			}
+			if (alignment.equals("CENTER")) {
+				jTextField.setHorizontalAlignment(SwingConstants.CENTER);
+			}
+			if (alignment.equals("LEFT")) {
+				jTextField.setHorizontalAlignment(SwingConstants.LEFT);
+			}
 			jTextField.setText(this.getFormattedNumber("0"));
 		} else {
 			if (basicType_.equals("FLOAT")) {
-				jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+				if (alignment.equals("") || alignment.equals("RIGHT")) {
+					jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+				}
+				if (alignment.equals("CENTER")) {
+					jTextField.setHorizontalAlignment(SwingConstants.CENTER);
+				}
+				if (alignment.equals("LEFT")) {
+					jTextField.setHorizontalAlignment(SwingConstants.LEFT);
+				}
+
 				String wrkStr = "";
 				if (decimal_ == 0) {
 					wrkStr = "0";
@@ -4810,7 +4828,15 @@ class XFTextField extends JPanel implements XFEditableField {
 				}
 				jTextField.setText(this.getFormattedNumber(wrkStr));
 			} else {
-				jTextField.setHorizontalAlignment(SwingConstants.LEFT);
+				if (alignment.equals("") || alignment.equals("LEFT")) {
+					jTextField.setHorizontalAlignment(SwingConstants.LEFT);
+				}
+				if (alignment.equals("CENTER")) {
+					jTextField.setHorizontalAlignment(SwingConstants.CENTER);
+				}
+				if (alignment.equals("RIGHT")) {
+					jTextField.setHorizontalAlignment(SwingConstants.RIGHT);
+				}
 			}
 		}
 		jTextField.addFocusListener(new ComponentFocusListener());

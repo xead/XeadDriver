@@ -37,13 +37,20 @@ import java.awt.FontMetrics;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
+import javax.swing.InputMap;
 import javax.swing.JDialog;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 
 ////////////////////////////////////////////////////////////////
 // This is a public class used in Table-Script.               //
@@ -64,6 +71,18 @@ public class XFInputDialog extends JDialog {
     private Dimension scrSize, dlgSize;
     private ArrayList<XFInputDialogField> fieldList = new ArrayList<XFInputDialogField>();
     private ArrayList<Integer> areaIndexList = new ArrayList<Integer>();
+	private Action helpAction = new AbstractAction(){
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e){
+			session_.browseHelp();
+		}
+	};
+	private Action escapeAction = new AbstractAction() {
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e) {
+			returnTo("MENU");
+		}
+	};
     private int reply;
 	private int nextLocationTopY = 6;
 	private int nextLocationCenterY = 6;
@@ -78,6 +97,14 @@ public class XFInputDialog extends JDialog {
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		jPanelMain.setLayout(new BorderLayout());
 		jPanelMain.setBorder(null);
+		InputMap inputMap  = jPanelMain.getInputMap(JPanel.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+		inputMap.clear();
+		ActionMap actionMap = jPanelMain.getActionMap();
+		actionMap.clear();
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
+		actionMap.put("HELP", helpAction);
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ESCAPE");
+		actionMap.put("ESCAPE", escapeAction);
 		jPanelTop.setLayout(null);
 		jPanelTop.setBorder(BorderFactory.createEtchedBorder());
 		jPanelCenter.setLayout(null);
@@ -268,6 +295,12 @@ public class XFInputDialog extends JDialog {
 	
 	public Session getSession() {
 		return session_;
+	}
+
+	void returnTo(String target) {
+		if (target.equals("MENU")) {
+			this.setVisible(false);
+		}
 	}
 
 	void jButtonClose_actionPerformed(ActionEvent e) {

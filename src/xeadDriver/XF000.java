@@ -134,7 +134,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jLabelTime.setText(XFUtility.RESOURCE.getString("TimerTime"));
 		jLabelTime.setBounds(new Rectangle(10, 42, 100, 20));
 		jTextFieldTime.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
-		jTextFieldTime.setBounds(new Rectangle(115, 40, 620, 25));
+		jTextFieldTime.setBounds(new Rectangle(115, 40, 740, 25));
 		jLabelCondition.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jLabelCondition.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelCondition.setHorizontalTextPosition(SwingConstants.LEADING);
@@ -168,8 +168,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jTextAreaMessages.setWrapStyleWord(true);
 		jTextAreaMessages.setOpaque(false);
 		jTextAreaMessages.setFocusable(true);
-		//DefaultCaret caret = (DefaultCaret)jTextAreaMessages.getCaret();
-		//caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 		jScrollPaneMessages.getViewport().add(jTextAreaMessages, null);
 		jPanelBottom.setPreferredSize(new Dimension(10, 35));
 		jPanelBottom.setLayout(new BorderLayout());
@@ -215,7 +213,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		});
 		jButtonStart.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonStart.setText(XFUtility.RESOURCE.getString("TimerStart"));
-		jButtonStart.setBounds(new Rectangle(180, 2, 140, 32));
+		jButtonStart.setBounds(new Rectangle(210, 2, 140, 32));
 		jButtonStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				isExecuted = true;
@@ -224,7 +222,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		});
 		jButtonStop.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonStop.setText(XFUtility.RESOURCE.getString("TimerStop"));
-		jButtonStop.setBounds(new Rectangle(355, 2, 140, 32));
+		jButtonStop.setBounds(new Rectangle(415, 2, 140, 32));
 		jButtonStop.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (timer != null) {
@@ -234,7 +232,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		});
 		jButtonIconify.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jButtonIconify.setText(XFUtility.RESOURCE.getString("Iconify"));
-		jButtonIconify.setBounds(new Rectangle(530, 2, 140, 32));
+		jButtonIconify.setBounds(new Rectangle(620, 2, 140, 32));
 		jButtonIconify.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				session_.setExtendedState(JFrame.ICONIFIED | session_.getExtendedState());
@@ -340,8 +338,8 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		if (!functionElement_.getAttribute("TimerOption").equals("")) {
 			this.setTitle(functionElement_.getAttribute("Name"));
 			this.setSize(new Dimension(scrSize.width, scrSize.height));
-			int width = 780;
-			int height = 450;
+			int width = 900; //780
+			int height = 600; //450
 			this.setPreferredSize(new Dimension(width, height));
 			int posX = (scrSize.width - width) / 2;
 			int posY = (scrSize.height - height) / 2;
@@ -425,12 +423,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			closeFunction();
 		}
-//		if (e.getID() == WindowEvent.WINDOW_ACTIVATED) {
-//			if (firstTime && functionElement_.getAttribute("TimerOption").equals("CONSOLE")) {
-//				runNow();
-//				firstTime = false;
-//			}
-//		}
 	}
 
 	public boolean isAvailable() {
@@ -457,6 +449,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			setErrorAndCloseFunction();
 		}
 
+		if (returnMap_.get("RETURN_TO") != null) {
+			returnTo(returnMap_.get("RETURN_TO").toString());
+		}
 		if (returnMap_.get("RETURN_CODE").equals("99")) {
 			errorHasOccured = true;
 		}
@@ -474,27 +469,28 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 
 	private void setBackgroundMessage(String message1, String message2) {
 		JScrollPane scrollPane = session_.getMessageComponent();
-		JTextArea textArea = (JTextArea)scrollPane.getViewport().getComponent(0);
+		if (scrollPane != null) {
+			JTextArea textArea = (JTextArea)scrollPane.getViewport().getComponent(0);
+			StringBuffer bf = new StringBuffer();
+			if (!textArea.getText().equals("")) {
+				bf.append(textArea.getText());
+				bf.append("\n");
+			}
+			bf.append("> ");
+			bf.append(message1);
+			if (!message2.equals("")) {
+				bf.append(" ");
+				bf.append(message2);
+			}
+			calendar = Calendar.getInstance();
+			bf.append("(");
+			bf.append(formatter.format(calendar.getTime()));
+			bf.append(")");
 
-		StringBuffer bf = new StringBuffer();
-		if (!textArea.getText().equals("")) {
-			bf.append(textArea.getText());
-			bf.append("\n");
+			textArea.setText(bf.toString());
+			scrollPane.getViewport().scrollRectToVisible(new Rectangle(0, Integer.MAX_VALUE - 1, 1, 1));
+			scrollPane.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 		}
-		bf.append("> ");
-		bf.append(message1);
-		if (!message2.equals("")) {
-			bf.append(" ");
-			bf.append(message2);
-		}
-		calendar = Calendar.getInstance();
-		bf.append("(");
-		bf.append(formatter.format(calendar.getTime()));
-		bf.append(")");
-
-		textArea.setText(bf.toString());
-		scrollPane.getViewport().scrollRectToVisible(new Rectangle(0, Integer.MAX_VALUE - 1, 1, 1));
-		scrollPane.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 	}
 
 	public void commit() {
@@ -561,6 +557,18 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	public void setErrorAndCloseFunction() {
 		errorHasOccured = true;
 		closeFunction();
+	}
+
+	void returnTo(String target) {
+		if (!target.equals("") && !target.equals(functionElement_.getAttribute("ID"))) {
+			if (target.equals("MENU")) {
+				returnMap_.put("RETURN_TO", "MENU");
+			}
+			closeFunction();
+		}
+		if (target.equals(functionElement_.getAttribute("ID"))) {
+			returnMap_.remove("RETURN_TO");
+		}
 	}
 
 	void closeFunction() {

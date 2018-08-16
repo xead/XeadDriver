@@ -133,7 +133,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	private Action escapeAction = new AbstractAction() {
 		private static final long serialVersionUID = 1L;
 		public void actionPerformed(ActionEvent e) {
-			returnToMenu();
+			returnTo("MENU");
 		}
 	};
 	private Action[] actionButtonArray = new Action[7];
@@ -871,9 +871,20 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		closeFunction();
 	}
 
-	void returnToMenu() {
-		returnMap_.put("RETURN_TO", "MENU");
-		closeFunction();
+//	void returnToMenu() {
+//		returnMap_.put("RETURN_TO", "MENU");
+//		closeFunction();
+//	}
+	void returnTo(String target) {
+		if (!target.equals("") && !target.equals(functionElement_.getAttribute("ID"))) {
+			if (target.equals("MENU")) {
+				returnMap_.put("RETURN_TO", "MENU");
+			}
+			closeFunction();
+		}
+		if (target.equals(functionElement_.getAttribute("ID"))) {
+			returnMap_.remove("RETURN_TO");
+		}
 	}
 
 	void closeFunction() {
@@ -1809,10 +1820,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 						}
 					}
 				}
-//				HashMap<String, Object> returnMap = session_.executeFunction(functionID, parmMap_);
 				HashMap<String, Object> returnMap = session_.executeFunction(functionID, workMap);
-				if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-					returnToMenu();
+				if (returnMap.get("RETURN_TO") != null) {
+					returnTo(returnMap.get("RETURN_TO").toString());
 				}
 				if (returnMap.get("RETURN_MESSAGE") == null) {
 					messageList.add(XFUtility.getMessageOfReturnCode(returnMap.get("RETURN_CODE").toString()));
@@ -2189,7 +2199,6 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 	private String errorMessage = "";
 	private boolean isNullable = true;
 	private boolean isKey = false;
-//	private boolean isKeyDependent = false;
 	private boolean isNoUpdate = false;
 	private boolean isFieldOnPrimaryTable = false;
 	private boolean isError = false;
@@ -3710,10 +3719,11 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 							fieldValuesMap.put(fieldsToPutToList_.get(i), value);
 						}
 					}
+					fieldValuesMap.put("RETURN_TO", dialog_.getFunctionID());
 
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
-					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-						dialog_.returnToMenu();
+					if (returnMap.get("RETURN_TO") != null) {
+						dialog_.returnTo(returnMap.get("RETURN_TO").toString());
 					}
 					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();

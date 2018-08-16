@@ -69,6 +69,7 @@ public class XFTableOperator {
     private String dbName = "";
     private String selectFields_ = "";
     private String orderBy_ = "";
+    private String additionalWhere_ = "";
     private String sqlText_ = "";
     private ArrayList<String> fieldIDList_ = new ArrayList<String>();
     //private ArrayList<String> physicalIDList_ = new ArrayList<String>();
@@ -396,6 +397,10 @@ public class XFTableOperator {
     	orderBy_ = text;
     }
 
+    public void addWhere(String text) {
+    	additionalWhere_ = text;
+    }
+
     public void setSqlText(String text) {
     	sqlText_ = text;
     }
@@ -421,6 +426,25 @@ public class XFTableOperator {
         				bf.append(withKeyList_.get(i));
         			}
         		}
+        		if (!additionalWhere_.equals("")) {
+        			if (!bf.toString().contains(" where ")) {
+            			bf.append(" where ");
+        			}
+        			if (additionalWhere_.toLowerCase().startsWith("AND ")
+        					|| additionalWhere_.toLowerCase().startsWith("AND(")) {
+        				bf.append(" ");
+        				bf.append(additionalWhere_);
+        			} else {
+        				if (additionalWhere_.toLowerCase().startsWith(" AND ")
+        						|| additionalWhere_.toLowerCase().startsWith(" AND(")) {
+        					bf.append(additionalWhere_);
+        				} else {
+        					bf.append(" and (");
+        					bf.append(additionalWhere_);
+        					bf.append(")");
+        				}
+        			}
+        		}
         		if (!orderBy_.equals("")) {
         			bf.append(" order by ");
         			bf.append(orderBy_);
@@ -434,6 +458,25 @@ public class XFTableOperator {
         			bf.append(" where ");
         			for (int i = 0; i < withKeyList_.size(); i++) {
         				bf.append(withKeyList_.get(i));
+        			}
+        		}
+        		if (!additionalWhere_.equals("")) {
+        			if (!bf.toString().contains(" where ")) {
+            			bf.append(" where ");
+        			}
+        			if (additionalWhere_.toLowerCase().startsWith("AND ")
+        					|| additionalWhere_.toLowerCase().startsWith("AND(")) {
+        				bf.append(" ");
+        				bf.append(additionalWhere_);
+        			} else {
+        				if (additionalWhere_.toLowerCase().startsWith(" AND ")
+        						|| additionalWhere_.toLowerCase().startsWith(" AND(")) {
+        					bf.append(additionalWhere_);
+        				} else {
+        					bf.append(" and (");
+        					bf.append(additionalWhere_);
+        					bf.append(")");
+        				}
         			}
         		}
         	}
@@ -480,6 +523,25 @@ public class XFTableOperator {
         				bf.append(withKeyList_.get(i));
         			}
         		}
+        		if (!additionalWhere_.equals("")) {
+        			if (!bf.toString().contains(" where ")) {
+            			bf.append(" where ");
+        			}
+        			if (additionalWhere_.toLowerCase().startsWith("AND ")
+        					|| additionalWhere_.toLowerCase().startsWith("AND(")) {
+        				bf.append(" ");
+        				bf.append(additionalWhere_);
+        			} else {
+        				if (additionalWhere_.toLowerCase().startsWith(" AND ")
+        						|| additionalWhere_.toLowerCase().startsWith(" AND(")) {
+        					bf.append(additionalWhere_);
+        				} else {
+        					bf.append(" and (");
+        					bf.append(additionalWhere_);
+        					bf.append(")");
+        				}
+        			}
+        		}
         	}
 
         	if (operation_.toUpperCase().equals("DELETE")) {
@@ -491,6 +553,25 @@ public class XFTableOperator {
         			bf.append(" where ");
         			for (int i = 0; i < withKeyList_.size(); i++) {
         				bf.append(withKeyList_.get(i));
+        			}
+        		}
+        		if (!additionalWhere_.equals("")) {
+        			if (!bf.toString().contains(" where ")) {
+            			bf.append(" where ");
+        			}
+        			if (additionalWhere_.toLowerCase().startsWith("AND ")
+        					|| additionalWhere_.toLowerCase().startsWith("AND(")) {
+        				bf.append(" ");
+        				bf.append(additionalWhere_);
+        			} else {
+        				if (additionalWhere_.toLowerCase().startsWith(" AND ")
+        						|| additionalWhere_.toLowerCase().startsWith(" AND(")) {
+        					bf.append(additionalWhere_);
+        				} else {
+        					bf.append(" and (");
+        					bf.append(additionalWhere_);
+        					bf.append(")");
+        				}
         			}
         		}
         	}

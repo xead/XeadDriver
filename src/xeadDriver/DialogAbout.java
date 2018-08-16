@@ -43,14 +43,24 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M19";
-	public static final String VERSION  = "1.3.19";
+	public static final String FULL_VERSION  = "V1.R3.M21";
+	public static final String VERSION  = "1.3.21";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2018 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.21
+	//・XF000をコンソールなしで実行するとinstance.callFunction(...)でエラーになるバグを修正
+	//・返値のRETURN_TOの値に応答するように広範囲で修正
+	//・XF110,200,300,310のフラットパネルにおいて、フィールドのアラインメントを指定できるようにした
+	//
+	//1.3.20
+	//・InputDialogのListBoxフィールドのsetEditable()にsetEnabled()を関連させた
+	//・setDirectoryChooser(...),setFileChooser(...)の使い勝手を改善した
+	//・XF300の絞り込み条件の強制選択オプションのバグを修正
+	//・XFTableOperatorにaddWhere(...)のメソッドを設けた
+	//
 	//1.3.19
 	//・XFInputDialogのフィールドにsetDirectoryChooser(...)のメソッドを追加した
-	//#InputDialogのListBoxフィールドのsetEditable()にsetEnabled()を関連させた
 	//・TableOperatorとTableEvaluatorでのVARCHARデータの扱いロジックを改善した
 	//
 	//1.3.18

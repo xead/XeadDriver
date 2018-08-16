@@ -149,7 +149,7 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	private Action escapeAction = new AbstractAction() {
 		private static final long serialVersionUID = 1L;
 		public void actionPerformed(ActionEvent e) {
-			returnToMenu();
+			returnTo("MENU");
 		}
 	};
 	private Action[] actionButtonArray = new Action[7];
@@ -907,10 +907,22 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		}
 	}
 
-	void returnToMenu() {
-		session_.removeMessageComponent(jScrollPaneMessages);
-		this.setVisible(false);
-		dialog_.returnToMenu();
+//	void returnToMenu() {
+//		session_.removeMessageComponent(jScrollPaneMessages);
+//		this.setVisible(false);
+//		dialog_.returnToMenu();
+//	}
+
+	void returnTo(String target) {
+		if (!target.equals("") && !target.equals(functionElement_.getAttribute("ID"))) {
+			if (target.equals("MENU")) {
+				dialog_.getReturnMap().put("RETURN_TO", "MENU");
+			}
+			closeFunction("EXIT");
+		}
+		if (target.equals(functionElement_.getAttribute("ID"))) {
+			dialog_.getReturnMap().remove("RETURN_TO");
+		}
 	}
 
 	void closeFunction(String code) {
@@ -5425,9 +5437,10 @@ class XF110_SubListCellEditorWithPromptCall extends JPanel implements XFTableCol
 							parmValueMap.put(fieldsToPutToList_.get(i), value);
 						}
 					}
+					parmValueMap.put("RETURN_TO", dialog_.getFunctionID());
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, parmValueMap);
-					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-						dialog_.returnToMenu();
+					if (returnMap.get("RETURN_TO") != null) {
+						dialog_.returnTo(returnMap.get("RETURN_TO").toString());
 					}
 					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
@@ -8401,10 +8414,11 @@ class XF110_SubListBatchPromptCall extends JPanel implements XFEditableField {
 							fieldValuesMap.put(fieldsToPutToList_.get(i), value);
 						}
 					}
+					fieldValuesMap.put("RETURN_TO", dialog_.getFunctionID());
 
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
-					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-						dialog_.returnToMenu();
+					if (returnMap.get("RETURN_TO") != null) {
+						dialog_.returnTo(returnMap.get("RETURN_TO").toString());
 					}
 					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();

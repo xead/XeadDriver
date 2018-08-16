@@ -354,7 +354,11 @@ public class Session extends JFrame {
 	}
 
 	public JScrollPane getMessageComponent() {
-		return messageComponentList.get(messageComponentList.size() - 1);
+		if (messageComponentList.size() == 0) {
+			return null;
+		} else {
+			return messageComponentList.get(messageComponentList.size() - 1);
+		}
 	}
 
 	public void removeMessageComponent(JScrollPane component) {
@@ -946,7 +950,7 @@ public class Session extends JFrame {
 		jSplitPane1.add(jScrollPaneMessages, JSplitPane.BOTTOM);
 
 		this.enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		this.setTitle(systemName + " " + systemVersion);
+		this.setTitle(systemName + " " + systemVersion + " - " + sessionID);
 		imageTitle = Toolkit.getDefaultToolkit().createImage(xeadDriver.Session.class.getResource("title32.png"));
 		this.setIconImage(imageTitle);
 		int shorterWidth1 = Math.round(screenSize.width * (float)0.9);

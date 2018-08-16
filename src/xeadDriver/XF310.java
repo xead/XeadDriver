@@ -157,7 +157,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	private Action escapeAction = new AbstractAction() {
 		private static final long serialVersionUID = 1L;
 		public void actionPerformed(ActionEvent e) {
-			returnToMenu();
+			returnTo("MENU");
 		}
 	};
 	private JPanel[] jPanelButtonArray = new JPanel[7];
@@ -1041,9 +1041,16 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		closeFunction();
 	}
 
-	void returnToMenu() {
-		returnMap_.put("RETURN_TO", "MENU");
-		closeFunction();
+	void returnTo(String target) {
+		if (!target.equals("") && !target.equals(functionElement_.getAttribute("ID"))) {
+			if (target.equals("MENU")) {
+				returnMap_.put("RETURN_TO", "MENU");
+			}
+			closeFunction();
+		}
+		if (target.equals(functionElement_.getAttribute("ID"))) {
+			returnMap_.remove("RETURN_TO");
+		}
 	}
 
 	void closeFunction() {
@@ -2326,8 +2333,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			// Call function exchanging map to get result //
 			////////////////////////////////////////////////
 			HashMap<String, Object> returnMap = session_.executeFunction(functionID, fieldValuesMap);
-			if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-				returnToMenu();
+			if (returnMap.get("RETURN_TO") != null) {
+				returnTo("MENU");
 			}
 			if (returnMap.get("RETURN_CODE").equals("00") && returnMap.size() > 1) {
 
@@ -6352,10 +6359,11 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 							}
 						}
 					}
+					parmValueMap.put("RETURN_TO", dialog_.getFunctionID());
 
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, parmValueMap);
-					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-						dialog_.returnToMenu();
+					if (returnMap.get("RETURN_TO") != null) {
+						dialog_.returnTo(returnMap.get("RETURN_TO").toString());
 					}
 					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
@@ -9703,9 +9711,10 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 							fieldValuesMap.put(fieldsToPutToList_.get(i), value);
 						}
 					}
+					fieldValuesMap.put("RETURN_TO", dialog_.getFunctionID());
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
-					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-						dialog_.returnToMenu();
+					if (returnMap.get("RETURN_TO") != null) {
+						dialog_.returnTo(returnMap.get("RETURN_TO").toString());
 					}
 					if (returnMap.get("RETURN_CODE").equals("00")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();

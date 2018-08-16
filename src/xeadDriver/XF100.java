@@ -111,7 +111,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	private Action escapeAction = new AbstractAction() {
 		private static final long serialVersionUID = 1L;
 		public void actionPerformed(ActionEvent e) {
-			returnToMenu();
+			returnTo("MENU");
 		}
 	};
 	private Action[] actionButtonArray = new Action[7];
@@ -770,9 +770,16 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		closeFunction();
 	}
 
-	void returnToMenu() {
-		returnMap_.put("RETURN_TO", "MENU");
-		closeFunction();
+	void returnTo(String target) {
+		if (!target.equals("") && !target.equals(functionElement_.getAttribute("ID"))) {
+			if (target.equals("MENU")) {
+				returnMap_.put("RETURN_TO", "MENU");
+			}
+			closeFunction();
+		}
+		if (target.equals(functionElement_.getAttribute("ID"))) {
+			returnMap_.remove("RETURN_TO");
+		}
 	}
 
 	void closeFunction() {
@@ -1276,8 +1283,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					} else {
 						messageList.add(returnMap.get("RETURN_MESSAGE").toString());
 					}
-					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-						returnToMenu();
+					if (returnMap.get("RETURN_TO") != null) {
+						returnTo(returnMap.get("RETURN_TO").toString());
 					}
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(null, e.getMessage());
@@ -1326,8 +1333,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 							} else {
 								messageList.add(returnMap.get("RETURN_MESSAGE").toString());
 							}
-							if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-								returnToMenu();
+							if (returnMap.get("RETURN_TO") != null) {
+								returnTo(returnMap.get("RETURN_TO").toString());
 							}
 						} catch (Exception e) {
 							JOptionPane.showMessageDialog(null, e.getMessage());
@@ -1915,6 +1922,7 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 								}
 							}
 						}
+						workMap.putAll(parmMap_);
 
 						try {
 							HashMap<String, Object> returnMap = session_.executeFunction(detailFunctionID, workMap);
@@ -1929,8 +1937,9 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 							} else {
 								messageList.add(returnMap.get("RETURN_MESSAGE").toString());
 							}
-							if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-								returnToMenu();
+							if (returnMap.get("RETURN_TO") != null) {
+								returnMap_.putAll(returnMap);
+								returnTo(returnMap.get("RETURN_TO").toString());
 							}
 						} catch (Exception e) {
 							messageList.add(XFUtility.RESOURCE.getString("FunctionError15") + " " + detailFunctionID);
@@ -3988,10 +3997,11 @@ class XF100_PromptCallField extends JPanel implements XFEditableField {
 						fieldValuesMap.put(fieldsToPutToList_.get(i), filter.getValue());
 					}
 				}
+				fieldValuesMap.put("RETURN_TO", dialog_.getFunctionID());
 				try {
 					HashMap<String, Object> returnMap = dialog_.getSession().executeFunction(functionID_, fieldValuesMap);
-					if (returnMap.get("RETURN_TO") != null && returnMap.get("RETURN_TO").equals("MENU")) {
-						dialog_.returnToMenu();
+					if (returnMap.get("RETURN_TO") != null) {
+						dialog_.returnTo(returnMap.get("RETURN_TO").toString());
 					}
 					if (!returnMap.get("RETURN_CODE").equals("99")) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();

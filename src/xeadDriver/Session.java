@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -129,6 +129,8 @@ public class Session extends JFrame {
 	private String menuIDUsing = "";
 	private String imageFileFolder = "";
 	private File outputFolder = null;
+	private String logFileFolder = "";
+	private int loggingSize = 0;
 	private String welcomePageURL = "";
 	private String dateFormat = "";
 	public String systemFont = "";
@@ -558,6 +560,26 @@ public class Session extends JFrame {
 			outputFolder = new File(wrkStr);
 			if (!outputFolder.exists()) {
 				outputFolder = null;
+			}
+		}
+		wrkStr = element.getAttribute("LogFileFolder"); 
+		if (wrkStr.equals("")) {
+			logFileFolder = currentFolder + File.separator + "log" + File.separator;
+		} else {
+			if (wrkStr.contains("<CURRENT>")) {
+				imageFileFolder = wrkStr.replace("<CURRENT>", currentFolder) + File.separator;
+			} else {
+				imageFileFolder = wrkStr + File.separator;
+			}
+		}
+		wrkStr = element.getAttribute("LoggingSize"); 
+		if (wrkStr.equals("")) {
+			loggingSize = 3000;
+		} else {
+			try {
+				loggingSize = Integer.parseInt(wrkStr);
+			} catch (Exception e) {
+				loggingSize = 3000;
 			}
 		}
 		if (application != null) {
@@ -2593,6 +2615,11 @@ public class Session extends JFrame {
 		}
 	}
 
+	public String getLogFileFolder() {
+		File logFileDir = new File(logFileFolder);
+		return logFileDir.getPath();
+	}
+
 	public int writeLogOfFunctionStarted(String functionID, String functionName) {
 		sqProgram++;
 		try {
@@ -2613,19 +2640,43 @@ public class Session extends JFrame {
 	public void writeLogOfFunctionClosed(int sqProgramOfFunction, String programStatus, String tableOperationLog, String errorLog) {
 		String logString = "";
 		StringBuffer bf = new StringBuffer();
-
-		if (tableOperationLog.length() > 3000) {
-			tableOperationLog = "... " + tableOperationLog.substring(tableOperationLog.length()-3000, tableOperationLog.length());
-		}
-		bf.append(tableOperationLog.replace("'", "\""));
+		bf.append(tableOperationLog);
 		if (!errorLog.equals("")) {
 			bf.append("\n<ERROR LOG>\n");
-			bf.append(errorLog.replace("'", "\""));
+			bf.append(errorLog);
 		}
 		logString = bf.toString();
-		if (logString.length() > 3800) {
-			logString = logString.substring(0, 3800) + " ...";
+
+		if (logString.length() > loggingSize) {
+			//tableOperationLog = "... " + tableOperationLog.substring(tableOperationLog.length()-3000, tableOperationLog.length());
+			String logFileName = "";
+			try{
+				File logFileDir = new File(logFileFolder);
+				if (!logFileDir.exists()) {
+					logFileDir.mkdir();
+				}
+				logFileName = logFileDir.getPath() + File.separator + "Log" + this.getSessionID() + "_" + sqProgramOfFunction + ".txt";
+
+				FileOutputStream fileOutputStream = new FileOutputStream(logFileName);
+				OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream, "UTF-8");
+				Writer writer = new BufferedWriter(outputStreamWriter);
+				writer.write(logString);
+				writer.close();
+			} catch(Exception ex){
+				JOptionPane.showMessageDialog(this, "It failed to process log file " + logFileName + "\n" + ex.getMessage());
+			}
+			logString = "Ref " + "Log" + this.getSessionID() + "_" + sqProgramOfFunction + ".txt";
 		}
+//		bf.append(tableOperationLog.replace("'", "\""));
+//		if (!errorLog.equals("")) {
+//			bf.append("\n<ERROR LOG>\n");
+//			bf.append(errorLog.replace("'", "\""));
+//		}
+//		logString = bf.toString();
+//		if (logString.length() > 3800) {
+//			logString = logString.substring(0, 3800) + " ...";
+//		}
+		logString = logString.replaceAll("'", "\"");
 
 		////////////////////////////////////////////////////////////////////////////
 		// Note that value of MS Access Date field is expressed like #2000-01-01# //
@@ -3549,7 +3600,6 @@ public class Session extends JFrame {
 		try {
 			desktop.browse(uri);
 		} catch (IOException ex) {
-			ex.printStackTrace();
 			JOptionPane.showMessageDialog(null, ex.getMessage());
 		}	
 	}

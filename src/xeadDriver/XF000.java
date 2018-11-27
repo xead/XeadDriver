@@ -458,8 +458,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public void setStatusMessage(String message) {
+		setStatusMessage(message, false);
+	}
+	public void setStatusMessage(String message, boolean isToReplaceLastLine) {
 		if (this.isVisible()) {
-			jTextAreaMessages.setText(getNewMessage(message, ""));
+			jTextAreaMessages.setText(getNewMessage(message, "", isToReplaceLastLine));
 			jScrollPaneMessages.getViewport().scrollRectToVisible(new Rectangle(0, Integer.MAX_VALUE - 1, 1, 1));
 			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
 		} else {
@@ -1140,11 +1143,23 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			jCheckBoxRunOffDay.setEnabled(true);
 		}
 	}
-	
+
 	private String getNewMessage(String newMessage1, String newMessage2) {
+		return getNewMessage(newMessage1, newMessage2, false);
+	}
+	private String getNewMessage(String newMessage1, String newMessage2, boolean isToReplaceLastLine) {
+		String lastTimeInfo = "";
 		StringBuffer bf = new StringBuffer();
 		if (!jTextAreaMessages.getText().equals("")) {
-			bf.append(jTextAreaMessages.getText());
+			if (isToReplaceLastLine) {
+				int pos1 = jTextAreaMessages.getText().lastIndexOf("\n");
+				bf.append(jTextAreaMessages.getText().substring(0, pos1));
+				String text2 = jTextAreaMessages.getText().substring(pos1, jTextAreaMessages.getText().length());
+				int pos2 = text2.lastIndexOf("(");
+				lastTimeInfo = text2.substring(pos2, text2.length()) + " - ";
+			} else {
+				bf.append(jTextAreaMessages.getText());
+			}
 			bf.append("\n");
 		}
 		bf.append("> ");
@@ -1153,6 +1168,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			bf.append(" ");
 			bf.append(newMessage2);
 		}
+		bf.append(lastTimeInfo);
 		calendar = Calendar.getInstance();
 		bf.append("(");
 		bf.append(formatter.format(calendar.getTime()));

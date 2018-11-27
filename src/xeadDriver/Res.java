@@ -318,6 +318,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "URLFont", "Times New Roman" },
 		{ "UserID", "User ID" },
 		{ "UserName", "User Name" },
+		{ "Warning", "(Warning)" },
 		{ "XLSComment1", "* Data was output into EXCEL sheet." },
 		{ "XLSComment2", "* These are subset with criteriaÅF" },
 		{ "XLSErrorMessage", "IOException of EXCEL data. Refer to session log for details." },

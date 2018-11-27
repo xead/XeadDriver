@@ -43,11 +43,26 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M21";
-	public static final String VERSION  = "1.3.21";
+	public static final String FULL_VERSION  = "V1.R3.M24";
+	public static final String VERSION  = "1.3.24";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2018 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.24
+	//・スクリプトでwarningのフィールドプロパティを扱えるようにした
+	//・見出し領域のフィールド値をコピーできるようにした
+	//・session.getLogFileFolder()を追加した
+	//・プロンプト利用の場合でも、XF300での終了キーや×ボタンで直前に戻るようにした
+	//・XF300からの返し値に見出し域項目がブランクでなければ組み込むようにした
+	//
+	//1.3.23
+	//・XF100,110,300の明細上でＵＲＬ項目をリンク表示するようにした
+	//・規定サイズ以上のテーブル操作ログを、規定フォルダにファイル出力するようにした
+	//
+	//1.3.22
+	//・XF100,300の機能ボタンのアクション「選択行を返す」に対応した
+	//・XF110,200,300,310のフィールド設定のキャプション幅に対応した
+	//
 	//1.3.21
 	//・XF000をコンソールなしで実行するとinstance.callFunction(...)でエラーになるバグを修正
 	//・返値のRETURN_TOの値に応答するように広範囲で修正

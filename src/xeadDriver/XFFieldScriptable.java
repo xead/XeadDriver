@@ -55,6 +55,8 @@ public interface XFFieldScriptable {
 	public void setEditable(boolean isEditable);
 	public String getError();
 	public void setError(String message);
+	public String getWarning();
+	public void setWarning(String message);
 	public void setValueList(String[] valueList);
 	public String[] getValueList();
 }

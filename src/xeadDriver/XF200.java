@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -949,6 +949,9 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public void setStatusMessage(String message) {
+		setStatusMessage(message, false);
+	}
+	public void setStatusMessage(String message, boolean isToReplaceLastLine) {
 		if (this.isVisible()) {
 			jTextAreaMessages.setText(message);
 			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
@@ -1443,11 +1446,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					fieldList.get(i).requestFocus();
 					isFirstErrorField = false;
 				}
-				//if (fieldList.get(i).isVisibleOnPanel()) {
-					messageList.add(fieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + fieldList.get(i).getError());
-				//} else {
-				//	messageList.add(fieldList.get(i).getError());
-				//}
+				messageList.add(fieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + fieldList.get(i).getError());
+			}
+			if (!fieldList.get(i).getWarning().equals("")) {
+				messageList.add(fieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + XFUtility.RESOURCE.getString("Warning") + fieldList.get(i).getWarning());
 			}
 			/////////////////////////////////////////////////////////
 			// required step to set focus on the first error field //
@@ -2197,6 +2199,7 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 	private JButton jButtonToRefferZipNo = null;
 	private String byteaTypeFieldID = "";
 	private String errorMessage = "";
+	private String warningMessage = "";
 	private boolean isNullable = true;
 	private boolean isKey = false;
 	private boolean isNoUpdate = false;
@@ -2304,8 +2307,13 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 			FontMetrics metrics = jLabelField.getFontMetrics(jLabelField.getFont());
 			jLabelField.setPreferredSize(new Dimension(metrics.stringWidth(fieldCaption), XFUtility.FIELD_UNIT_HEIGHT));
 		} else {
-			jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
-			XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
+			int captionWidth = XFUtility.DEFAULT_LABEL_WIDTH;
+			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION_WIDTH");
+			if (!wrkStr.equals("")) {
+				captionWidth = Integer.parseInt(wrkStr);
+			}
+			jLabelField.setPreferredSize(new Dimension(captionWidth, XFUtility.FIELD_UNIT_HEIGHT));
+			XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, captionWidth);
 		}
 
 		if (fieldOptionList.contains("PROMPT_LIST")) {
@@ -2722,7 +2730,8 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 			}
 		} else {
 			isError = false;
-			this.errorMessage = "";
+			errorMessage = "";
+			warningMessage = "";
 			if (component.isEditable()) {
 				component.setBackground(XFUtility.ACTIVE_COLOR);
 			} else {
@@ -3111,16 +3120,34 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 	public void setError(String message) {
 		if (!message.equals("")) {
 			setError(true);
-			if (this.errorMessage.equals("")) {
-				this.errorMessage = message;
+			if (errorMessage.equals("")) {
+				errorMessage = message;
 			} else {
-				this.errorMessage = this.errorMessage + " " +message;
+				if (!errorMessage.contains(message)) {
+					errorMessage = errorMessage + " " +message;
+				}
 			}
 		}
 	}
 
 	public String getError() {
 		return errorMessage;
+	}
+
+	public void setWarning(String message) {
+		if (!message.equals("")) {
+			if (warningMessage.equals("")) {
+				warningMessage = message;
+			} else {
+				if (!warningMessage.contains(message)) {
+					warningMessage = warningMessage + " " + message;
+				}
+			}
+		}
+	}
+
+	public String getWarning() {
+		return warningMessage;
 	}
 
 	public int getTabIndex() {

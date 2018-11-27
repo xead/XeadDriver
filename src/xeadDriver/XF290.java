@@ -362,6 +362,9 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	}
 
 	public void setStatusMessage(String message) {
+		setStatusMessage(message, false);
+	}
+	public void setStatusMessage(String message, boolean isToReplaceLastLine) {
 	}
 	
 	public void startProgress(String text, int maxValue) {
@@ -1297,6 +1300,13 @@ class XF290_Field implements XFFieldScriptable {
 	}
 
 	public String getError() {
+		return "";
+	}
+
+	public void setWarning(String message) {
+	}
+
+	public String getWarning() {
 		return "";
 	}
 

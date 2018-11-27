@@ -1104,6 +1104,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public void setStatusMessage(String message) {
+		setStatusMessage(message, false);
+	}
+	public void setStatusMessage(String message, boolean isToReplaceLastLine) {
 		if (this.isVisible()) {
 			jTextAreaMessages.setText(message);
 			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
@@ -2332,9 +2335,10 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			////////////////////////////////////////////////
 			// Call function exchanging map to get result //
 			////////////////////////////////////////////////
+			fieldValuesMap.put("RETURN_TO", getFunctionID());
 			HashMap<String, Object> returnMap = session_.executeFunction(functionID, fieldValuesMap);
 			if (returnMap.get("RETURN_TO") != null) {
-				returnTo("MENU");
+				returnTo(returnMap.get("RETURN_TO").toString());
 			}
 			if (returnMap.get("RETURN_CODE").equals("00") && returnMap.size() > 1) {
 
@@ -3450,11 +3454,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					headerFieldList.get(i).requestFocus();
 					topErrorFieldNotFound = false;
 				}
-				//if (headerFieldList.get(i).isVisibleOnPanel()) {
-					messageList.add(workRow, headerFieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + headerFieldList.get(i).getError());
-				//} else {
-				//	messageList.add(workRow, headerFieldList.get(i).getError());
-				//}
+				messageList.add(workRow, headerFieldList.get(i).getCaption()
+						+ XFUtility.RESOURCE.getString("Colon") + headerFieldList.get(i).getError());
+				workRow++;
+			}
+			if (!headerFieldList.get(i).getWarning().equals("")) {
+				messageList.add(workRow, headerFieldList.get(i).getCaption()
+						+ XFUtility.RESOURCE.getString("Colon") + XFUtility.RESOURCE.getString("Warning")
+						+ headerFieldList.get(i).getWarning());
 				workRow++;
 			}
 		}
@@ -3837,6 +3844,7 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 	private boolean isImage = false;
 	private boolean isError = false;
 	private String errorMessage = "";
+	private String warningMessage = "";
 	private int positionMargin = 0;
 	private ArrayList<String> additionalHiddenFieldList = new ArrayList<String>();
 	private Color foreground = Color.black;
@@ -3923,7 +3931,13 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 			FontMetrics metrics = jLabelField.getFontMetrics(jLabelField.getFont());
 			jLabelField.setPreferredSize(new Dimension(metrics.stringWidth(fieldCaption), XFUtility.FIELD_UNIT_HEIGHT));
 		} else {
-			jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+			//jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+			int captionWidth = XFUtility.DEFAULT_LABEL_WIDTH;
+			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION_WIDTH");
+			if (!wrkStr.equals("")) {
+				captionWidth = Integer.parseInt(wrkStr);
+			}
+			jLabelField.setPreferredSize(new Dimension(captionWidth, XFUtility.FIELD_UNIT_HEIGHT));
 			XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
 		}
 
@@ -4620,7 +4634,8 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 			}
 		} else {
 			isError = false;
-			this.errorMessage = "";
+			errorMessage = "";
+			warningMessage = "";
 			if (component.isEditable()) {
 				component.setBackground(XFUtility.ACTIVE_COLOR);
 			} else {
@@ -4636,16 +4651,34 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 	public void setError(String message) {
 		if (!message.equals("")) {
 			setError(true);
-			if (this.errorMessage.equals("")) {
-				this.errorMessage = message;
+			if (errorMessage.equals("")) {
+				errorMessage = message;
 			} else {
-				this.errorMessage = this.errorMessage + " " + message;
+				if (!errorMessage.contains(message)) {
+					errorMessage = errorMessage + " " + message;
+				}
 			}
 		}
 	}
 
 	public String getError() {
 		return errorMessage;
+	}
+
+	public void setWarning(String message) {
+		if (!message.equals("")) {
+			if (warningMessage.equals("")) {
+				warningMessage = message;
+			} else {
+				if (!warningMessage.contains(message)) {
+					warningMessage = warningMessage + " " + message;
+				}
+			}
+		}
+	}
+
+	public String getWarning() {
+		return warningMessage;
 	}
 
 	public void setColor(String color) {
@@ -6671,6 +6704,23 @@ class XF310_DetailRowNumber extends Object {
 					}
 				}
 			}
+			if (!this.isJustAdded && !dialog_.getDetailColumnList().get(i).getWarning().equals("")) {
+				rowNumber = this.getRowIndex() + 1;
+				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()) {
+					messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1")
+							+ rowNumber + XFUtility.RESOURCE.getString("LineNumber2")
+							+ XFUtility.RESOURCE.getString("Warning")
+							+ dialog_.getDetailColumnList().get(i).getWarning());
+				} else {
+					message = XFUtility.RESOURCE.getString("LineNumber1") + rowNumber
+							+ XFUtility.RESOURCE.getString("LineNumber2")
+							+ XFUtility.RESOURCE.getString("Warning")
+							+ dialog_.getDetailColumnList().get(i).getWarning();
+					if (!messageList.contains(message)) {
+						messageList.add(message);
+					}
+				}
+			}
 		}
 		
 		isJustAdded = false;
@@ -6704,6 +6754,24 @@ class XF310_DetailRowNumber extends Object {
 					}
 				}
 				countOfErrors++;
+			}
+			if (!dialog_.getDetailColumnList().get(i).getWarning().equals("")) {
+				rowNumber = this.getRowIndex() + 1;
+				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()) {
+					messageList.add(dialog_.getDetailColumnList().get(i).getCaption()
+							+ XFUtility.RESOURCE.getString("LineNumber1") + rowNumber
+							+ XFUtility.RESOURCE.getString("LineNumber2")
+							+ XFUtility.RESOURCE.getString("Warning")
+							+ dialog_.getDetailColumnList().get(i).getWarning());
+				} else {
+					message = XFUtility.RESOURCE.getString("LineNumber1") + rowNumber
+							+ XFUtility.RESOURCE.getString("LineNumber2")
+							+ XFUtility.RESOURCE.getString("Warning")
+							+ dialog_.getDetailColumnList().get(i).getWarning();
+					if (!messageList.contains(message)) {
+						messageList.add(message);
+					}
+				}
 			}
 		}
 		return countOfErrors;
@@ -6800,6 +6868,7 @@ class XF310_DetailColumn implements XFFieldScriptable {
 	private XFTableColumnEditor editor = null;
 	private boolean isError = false;
 	private String errorMessage = "";
+	private String warningMessage = "";
 	private String numberingID = "";
 	private int fieldRows = 1;
 	private String fieldLayout = "HORIZONTAL";
@@ -6996,7 +7065,7 @@ class XF310_DetailColumn implements XFFieldScriptable {
 
 							} else {
 								if (dataTypeOptionList.contains("YMONTH")) {
-									fieldWidth = 100;
+									fieldWidth = 120;
 									editor = new XF310_CellEditorWithYMonthBox(dialog_);
 
 								} else {
@@ -7228,7 +7297,8 @@ class XF310_DetailColumn implements XFFieldScriptable {
 			isError = true;
 		} else {
 			isError = false;
-			this.errorMessage = "";
+			errorMessage = "";
+			warningMessage = "";
 		}
 	}
 
@@ -7239,16 +7309,34 @@ class XF310_DetailColumn implements XFFieldScriptable {
 	public void setError(String message){
 		if (!message.equals("")) {
 			setError(true);
-			if (this.errorMessage.equals("")) {
-				this.errorMessage = message;
+			if (errorMessage.equals("")) {
+				errorMessage = message;
 			} else {
-				this.errorMessage = this.errorMessage + " " + message;
+				if (!errorMessage.contains(message)) {
+					errorMessage = errorMessage + " " + message;
+				}
 			}
 		}
 	}
 
 	public boolean isError() {
 		return isError;
+	}
+
+	public String getWarning(){
+		return warningMessage;
+	}
+
+	public void setWarning(String message){
+		if (!message.equals("")) {
+			if (warningMessage.equals("")) {
+				warningMessage = message;
+			} else {
+				if (!warningMessage.contains(message)) {
+					warningMessage = warningMessage + " " + message;
+				}
+			}
+		}
 	}
 
 	public String getByteaTypeFieldID(){

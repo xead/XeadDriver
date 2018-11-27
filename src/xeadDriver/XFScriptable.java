@@ -60,4 +60,5 @@ public interface XFScriptable {
 	public PrintStream getExceptionStream();
 	public void setErrorAndCloseFunction();
 	public void setStatusMessage(String message);
+	public void setStatusMessage(String message, boolean isToReplaceLastLine);
 }

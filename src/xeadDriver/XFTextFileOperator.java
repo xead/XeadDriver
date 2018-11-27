@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2014 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -173,10 +173,6 @@ public class XFTextFileOperator {
     	if (separator_.equals("")) {
     		array.add(rowData);
     	} else {
-//    		StringTokenizer tokenizer = new StringTokenizer(rowData, separator_);
-//    		while (tokenizer.hasMoreTokens()) {
-//        		array.add(tokenizer.nextToken());
-//    		}
     		String[] strValue = rowData.split(separator_, -1);
     		for (int i = 0 ; i < strValue.length ; i++){
         		array.add(strValue[i]);

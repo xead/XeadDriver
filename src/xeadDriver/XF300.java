@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -92,6 +92,8 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	private JPanel jPanelTop = new JPanel();
 	private JPanel jPanelCenter = new JPanel();
 	private JButton jButtonList = new JButton();
+	private JButton buttonReturnRows[] = new JButton[20];
+	private String functionKeyToSelectRows[] = new String[20];
 	private JPanel jPanelFilters[] = new JPanel[20];
 	private JScrollPane jScrollPaneFilters[] = new JScrollPane[20];
 	private XF300_Filter firstEditableFilter[] = new XF300_Filter[20];
@@ -255,6 +257,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			jTableMainArray[i].setSelectionForeground(Color.black);
 			jTableMainArray[i].addKeyListener(new XF300_jTableMain_keyAdapter(this));
 			jTableMainArray[i].addMouseListener(new XF300_jTableMain_mouseAdapter(this));
+			jTableMainArray[i].addMouseMotionListener(new XF300_jTableMain_mouseMotionAdapter(this));
 			jTableMainArray[i].addFocusListener(new XF300_jTableMain_focusAdapter(this));
 			JTableHeader header = new JTableHeader(jTableMainArray[i].getColumnModel()) {
 				private static final long serialVersionUID = 1L;
@@ -282,6 +285,10 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						jScrollPaneTable.updateUI();
 					}
 					isHeaderResizing = false;
+				}
+				public void mouseClicked(MouseEvent e) {
+					headersRenderer[jTabbedPane.getSelectedIndex()].checkSelection(e);
+					jScrollPaneTable.updateUI();
 				}
 				public void mouseExited(MouseEvent e) {
 					setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -924,6 +931,19 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			jTableMainArray[i].setModel(tableModelMainArray[i]);
 			detailColumnListArray[i].clear();
 
+			/////////////////////////////////////////////////
+			// Setup information of detail function called //
+			/////////////////////////////////////////////////
+			detailParmTypeArray[i] = workElement.getAttribute("ParmType");
+			detailParmAdditionalArray[i] = workElement.getAttribute("ParmAdditional");
+			detailInitialListingArray[i] = workElement.getAttribute("InitialListing");
+			detailFunctionIDArray[i] = workElement.getAttribute("DetailFunction");
+			if (detailFunctionIDArray[i].equals("NONE")) {
+				jTableMainArray[i].setRowSelectionAllowed(false);
+			} else {
+				jTableMainArray[i].setRowSelectionAllowed(true);
+			}
+
 			///////////////////////////////
 			// Add Column on table model //
 			///////////////////////////////
@@ -937,7 +957,18 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					detailColumnListArray[i].get(j).setColumnIndex(columnIndex);
 				}
 			}
-			headersRenderer[i] = new TableHeadersRenderer(i, this); 
+			boolean isWithCheckBox = false;
+			if (detailFunctionIDArray[i].equals("")) {
+				NodeList buttonList = detailTableArray[i].getDetailTableElement().getElementsByTagName("Button");
+				for (int j = 0; j < buttonList.getLength(); j++) {
+					workElement = (org.w3c.dom.Element)buttonList.item(j);
+					if (workElement.getAttribute("Action").equals("RETURN_ROWS")) {
+						isWithCheckBox = true;
+						break;
+					}
+				}
+			}
+			headersRenderer[i] = new TableHeadersRenderer(i, this, isWithCheckBox); 
 			cellsRenderer[i] = new TableCellsRenderer(headersRenderer[i]); 
 			jTableMainArray[i].setRowHeight(headersRenderer[i].getHeight());
 			tableModelMainArray[i].addColumn(""); //column index:0 //
@@ -1048,19 +1079,18 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 			}
-
-			/////////////////////////////////////////////////
-			// Setup information of detail function called //
-			/////////////////////////////////////////////////
-			detailParmTypeArray[i] = workElement.getAttribute("ParmType");
-			detailParmAdditionalArray[i] = workElement.getAttribute("ParmAdditional");
-			detailInitialListingArray[i] = workElement.getAttribute("InitialListing");
-			detailFunctionIDArray[i] = workElement.getAttribute("DetailFunction");
-			if (detailFunctionIDArray[i].equals("NONE")) {
-				jTableMainArray[i].setRowSelectionAllowed(false);
-			} else {
-				jTableMainArray[i].setRowSelectionAllowed(true);
-			}
+//			/////////////////////////////////////////////////
+//			// Setup information of detail function called //
+//			/////////////////////////////////////////////////
+//			detailParmTypeArray[i] = workElement.getAttribute("ParmType");
+//			detailParmAdditionalArray[i] = workElement.getAttribute("ParmAdditional");
+//			detailInitialListingArray[i] = workElement.getAttribute("InitialListing");
+//			detailFunctionIDArray[i] = workElement.getAttribute("DetailFunction");
+//			if (detailFunctionIDArray[i].equals("NONE")) {
+//				jTableMainArray[i].setRowSelectionAllowed(false);
+//			} else {
+//				jTableMainArray[i].setRowSelectionAllowed(true);
+//			}
 		}
 		
 
@@ -1091,6 +1121,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	protected void processWindowEvent(WindowEvent e) {
 		super.processWindowEvent(e);
 		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
+			returnMap_.put("RETURN_TO", "");
 			closeFunction();
 		}
 	}
@@ -1176,6 +1207,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public void setStatusMessage(String message) {
+		setStatusMessage(message, false);
+	}
+	public void setStatusMessage(String message, boolean isToReplaceLastLine) {
 		if (this.isVisible()) {
 			jTextAreaMessages.setText(message);
 			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
@@ -1427,6 +1461,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		actionF6 = "";
 		actionF8 = "";
 
+		buttonReturnRows[tabIndex] = null;
+		functionKeyToSelectRows[tabIndex] = "";
+
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
 		actionMap.put("HELP", helpAction);
 		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T,ActionEvent.CTRL_MASK), "FOCUS_TAB");
@@ -1458,6 +1495,11 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			if (element.getAttribute("Action").equals("OUTPUT")) {
 				jMenuItemToOutput[tabIndex].setText(element.getAttribute("Caption"));
 				jPopupMenu[tabIndex].add(jMenuItemToOutput[tabIndex]);
+			}
+			if (element.getAttribute("Action").equals("RETURN_ROWS")) {
+				buttonReturnRows[tabIndex] = jButtonArray[workIndex];
+				buttonReturnRows[tabIndex].setEnabled(false);
+				functionKeyToSelectRows[tabIndex] = "F" + element.getAttribute("Number");
 			}
 			if (element.getAttribute("Action").equals("HEADER")) {
 				String functionName = session_.getFunctionName(headerFunctionID);
@@ -1687,7 +1729,12 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 						messageList.add(XFUtility.RESOURCE.getString("FunctionMessage57"));
 					} else {
 						if (detailFunctionIDArray[index].equals("")) {
-							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage2"));
+							//messageList.add(XFUtility.RESOURCE.getString("FunctionMessage2"));
+							if (headersRenderer[index].isWithCheckBox_) {
+								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage5") + functionKeyToSelectRows + XFUtility.RESOURCE.getString("FunctionMessage6"));
+							} else {
+								messageList.add(XFUtility.RESOURCE.getString("FunctionMessage2"));
+							}
 						} else {
 							messageList.add(XFUtility.RESOURCE.getString("FunctionMessage3"));
 						}
@@ -1850,6 +1897,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			messageList.clear();
 
 			if (action.equals("EXIT")) {
+				returnMap_.put("RETURN_TO", "");
 				closeFunction();
 			}
 
@@ -1984,6 +2032,38 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 
+			if (action.equals("RETURN_ROWS")) {
+				if (!detailTableArray[jTabbedPane.getSelectedIndex()].getTableID().equals(headerTable_.getTableID())) {
+					for (int i = 0; i < headerFieldList.size(); i++) {
+//						if (!returnMap_.containsKey(headerFieldList.get(i).getDataSourceID())) {
+						if (!headerFieldList.get(i).getValue().toString().equals("")) {
+							returnMap_.put(headerFieldList.get(i).getTableAlias()+"."+headerFieldList.get(i).getFieldID(), headerFieldList.get(i).getValue().toString());
+						}
+					}
+				}
+				for (int i = 0; i < detailColumnListArray[jTabbedPane.getSelectedIndex()].size(); i++) {
+					returnMap_.put(detailColumnListArray[jTabbedPane.getSelectedIndex()].get(i).getTableAlias() + "." + detailColumnListArray[jTabbedPane.getSelectedIndex()].get(i).getFieldID(), "");
+				}
+				for (int k = 0; k < tableModelMainArray[jTabbedPane.getSelectedIndex()].getRowCount(); k++) {
+					XF300_DetailRowNumber rowObject = (XF300_DetailRowNumber)tableModelMainArray[jTabbedPane.getSelectedIndex()].getValueAt(k, 0);
+					if (rowObject.isSelected()) {
+						HashMap<String, Object> workMap = rowObject.getColumnMap();
+						for (int i = 0; i < detailColumnListArray[jTabbedPane.getSelectedIndex()].size(); i++) {
+							Object value = returnMap_.get(detailColumnListArray[jTabbedPane.getSelectedIndex()].get(i).getDataSourceName());
+							if (!value.equals("")) {
+								value = value + ";";
+							}
+							value = value + workMap.get(detailColumnListArray[jTabbedPane.getSelectedIndex()].get(i).getDataSourceName()).toString();
+							returnMap_.put(detailColumnListArray[jTabbedPane.getSelectedIndex()].get(i).getDataSourceName(), value);
+						}
+					}
+				}
+				returnMap_.put("RETURN_CODE", "10");
+				if (returnMap_.get("RETURN_TO") != null) {
+					returnTo(returnMap_.get("RETURN_TO").toString());
+				}
+			}
+
 			setMessagesOnPanel();
 
 		} finally {
@@ -1993,9 +2073,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 
 	class TableHeadersRenderer extends JPanel implements TableCellRenderer {   
 		private static final long serialVersionUID = 1L;
+		private JPanel westPanel = new JPanel();
 		private JLabel numberLabel = new JLabel("No.");
+		private JPanel checkBoxPanel = new JPanel();
+		private JCheckBox checkBox = new JCheckBox();
 		private JPanel centerPanel = new JPanel();
 		private ArrayList<JLabel> headerList = new ArrayList<JLabel>();
+		private ArrayList<String> dataTypeList = new ArrayList<String>();
 		private int totalWidthOfCenterPanel = 0;
 		private int totalHeight = 0;
 		private ArrayList<XF300_DetailColumn> columnList_;
@@ -2004,19 +2088,50 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		private boolean isAscendingColumnSorting = true;
 		private XF300 dialog_;
 		private int tabIndex_;
+		private boolean isWithCheckBox_ = false;
 
-		public TableHeadersRenderer(int tabIndex, XF300 dialog) {
+		public TableHeadersRenderer(int tabIndex, XF300 dialog, boolean isWithCheckBox) {
 			tabIndex_ = tabIndex;
 			dialog_ = dialog;
+			isWithCheckBox_ = isWithCheckBox;
 			columnList_ = dialog_.getDetailColumnList(tabIndex_);
-			arrangeColumnsPosition(true);
 			centerPanel.setLayout(null);
 			numberLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 			numberLabel.setBorder(new HeaderBorder());
 			numberLabel.setHorizontalAlignment(SwingConstants.CENTER);
-			this.setLayout(new BorderLayout());
-			this.add(numberLabel, BorderLayout.WEST);
-			this.add(centerPanel, BorderLayout.CENTER);
+
+			if (isWithCheckBox_) {
+				GridLayout layout = new GridLayout();
+				layout.setColumns(2);
+				layout.setRows(1);
+				westPanel.setLayout(layout);
+				westPanel.setPreferredSize(new Dimension(XFUtility.SEQUENCE_WIDTH*2, 10));
+				arrangeColumnsPosition(true);
+				checkBox.setHorizontalAlignment(SwingConstants.CENTER);
+				checkBoxPanel.setBorder(new HeaderBorder());
+				checkBoxPanel.setLayout(new BorderLayout());
+				checkBoxPanel.add(checkBox, BorderLayout.CENTER);
+				westPanel.add(numberLabel);
+				westPanel.add(checkBoxPanel);
+				centerPanel.setLayout(null);
+				this.setLayout(new BorderLayout());
+				this.add(westPanel, BorderLayout.WEST);
+				this.add(centerPanel, BorderLayout.CENTER);
+
+			} else {
+				arrangeColumnsPosition(true);
+				this.setLayout(new BorderLayout());
+				this.add(numberLabel, BorderLayout.WEST);
+				this.add(centerPanel, BorderLayout.CENTER);
+			}
+		}
+
+		public boolean isWithCheckBox() {
+			return isWithCheckBox_;
+		}
+		
+		public int getWestPanelWidth() {
+			return westPanel.getPreferredSize().width;
 		}
 
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {  
@@ -2045,7 +2160,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		
 		public boolean hasMouseOnColumnBorder(int headerPosX, int headerPosY) {
 			boolean result = false;
-			double posX = headerPosX - numberLabel.getBounds().getWidth();
+			//double posX = headerPosX - numberLabel.getBounds().getWidth();
+			double posX;
+			if (isWithCheckBox_) {
+				posX = headerPosX - westPanel.getBounds().getWidth();
+			} else {
+				posX = headerPosX - numberLabel.getBounds().getWidth();
+			}
 			if (posX >= -3 && posX <= 0) {
 				result = true;
 			} else {
@@ -2063,7 +2184,12 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		
 		public void setUnderlineOnColumnAt(int headerPosX, int headerPosY) {
-			double posX = headerPosX - numberLabel.getBounds().getWidth();
+			double posX;
+			if (isWithCheckBox_) {
+				posX = headerPosX - numberLabel.getBounds().getWidth() - checkBox.getBounds().getWidth();
+			} else {
+				posX = headerPosX - numberLabel.getBounds().getWidth();
+			}
 			for (int i = 0; i < headerList.size(); i++) {
 				headerList.get(i).setText(headerList.get(i).getText().replace("<html><u>", ""));
 				if (posX >= headerList.get(i).getBounds().x
@@ -2089,7 +2215,12 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		}
 
 		public void resortRowsByColumnAt(int headerPosX, int headerPosY) {
-			double posX = headerPosX - numberLabel.getBounds().getWidth();
+			double posX;
+			if (isWithCheckBox_) {
+				posX = headerPosX - numberLabel.getBounds().getWidth() - checkBox.getBounds().getWidth();
+			} else {
+				posX = headerPosX - numberLabel.getBounds().getWidth();
+			}
 			for (int i = 0; i < headerList.size(); i++) {
 				if (posX >= headerList.get(i).getBounds().x
 				&& posX < (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
@@ -2107,8 +2238,14 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		
 		public void setSizingHeader(int headersPosX) {
-			double posX = headersPosX - numberLabel.getBounds().getWidth();
-			sizingHeader = numberLabel;
+			double posX;
+			if (isWithCheckBox_) {
+				posX = headersPosX - westPanel.getBounds().getWidth();
+				sizingHeader = westPanel;
+			} else {
+				posX = headersPosX - numberLabel.getBounds().getWidth();
+				sizingHeader = numberLabel;
+			}
 			for (int i = 0; i < headerList.size(); i++) {
 				if (posX >= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width - 3)
 						&& posX <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
@@ -2119,24 +2256,48 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		
 		public void setNewBoundsToHeaders(int posXOnHeaders) {
-			if (sizingHeader == numberLabel) {
-				numberLabel.setPreferredSize(new Dimension(posXOnHeaders, totalHeight));
-				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + posXOnHeaders, totalHeight));
-			} else {
-				int posX = posXOnHeaders - numberLabel.getBounds().width;
-				int widthAdjusted = 0;
-				for (int i = 0; i < headerList.size(); i++) {
-					if (sizingHeader == headerList.get(i)) {
-						int newWidth = posX - headerList.get(i).getBounds().x;
-						if (newWidth > 0) {
-							columnList_.get(i).setWidth(newWidth);
-							widthAdjusted = newWidth - headerList.get(i).getBounds().width;
+			if (isWithCheckBox_) {
+				if (sizingHeader == westPanel) {
+					westPanel.setPreferredSize(new Dimension(posXOnHeaders, totalHeight));
+					this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + posXOnHeaders, totalHeight));
+				} else {
+					int posX = posXOnHeaders - westPanel.getBounds().width;
+					int widthAdjusted = 0;
+					for (int i = 0; i < headerList.size(); i++) {
+						if (sizingHeader == headerList.get(i)) {
+							int newWidth = posX - headerList.get(i).getBounds().x;
+							if (newWidth > 0) {
+								columnList_.get(i).setWidth(newWidth);
+								widthAdjusted = newWidth - headerList.get(i).getBounds().width;
+							}
+							break;
 						}
-						break;
+					}
+					if (widthAdjusted != 0) {
+						arrangeColumnsPosition(false);
 					}
 				}
-				if (widthAdjusted != 0) {
-					arrangeColumnsPosition(false);
+				
+			} else {
+				if (sizingHeader == numberLabel) {
+					numberLabel.setPreferredSize(new Dimension(posXOnHeaders, totalHeight));
+					this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + posXOnHeaders, totalHeight));
+				} else {
+					int posX = posXOnHeaders - numberLabel.getBounds().width;
+					int widthAdjusted = 0;
+					for (int i = 0; i < headerList.size(); i++) {
+						if (sizingHeader == headerList.get(i)) {
+							int newWidth = posX - headerList.get(i).getBounds().x;
+							if (newWidth > 0) {
+								columnList_.get(i).setWidth(newWidth);
+								widthAdjusted = newWidth - headerList.get(i).getBounds().width;
+							}
+							break;
+						}
+					}
+					if (widthAdjusted != 0) {
+						arrangeColumnsPosition(false);
+					}
 				}
 			}
 		}
@@ -2202,6 +2363,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 					header.setBorder(new HeaderBorder());
 					headerList.add(header);
 					centerPanel.add(header);
+					dataTypeList.add(columnList_.get(i).getValueType());
 
 					if (fromX + width > totalWidthOfCenterPanel) {
 						totalWidthOfCenterPanel = fromX + width;
@@ -2215,7 +2377,49 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				numberLabel.setPreferredSize(new Dimension(XFUtility.SEQUENCE_WIDTH, totalHeight));
 			}
 			centerPanel.setPreferredSize(new Dimension(totalWidthOfCenterPanel, totalHeight));
-			this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + numberLabel.getPreferredSize().width, totalHeight));
+			if (isWithCheckBox_) {
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + westPanel.getPreferredSize().width, totalHeight));
+			} else {
+				this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + numberLabel.getPreferredSize().width, totalHeight));
+			}
+		}
+
+		public int getColumnIndex(int posX) {
+			int index = -1;
+			int posXOnCenterPanel = 0;
+			if (isWithCheckBox_) {
+				posXOnCenterPanel = posX - westPanel.getPreferredSize().width;
+			} else {
+				posXOnCenterPanel = posX - numberLabel.getPreferredSize().width;
+			}
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+						&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+					index = i;
+					break;
+				}
+			}
+			return index;
+		}
+
+		public boolean isUrlColumn(int posX) {
+			boolean isUrlColumn = false;
+			int posXOnCenterPanel = 0;
+			if (isWithCheckBox_) {
+				posXOnCenterPanel = posX - westPanel.getPreferredSize().width;
+			} else {
+				posXOnCenterPanel = posX - numberLabel.getPreferredSize().width;
+			}
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+						&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+					if (dataTypeList.get(i).equals("URL")) {
+						isUrlColumn = true;
+					}
+					break;
+				}
+			}
+			return isUrlColumn;
 		}
 
 		public String getToolTipText(MouseEvent e) {
@@ -2239,10 +2443,29 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			return text;
 		}
+
+		public void checkSelection(MouseEvent e) {
+			XF300_DetailRowNumber rowObject;
+			if (isWithCheckBox_ && e.getX() > numberLabel.getWidth() && e.getX() <= westPanel.getWidth()) {
+				buttonReturnRows[tabIndex_].setEnabled(false);
+				checkBox.setSelected(!checkBox.isSelected());
+				for (int i = 0; i < tableModelMainArray[tabIndex_].getRowCount(); i++) {
+					rowObject = (XF300_DetailRowNumber)tableModelMainArray[tabIndex_].getValueAt(i, 0);
+					rowObject.setSelected(checkBox.isSelected());
+					if (rowObject.isSelected()) {
+						buttonReturnRows[tabIndex_].setEnabled(true);
+					}
+				}
+			}
+		}
 	}  
 
 	public class TableCellsRenderer extends JPanel implements TableCellRenderer {
 		private static final long serialVersionUID = 1L;
+		private JPanel westPanel = new JPanel();
+		private JPanel checkBoxPanel = new JPanel();
+		private JCheckBox checkBox = new JCheckBox();
+
 		private JLabel numberCell = new JLabel("");
 		private JPanel multiLinesPanel = new JPanel();
 		private ArrayList<JLabel> cellList = new ArrayList<JLabel>();
@@ -2250,32 +2473,60 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 
 		public TableCellsRenderer(TableHeadersRenderer headersRenderer) {
 			headersRenderer_ = headersRenderer;
+
 			numberCell.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 			numberCell.setBorder(new CellBorder());
 			numberCell.setHorizontalAlignment(SwingConstants.CENTER);
+			numberCell.setOpaque(true);
 			multiLinesPanel.setLayout(null);
 			multiLinesPanel.setOpaque(false);
 			setupCellBounds();
-			this.setLayout(new BorderLayout());
-			this.add(numberCell, BorderLayout.WEST);
-			this.add(multiLinesPanel, BorderLayout.CENTER);
+
+			if (headersRenderer_.isWithCheckBox_) {
+				GridLayout layout = new GridLayout();
+				layout.setColumns(2);
+				layout.setRows(1);
+				westPanel.setLayout(layout);
+				checkBox.setHorizontalAlignment(SwingConstants.CENTER);
+				checkBoxPanel.setBorder(new CellBorder());
+				checkBoxPanel.setLayout(new BorderLayout());
+				checkBoxPanel.add(checkBox, BorderLayout.CENTER);
+				westPanel.add(numberCell);
+				westPanel.add(checkBoxPanel);
+				this.setLayout(new BorderLayout());
+				this.add(westPanel, BorderLayout.WEST);
+				this.add(multiLinesPanel, BorderLayout.CENTER);
+			} else {
+				this.setLayout(new BorderLayout());
+				this.add(numberCell, BorderLayout.WEST);
+				this.add(multiLinesPanel, BorderLayout.CENTER);
+			}
 		}   
 		
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 			if (isSelected) {
 				setBackground(table.getSelectionBackground());
 				numberCell.setForeground(table.getSelectionForeground());
+				numberCell.setBackground(table.getSelectionBackground());
+				checkBox.setBackground(table.getSelectionBackground());
 			} else {
 				if (row%2==0) {
 					setBackground(SystemColor.text);
+					numberCell.setBackground(SystemColor.text);
+					checkBox.setBackground(SystemColor.text);
 				} else {
 					setBackground(XFUtility.ODD_ROW_COLOR);
+					numberCell.setBackground(XFUtility.ODD_ROW_COLOR);
+					checkBox.setBackground(XFUtility.ODD_ROW_COLOR);
 				}
 				numberCell.setForeground(table.getForeground());
 			}
 			setFocusable(false);
 			XF300_DetailRowNumber rowObject = (XF300_DetailRowNumber)value;
 			numberCell.setText(rowObject.getRowNumberString());
+			if (headersRenderer_.isWithCheckBox_) {
+				checkBox.setSelected(rowObject.isSelected());
+			}
 			ArrayList<XF300_DetailColumn> columnList = detailColumnListArray[jTabbedPane.getSelectedIndex()];
 			for (int i = 0; i < cellList.size(); i++) {
 				cellList.get(i).setEnabled(columnList.get(i).isEnabled());
@@ -2295,10 +2546,14 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 							}
 						}
 					} else {
-						if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
-							cellList.get(i).setForeground(table.getForeground());
+						if (rowObject.getCellObjectList().get(i).getValueType().equals("URL")) {
+							cellList.get(i).setText("<html><u><font color='blue'>"+rowObject.getCellObjectList().get(i).getExternalValue());
 						} else {
-							cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+							if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
+								cellList.get(i).setForeground(table.getForeground());
+							} else {
+								cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+							}
 						}
 					}
 				}
@@ -2321,11 +2576,20 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				cellList.add(cell);
 				multiLinesPanel.add(cell);
 			}
-			int totalWidth = headersRenderer_.getWidth() - headersRenderer_.getSequenceWidth();
-			int totalHeight = headersRenderer_.getHeight();
-			multiLinesPanel.setPreferredSize(new Dimension(totalWidth, totalHeight));
-			numberCell.setPreferredSize(new Dimension(headersRenderer_.getSequenceWidth(), totalHeight));
-			this.setPreferredSize(new Dimension(totalWidth + headersRenderer_.getSequenceWidth(), totalHeight));
+			if (headersRenderer_.isWithCheckBox_) {
+				int totalWidth = headersRenderer_.getWidth() - headersRenderer_.getWestPanelWidth();
+				int totalHeight = headersRenderer_.getHeight();
+				multiLinesPanel.setPreferredSize(new Dimension(totalWidth, totalHeight));
+				westPanel.setPreferredSize(new Dimension(headersRenderer_.getWestPanelWidth(), totalHeight));
+				this.setPreferredSize(new Dimension(totalWidth + headersRenderer_.getWestPanelWidth(), totalHeight));
+			} else {
+				int totalWidth = headersRenderer_.getWidth() - headersRenderer_.getSequenceWidth();
+				int totalHeight = headersRenderer_.getHeight();
+				multiLinesPanel.setPreferredSize(new Dimension(totalWidth, totalHeight));
+				numberCell.setPreferredSize(new Dimension(headersRenderer_.getSequenceWidth(), totalHeight));
+				this.setPreferredSize(new Dimension(totalWidth + headersRenderer_.getSequenceWidth(), totalHeight));
+			
+			}
 		}
 	} 
 
@@ -2944,6 +3208,9 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			setMessagesOnPanel();
 			setupFunctionKeysAndButtonsForTabIndex(index);
+			if (buttonReturnRows[index] != null) {
+				buttonReturnRows[index].setEnabled(false);
+			}
 
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
@@ -2966,17 +3233,37 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void jTableMain_mouseClicked(MouseEvent e) {
-		if (e.getClickCount() >= 2 && tableModelMainArray[jTabbedPane.getSelectedIndex()].getRowCount() > 0) {
-			if (!detailFunctionIDArray[jTabbedPane.getSelectedIndex()].equals("NONE")) {
-				processRow(false);
-			}
+		if (headersRenderer[jTabbedPane.getSelectedIndex()].isUrlColumn(e.getPoint().x)) {
+			browseUrl(jTableMainArray[jTabbedPane.getSelectedIndex()].rowAtPoint(e.getPoint()), headersRenderer[jTabbedPane.getSelectedIndex()].getColumnIndex(e.getPoint().x));
 		} else {
-			if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != InputEvent.BUTTON1_MASK) {
-				int selectedRow = jTableMainArray[jTabbedPane.getSelectedIndex()].rowAtPoint(e.getPoint());
-				jTableMainArray[jTabbedPane.getSelectedIndex()].setRowSelectionInterval(selectedRow, selectedRow);
-				jPopupMenu[jTabbedPane.getSelectedIndex()].show(e.getComponent(), e.getX(), e.getY());
+			if (headersRenderer[jTabbedPane.getSelectedIndex()].isWithCheckBox_) {
+				processRow(false);
+			} else {
+				if (e.getClickCount() >= 2 && tableModelMainArray[jTabbedPane.getSelectedIndex()].getRowCount() > 0) {
+					if (!detailFunctionIDArray[jTabbedPane.getSelectedIndex()].equals("NONE")) {
+						processRow(false);
+					}
+				} else {
+					if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != InputEvent.BUTTON1_MASK) {
+						int selectedRow = jTableMainArray[jTabbedPane.getSelectedIndex()].rowAtPoint(e.getPoint());
+						jTableMainArray[jTabbedPane.getSelectedIndex()].setRowSelectionInterval(selectedRow, selectedRow);
+						jPopupMenu[jTabbedPane.getSelectedIndex()].show(e.getComponent(), e.getX(), e.getY());
+					}
+				}
 			}
 		}
+	}
+
+	void jTableMain_mouseMoved(MouseEvent e) {
+		if (headersRenderer[jTabbedPane.getSelectedIndex()].isUrlColumn(e.getPoint().x)) {
+			setCursor(session_.editorKit.getLinkCursor());
+		} else {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		}
+	}
+
+	void jTableMain_mouseExited(MouseEvent e) {
+		setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 	}
 
 	void jTableMain_keyPressed(KeyEvent e) {
@@ -3024,6 +3311,25 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 			}
 		}
 	}
+
+	void browseUrl(int rowIndex, int columnIndex) {
+		String urlText = "";
+		try {
+			setCursor(new Cursor(Cursor.WAIT_CURSOR));
+			XF300_DetailRowNumber rowObject = (XF300_DetailRowNumber)tableModelMainArray[jTabbedPane.getSelectedIndex()].getValueAt(rowIndex, 0);
+			urlText = rowObject.getCellObjectList().get(columnIndex).getInternalValue().toString();
+			urlText = urlText.replaceAll("\\\\", "/");
+			if (!urlText.startsWith("http") && !urlText.startsWith("mail")) {
+				urlText = urlText.replace("file://", "");
+				urlText = "file://" + urlText;
+			}
+			session_.browseFile(new URI(urlText));
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(null, "Unable to browse the url.\n" + urlText);
+		} finally {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		}
+	}
 	
 	void processRow(boolean enterKeyPressed) {
 		messageList.clear();
@@ -3034,22 +3340,53 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				int rowNumber = jTableMainArray[jTabbedPane.getSelectedIndex()].convertRowIndexToModel(jTableMainArray[jTabbedPane.getSelectedIndex()].getSelectedRow());
 				if (rowNumber > -1) {
 					XF300_DetailRowNumber detailRowNumber = (XF300_DetailRowNumber)tableModelMainArray[jTabbedPane.getSelectedIndex()].getValueAt(rowNumber,0);
-					HashMap<String, Object> keyMap = detailRowNumber.getKeyMap();
+
 					if (detailFunctionIDArray[jTabbedPane.getSelectedIndex()].equals("")) {
-						if (detailParmTypeArray[jTabbedPane.getSelectedIndex()].equals("COLUMNS")) {
-							keyMap = detailRowNumber.getColumnMap();
-						}
-						returnMap_.putAll(keyMap);
-						returnMap_.put("RETURN_CODE", "00");
-						closeFunction();
-					} else {
-						if (detailParmTypeArray[jTabbedPane.getSelectedIndex()].equals("COLUMNS")) {
-							keyMap = detailRowNumber.getColumnMap();
+						if (headersRenderer[jTabbedPane.getSelectedIndex()].isWithCheckBox_) {
+								detailRowNumber.setSelected(!detailRowNumber.isSelected());
+								jTableMainArray[jTabbedPane.getSelectedIndex()].repaint();
+								buttonReturnRows[jTabbedPane.getSelectedIndex()].setEnabled(false);
+								for (int i = 0; i < tableModelMainArray[jTabbedPane.getSelectedIndex()].getRowCount(); i++) {
+									detailRowNumber = (XF300_DetailRowNumber)tableModelMainArray[jTabbedPane.getSelectedIndex()].getValueAt(i, 0);
+									if (detailRowNumber.isSelected()) {
+										buttonReturnRows[jTabbedPane.getSelectedIndex()].setEnabled(true);
+										break;
+									}
+								}
+
 						} else {
 							if (!detailTableArray[jTabbedPane.getSelectedIndex()].getTableID().equals(headerTable_.getTableID())) {
-								keyMap.putAll(parmMap_);
+								for (int i = 0; i < headerFieldList.size(); i++) {
+									//if (!returnMap_.containsKey(headerFieldList.get(i).getDataSourceID())) {
+									if (!headerFieldList.get(i).getValue().toString().equals("")) {
+										returnMap_.put(headerFieldList.get(i).getTableAlias()+"."+headerFieldList.get(i).getFieldID(), headerFieldList.get(i).getValue().toString());
+									}
+								}
+							}
+							returnMap_.putAll(detailRowNumber.getColumnMap());
+							returnMap_.put("RETURN_CODE", "00");
+							closeFunction();
+						}
+
+					} else {
+						HashMap<String, Object> callParmMap = new HashMap<String, Object>();
+
+						if (detailParmTypeArray[jTabbedPane.getSelectedIndex()].equals("COLUMNS")) {
+							callParmMap.putAll(detailRowNumber.getColumnMap());
+							if (!detailTableArray[jTabbedPane.getSelectedIndex()].getTableID().equals(headerTable_.getTableID())) {
+								for (int i = 0; i < headerFieldList.size(); i++) {
+									if (!callParmMap.containsKey(headerFieldList.get(i).getDataSourceID())) {
+										callParmMap.put(headerFieldList.get(i).getDataSourceID(), headerFieldList.get(i).getValue().toString());
+									}
+								}
+							}
+						} else {
+							callParmMap.putAll(detailRowNumber.getKeyMap());
+							if (!detailTableArray[jTabbedPane.getSelectedIndex()].getTableID().equals(headerTable_.getTableID())) {
+								callParmMap.putAll(parmMap_);
 							}
 						}
+
 						if (!detailParmAdditionalArray[jTabbedPane.getSelectedIndex()].equals("")) {
 							StringTokenizer workTokenizer1 = new StringTokenizer(detailParmAdditionalArray[jTabbedPane.getSelectedIndex()], ";" );
 							while (workTokenizer1.hasMoreTokens()) {
@@ -3057,12 +3394,13 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 								if (workTokenizer2.countTokens() == 2) {
 									String parmName = workTokenizer2.nextToken();
 									String parmValue = workTokenizer2.nextToken();
-									keyMap.put(parmName, parmValue);
+									callParmMap.put(parmName, parmValue);
 								}
 							}
 						}
+
 						try {
-							HashMap<String, Object> returnMap = session_.executeFunction(detailFunctionIDArray[jTabbedPane.getSelectedIndex()], keyMap);
+							HashMap<String, Object> returnMap = session_.executeFunction(detailFunctionIDArray[jTabbedPane.getSelectedIndex()], callParmMap);
 							if (returnMap.get("RETURN_CODE").equals("10")
 									|| returnMap.get("RETURN_CODE").equals("20")
 									|| returnMap.get("RETURN_CODE").equals("30")) {
@@ -3590,7 +3928,13 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 			FontMetrics metrics = jLabelField.getFontMetrics(jLabelField.getFont());
 			jLabelField.setPreferredSize(new Dimension(metrics.stringWidth(fieldCaption), XFUtility.FIELD_UNIT_HEIGHT));
 		} else {
-			jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+			//jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+			int captionWidth = XFUtility.DEFAULT_LABEL_WIDTH;
+			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION_WIDTH");
+			if (!wrkStr.equals("")) {
+				captionWidth = Integer.parseInt(wrkStr);
+			}
+			jLabelField.setPreferredSize(new Dimension(captionWidth, XFUtility.FIELD_UNIT_HEIGHT));
 			XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
 		}
 
@@ -4083,6 +4427,13 @@ class XF300_HeaderField extends JPanel implements XFFieldScriptable {
 		return "";
 	}
 
+	public void setWarning(String message) {
+	}
+
+	public String getWarning() {
+		return "";
+	}
+
 	public void setColor(String color) {
 		foreground = XFUtility.convertStringToColor(color);
 		component.setForeground(foreground);
@@ -4283,6 +4634,7 @@ class XF300_DetailRowNumber extends Object {
 	private HashMap<String, Object> keyMap_ = new HashMap<String, Object>();
 	private HashMap<String, Object> columnMap_ = new HashMap<String, Object>();
 	private ArrayList<TableCellReadOnly> cellObjectList_;
+	private boolean isSelected_ = false;
 	public XF300_DetailRowNumber(int num, HashMap<String, Object> keyMap, HashMap<String, Object> columnMap, ArrayList<TableCellReadOnly> cellObjectList) {
 		number_ = num;
 		keyMap_ = keyMap;
@@ -4300,6 +4652,12 @@ class XF300_DetailRowNumber extends Object {
 	}
 	public String getRowNumberString() {
 		return Integer.toString(number_);
+	}
+	public void setSelected(boolean isSelected) {
+		isSelected_ = isSelected;
+	}
+	public boolean isSelected() {
+		return isSelected_;
 	}
 }
 
@@ -4436,22 +4794,27 @@ class XF300_DetailColumn implements XFFieldScriptable {
 							if (dataTypeOptionList.contains("MSEQ")) {
 								fieldWidth = 80;
 							} else {
-								if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-									fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
+								if (dataTypeOptionList.contains("URL")) {
+									valueType = "URL";
+									fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
 								} else {
-									if (basicType.equals("DATE")) {
-										fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
+									if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
+										fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
 									} else {
-										if (basicType.equals("BYTEA")) {
-											valueType = "BYTEA";
-											fieldWidth = 100;
+										if (basicType.equals("DATE")) {
+											fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
 										} else {
-											if (dataTypeOptionList.contains("IMAGE")) {
-												valueType = "IMAGE";
-												fieldWidth = 60;
-												fieldRows = 2;
+											if (basicType.equals("BYTEA")) {
+												valueType = "BYTEA";
+												fieldWidth = 100;
 											} else {
-												fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
+												if (dataTypeOptionList.contains("IMAGE")) {
+													valueType = "IMAGE";
+													fieldWidth = 60;
+													fieldRows = 2;
+												} else {
+													fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
+												}
 											}
 										}
 									}
@@ -4640,7 +5003,7 @@ class XF300_DetailColumn implements XFFieldScriptable {
 								}
 							}
 						} else {
-							if (valueType.equals("STRING")) {
+							if (valueType.equals("STRING") || valueType.equals("URL")) {
 								if (value_ != null) {
 									value = value_.toString().trim();
 									if (dataTypeOptionList.contains("YMONTH") || dataTypeOptionList.contains("FYEAR")) {
@@ -4817,6 +5180,13 @@ class XF300_DetailColumn implements XFFieldScriptable {
 	}
 
 	public String getError() {
+		return "";
+	}
+
+	public void setWarning(String message) {
+	}
+
+	public String getWarning() {
 		return "";
 	}
 
@@ -8192,6 +8562,15 @@ class XF300_jTableMain_mouseAdapter extends java.awt.event.MouseAdapter {
 	}
 }
 
+class XF300_jTableMain_mouseMotionAdapter extends java.awt.event.MouseMotionAdapter {
+	XF300 adaptee;
+	XF300_jTableMain_mouseMotionAdapter(XF300 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void mouseMoved(MouseEvent e) {
+		adaptee.jTableMain_mouseMoved(e);
+	}
+}
 
 class XF300_jScrollPaneTable_mouseAdapter extends java.awt.event.MouseAdapter {
 	XF300 adaptee;

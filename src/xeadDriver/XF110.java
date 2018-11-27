@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -179,6 +179,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		jTableMain.addKeyListener(new XF110_jTableMain_keyAdapter(this));
 		jTableMain.addKeyListener(new XF110_Component_keyAdapter(this));
 		jTableMain.addMouseListener(new XF110_jTableMain_mouseAdapter(this));
+		jTableMain.addMouseMotionListener(new XF110_jTableMain_mouseMotionAdapter(this));
 		jTableMain.addFocusListener(new XF110_jTableMain_focusAdapter(this));
 		JTableHeader header = new JTableHeader(jTableMain.getColumnModel()) {
 			private static final long serialVersionUID = 1L;
@@ -801,6 +802,9 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public void setStatusMessage(String message) {
+		setStatusMessage(message, false);
+	}
+	public void setStatusMessage(String message, boolean isToReplaceLastLine) {
 		if (this.isVisible()) {
 			jTextAreaMessages.setText(message);
 			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
@@ -1762,9 +1766,25 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void jTableMain_mousePressed(MouseEvent e) {
-		if (tableModelMain.getRowCount() > 0) {
-			processRow();
+		if (headersRenderer.isUrlColumn(e.getPoint().x)) {
+			browseUrl(jTableMain.rowAtPoint(e.getPoint()), headersRenderer.getColumnIndex(e.getPoint().x));
+		} else {
+			if (tableModelMain.getRowCount() > 0) {
+				processRow();
+			}
 		}
+	}
+
+	void jTableMain_mouseMoved(MouseEvent e) {
+		if (headersRenderer.isUrlColumn(e.getPoint().x)) {
+			setCursor(session_.editorKit.getLinkCursor());
+		} else {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+		}
+	}
+
+	void jTableMain_mouseExited(MouseEvent e) {
+		setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 	}
 
 	void jTableMain_keyPressed(KeyEvent e) {
@@ -1797,6 +1817,25 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		if (e.getKeyCode() == KeyEvent.VK_F8 && buttonIndexForF8 != -1) {
 			jButtonArray[buttonIndexForF8].doClick();
+		}
+	}
+
+	void browseUrl(int rowIndex, int columnIndex) {
+		String urlText = "";
+		try {
+			setCursor(new Cursor(Cursor.WAIT_CURSOR));
+			XF110_RowNumber rowObject = (XF110_RowNumber)tableModelMain.getValueAt(rowIndex, 0);
+			urlText = rowObject.getCellObjectList().get(columnIndex).getInternalValue().toString();
+			urlText = urlText.replaceAll("\\\\", "/");
+			if (!urlText.startsWith("http") && !urlText.startsWith("mail")) {
+				urlText = urlText.replace("file://", "");
+				urlText = "file://" + urlText;
+			}
+			session_.browseFile(new URI(urlText));
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(null, "Unable to browse the url.\n" + urlText);
+		} finally {
+			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 		}
 	}
 
@@ -1985,6 +2024,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		private JCheckBox checkBox = new JCheckBox();
 		private JPanel centerPanel = new JPanel();
 		private ArrayList<JLabel> headerList = new ArrayList<JLabel>();
+		private ArrayList<String> dataTypeList = new ArrayList<String>();
 		private int totalWidthOfCenterPanel = 0;
 		private int totalHeight = 0;
 		private Component sizingHeader = null;
@@ -2202,6 +2242,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 					header.setBorder(new HeaderBorder());
 					headerList.add(header);
 					centerPanel.add(header);
+					dataTypeList.add(columnList.get(i).getValueType());
 
 					if (fromX + width > totalWidthOfCenterPanel) {
 						totalWidthOfCenterPanel = fromX + width;
@@ -2216,6 +2257,34 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			centerPanel.setPreferredSize(new Dimension(totalWidthOfCenterPanel, totalHeight));
 			this.setPreferredSize(new Dimension(totalWidthOfCenterPanel + westPanel.getPreferredSize().width, totalHeight));
+		}
+
+		public int getColumnIndex(int posX) {
+			int index = -1;
+			int posXOnCenterPanel = posX - westPanel.getPreferredSize().width;
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+						&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+					index = i;
+					break;
+				}
+			}
+			return index;
+		}
+
+		public boolean isUrlColumn(int posX) {
+			boolean isUrlColumn = false;
+			int posXOnCenterPanel = posX - westPanel.getPreferredSize().width;
+			for (int i = 0; i < headerList.size(); i++) {
+				if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+						&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+					if (dataTypeList.get(i).equals("URL")) {
+						isUrlColumn = true;
+					}
+					break;
+				}
+			}
+			return isUrlColumn;
 		}
 
 		public String getToolTipText(MouseEvent e) {
@@ -2299,19 +2368,16 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 			if (isSelected) {
 				setBackground(table.getSelectionBackground());
-				centerPanel.setBackground(table.getSelectionBackground());
 				numberCell.setBackground(table.getSelectionBackground());
 				checkBox.setBackground(table.getSelectionBackground());
 				numberCell.setForeground(table.getSelectionForeground());
 			} else {
 				if (row%2==0) {
 					setBackground(SystemColor.text);
-					centerPanel.setBackground(SystemColor.text);
 					numberCell.setBackground(SystemColor.text);
 					checkBox.setBackground(SystemColor.text);
 				} else {
 					setBackground(XFUtility.ODD_ROW_COLOR);
-					centerPanel.setBackground(XFUtility.ODD_ROW_COLOR);
 					numberCell.setBackground(XFUtility.ODD_ROW_COLOR);
 					checkBox.setBackground(XFUtility.ODD_ROW_COLOR);
 				}
@@ -2336,13 +2402,17 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 							cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
 						}
 					} else {
-						if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
-							cellList.get(i).setForeground(table.getForeground());
+						if (rowObject.getCellObjectList().get(i).getValueType().equals("URL")) {
+							cellList.get(i).setText("<html><u><font color='blue'>"+rowObject.getCellObjectList().get(i).getExternalValue());
 						} else {
-							if (rowObject.getCellObjectList().get(i).getColor().equals(Color.blue)) {
-								cellList.get(i).setForeground(Color.cyan);
+							if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
+								cellList.get(i).setForeground(table.getForeground());
 							} else {
-								cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+								if (rowObject.getCellObjectList().get(i).getColor().equals(Color.blue)) {
+									cellList.get(i).setForeground(Color.cyan);
+								} else {
+									cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+								}
 							}
 						}
 					}
@@ -4231,22 +4301,27 @@ class XF110_Column implements XFFieldScriptable {
 							if (dataTypeOptionList.contains("MSEQ")) {
 								fieldWidth = 80;
 							} else {
-								if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
-									fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
+								if (dataTypeOptionList.contains("URL")) {
+									valueType = "URL";
+									fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
 								} else {
-									if (basicType.equals("DATE")) {
-										fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
+									if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
+										fieldWidth = XFUtility.getLengthOfEdittedNumericValue(dataSize, decimalSize, dataTypeOptionList) * (XFUtility.FONT_SIZE/2 + 2) + 15;
 									} else {
-										if (basicType.equals("BYTEA")) {
-											valueType = "BYTEA";
-											fieldWidth = 100;
+										if (basicType.equals("DATE")) {
+											fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
 										} else {
-											if (dataTypeOptionList.contains("IMAGE")) {
-												valueType = "IMAGE";
-												fieldWidth = 60;
-												fieldRows = 2;
+											if (basicType.equals("BYTEA")) {
+												valueType = "BYTEA";
+												fieldWidth = 100;
 											} else {
-												fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
+												if (dataTypeOptionList.contains("IMAGE")) {
+													valueType = "IMAGE";
+													fieldWidth = 60;
+													fieldRows = 2;
+												} else {
+													fieldWidth = dataSize * (XFUtility.FONT_SIZE/2 + 2) + 15;
+												}
 											}
 										}
 									}
@@ -4496,7 +4571,7 @@ class XF110_Column implements XFFieldScriptable {
 											value = XFUtility.getUserExpressionOfYearMonth(wrkStr, dialog_.getSession().getDateFormat());
 										}
 									} else {
-										if (valueType.equals("STRING")) {
+										if (valueType.equals("STRING") || valueType.equals("URL")) {
 											if (value_ == null) {
 												value = "";
 											} else {
@@ -4676,6 +4751,13 @@ class XF110_Column implements XFFieldScriptable {
 	}
 
 	public String getError() {
+		return "";
+	}
+
+	public void setWarning(String message) {
+	}
+
+	public String getWarning() {
 		return "";
 	}
 
@@ -5385,6 +5467,16 @@ class XF110_jTableMain_mouseAdapter extends java.awt.event.MouseAdapter {
 	}
 	public void mousePressed(MouseEvent e) {
 		adaptee.jTableMain_mousePressed(e);
+	}
+}
+
+class XF110_jTableMain_mouseMotionAdapter extends java.awt.event.MouseMotionAdapter {
+	XF110 adaptee;
+	XF110_jTableMain_mouseMotionAdapter(XF110 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void mouseMoved(MouseEvent e) {
+		adaptee.jTableMain_mouseMoved(e);
 	}
 }
 

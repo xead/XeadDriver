@@ -1279,6 +1279,7 @@ class XFTableEvaluator_Field extends Object implements XFFieldScriptable {
 	private ArrayList<String> dataTypeOptionList;
 	private String autoNumberKey = "";
 	private String errorMessage = "";
+	private String warningMessage = "";
 	private Object value_ = null;
 	private Object oldValue_ = null;
 	private boolean isNullable = true;
@@ -1395,6 +1396,10 @@ class XFTableEvaluator_Field extends Object implements XFFieldScriptable {
 
 	public void setError(boolean error) {
 		isError = error;
+		if (!isError) {
+			errorMessage = "";
+			warningMessage = "";
+		}
 	}
 
 	public void setEditable(boolean editable){
@@ -1646,6 +1651,20 @@ class XFTableEvaluator_Field extends Object implements XFFieldScriptable {
 
 	public String getError() {
 		return errorMessage;
+	}
+
+	public void setWarning(String message) {
+		if (!message.equals("")) {
+			if (this.warningMessage.equals("")) {
+				this.warningMessage = message;
+			} else {
+				this.warningMessage = this.warningMessage + " " +message;
+			}
+		}
+	}
+
+	public String getWarning() {
+		return warningMessage;
 	}
 
 	public void setColor(String color) {

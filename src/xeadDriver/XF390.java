@@ -537,6 +537,9 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	}
 
 	public void setStatusMessage(String message) {
+		setStatusMessage(message, false);
+	}
+	public void setStatusMessage(String message, boolean isToReplaceLastLine) {
 	}
 	
 	public void startProgress(String text, int maxValue) {
@@ -1984,6 +1987,13 @@ class XF390_HeaderField implements XFFieldScriptable {
 		return "";
 	}
 
+	public void setWarning(String message) {
+	}
+
+	public String getWarning() {
+		return "";
+	}
+
 	public void setColor(String color) {
 		foreground = XFUtility.convertStringToColor(color);
 	}
@@ -3321,6 +3331,13 @@ class XF390_DetailColumn implements XFFieldScriptable {
 	}
 
 	public String getError() {
+		return "";
+	}
+
+	public void setWarning(String message) {
+	}
+
+	public String getWarning() {
 		return "";
 	}
 

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2015 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -693,7 +693,8 @@ public class XFUtility {
 			ArrayList<String> typeOptionList = getOptionList(options);
 			for (int i = 0; i < typeOptionList.size(); i++) {
 				pos1 = typeOptionList.get(i).indexOf(keyword + "(");
-				if (pos1 > -1) {
+				//if (pos1 > -1) {
+				if (pos1 == 0) {
 					pos2 = typeOptionList.get(i).length() - 1;
 					value = typeOptionList.get(i).substring(pos1 + lengthOfKeyword, pos2);
 					break;
@@ -4988,7 +4989,7 @@ class XFTextField extends JPanel implements XFEditableField {
 	
 	public void setEditable(boolean editable) {
 		jTextField.setEditable(editable);
-		jTextField.setFocusable(editable);
+		//jTextField.setFocusable(editable);
 		if (jComboBox == null) {
 			if (editable) {
 				jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE - 2));
@@ -5734,7 +5735,7 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 
 		jTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
-		jTextField.setFocusable(false);
+		//jTextField.setFocusable(false);
 
 		GregorianCalendar calendar = new GregorianCalendar();
 		int currentYear = calendar.get(Calendar.YEAR);
@@ -5985,7 +5986,7 @@ class XFFYearBox extends JPanel implements XFEditableField {
 
 		jTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
-		jTextField.setFocusable(false);
+		//jTextField.setFocusable(false);
 		jTextField.setBounds(new Rectangle(0, 0, 110, XFUtility.FIELD_UNIT_HEIGHT));
 
 		GregorianCalendar calendar = new GregorianCalendar();
@@ -6150,7 +6151,7 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 
 		jTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
-		jTextField.setFocusable(false);
+		//jTextField.setFocusable(false);
 
 		jComboBoxMSeq.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE-2));
 		jComboBoxMSeq.addKeyListener(new XFMSeqBox_keyAdapter(this));
@@ -6509,7 +6510,7 @@ class XFUrlField extends JPanel implements XFEditableField {
 			this.add(jTextField, BorderLayout.CENTER);
 		}
 		jTextField.setEditable(editable);
-		jTextField.setFocusable(editable);
+		//jTextField.setFocusable(editable);
 	}
 	
 	public void setToolTipText(String text) {
@@ -6548,8 +6549,9 @@ class XFUrlField extends JPanel implements XFEditableField {
 							adaptee.desktop.browse(new URI(fileName));
 						} else {
 							fileName = fileName.replaceAll(" ", "%20");
-							fileName = fileName.replace("file:", "");
-							adaptee.desktop.browse(new URI("file:" + fileName));
+							fileName = fileName.replaceAll("\\\\", "/");
+							fileName = fileName.replace("file://", "");
+							adaptee.desktop.browse(new URI("file://" + fileName));
 						}
 					}
 				}

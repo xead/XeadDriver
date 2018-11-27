@@ -317,6 +317,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "URLFont", "ＭＳ 明朝" },
 		{ "UserID", "ユーザＩＤ" },
 		{ "UserName", "ユーザ名" },
+		{ "Warning", "(警告)" },
 		{ "XLSComment1", "＊データがエクセルシートに出力されました。" },
 		{ "XLSComment2", "＊この一覧は次の条件で絞込まれています：" },
 		{ "XLSErrorMessage", "エクセルデータの出力エラーが発生しました。エラーの詳細については、セッションログで確認してください。" },

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -1004,6 +1004,9 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 	}
 
 	public void setStatusMessage(String message) {
+		setStatusMessage(message, false);
+	}
+	public void setStatusMessage(String message, boolean isToReplaceLastLine) {
 		if (this.isVisible()) {
 			jTextAreaMessages.setText(message);
 			jScrollPaneMessages.paintImmediately(0,0,jScrollPaneMessages.getWidth(),jScrollPaneMessages.getHeight());
@@ -2611,6 +2614,10 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 				messageList.add(workRow, batchFieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + batchFieldList.get(i).getError());
 				workRow++;
 			}
+			if (!batchFieldList.get(i).getWarning().equals("")) {
+				messageList.add(workRow, batchFieldList.get(i).getCaption() + XFUtility.RESOURCE.getString("Colon") + XFUtility.RESOURCE.getString("Warning") + batchFieldList.get(i).getWarning());
+				workRow++;
+			}
 		}
 		if (topErrorFieldNotFound) {
 			for (int i = 0; i < jTableMain.getRowCount(); i++) {
@@ -2959,6 +2966,7 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 	private boolean isError = false;
 	private String autoNumberKey = "";
 	private String errorMessage = "";
+	private String warningMessage = "";
 	private int positionMargin = 0;
 	private Color foreground = Color.black;
 	private XF110_SubList dialog_;
@@ -3029,10 +3037,6 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 		if (fieldElement.getAttribute("Nullable").equals("F")) {
 			isNullable = false;
 		}
-//		wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "AUTO_NUMBER");
-//		if (!wrkStr.equals("")) {
-//			autoNumberKey = wrkStr;
-//		}
 		byteaTypeFieldID = fieldElement.getAttribute("ByteaTypeField");
 		tableElement = (org.w3c.dom.Element)fieldElement.getParentNode();
 
@@ -3048,7 +3052,13 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 			FontMetrics metrics = jLabelField.getFontMetrics(jLabelField.getFont());
 			jLabelField.setPreferredSize(new Dimension(metrics.stringWidth(fieldCaption), XFUtility.FIELD_UNIT_HEIGHT));
 		} else {
-			jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+			//jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+			int captionWidth = XFUtility.DEFAULT_LABEL_WIDTH;
+			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION_WIDTH");
+			if (!wrkStr.equals("")) {
+				captionWidth = Integer.parseInt(wrkStr);
+			}
+			jLabelField.setPreferredSize(new Dimension(captionWidth, XFUtility.FIELD_UNIT_HEIGHT));
 			XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
 		}
 
@@ -3513,7 +3523,8 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 			}
 		} else {
 			isError = false;
-			this.errorMessage = "";
+			errorMessage = "";
+			warningMessage = "";
 			if (component.isEditable()) {
 				component.setBackground(XFUtility.ACTIVE_COLOR);
 			} else {
@@ -3725,16 +3736,35 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 	public void setError(String message) {
 		if (!message.equals("") && this.errorMessage.equals("")) {
 			setError(true);
-			if (this.errorMessage.equals("")) {
-				this.errorMessage = message;
+			if (errorMessage.equals("")) {
+				errorMessage = message;
 			} else {
-				this.errorMessage = this.errorMessage + " " + message;
+				if (!errorMessage.contains(message)) {
+					errorMessage = errorMessage + " " + message;
+				}
 			}
 		}
 	}
 
 	public String getError() {
 		return errorMessage;
+	}
+
+	public void setWarning(String message) {
+		if (!message.equals("") && this.warningMessage.equals("")) {
+			setError(true);
+			if (warningMessage.equals("")) {
+				warningMessage = message;
+			} else {
+				if (!warningMessage.contains(message)) {
+					warningMessage = warningMessage + " " + message;
+				}
+			}
+		}
+	}
+
+	public String getWarning() {
+		return XFUtility.RESOURCE.getString("Warning") + warningMessage;
 	}
 
 	public void setColor(String color) {
@@ -5713,6 +5743,19 @@ class XF110_SubListDetailRowNumber extends Object implements Comparable {
 					}
 				}
 			}
+			if (!dialog_.getDetailColumnList().get(i).getWarning().equals("")) {
+				rowNumber = this.getRowIndex() + 1;
+				if (dialog_.getDetailColumnList().get(i).isVisibleOnPanel()) {
+					messageList.add(dialog_.getDetailColumnList().get(i).getCaption() + XFUtility.RESOURCE.getString("LineNumber1") + rowNumber
+							+ XFUtility.RESOURCE.getString("LineNumber2") + XFUtility.RESOURCE.getString("Warning") + dialog_.getDetailColumnList().get(i).getWarning());
+				} else {
+					message = XFUtility.RESOURCE.getString("LineNumber1") + rowNumber + XFUtility.RESOURCE.getString("LineNumber2")
+							+ XFUtility.RESOURCE.getString("Warning") + dialog_.getDetailColumnList().get(i).getWarning();
+					if (!messageList.contains(message)) {
+						messageList.add(message);
+					}
+				}
+			}
 		}
 
 		return countOfErrors;
@@ -5799,6 +5842,7 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 	private XFTableColumnEditor editor = null;
 	private boolean isError = false;
 	private String errorMessage = "";
+	private String warningMessage = "";
 	private int fieldRows = 1;
 	private String fieldLayout = "HORIZONTAL";
 
@@ -6180,7 +6224,8 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 			isError = true;
 		} else {
 			isError = false;
-			this.errorMessage = "";
+			errorMessage = "";
+			warningMessage = "";
 		}
 	}
 
@@ -6190,17 +6235,35 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 
 	public void setError(String message){
 		if (!message.equals("")) {
-			setError(true);
-			if (this.errorMessage.equals("")) {
-				this.errorMessage = message;
+			if (errorMessage.equals("")) {
+				errorMessage = message;
 			} else {
-				this.errorMessage = this.errorMessage + " " + message;
+				if (!errorMessage.contains(message)) {
+					errorMessage = errorMessage + " " + message;
+				}
 			}
 		}
 	}
 
 	public boolean isError() {
 		return isError;
+	}
+
+	public String getWarning(){
+		return warningMessage;
+	}
+
+	public void setWarning(String message){
+		if (!message.equals("")) {
+			setError(true);
+			if (warningMessage.equals("")) {
+				warningMessage = message;
+			} else {
+				if (!warningMessage.contains(message)) {
+					warningMessage = warningMessage + " " + message;
+				}
+			}
+		}
 	}
 
 	public String getByteaTypeFieldID(){

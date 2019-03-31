@@ -1032,6 +1032,10 @@ public class XFTableOperator {
     	return hasPrevious;
     }
     
+    public int getRowCount() {
+    	return relation_.getRowCount();
+    }
+    
     public Object getValueOf(String fieldID) throws Exception {
     	Object value = "";
     	if (relation_ != null) {

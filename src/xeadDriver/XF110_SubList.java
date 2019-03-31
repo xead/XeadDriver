@@ -6504,7 +6504,7 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 				} else {
 					if (basicType.equals("INTEGER")) {
 						if (value == null || value.equals("")) {
-							value_ = "";
+							value_ = "0";
 						} else {
 							String wrkStr = value.toString();
 							int pos = wrkStr.indexOf(".");
@@ -6516,7 +6516,7 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 					} else {
 						if (basicType.equals("FLOAT")) {
 							if (value == null || value.equals("")) {
-								value_ = "";
+								value_ = "0.0";
 							} else {
 								value_ = Double.parseDouble(value.toString());
 							}

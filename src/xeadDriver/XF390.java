@@ -1140,10 +1140,14 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	void fetchHeaderTableRecord() {
 		try {
 			for (int i = 0; i < headerFieldList.size(); i++) {
-				if (parmMap_.containsKey(headerFieldList.get(i).getFieldID())) {
-					headerFieldList.get(i).setValue(parmMap_.get(headerFieldList.get(i).getFieldID()));
+				if (parmMap_.containsKey(headerFieldList.get(i).getDataSourceName())) {
+					headerFieldList.get(i).setValue(parmMap_.get(headerFieldList.get(i).getDataSourceName()));
 				} else {
-					headerFieldList.get(i).setValue(headerFieldList.get(i).getNullValue());
+					if (parmMap_.containsKey(headerFieldList.get(i).getFieldID())) {
+						headerFieldList.get(i).setValue(parmMap_.get(headerFieldList.get(i).getFieldID()));
+					} else {
+						headerFieldList.get(i).setValue(headerFieldList.get(i).getNullValue());
+					}
 				}
 			}
 
@@ -3253,7 +3257,7 @@ class XF390_DetailColumn implements XFFieldScriptable {
 					Object value = operator.getValueOf(this.getFieldID()); 
 					if (basicType.equals("INTEGER")) {
 						if (value == null || value.equals("")) {
-							value_ = "";
+							value_ = "0";
 						} else {
 							String wrkStr = value.toString();
 							int pos = wrkStr.indexOf(".");
@@ -3265,7 +3269,7 @@ class XF390_DetailColumn implements XFFieldScriptable {
 					} else {
 						if (basicType.equals("FLOAT")) {
 							if (value == null || value.equals("")) {
-								value_ = "";
+								value_ = "0.0";
 							} else {
 								value_ = Double.parseDouble(value.toString());
 							}

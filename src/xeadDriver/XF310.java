@@ -1154,12 +1154,19 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			boolean keyInputRequired = false;
 			for (int i = 0; i < headerFieldList.size(); i++) {
 				if (headerFieldList.get(i).isKey()) {
-					if (parmMap_.containsKey(headerFieldList.get(i).getFieldID())) {
-						if (parmMap_.get(headerFieldList.get(i).getFieldID()).equals(headerFieldList.get(i).getNullValue())) {
+					if (parmMap_.containsKey(headerFieldList.get(i).getDataSourceName())) {
+						if (parmMap_.get(headerFieldList.get(i).getDataSourceName()).equals(headerFieldList.get(i).getNullValue())) {
 							keyInputRequired = true;
 						}
+						parmMap_.put(headerFieldList.get(i).getFieldID(), parmMap_.get(headerFieldList.get(i).getDataSourceName()));
 					} else {
-						keyInputRequired = true;
+						if (parmMap_.containsKey(headerFieldList.get(i).getFieldID())) {
+							if (parmMap_.get(headerFieldList.get(i).getFieldID()).equals(headerFieldList.get(i).getNullValue())) {
+								keyInputRequired = true;
+							}
+						} else {
+							keyInputRequired = true;
+						}
 					}
 				} else {
 					headerFieldList.get(i).setValue(headerFieldList.get(i).getNullValue());
@@ -2340,7 +2347,8 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			if (returnMap.get("RETURN_TO") != null) {
 				returnTo(returnMap.get("RETURN_TO").toString());
 			}
-			if (returnMap.get("RETURN_CODE").equals("00") && returnMap.size() > 1) {
+			if ((returnMap.get("RETURN_CODE").equals("00") || returnMap.get("RETURN_CODE").equals("10"))
+					&& returnMap.size() > 1) {
 
 				///////////////////////////////////////////////////////////////////
 				// Get latest detail row number if it is an auto-numbering field //
@@ -2359,23 +2367,24 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				////////////////////////////////////////////////////////
 				// Create new row(s) according to value maps returned //
 				////////////////////////////////////////////////////////
-				String datasourceName = "";
-				String multipleValues = "";
+				//String datasourceName = "";
+				int numberOfSelection = 1;
 				for (int i = 0; i < fieldsToGetList_.size(); i++) {
 					value = returnMap.get(fieldsToGetList_.get(i));
 					if (value == null) {
-//						JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+						JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
 						isNoError = false;
+						break;
 					} else {
-						if (value.toString().contains(";") && !value.toString().equals(";")) {
-							datasourceName = fieldsToGetList_.get(i);
-							multipleValues = value.toString();
+						if (value.toString().contains("<ListSeparator>")) {
+							workTokenizer = new StringTokenizer(value.toString(), "<ListSeparator>" );
+							numberOfSelection = workTokenizer.countTokens();
 							break;
 						}
 					}
 				}
 				if (isNoError) {
-					if (multipleValues.equals("")) {
+					if (numberOfSelection <= 1) {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
@@ -2387,14 +2396,23 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							setupNewRowAndAddToJTable(fieldsToGetMap);
 						}
 					} else {
-						workTokenizer = new StringTokenizer(multipleValues, ";" );
-						while (workTokenizer.hasMoreTokens()) {
+						String tokenValue;
+						for (int p=0; p < numberOfSelection; p++) {
 							HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 							for (int i = 0; i < fieldsToGetList_.size(); i++) {
 								value = returnMap.get(fieldsToGetList_.get(i));
 								if (value != null) {
-									if (fieldsToGetList_.get(i).equals(datasourceName)) {
-										fieldsToGetMap.put(fieldsToGetToList_.get(i), workTokenizer.nextToken());
+									if (value.toString().contains("<ListSeparator>")) {
+										int index = 0;
+										workTokenizer = new StringTokenizer(value.toString(), "<ListSeparator>" );
+										while (workTokenizer.hasMoreTokens()) {
+											tokenValue = workTokenizer.nextToken();
+											if (index == p) {
+												fieldsToGetMap.put(fieldsToGetToList_.get(i), tokenValue);
+												break;
+											}
+											index++;
+										}
 									} else {
 										fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 									}
@@ -2404,6 +2422,23 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 								setupNewRowAndAddToJTable(fieldsToGetMap);
 							}
 						}
+//						workTokenizer = new StringTokenizer(multipleValues, ";" );
+//						while (workTokenizer.hasMoreTokens()) {
+//							HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
+//							for (int i = 0; i < fieldsToGetList_.size(); i++) {
+//								value = returnMap.get(fieldsToGetList_.get(i));
+//								if (value != null) {
+//									if (fieldsToGetList_.get(i).equals(datasourceName)) {
+//										fieldsToGetMap.put(fieldsToGetToList_.get(i), workTokenizer.nextToken());
+//									} else {
+//										fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+//									}
+//								}
+//							}
+//							if (fieldsToGetMap.size() > 0) {
+//								setupNewRowAndAddToJTable(fieldsToGetMap);
+//							}
+//						}
 					}
 				}
 			}
@@ -7581,7 +7616,7 @@ class XF310_DetailColumn implements XFFieldScriptable {
 				} else {
 					if (basicType.equals("INTEGER")) {
 						if (value == null || value.equals("")) {
-							value_ = "";
+							value_ = "0";
 						} else {
 							String wrkStr = value.toString();
 							int pos = wrkStr.indexOf(".");
@@ -7593,7 +7628,7 @@ class XF310_DetailColumn implements XFFieldScriptable {
 					} else {
 						if (basicType.equals("FLOAT")) {
 							if (value == null || value.equals("")) {
-								value_ = "";
+								value_ = "0.0";
 							} else {
 								value_ = Double.parseDouble(value.toString());
 							}

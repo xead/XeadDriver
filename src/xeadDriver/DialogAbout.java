@@ -43,11 +43,26 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M24";
-	public static final String VERSION  = "1.3.24";
+	public static final String FULL_VERSION  = "V1.R3.M26";
+	public static final String VERSION  = "1.3.26";
 	public static final String FORMAT_VERSION  = "1.2";
-	public static final String COPYRIGHT = "Copyright 2018 DBC Ltd.";
+	public static final String COPYRIGHT = "Copyright 2019 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.26
+	//・XF100,300の明細行でリンク機能を使えるようにした
+	//・リンク機能の組み込みに伴い、XF200,300,310のパラメータ設定仕様を改善した
+	//・TableOperatorにgetRowCount()のメソッドを追加した
+	//・XF000でダイアログを含むスクリプトでコンソールありを指定した場合、自動実行されるようにした
+	//
+	//1.3.25
+	//・リンク機能を指定したフィールドの長さ設定のバグを修正した
+	//・XF100,110,300でのフィルター検索のバグを修正するとともに、機能アップした
+	//・XF100,110,300の数値のフィルター条件でブランク指定と0指定を区別するようにした
+	//・XF100,110,300の文字値のフィルター条件でブランク指定と''(または"")指定を区別するようにした
+	//・XF100,300での複数行選択時の返信処理を改善した
+	//・XF310での行追加用機能との連携処理を改善した
+	//・XF000以外の機能タイプでパラメータ値の検索ロジックを改善した
+	//
 	//1.3.24
 	//・スクリプトでwarningのフィールドプロパティを扱えるようにした
 	//・見出し領域のフィールド値をコピーできるようにした

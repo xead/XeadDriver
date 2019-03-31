@@ -278,7 +278,9 @@ public class XFUtility {
 					if (value.startsWith("-")) {
 						bf.append("-");
 					}
-					bf.append(XFUtility.INTEGER_FORMAT.format(Long.parseLong(wrkValue)));
+					if (!wrkValue.equals("")) {
+						bf.append(XFUtility.INTEGER_FORMAT.format(Long.parseLong(wrkValue)));
+					}
 					if (value.endsWith("-")) {
 						bf.append("-");
 					}
@@ -4762,12 +4764,18 @@ class XFTextField extends JPanel implements XFEditableField {
 	private JComboBox jComboBox = null;
 	private String[] valueList_ = null;
 	private boolean itemSelectionControled = true;
+	private boolean isFilter_ = true;
 
 	public XFTextField(String basicType, int digits, int decimal, String dataTypeOptions, String fieldOptions, String fontName) {
+		this(basicType, digits, decimal, dataTypeOptions, fieldOptions, fontName, false);
+	}
+
+	public XFTextField(String basicType, int digits, int decimal, String dataTypeOptions, String fieldOptions, String fontName, boolean isFilter) {
 		super();
 
 		basicType_ = basicType;
 		fontName_ = fontName;
+		isFilter_ = isFilter;
 
 		////////////////////////////
 		// digits of VARCHAR is 0 //
@@ -4792,7 +4800,9 @@ class XFTextField extends JPanel implements XFEditableField {
 			if (alignment.equals("LEFT")) {
 				jTextField.setHorizontalAlignment(SwingConstants.LEFT);
 			}
-			jTextField.setText(this.getFormattedNumber("0"));
+			if (!isFilter_) {
+				jTextField.setText(this.getFormattedNumber("0"));
+			}
 		} else {
 			if (basicType_.equals("FLOAT")) {
 				if (alignment.equals("") || alignment.equals("RIGHT")) {
@@ -4805,29 +4815,31 @@ class XFTextField extends JPanel implements XFEditableField {
 					jTextField.setHorizontalAlignment(SwingConstants.LEFT);
 				}
 
-				String wrkStr = "";
-				if (decimal_ == 0) {
-					wrkStr = "0";
+				if (!isFilter_) {
+					String wrkStr = "";
+					if (decimal_ == 0) {
+						wrkStr = "0";
+					}
+					if (decimal_ == 1) {
+						wrkStr = "0.0";
+					}
+					if (decimal_ == 2) {
+						wrkStr = "0.00";
+					}
+					if (decimal_ == 3) {
+						wrkStr = "0.000";
+					}
+					if (decimal_ == 4) {
+						wrkStr = "0.0000";
+					}
+					if (decimal_ == 5) {
+						wrkStr = "0.00000";
+					}
+					if (decimal_ == 6) {
+						wrkStr = "0.000000";
+					}
+					jTextField.setText(this.getFormattedNumber(wrkStr));
 				}
-				if (decimal_ == 1) {
-					wrkStr = "0.0";
-				}
-				if (decimal_ == 2) {
-					wrkStr = "0.00";
-				}
-				if (decimal_ == 3) {
-					wrkStr = "0.000";
-				}
-				if (decimal_ == 4) {
-					wrkStr = "0.0000";
-				}
-				if (decimal_ == 5) {
-					wrkStr = "0.00000";
-				}
-				if (decimal_ == 6) {
-					wrkStr = "0.000000";
-				}
-				jTextField.setText(this.getFormattedNumber(wrkStr));
 			} else {
 				if (alignment.equals("") || alignment.equals("LEFT")) {
 					jTextField.setHorizontalAlignment(SwingConstants.LEFT);
@@ -5011,30 +5023,32 @@ class XFTextField extends JPanel implements XFEditableField {
 	public String getStringNumber(String text) {
 		String numberString = XFUtility.getStringNumber(text);
 		if (numberString.equals("")) {
-			if (basicType_.equals("INTEGER")) {
-				numberString = "0";
-			}
-			if (basicType_.equals("FLOAT")) {
-				if (decimal_ == 0) {
+			if (!isFilter_) {
+				if (basicType_.equals("INTEGER")) {
 					numberString = "0";
 				}
-				if (decimal_ == 1) {
-					numberString = "0.0";
-				}
-				if (decimal_ == 2) {
-					numberString = "0.00";
-				}
-				if (decimal_ == 3) {
-					numberString = "0.000";
-				}
-				if (decimal_ == 4) {
-					numberString = "0.0000";
-				}
-				if (decimal_ == 5) {
-					numberString = "0.00000";
-				}
-				if (decimal_ == 6) {
-					numberString = "0.000000";
+				if (basicType_.equals("FLOAT")) {
+					if (decimal_ == 0) {
+						numberString = "0";
+					}
+					if (decimal_ == 1) {
+						numberString = "0.0";
+					}
+					if (decimal_ == 2) {
+						numberString = "0.00";
+					}
+					if (decimal_ == 3) {
+						numberString = "0.000";
+					}
+					if (decimal_ == 4) {
+						numberString = "0.0000";
+					}
+					if (decimal_ == 5) {
+						numberString = "0.00000";
+					}
+					if (decimal_ == 6) {
+						numberString = "0.000000";
+					}
 				}
 			}
 		} else {
@@ -5138,6 +5152,11 @@ class XFTextField extends JPanel implements XFEditableField {
 			}
 			if (basicType_.equals("FLOAT")) {
 				value = XFUtility.getFormattedFloatValue(getStringNumber(text), decimal_);
+			}
+			if (isFilter_) {
+				if (text.equals("")) {
+					value = "";
+				} 
 			}
 		}
 		return value;

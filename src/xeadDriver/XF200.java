@@ -347,8 +347,6 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			// Initializing panel mode //
 			/////////////////////////////
 			if (hasParmMapWithCompleteKeySet()) {
-//				if (functionElement_.getAttribute("UpdateOnly").equals("T")
-//						|| (parmMap_.containsKey("INSTANCE_MODE") && parmMap_.get("INSTANCE_MODE").toString().equals("EDIT"))) {
 				if (parmMap_.containsKey("INSTANCE_MODE") && parmMap_.get("INSTANCE_MODE").toString().equals("EDIT")) {
 					panelMode_ = "EDIT";
 					returnMap_.put("RETURN_CODE", "21");
@@ -1168,11 +1166,12 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		try {
 
 			for (int i = 0; i < fieldList.size(); i++) {
-				if (parmMap_.containsKey(fieldList.get(i).getFieldID())) {
-					fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getFieldID()));
+				if (parmMap_.containsKey(fieldList.get(i).getDataSourceName())) {
+					fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getDataSourceName()));
+					parmMap_.put(fieldList.get(i).getFieldID(), parmMap_.get(fieldList.get(i).getDataSourceName()));
 				} else {
-					if (parmMap_.containsKey(fieldList.get(i).getDataSourceName())) {
-						fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getDataSourceName()));
+					if (parmMap_.containsKey(fieldList.get(i).getFieldID())) {
+						fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getFieldID()));
 					} else {
 						fieldList.get(i).setValue(fieldList.get(i).getNullValue());
 					}
@@ -1234,7 +1233,7 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 	boolean hasParmMapWithCompleteKeySet() {
 		boolean hasCompleteKeySet = true;
 		for (int i = 0; i < primaryTable_.getKeyFieldList().size(); i++) {
-			if (!parmMap_.containsKey(primaryTable_.getKeyFieldList().get(i))) {
+			if (!parmMap_.containsKey(primaryTable_.getKeyFieldList().get(i)) && !parmMap_.containsKey(primaryTable_.getTableID() + "." + primaryTable_.getKeyFieldList().get(i))) {
 				hasCompleteKeySet = false;
 				break;
 			}

@@ -914,6 +914,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		ArrayList<Object> orderByValueList;
 		String wrkStr, sql;
 		XFTableOperator primaryTableOp, referTableOp;
+		int rowIndexNumber = 0;
 
 		try {
 			setCursor(new Cursor(Cursor.WAIT_CURSOR));
@@ -998,7 +999,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 							}
 						}
 						if (isTheRowToBeSelected()) {
-
+							rowIndexNumber++;
+							
 							keyMap = new HashMap<String, Object>();
 							for (int i = 0; i < primaryTable_.getKeyFieldIDList().size(); i++) {
 								keyMap.put(primaryTable_.getKeyFieldIDList().get(i), primaryTableOp.getValueOf(primaryTable_.getKeyFieldIDList().get(i)));
@@ -1014,9 +1016,11 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 							if (primaryTable_.hasOrderByAsItsOwnFields()) {
 								Object[] cell = new Object[1];
 								if (primaryTable_.getUpdateCounterID().equals("")) {
-									cell[0] = new XF110_RowNumber(countOfRows + 1, keyMap, columnMap, cellObjectList);
+//									cell[0] = new XF110_RowNumber(countOfRows + 1, keyMap, columnMap, cellObjectList);
+									cell[0] = new XF110_RowNumber(rowIndexNumber, keyMap, columnMap, cellObjectList);
 								} else {
-									cell[0] = new XF110_RowNumber(countOfRows + 1, keyMap, columnMap, cellObjectList, Integer.parseInt(primaryTableOp.getValueOf(primaryTable_.getUpdateCounterID()).toString()));
+//									cell[0] = new XF110_RowNumber(countOfRows + 1, keyMap, columnMap, cellObjectList, Integer.parseInt(primaryTableOp.getValueOf(primaryTable_.getUpdateCounterID()).toString()));
+									cell[0] = new XF110_RowNumber(rowIndexNumber, keyMap, columnMap, cellObjectList, Integer.parseInt(primaryTableOp.getValueOf(primaryTable_.getUpdateCounterID()).toString()));
 								}
 								tableModelMain.addRow(cell);
 							} else {
@@ -1037,39 +1041,72 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 								workingRowList.add(new WorkingRow(keyMap, columnMap, cellObjectList, orderByValueList, orderByFieldTypeList, Integer.parseInt(primaryTableOp.getValueOf(primaryTable_.getUpdateCounterID()).toString())));
 							}
 
-							countOfRows++;
-							blockRows++;
-							if (countOfBlockUnit > 0 && blockRows == countOfBlockUnit) {
-								primaryTableOp = null; //clear heap//
-								dialogCheckReadRequested = true;
-								if (countOfRows > 0) {
-									jTableMain.scrollRectToVisible(jTableMain.getCellRect(countOfRows-1, 0, true));
-								}
-								//////////////////////////////////////
-								// row number of the first row is 0 //
-								//////////////////////////////////////
-								boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, countOfRows, fromRow+countOfBlockUnit, countOfBlockUnit);
-								if (repliedOK) {
-									blockRows = 0;
-									fromRow = session_.getDialogCheckRead().getNextRow();
-									countOfBlockUnit = session_.getDialogCheckRead().getCountUnit();
-									if (session_.getDialogCheckRead().isRestarting()) {
-										originalFromRow = session_.getDialogCheckRead().getNextRow();
-										rowCount = tableModelMain.getRowCount();
-										for (int i = 0; i < rowCount; i++) {
-											tableModelMain.removeRow(0);
-										}
-										countOfRows = 0;
-										workingRowList.clear();
-									}
-									primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
-								} else {
-									break;
-								}
-							}
+//							countOfRows++;
+//							blockRows++;
+//							if (countOfBlockUnit > 0 && blockRows == countOfBlockUnit) {
+//								primaryTableOp = null; //clear heap//
+//								dialogCheckReadRequested = true;
+//								if (countOfRows > 0) {
+//									jTableMain.scrollRectToVisible(jTableMain.getCellRect(countOfRows-1, 0, true));
+//								}
+//								//////////////////////////////////////
+//								// row number of the first row is 0 //
+//								//////////////////////////////////////
+//								boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, countOfRows, fromRow+countOfBlockUnit, countOfBlockUnit);
+//								if (repliedOK) {
+//									blockRows = 0;
+//									fromRow = session_.getDialogCheckRead().getNextRow();
+//									countOfBlockUnit = session_.getDialogCheckRead().getCountUnit();
+//									if (session_.getDialogCheckRead().isRestarting()) {
+//										originalFromRow = session_.getDialogCheckRead().getNextRow();
+//										rowCount = tableModelMain.getRowCount();
+//										for (int i = 0; i < rowCount; i++) {
+//											tableModelMain.removeRow(0);
+//										}
+//										countOfRows = 0;
+//										workingRowList.clear();
+//									}
+//									primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
+//								} else {
+//									break;
+//								}
+//							}
 
 						}
 					}
+
+					countOfRows++;
+					blockRows++;
+					if (countOfBlockUnit > 0 && blockRows == countOfBlockUnit) {
+						primaryTableOp = null; //clear heap//
+						dialogCheckReadRequested = true;
+						if (countOfRows > 0) {
+							jTableMain.scrollRectToVisible(jTableMain.getCellRect(countOfRows-1, 0, true));
+						}
+						//////////////////////////////////////
+						// row number of the first row is 0 //
+						//////////////////////////////////////
+//						boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, rowIndexNumber, fromRow+countOfBlockUnit, countOfBlockUnit);
+						boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, countOfRows, fromRow+countOfBlockUnit, countOfBlockUnit);
+						if (repliedOK) {
+							blockRows = 0;
+							fromRow = session_.getDialogCheckRead().getNextRow();
+							countOfBlockUnit = session_.getDialogCheckRead().getCountUnit();
+							if (session_.getDialogCheckRead().isRestarting()) {
+								originalFromRow = session_.getDialogCheckRead().getNextRow();
+								rowCount = tableModelMain.getRowCount();
+								for (int i = 0; i < rowCount; i++) {
+									tableModelMain.removeRow(0);
+								}
+								countOfRows = 0;
+								workingRowList.clear();
+							}
+							primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
+						} else {
+							break;
+						}
+					}
+
 				}
 			}
 			primaryTableOp = null; //clear heap//
@@ -2399,7 +2436,11 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 						if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
 							cellList.get(i).setForeground(table.getSelectionForeground());
 						} else {
-							cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+							if (rowObject.getCellObjectList().get(i).getColor().equals(Color.blue)) {
+								cellList.get(i).setForeground(Color.cyan);
+							} else {
+								cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
+							}
 						}
 					} else {
 						if (rowObject.getCellObjectList().get(i).getValueType().equals("URL")) {
@@ -2408,11 +2449,7 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 							if (rowObject.getCellObjectList().get(i).getColor().equals(Color.black)) {
 								cellList.get(i).setForeground(table.getForeground());
 							} else {
-								if (rowObject.getCellObjectList().get(i).getColor().equals(Color.blue)) {
-									cellList.get(i).setForeground(Color.cyan);
-								} else {
-									cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
-								}
+								cellList.get(i).setForeground(rowObject.getCellObjectList().get(i).getColor());
 							}
 						}
 					}
@@ -2461,13 +2498,17 @@ class XF110_Filter extends JPanel {
 	private String fieldCaption = "";
 	private String fieldOptions = "";
 	private ArrayList<String> fieldOptionList;
+	private String basicType = "";
 	private String operand = "";
 	private String componentType = "";
 	private String operandType = "";
 	private int dataSize = 5;
 	private int decimalSize = 0;
 	private JPanel jPanelField = new JPanel();
+	private JPanel jPanelCaption = new JPanel();
 	private JLabel jLabelField = new JLabel();
+	private JButton jButton = new JButton();
+	private JPopupMenu jPopupMenu = new JPopupMenu();
 	private XFTextField xFTextField = null;
 	private XFInputAssistField xFInputAssistField = null;
 	private XFCheckBox xFCheckBox = null;
@@ -2481,13 +2522,23 @@ class XF110_Filter extends JPanel {
 	private JComponent component = null;
 	private boolean isVertical = false;
 	private int verticalMargin = 5;
-	private int horizontalMargin = 45;
+	private int horizontalMargin = 50;
 	private boolean isReflect = false;
 	private boolean isEditable_ = true;
 	private boolean isHidden = false;
 	private boolean isVirtualField = false;
 	private boolean isPrimaryWhere = false;
 	private String filterGroupID = "";
+	private JRadioButtonMenuItem itemEQ = new JRadioButtonMenuItem(" = ");
+	private JRadioButtonMenuItem itemNE = new JRadioButtonMenuItem(" != ");
+	private JRadioButtonMenuItem itemGE = new JRadioButtonMenuItem(" >= ");
+	private JRadioButtonMenuItem itemGT = new JRadioButtonMenuItem(" > ");
+	private JRadioButtonMenuItem itemLE = new JRadioButtonMenuItem(" <= ");
+	private JRadioButtonMenuItem itemLT = new JRadioButtonMenuItem(" < ");
+	private JRadioButtonMenuItem itemGeneric = new JRadioButtonMenuItem(" ?* ");
+	private JRadioButtonMenuItem itemScan = new JRadioButtonMenuItem(" *?* ");
+	private ButtonGroup itemGroup = new ButtonGroup();
+	private ImageIcon buttonIcon = null;
 
 	public XF110_Filter(org.w3c.dom.Element fieldElement, XF110 dialog){
 		super();
@@ -2545,60 +2596,255 @@ class XF110_Filter extends JPanel {
 			}
 		}
 
-		operandType = "EQ";
-		operand = " = ";
-		if (fieldOptionList.contains("GE")) {
-			operandType = "GE";
-			operand = " >= ";
-		}
-		if (fieldOptionList.contains("GT")) {
-			operandType = "GT";
-			operand = " > ";
-		}
-		if (fieldOptionList.contains("LE")) {
-			operandType = "LE";
-			operand = " <= ";
-		}
-		if (fieldOptionList.contains("LT")) {
-			operandType = "LT";
-			operand = " < ";
-		}
-		if (fieldOptionList.contains("SCAN")) {
-			operandType = "SCAN";
-			operand = " LIKE ";
-		}
-		if (fieldOptionList.contains("GENERIC")) {
-			operandType = "GENERIC";
-			operand = " LIKE ";
-		}
 		if (fieldOptionList.contains("REFLECT")) {
 			operandType = "REFLECT";
 			operand = "";
-		}
-
-		if (operandType.equals("REFLECT")) {
 			isReflect = true;
+			buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterReflect.png"));
+		 	jButton.setIcon(buttonIcon);
+		} else {
+			if (fieldOptionList.contains("PROMPT_LIST1") || fieldOptionList.contains("PROMPT_LIST2")) {
+				jPopupMenu.add(itemEQ);
+				jPopupMenu.add(itemNE);
+				itemGroup.add(itemEQ);
+				itemGroup.add(itemNE);
+			} else {
+				basicType = XFUtility.getBasicTypeOf(dataType);
+				if (basicType.equals("INTEGER") || basicType.equals("FLOAT")) {
+					jPopupMenu.add(itemEQ);
+					jPopupMenu.add(itemNE);
+					jPopupMenu.add(itemGE);
+					jPopupMenu.add(itemGT);
+					jPopupMenu.add(itemLE);
+					jPopupMenu.add(itemLT);
+					itemGroup.add(itemEQ);
+					itemGroup.add(itemNE);
+					itemGroup.add(itemGE);
+					itemGroup.add(itemGT);
+					itemGroup.add(itemLE);
+					itemGroup.add(itemLT);
+				}
+				if (basicType.equals("STRING") || basicType.equals("CLOB")) {
+					jPopupMenu.add(itemEQ);
+					jPopupMenu.add(itemNE);
+					jPopupMenu.add(itemScan);
+					jPopupMenu.add(itemGeneric);
+					itemGroup.add(itemEQ);
+					itemGroup.add(itemNE);
+					itemGroup.add(itemScan);
+					itemGroup.add(itemGeneric);
+				}
+				if (basicType.equals("BINARY") || basicType.equals("BYTEA")) {
+					jPopupMenu.add(itemEQ);
+					jPopupMenu.add(itemNE);
+					itemGroup.add(itemEQ);
+					itemGroup.add(itemNE);
+				}
+				if (basicType.equals("DATE")) {
+					jPopupMenu.add(itemEQ);
+					jPopupMenu.add(itemNE);
+					jPopupMenu.add(itemGE);
+					jPopupMenu.add(itemGT);
+					jPopupMenu.add(itemLE);
+					jPopupMenu.add(itemLT);
+					itemGroup.add(itemEQ);
+					itemGroup.add(itemNE);
+					itemGroup.add(itemGE);
+					itemGroup.add(itemGT);
+					itemGroup.add(itemLE);
+					itemGroup.add(itemLT);
+				}
+				if (basicType.equals("TIME") || basicType.equals("DATETIME")) {
+					jPopupMenu.add(itemEQ);
+					jPopupMenu.add(itemNE);
+					jPopupMenu.add(itemGE);
+					jPopupMenu.add(itemGT);
+					jPopupMenu.add(itemLE);
+					jPopupMenu.add(itemLT);
+					jPopupMenu.add(itemGeneric);
+					itemGroup.add(itemEQ);
+					itemGroup.add(itemNE);
+					itemGroup.add(itemGE);
+					itemGroup.add(itemGT);
+					itemGroup.add(itemLE);
+					itemGroup.add(itemLT);
+					itemGroup.add(itemGeneric);
+				}
+			}
+			itemEQ.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					operandType = "EQ";
+					operand = " = ";
+					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterEQ.png"));
+				 	jButton.setIcon(buttonIcon);
+				}
+			});
+			itemNE.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					operandType = "NE";
+					operand = " != ";
+					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterNE.png"));
+				 	jButton.setIcon(buttonIcon);
+				}
+			});
+			itemGE.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					operandType = "GE";
+					operand = " >= ";
+					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterGE.png"));
+				 	jButton.setIcon(buttonIcon);
+				}
+			});
+			itemGT.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					operandType = "GT";
+					operand = " > ";
+					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterGT.png"));
+				 	jButton.setIcon(buttonIcon);
+				}
+			});
+			itemLE.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					operandType = "LE";
+					operand = " <= ";
+					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterLE.png"));
+				 	jButton.setIcon(buttonIcon);
+				}
+			});
+			itemLT.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					operandType = "LT";
+					operand = " < ";
+					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterLT.png"));
+				 	jButton.setIcon(buttonIcon);
+				}
+			});
+			itemScan.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					operandType = "SCAN";
+					operand = " LIKE ";
+					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterScan.png"));
+				 	jButton.setIcon(buttonIcon);
+				}
+			});
+			itemGeneric.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					operandType = "GENERIC";
+					operand = " LIKE ";
+					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterGeneric.png"));
+				 	jButton.setIcon(buttonIcon);
+				}
+			});
+
+			itemEQ.setSelected(true);
+			itemEQ.doClick();
+			if (fieldOptionList.contains("GE")) {
+				itemGE.setSelected(true);
+				itemGE.doClick();
+			}
+			if (fieldOptionList.contains("GT")) {
+				itemGT.setSelected(true);
+				itemGT.doClick();
+			}
+			if (fieldOptionList.contains("LE")) {
+				itemLE.setSelected(true);
+				itemLE.doClick();
+			}
+			if (fieldOptionList.contains("LT")) {
+				itemLT.setSelected(true);
+				itemLT.doClick();
+			}
+			if (fieldOptionList.contains("SCAN")) {
+				itemScan.setSelected(true);
+				itemScan.doClick();
+			}
+			if (fieldOptionList.contains("GENERIC")) {
+				itemGeneric.setSelected(true);
+				itemGeneric.doClick();
+			}
 		}
+//		
+//		operandType = "EQ";
+//		operand = " = ";
+//		if (fieldOptionList.contains("GE")) {
+//			operandType = "GE";
+//			operand = " >= ";
+//		}
+//		if (fieldOptionList.contains("GT")) {
+//			operandType = "GT";
+//			operand = " > ";
+//		}
+//		if (fieldOptionList.contains("LE")) {
+//			operandType = "LE";
+//			operand = " <= ";
+//		}
+//		if (fieldOptionList.contains("LT")) {
+//			operandType = "LT";
+//			operand = " < ";
+//		}
+//		if (fieldOptionList.contains("SCAN")) {
+//			operandType = "SCAN";
+//			operand = " LIKE ";
+//		}
+//		if (fieldOptionList.contains("GENERIC")) {
+//			operandType = "GENERIC";
+//			operand = " LIKE ";
+//		}
+//		if (fieldOptionList.contains("REFLECT")) {
+//			operandType = "REFLECT";
+//			operand = "";
+//		}
+//
+//		if (operandType.equals("REFLECT")) {
+//			isReflect = true;
+//		}
 
 		filterGroupID = tableAlias + "." + fieldID + ":" + operand;
 
 		wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "CAPTION");
 		if (!wrkStr.equals("")) {
 			fieldCaption = XFUtility.getCaptionValue(wrkStr, dialog_.getSession());
+			fieldCaption = fieldCaption.replace("SCAN","");
+			fieldCaption = fieldCaption.replace("†","");
+			fieldCaption = fieldCaption.replace("ãˆÊŒ…","");
 		}
 		jLabelField = new JLabel(fieldCaption);
 		jLabelField.setHorizontalAlignment(SwingConstants.RIGHT);
 		jLabelField.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
-		int width = XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH);
+		int width = XFUtility.adjustFontSizeToGetPreferredWidthOfLabel(jLabelField, XFUtility.DEFAULT_LABEL_WIDTH-20);
+//		if (isVertical || dialog_.getFilterList().size() == 0) {
+//			jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+//		} else {
+//			jLabelField.setPreferredSize(new Dimension(width + horizontalMargin, XFUtility.FIELD_UNIT_HEIGHT));
+//		}
 		if (isVertical || dialog_.getFilterList().size() == 0) {
-			jLabelField.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
+			jPanelCaption.setPreferredSize(new Dimension(XFUtility.DEFAULT_LABEL_WIDTH, XFUtility.FIELD_UNIT_HEIGHT));
 		} else {
-			jLabelField.setPreferredSize(new Dimension(width + horizontalMargin, XFUtility.FIELD_UNIT_HEIGHT));
+			jPanelCaption.setPreferredSize(new Dimension(width + horizontalMargin, XFUtility.FIELD_UNIT_HEIGHT));
 		}
+		jButton.setPreferredSize(new Dimension(20, XFUtility.FIELD_UNIT_HEIGHT));
+		jButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Component com = (Component)e.getSource();
+				jPopupMenu.show(com, 10, 10);
+			}
+		});
+		jButton.addKeyListener(new KeyAdapter() {
+			public void keyPressed(KeyEvent e) {
+			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
+					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+						jButton.doClick();
+					}
+				}
+			} 
+		});
+		jPanelCaption.setLayout(new BorderLayout());
+		jPanelCaption.add(jLabelField, BorderLayout.CENTER);
+		jPanelCaption.add(jButton, BorderLayout.EAST);
 
 		jPanelField.setLayout(null);
 		this.setLayout(new BorderLayout());
-		this.add(jLabelField, BorderLayout.WEST);
+		this.add(jPanelCaption, BorderLayout.WEST);
 		this.add(jPanelField, BorderLayout.CENTER);
 
 		////////////////////////////////////////////////////////////////////////////////
@@ -2609,7 +2855,7 @@ class XF110_Filter extends JPanel {
 			componentType = "BOOLEAN";
 			xFCheckBox = new XFCheckBox(dataTypeOptions);
 			xFCheckBox.addKeyListener(new XF110_Component_keyAdapter(dialog));
-			xFCheckBox.setLocation(5, 0);
+			xFCheckBox.setLocation(0, 0);
 			xFCheckBox.setEditable(true);
 			component = xFCheckBox;
 		} else {
@@ -2617,7 +2863,7 @@ class XF110_Filter extends JPanel {
 				componentType = "ASSISTFIELD";
 				xFInputAssistField = new XFInputAssistField(tableID, fieldID, dataSize, dataTypeOptions, dialog_.getSession());
 				xFInputAssistField.addKeyListener(new XF110_Component_keyAdapter(dialog));
-				xFInputAssistField.setLocation(5, 0);
+				xFInputAssistField.setLocation(0, 0);
 				component = xFInputAssistField;
 			} else {
 				////////////////////////////////////////////////////////////////////////////////
@@ -2651,7 +2897,7 @@ class XF110_Filter extends JPanel {
 									fieldWidth = metrics2.stringWidth(wrkText);
 								}
 							}
-							jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 30, 24));
+							jComboBox.setBounds(new Rectangle(0, 0, fieldWidth + 30, 24));
 							jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 							jComboBox.setSelectedIndex(0);
 						} catch(Exception e) {
@@ -2677,7 +2923,7 @@ class XF110_Filter extends JPanel {
 									fieldWidth = metrics2.stringWidth(wrkKey);
 								}
 							}
-							jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 30, 24));
+							jComboBox.setBounds(new Rectangle(0, 0, fieldWidth + 30, 24));
 							jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 							jComboBox.setSelectedIndex(0);
 						} else {
@@ -2702,7 +2948,7 @@ class XF110_Filter extends JPanel {
 													fieldWidth = metrics2.stringWidth(wrkKey);
 												}
 											}
-											jComboBox.setBounds(new Rectangle(5, 0, fieldWidth + 30, 24));
+											jComboBox.setBounds(new Rectangle(0, 0, fieldWidth + 30, 24));
 											jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 											jComboBox.setSelectedIndex(0);
 										} catch(Exception e) {
@@ -2721,7 +2967,7 @@ class XF110_Filter extends JPanel {
 						componentType = "PROMPT_CALL";
 						xFPromptCall = new XF110_PromptCallField(fieldElement, wrkStr, dialog_);
 						xFPromptCall.addKeyListener(new XF110_Component_keyAdapter(dialog));
-						xFPromptCall.setLocation(5, 0);
+						xFPromptCall.setLocation(0, 0);
 						component = xFPromptCall;
 						if (component.getBounds().width < 70) {
 							component.setBounds(new Rectangle(component.getBounds().x, component.getBounds().y, 70, component.getBounds().height));
@@ -2731,7 +2977,7 @@ class XF110_Filter extends JPanel {
 							componentType = "DATE";
 							xFDateField = new XFDateField(dialog_.getSession());
 							xFDateField.addKeyListener(new XF110_Component_keyAdapter(dialog));
-							xFDateField.setLocation(5, 0);
+							xFDateField.setLocation(0, 0);
 							xFDateField.setEditable(true);
 							component = xFDateField;
 						} else {
@@ -2739,7 +2985,7 @@ class XF110_Filter extends JPanel {
 								componentType = "YMONTH";
 								xFYMonthBox = new XFYMonthBox(dialog_.getSession());
 								xFYMonthBox.addKeyListener(new XF110_Component_keyAdapter(dialog));
-								xFYMonthBox.setLocation(5, 0);
+								xFYMonthBox.setLocation(0, 0);
 								xFYMonthBox.setEditable(true);
 								component = xFYMonthBox;
 							} else {
@@ -2747,7 +2993,7 @@ class XF110_Filter extends JPanel {
 									componentType = "MSEQ";
 									xFMSeqBox = new XFMSeqBox(dialog_.getSession());
 									xFMSeqBox.addKeyListener(new XF110_Component_keyAdapter(dialog));
-									xFMSeqBox.setLocation(5, 0);
+									xFMSeqBox.setLocation(0, 0);
 									xFMSeqBox.setEditable(true);
 									component = xFMSeqBox;
 								} else {
@@ -2755,14 +3001,14 @@ class XF110_Filter extends JPanel {
 										componentType = "FYEAR";
 										xFFYearBox = new XFFYearBox(dialog_.getSession());
 										xFFYearBox.addKeyListener(new XF110_Component_keyAdapter(dialog));
-										xFFYearBox.setLocation(5, 0);
+										xFFYearBox.setLocation(0, 0);
 										xFFYearBox.setEditable(true);
 										component = xFFYearBox;
 									} else {
 										componentType = "TEXTFIELD";
-										xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont);
+										xFTextField = new XFTextField(this.getBasicType(), dataSize, decimalSize, dataTypeOptions, fieldOptions, dialog_.getSession().systemFont, true);
 										xFTextField.addKeyListener(new XF110_Component_keyAdapter(dialog));
-										xFTextField.setLocation(5, 0);
+										xFTextField.setLocation(0, 0);
 										component = xFTextField;
 									}
 								}
@@ -2799,7 +3045,8 @@ class XF110_Filter extends JPanel {
 		} else {
 			component.setBounds(new Rectangle(component.getBounds().x, component.getBounds().y, Integer.parseInt(wrkStr), component.getBounds().height));
 		}
-		this.setPreferredSize(new Dimension(jLabelField.getPreferredSize().width + component.getBounds().width + 5, component.getBounds().height));
+		//this.setPreferredSize(new Dimension(jLabelField.getPreferredSize().width + component.getBounds().width + 5, component.getBounds().height));
+		this.setPreferredSize(new Dimension(jPanelCaption.getPreferredSize().width + component.getBounds().width, component.getBounds().height));
 	}
 
 	Object getDefaultValue() {
@@ -2839,7 +3086,7 @@ class XF110_Filter extends JPanel {
 	}
 
 	public String getCaptionAndValue(){
-		String value = fieldCaption + ":";
+		String value = fieldCaption + operand;
 		String wrk = "";
 		if (componentType.equals("TEXTFIELD")) {
 			wrk = (String)xFTextField.getExternalValue();
@@ -3099,7 +3346,10 @@ class XF110_Filter extends JPanel {
 							stringFilterValue = (String)xFInputAssistField.getInternalValue();
 						}
 						if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-							if ((Double.parseDouble(stringFilterValue) == 0) && fieldOptionList.contains("IGNORE_IF_ZERO")) {
+//							if ((Double.parseDouble(stringFilterValue) == 0) && fieldOptionList.contains("IGNORE_IF_ZERO")) {
+//								validated = true;
+//							} else {
+							if (stringFilterValue.equals("")) {
 								validated = true;
 							} else {
 								doubleResultValue = Double.parseDouble(stringResultValue);
@@ -3185,11 +3435,17 @@ class XF110_Filter extends JPanel {
 									validated = true;
 								} else {
 									if (operandType.equals("EQ")) {
+										if (stringFilterValue.equals("\'\'") || stringFilterValue.equals("\"\"") || stringFilterValue.equals("\'") || stringFilterValue.equals("\"")) {
+											stringFilterValue = "";
+										}
 										if (stringResultValue.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 											validated = true;
 										}
 									}
 									if (operandType.equals("SCAN")) {
+										if (stringFilterValue.equals("\'\'") || stringFilterValue.equals("\"\"") || stringFilterValue.equals("\'") || stringFilterValue.equals("\"")) {
+											stringFilterValue = "";
+										}
 										if (stringResultValue.toUpperCase().contains(stringFilterValue.toUpperCase())) {
 											validated = true;
 										}
@@ -3589,9 +3845,9 @@ class XF110_Filter extends JPanel {
 				}
 				if (!wrkStr.equals("")) {
 					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-						if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+						//if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
 							value = fieldID + operand + wrkStr;
-						}
+						//}
 					} else {
 						if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME")) {
 							wrkStr = wrkStr.replace("-", "");
@@ -3606,6 +3862,9 @@ class XF110_Filter extends JPanel {
 									value = fieldID + whereValue;
 								}
 							} else {
+								if (wrkStr.equals("\'\'") || wrkStr.equals("\"\"") || wrkStr.equals("\'") || wrkStr.equals("\"")) {
+									wrkStr = "";
+								}
 								if (operandType.equals("SCAN")) {
 									value = "UPPER(" + fieldID + ") LIKE UPPER('%" + wrkStr + "%')";
 								} else {
@@ -3647,9 +3906,9 @@ class XF110_Filter extends JPanel {
 						value = bf.toString();
 					} else {
 						if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-							if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+							//if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
 								value = fieldID + operand + wrkStr;
-							}
+							//}
 						} else {
 							if (operand.equals(" LIKE ")) {
 								value = fieldID + operand + "'%" + wrkStr + "%'";
@@ -3706,9 +3965,9 @@ class XF110_Filter extends JPanel {
 			}
 			if (!wrkStr.equals("")) {
 				if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-					if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+					//if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
 						value = wrkStr;
-					}
+					//}
 				} else {
 					if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME") || this.getBasicType().equals("DATETIME")) {
 						wrkStr = wrkStr.replace("-", "");
@@ -3730,9 +3989,9 @@ class XF110_Filter extends JPanel {
 			wrkStr = (String)xFPromptCall.getInternalValue();
 			if (!wrkStr.equals("")) {
 				if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-					if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+					//if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
 						value = wrkStr;
-					}
+					//}
 				} else {
 					value = wrkStr;
 				}
@@ -3774,9 +4033,9 @@ class XF110_Filter extends JPanel {
 			}
 			if (!wrkStr.equals("")) {
 				if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-					if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+					//if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
 						result = true;
-					}
+					//}
 				} else {
 					result = true;
 				}
@@ -3802,9 +4061,9 @@ class XF110_Filter extends JPanel {
 			wrkStr = (String)xFPromptCall.getInternalValue();
 			if (!wrkStr.equals("")) {
 				if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-					if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
+					//if (Double.parseDouble(wrkStr.trim()) != 0 || !fieldOptionList.contains("IGNORE_IF_ZERO")) {
 						result = true;
-					}
+					//}
 				} else {
 					result = true;
 				}
@@ -4664,7 +4923,7 @@ class XF110_Column implements XFFieldScriptable {
 					isFoundInResultSet = true;
 					if (basicType.equals("INTEGER")) {
 						if (value == null || value.equals("")) {
-							value_ = "";
+							value_ = "0";
 						} else {
 							String wrkStr = value.toString();
 							int pos = wrkStr.indexOf(".");
@@ -4676,7 +4935,7 @@ class XF110_Column implements XFFieldScriptable {
 					} else {
 						if (basicType.equals("FLOAT")) {
 							if (value == null || value.equals("")) {
-								value_ = "";
+								value_ = "0.0";
 							} else {
 								value_ = Double.parseDouble(value.toString());
 							}

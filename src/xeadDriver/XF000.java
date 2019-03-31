@@ -243,6 +243,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelButtons.add(jButtonStop);
 		jPanelButtons.add(jButtonIconify);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
+		this.addWindowListener(new XF000_WindowListener(this));
 	}
 
 	public HashMap<String, Object> execute(HashMap<String, Object> parmMap) {
@@ -318,6 +319,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 						setupConsoleWithoutTimer();
 					}
 				}
+
 				session_.setMessageComponent(jScrollPaneMessages);
 				this.setVisible(true);
 			}
@@ -374,7 +376,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		}
 
 		if (functionElement_.getAttribute("TimerMessage").equals("")) {
-			jTextAreaMessages.setText("> " + XFUtility.RESOURCE.getString("FunctionMessage44"));
+			if (functionElement_.getAttribute("TimerOption").contains(":")) {
+				jTextAreaMessages.setText("> " + XFUtility.RESOURCE.getString("FunctionMessage44"));
+			} else {
+				jTextAreaMessages.setText("> " + XFUtility.RESOURCE.getString("FunctionMessage66"));
+			}
 		} else {
 			jTextAreaMessages.setText(functionElement_.getAttribute("TimerMessage"));
 		}
@@ -393,6 +399,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jLabelTime.setEnabled(false);
 		jTextFieldTime.setEnabled(false);
 		jTextFieldTime.setText("");
+		jTextAreaMessages.setText("");
 
 		jCheckBoxRunNow.setSelected(true);
 		jCheckBoxRunNow.setEnabled(false);
@@ -401,13 +408,13 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jCheckBoxRunOffDay.setSelected(false);
 		jCheckBoxRunOffDay.setEnabled(false);
 
-		if (functionElement_.getAttribute("TimerMessage").equals("")) {
-			jTextAreaMessages.setText("> " + XFUtility.RESOURCE.getString("FunctionMessage66"));
-		} else {
-			jTextAreaMessages.setText("> " + functionElement_.getAttribute("TimerMessage"));
-		}
+//		if (functionElement_.getAttribute("TimerMessage").equals("")) {
+//			jTextAreaMessages.setText("> " + XFUtility.RESOURCE.getString("FunctionMessage66"));
+//		} else {
+//			jTextAreaMessages.setText("> " + functionElement_.getAttribute("TimerMessage"));
+//		}
 
-		jButtonStart.setEnabled(true);
+		jButtonStart.setEnabled(false);
 		jButtonStop.setEnabled(false);
 		jButtonIconify.setEnabled(false);
 		jPanelBottom.remove(jProgressBar);
@@ -422,6 +429,13 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				stopTimer();
 			}
 			closeFunction();
+		}
+	}
+
+	public void startProcess() {
+		if (!jButtonStart.isEnabled() && !isExecuted) {
+			isExecuted = true;
+			startTimer();
 		}
 	}
 
@@ -469,7 +483,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 			setBackgroundMessage(message, "");
 		}
 	}
-
+	
 	private void setBackgroundMessage(String message1, String message2) {
 		JScrollPane scrollPane = session_.getMessageComponent();
 		if (scrollPane != null) {
@@ -1110,11 +1124,6 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage47"), ""));
 				runScript();
 				jButtonStart.setEnabled(false);
-//				if (errorHasOccured) {
-//					jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage51"), "") + "\n");
-//				} else {
-//					jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage48"), "") + "\n");
-//				}
 				if (jCheckBoxRepeat.isSelected()) {
 					startTimer();
 				} else {
@@ -1174,5 +1183,33 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		bf.append(formatter.format(calendar.getTime()));
 		bf.append(")");
 		return bf.toString();
+	}
+}
+
+class XF000_WindowListener implements java.awt.event.WindowListener {
+	XF000 adaptee;
+	XF000_WindowListener(XF000 adaptee) {
+		this.adaptee = adaptee;
+	}
+	public void windowOpened(WindowEvent e){
+	}
+
+	public void windowClosing(WindowEvent e){
+	}
+
+	public void windowClosed(WindowEvent e){
+	}
+
+	public void windowIconified(WindowEvent e){
+	}
+
+	public void windowDeiconified(WindowEvent e){
+	}
+
+	public void windowActivated(WindowEvent e){
+		adaptee.startProcess();
+	}
+
+	public void windowDeactivated(WindowEvent e){
 	}
 }

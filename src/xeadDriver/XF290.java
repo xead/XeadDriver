@@ -629,8 +629,12 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 	void fetchTableRecord() {
 		try {
 			for (int i = 0; i < fieldList.size(); i++) {
-				if (parmMap_.containsKey(fieldList.get(i).getFieldID())) {
-					fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getFieldID()));
+				if (parmMap_.containsKey(fieldList.get(i).getDataSourceName())) {
+					fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getDataSourceName()));
+				} else {
+					if (parmMap_.containsKey(fieldList.get(i).getFieldID())) {
+						fieldList.get(i).setValue(parmMap_.get(fieldList.get(i).getFieldID()));
+					}
 				}
 			}
 			primaryTable_.runScript("BR", "");

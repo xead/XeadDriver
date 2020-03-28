@@ -247,6 +247,10 @@ public class XFCheckListDialog extends JDialog {
     	this.setVisible(false);
     }
 
+    public int getRowCount() {
+    	return keyList.size();
+    }
+
     public void setListSelected(String keyList) {
     	initialSelectKeyList.clear();
 		StringTokenizer workTokenizer = new StringTokenizer(keyList, ";" );

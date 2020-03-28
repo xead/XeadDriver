@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2016 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2019 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -47,6 +47,7 @@ import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -76,6 +77,18 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	private String exceptionHeader = "";
 
 	private JPanel jPanelMain = new JPanel();
+	private Action helpAction = new AbstractAction(){
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e){
+			session_.browseHelp();
+		}
+	};
+	private Action escapeAction = new AbstractAction() {
+		private static final long serialVersionUID = 1L;
+		public void actionPerformed(ActionEvent e) {
+			returnTo("MENU");
+		}
+	};
 	private Dimension scrSize;
 	private JPanel jPanelTimer = new JPanel();
 	private JPanel jPanelTop = new JPanel();
@@ -123,6 +136,15 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	void initConsole() {
 		scrSize = Toolkit.getDefaultToolkit().getScreenSize();
 		jPanelMain.setLayout(new BorderLayout());
+		InputMap inputMap  = jPanelMain.getInputMap(JPanel.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+		inputMap.clear();
+		ActionMap actionMap = jPanelMain.getActionMap();
+		actionMap.clear();
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "HELP");
+		actionMap.put("HELP", helpAction);
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "ESCAPE");
+		actionMap.put("ESCAPE", escapeAction);
+
 		jPanelTop.setLayout(new BorderLayout());
 		jPanelTimer.setLayout(null);
 		jPanelTimer.setFocusable(false);
@@ -243,7 +265,7 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jPanelButtons.add(jButtonStop);
 		jPanelButtons.add(jButtonIconify);
 		this.getContentPane().add(jPanelMain, BorderLayout.CENTER);
-		this.addWindowListener(new XF000_WindowListener(this));
+		//this.addWindowListener(new XF000_WindowListener(this));
 	}
 
 	public HashMap<String, Object> execute(HashMap<String, Object> parmMap) {
@@ -414,12 +436,12 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 //			jTextAreaMessages.setText("> " + functionElement_.getAttribute("TimerMessage"));
 //		}
 
-		jButtonStart.setEnabled(false);
+		jButtonStart.setEnabled(true);
 		jButtonStop.setEnabled(false);
 		jButtonIconify.setEnabled(false);
 		jPanelBottom.remove(jProgressBar);
 		jPanelBottom.add(jPanelInfo, BorderLayout.EAST);
-		this.getRootPane().setDefaultButton(jButtonExit);
+		this.getRootPane().setDefaultButton(jButtonStart);
 	}
 
 	protected void processWindowEvent(WindowEvent e) {
@@ -432,12 +454,12 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 
-	public void startProcess() {
-		if (!jButtonStart.isEnabled() && !isExecuted) {
-			isExecuted = true;
-			startTimer();
-		}
-	}
+//	public void startProcess() {
+//		if (!jButtonStart.isEnabled() && !isExecuted) {
+//			isExecuted = true;
+//			startTimer();
+//		}
+//	}
 
 	public boolean isAvailable() {
 		return instanceIsAvailable_;
@@ -1186,30 +1208,30 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	}
 }
 
-class XF000_WindowListener implements java.awt.event.WindowListener {
-	XF000 adaptee;
-	XF000_WindowListener(XF000 adaptee) {
-		this.adaptee = adaptee;
-	}
-	public void windowOpened(WindowEvent e){
-	}
-
-	public void windowClosing(WindowEvent e){
-	}
-
-	public void windowClosed(WindowEvent e){
-	}
-
-	public void windowIconified(WindowEvent e){
-	}
-
-	public void windowDeiconified(WindowEvent e){
-	}
-
-	public void windowActivated(WindowEvent e){
-		adaptee.startProcess();
-	}
-
-	public void windowDeactivated(WindowEvent e){
-	}
-}
+//class XF000_WindowListener implements java.awt.event.WindowListener {
+//	XF000 adaptee;
+//	XF000_WindowListener(XF000 adaptee) {
+//		this.adaptee = adaptee;
+//	}
+//	public void windowOpened(WindowEvent e){
+//	}
+//
+//	public void windowClosing(WindowEvent e){
+//	}
+//
+//	public void windowClosed(WindowEvent e){
+//	}
+//
+//	public void windowIconified(WindowEvent e){
+//	}
+//
+//	public void windowDeiconified(WindowEvent e){
+//	}
+//
+//	public void windowActivated(WindowEvent e){
+//		adaptee.startProcess();
+//	}
+//
+//	public void windowDeactivated(WindowEvent e){
+//	}
+//}

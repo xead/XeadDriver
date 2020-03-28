@@ -392,9 +392,6 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 						maxWidth = filtersWidth;
 					}
 					
-					//if (maxWidth < 1000) {
-					//	maxWidth = 1000;
-					//}
 					if (maxWidth > screenRect.width) {
 						maxWidth = screenRect.width;
 					}
@@ -434,10 +431,27 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		// Set message and show Panel //
 		////////////////////////////////
 		if (!returnMap_.get("RETURN_CODE").equals("99") && !isClosing) {
-			if (firstEditableFilter != null) {
-				if (parmMap_.containsKey("INITIAL_MESSAGE")) {
-					jTextAreaMessages.setText((String)parmMap_.get("INITIAL_MESSAGE"));
-					parmMap_.remove("INITIAL_MESSAGE");
+			int rowCount = tableModelMain.getRowCount();
+			for (int i = 0; i < rowCount; i++) {
+				tableModelMain.removeRow(0);
+			}
+			if (firstEditableFilter == null) {
+				if (!initialMsg.equals("")) {
+					session_.setMessage(initialMsg);
+				}
+				selectRowsAndList();
+				if (!initialMsg.equals("")) {
+					session_.setMessage("");
+				}
+			} else {
+				if (functionElement_.getAttribute("InitialListing").equals("T")) {
+					if (!initialMsg.equals("")) {
+						session_.setMessage(initialMsg);
+					}
+					selectRowsAndList();
+					if (!initialMsg.equals("")) {
+						session_.setMessage("");
+					}
 				} else {
 					if (initialMsg.equals("")) {
 						StringBuffer buf = new StringBuffer();
@@ -449,33 +463,44 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 						jTextAreaMessages.setText(initialMsg);
 					}
 				}
-				if (functionElement_.getAttribute("InitialListing").equals("T")) {
-					if (!initialMsg.equals("")) {
-						session_.setMessage(initialMsg);
-					}
-					selectRowsAndList();
-					if (!initialMsg.equals("")) {
-						session_.setMessage("");
-					}
-				} else {
-					int rowCount = tableModelMain.getRowCount();
-					for (int i = 0; i < rowCount; i++) {
-						tableModelMain.removeRow(0);
-					}
-				}
-			} else {
-				if (!initialMsg.equals("")) {
-					session_.setMessage(initialMsg);
-				}
-				selectRowsAndList();
-				if (!initialMsg.equals("")) {
-					session_.setMessage("");
-				}
 			}
 			if (!isClosing) {
 				session_.setMessageComponent(jScrollPaneMessages);
 				this.setVisible(true);
 			}
+//			if (firstEditableFilter != null) {
+//				if (initialMsg.equals("")) {
+//					StringBuffer buf = new StringBuffer();
+//					buf.append(XFUtility.RESOURCE.getString("FunctionMessage1"));
+//					buf.append(primaryTable_.getOrderByDescription());
+//					buf.append(XFUtility.RESOURCE.getString("FunctionMessage56"));
+//					jTextAreaMessages.setText(buf.toString());
+//				} else {
+//					jTextAreaMessages.setText(initialMsg);
+//				}
+//				if (functionElement_.getAttribute("InitialListing").equals("T")) {
+//					if (!initialMsg.equals("")) {
+//						session_.setMessage(initialMsg);
+//					}
+//					selectRowsAndList();
+//					if (!initialMsg.equals("")) {
+//						session_.setMessage("");
+//					}
+//				} else {
+//					int rowCount = tableModelMain.getRowCount();
+//					for (int i = 0; i < rowCount; i++) {
+//						tableModelMain.removeRow(0);
+//					}
+//				}
+//			} else {
+//				if (!initialMsg.equals("")) {
+//					session_.setMessage(initialMsg);
+//				}
+//				selectRowsAndList();
+//				if (!initialMsg.equals("")) {
+//					session_.setMessage("");
+//				}
+//			}
 		}
 
 		return returnMap_;
@@ -694,11 +719,14 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		if (session_.userMenus.equals("ALL")) {
 			jLabelSessionID.setText("<html><u><font color='blue'>" + session_.getSessionID());
 			jLabelSessionID.addMouseListener(new MouseAdapter() {
-				@Override public void mouseClicked(MouseEvent e) {
+				@Override public void mousePressed(MouseEvent e) {
 					try {
 						HashMap<String, Object> parmMap = new HashMap<String, Object>();
 						parmMap.put("NRSESSION", session_.getSessionID());
-						session_.executeFunction("ZF051", parmMap);
+						HashMap<String, Object> returnMap = session_.executeFunction("ZF051", parmMap);
+						if (returnMap.get("RETURN_TO") != null) {
+							returnTo(returnMap.get("RETURN_TO").toString());
+						}
 					} catch (Exception e1) {
 						JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
 					}
@@ -1083,42 +1111,6 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 								}
 								workingRowList.add(new WorkingRow(cellObjectList, keyMap, columnMap, orderByValueList, orderByFieldTypeList));
 							}
-
-//							countOfRows++;
-//							blockRows++;
-//							if (countOfBlockUnit > 0 && blockRows == countOfBlockUnit) {
-//								primaryTableOp = null; //clear heap//
-//								dialogCheckReadRequested = true;
-//								if (countOfRows > 0) {
-//									jTableMain.scrollRectToVisible(jTableMain.getCellRect(countOfRows-1, 0, true));
-//								}
-//								//////////////////////////////////////
-//								// row number of the first row is 0 //
-//								//////////////////////////////////////
-//								boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, countOfRows, fromRow+countOfBlockUnit, countOfBlockUnit);
-//								if (repliedOK) {
-//									blockRows = 0;
-//									fromRow = session_.getDialogCheckRead().getNextRow();
-//									countOfBlockUnit = session_.getDialogCheckRead().getCountUnit();
-//									if (fromRow >= 0 && countOfBlockUnit >= 1) {
-//										if (session_.getDialogCheckRead().isRestarting()) {
-//											originalFromRow = session_.getDialogCheckRead().getNextRow();
-//											rowCount = tableModelMain.getRowCount();
-//											for (int i = 0; i < rowCount; i++) {
-//												tableModelMain.removeRow(0);
-//											}
-//											countOfRows = 0;
-//											workingRowList.clear();
-//										}
-//										primaryTableOp = createTableOperator(primaryTable_.getSelectSQL(fromRow, fromRow+countOfBlockUnit-1));
-//									} else {
-//										break;
-//									}
-//								} else {
-//									break;
-//								}
-//							}
-
 						}
 					}
 					
@@ -1133,7 +1125,6 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 						//////////////////////////////////////
 						// row number of the first row is 0 //
 						//////////////////////////////////////
-//						boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, countOfRows, fromRow+countOfBlockUnit, countOfBlockUnit);
 						boolean repliedOK = session_.getDialogCheckRead().request(originalFromRow, rowIndexNumber, fromRow+countOfBlockUnit, countOfBlockUnit);
 						if (repliedOK) {
 							blockRows = 0;
@@ -1174,12 +1165,21 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 
 			jTableMain.requestFocus();
 			messageList.clear();
-			if (countOfRows > 0) {
+//			if (countOfRows > 0) {
+			if (jTableMain.getRowCount() > 0) {
 				if (dialogCheckReadRequested) {
 					jTableMain.scrollRectToVisible(jTableMain.getCellRect(tableModelMain.getRowCount()-1, 0, true));
 				} else {
 					jTableMain.scrollRectToVisible(jTableMain.getCellRect(0, 0, true));
 					jTableMain.setRowSelectionInterval(0, 0);
+				}
+				if (parmMap_.containsKey("INITIAL_MESSAGE")) {
+					messageList.add((String)parmMap_.get("INITIAL_MESSAGE"));
+					parmMap_.remove("INITIAL_MESSAGE");
+					returnMap_.remove("INITIAL_MESSAGE");
+				}
+				if (!initialMsg.equals("")) {
+					messageList.add(initialMsg);
 				}
 				wrkStr = "";
 				if (originalFromRow > 0) {
@@ -1600,10 +1600,22 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
             for (int i = 0; i < this.getOrderByValueList().size(); i++) {
             	if (this.getOrderByFieldTypeList().get(i).equals("INTEGER")
             			|| this.getOrderByFieldTypeList().get(i).equals("FLOAT")) {
-            		wrkStr = XFUtility.getStringNumber(this.getOrderByValueList().get(i).toString());
-            		doubleNumber1 = Double.parseDouble(wrkStr);
-            		wrkStr = XFUtility.getStringNumber(otherRow.getOrderByValueList().get(i).toString());
-            		doubleNumber2 = Double.parseDouble(wrkStr);
+//            		wrkStr = XFUtility.getStringNumber(this.getOrderByValueList().get(i).toString());
+//            		doubleNumber1 = Double.parseDouble(wrkStr);
+//            		wrkStr = XFUtility.getStringNumber(otherRow.getOrderByValueList().get(i).toString());
+//            		doubleNumber2 = Double.parseDouble(wrkStr);
+					if (this.getOrderByValueList().get(i).toString().equals("")) {
+						doubleNumber1 = 0;
+					} else {
+						wrkStr = XFUtility.getStringNumber(this.getOrderByValueList().get(i).toString());
+						doubleNumber1 = Double.parseDouble(wrkStr);
+					}
+					if (otherRow.getOrderByValueList().get(i).toString().equals("")) {
+						doubleNumber2 = 0;
+					} else {
+						wrkStr = XFUtility.getStringNumber(otherRow.getOrderByValueList().get(i).toString());
+						doubleNumber2 = Double.parseDouble(wrkStr);
+					}
             		compareResult = 0;
             		if (doubleNumber1 > doubleNumber2) {
             			compareResult = 1;
@@ -1915,7 +1927,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				} else {
 					isListingInNormalOrder = true;
 				}
-				jButtonList.doClick();
+				selectRowsAndList();
+				saveFilterValues();
 			}
 		}
 
@@ -2023,7 +2036,14 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 					if (value == null) {
 						JOptionPane.showMessageDialog(null, "Unable to send the value of field " + column.getFieldsToPutList().get(i));
 					} else {
-						fieldValuesMap.put(column.getFieldsToPutToList().get(i), value);
+						//fieldValuesMap.put(column.getFieldsToPutToList().get(i), value);
+						String dataSourceID = column.getFieldsToPutToList().get(i);
+						fieldValuesMap.put(dataSourceID, value);
+						int index = dataSourceID.indexOf(".");
+						if (index > -1) {
+							String fieldID = dataSourceID.substring(index, dataSourceID.length());
+							fieldValuesMap.put(fieldID, value);
+						}
 					}
 				}
 
@@ -2832,7 +2852,7 @@ class XF100_Filter extends JPanel {
 	private JPanel jPanelField = new JPanel();
 	private JPanel jPanelCaption = new JPanel();
 	private JLabel jLabelField = new JLabel();
-	private JButton jButton = new JButton();
+	private JButton jButtonOperand = new JButton();
 	private JPopupMenu jPopupMenu = new JPopupMenu();
 	private XFTextField xFTextField = null;
 	private XFInputAssistField xFInputAssistField = null;
@@ -2926,7 +2946,7 @@ class XF100_Filter extends JPanel {
 			operand = "";
 			isReflect = true;
 			buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterReflect.png"));
-		 	jButton.setIcon(buttonIcon);
+		 	jButtonOperand.setIcon(buttonIcon);
 		} else {
 			if (fieldOptionList.contains("PROMPT_LIST1") || fieldOptionList.contains("PROMPT_LIST2")) {
 				jPopupMenu.add(itemEQ);
@@ -3001,7 +3021,7 @@ class XF100_Filter extends JPanel {
 					operandType = "EQ";
 					operand = " = ";
 					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterEQ.png"));
-				 	jButton.setIcon(buttonIcon);
+				 	jButtonOperand.setIcon(buttonIcon);
 				}
 			});
 			itemNE.addActionListener(new ActionListener() {
@@ -3009,7 +3029,7 @@ class XF100_Filter extends JPanel {
 					operandType = "NE";
 					operand = " != ";
 					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterNE.png"));
-				 	jButton.setIcon(buttonIcon);
+				 	jButtonOperand.setIcon(buttonIcon);
 				}
 			});
 			itemGE.addActionListener(new ActionListener() {
@@ -3017,7 +3037,7 @@ class XF100_Filter extends JPanel {
 					operandType = "GE";
 					operand = " >= ";
 					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterGE.png"));
-				 	jButton.setIcon(buttonIcon);
+				 	jButtonOperand.setIcon(buttonIcon);
 				}
 			});
 			itemGT.addActionListener(new ActionListener() {
@@ -3025,7 +3045,7 @@ class XF100_Filter extends JPanel {
 					operandType = "GT";
 					operand = " > ";
 					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterGT.png"));
-				 	jButton.setIcon(buttonIcon);
+				 	jButtonOperand.setIcon(buttonIcon);
 				}
 			});
 			itemLE.addActionListener(new ActionListener() {
@@ -3033,7 +3053,7 @@ class XF100_Filter extends JPanel {
 					operandType = "LE";
 					operand = " <= ";
 					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterLE.png"));
-				 	jButton.setIcon(buttonIcon);
+				 	jButtonOperand.setIcon(buttonIcon);
 				}
 			});
 			itemLT.addActionListener(new ActionListener() {
@@ -3041,7 +3061,7 @@ class XF100_Filter extends JPanel {
 					operandType = "LT";
 					operand = " < ";
 					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterLT.png"));
-				 	jButton.setIcon(buttonIcon);
+				 	jButtonOperand.setIcon(buttonIcon);
 				}
 			});
 			itemScan.addActionListener(new ActionListener() {
@@ -3049,7 +3069,7 @@ class XF100_Filter extends JPanel {
 					operandType = "SCAN";
 					operand = " LIKE ";
 					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterScan.png"));
-				 	jButton.setIcon(buttonIcon);
+				 	jButtonOperand.setIcon(buttonIcon);
 				}
 			});
 			itemGeneric.addActionListener(new ActionListener() {
@@ -3057,7 +3077,7 @@ class XF100_Filter extends JPanel {
 					operandType = "GENERIC";
 					operand = " LIKE ";
 					buttonIcon = new ImageIcon(xeadDriver.XFUtility.class.getResource("filterGeneric.png"));
-				 	jButton.setIcon(buttonIcon);
+				 	jButtonOperand.setIcon(buttonIcon);
 				}
 			});
 
@@ -3112,25 +3132,27 @@ class XF100_Filter extends JPanel {
 		} else {
 			jPanelCaption.setPreferredSize(new Dimension(width + horizontalMargin, XFUtility.FIELD_UNIT_HEIGHT));
 		}
-		jButton.setPreferredSize(new Dimension(20, XFUtility.FIELD_UNIT_HEIGHT));
-		jButton.addActionListener(new ActionListener() {
+		jButtonOperand.setPreferredSize(new Dimension(20, XFUtility.FIELD_UNIT_HEIGHT));
+		jButtonOperand.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Component com = (Component)e.getSource();
 				jPopupMenu.show(com, 10, 10);
 			}
 		});
-		jButton.addKeyListener(new KeyAdapter() {
-			public void keyPressed(KeyEvent e) {
-			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
-					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-						jButton.doClick();
-					}
-				}
-			} 
-		});
+		jButtonOperand.setFocusable(false);
+//		jButtonOperand.addKeyListener(new XF100_Component_keyAdapter(dialog));
+//		jButtonOperand.addKeyListener(new KeyAdapter() {
+//			public void keyPressed(KeyEvent e) {
+//			    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
+//					if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+//						jButton.doClick();
+//					}
+//				}
+//			} 
+//		});
 		jPanelCaption.setLayout(new BorderLayout());
 		jPanelCaption.add(jLabelField, BorderLayout.CENTER);
-		jPanelCaption.add(jButton, BorderLayout.EAST);
+		jPanelCaption.add(jButtonOperand, BorderLayout.EAST);
 
 		jPanelField.setLayout(null);
 		this.setLayout(new BorderLayout());
@@ -3188,6 +3210,7 @@ class XF100_Filter extends JPanel {
 						jComboBox.setBounds(new Rectangle(0, 0, fieldWidth + 30, 24));
 						jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 						jComboBox.setSelectedIndex(0);
+						jComboBox.setEditable(false);
 
 					} else {
 						wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES");
@@ -3211,6 +3234,7 @@ class XF100_Filter extends JPanel {
 							jComboBox.setBounds(new Rectangle(0, 0, fieldWidth + 30, 24));
 							jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 							jComboBox.setSelectedIndex(0);
+							jComboBox.setEditable(false);
 
 						} else {
 							componentType = "RECORDS_LIST";
@@ -3238,6 +3262,7 @@ class XF100_Filter extends JPanel {
 										jComboBox.setBounds(new Rectangle(0, 0, fieldWidth + 30, 24));
 										jComboBox.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 										jComboBox.setSelectedIndex(0);
+										jComboBox.setEditable(false);
 										break;
 									}
 								}
@@ -3533,6 +3558,7 @@ class XF100_Filter extends JPanel {
 	
 	public void setEditable(boolean isEditable) {
 		isEditable_ = isEditable;
+		jButtonOperand.setEnabled(isEditable_);
 		if (componentType.equals("TEXTFIELD")) {
 			xFTextField.setEditable(isEditable_);
 		}
@@ -3555,7 +3581,7 @@ class XF100_Filter extends JPanel {
 			xFFYearBox.setEditable(isEditable_);
 		}
 		if (componentType.equals("KUBUN_LIST") || componentType.equals("VALUES_LIST") || componentType.equals("RECORDS_LIST")) {
-			jComboBox.setEditable(isEditable_);
+			jComboBox.setEnabled(isEditable_);
 		}
 		if (componentType.equals("PROMPT_CALL")) {
 			xFPromptCall.setEditable(isEditable_);

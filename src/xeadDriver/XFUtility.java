@@ -2557,10 +2557,13 @@ public class XFUtility {
 			colorConverted = Color.blue;
 		}
 		if (color.equals("green")) {
-			colorConverted = Color.green;
+			colorConverted = Color.green.darker();
 		}
 		if (color.equals("orange")) {
-			colorConverted = Color.orange;
+			colorConverted = Color.orange.darker();
+		}
+		if (color.equals("magenta")) {
+			colorConverted = Color.magenta;
 		}
 		return colorConverted;
 	}
@@ -2576,11 +2579,14 @@ public class XFUtility {
 		if (color.equals(Color.blue)) {
 			colorConverted = "blue";
 		}
-		if (color.equals(Color.green)) {
+		if (color.equals(Color.green.darker())) {
 			colorConverted = "green";
 		}
-		if (color.equals(Color.orange)) {
+		if (color.equals(Color.orange.darker())) {
 			colorConverted = "orange";
+		}
+		if (color.equals(Color.magenta)) {
+			colorConverted = "magenta";
 		}
 		return colorConverted;
 	}
@@ -4908,6 +4914,10 @@ class XFTextField extends JPanel implements XFEditableField {
 		this.add(jTextField, BorderLayout.CENTER);
 	}
 
+	public void addKeyListener(KeyAdapter adapter) {
+		jTextField.addKeyListener(adapter);
+	}
+
 	public boolean isComponentFocusable() {
 		return jTextField.isFocusable();
 	}
@@ -5758,7 +5768,7 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 
 		GregorianCalendar calendar = new GregorianCalendar();
 		int currentYear = calendar.get(Calendar.YEAR);
-		int minimumYear = currentYear - 30;
+		int minimumYear = currentYear - 50;
 		int maximumYear = currentYear + 10;
 		jComboBoxYear.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jComboBoxYear.addKeyListener(new XFYMonthBox_Year_keyAdapter(this));

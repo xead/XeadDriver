@@ -246,33 +246,43 @@ public class XFTableOperator {
 		sqlText_ = "";
     	String fieldID_ = fieldID;
     	String operand_ = " = ";
-    	if (fieldID.contains("!=")) {
-    		fieldID_ = fieldID.replace("!=", "");
-    		operand_ = " != ";
+    	if (fieldID.contains("<>")) {
+    		fieldID_ = fieldID.replace("<>", "");
+    		operand_ = " <> ";
     	} else {
-    		if (fieldID.contains("<=")) {
-    			fieldID_ = fieldID.replace("<=", "");
-    			operand_ = " <= ";
+    		if (fieldID.contains("!=")) {
+    			fieldID_ = fieldID.replace("!=", "");
+    			operand_ = " != ";
     		} else {
-    			if (fieldID.contains(">=")) {
-    				fieldID_ = fieldID.replace(">=", "");
-    				operand_ = " >= ";
+    			if (fieldID.contains("<=")) {
+    				fieldID_ = fieldID.replace("<=", "");
+    				operand_ = " <= ";
     			} else {
-    				if (fieldID.contains("=")) {
-    					fieldID_ = fieldID.replace("=", "");
-    					operand_ = " = ";
-    				}
-    				if (fieldID.contains("<")) {
-    					fieldID_ = fieldID.replace("<", "");
-    					operand_ = " < ";
-    				}
-    				if (fieldID.contains(">")) {
-    					fieldID_ = fieldID.replace(">", "");
-    					operand_ = " > ";
+    				if (fieldID.contains(">=")) {
+    					fieldID_ = fieldID.replace(">=", "");
+    					operand_ = " >= ";
+    				} else {
+    					if (fieldID.contains("=")) {
+    						fieldID_ = fieldID.replace("=", "");
+    						operand_ = " = ";
+    					}
+    					if (fieldID.contains("<")) {
+    						fieldID_ = fieldID.replace("<", "");
+    						operand_ = " < ";
+    					}
+    					if (fieldID.contains(">")) {
+    						fieldID_ = fieldID.replace(">", "");
+    						operand_ = " > ";
+    					}
+    					if (fieldID.contains(" LIKE")) {
+    						fieldID_ = fieldID.replace(" LIKE", "");
+    						operand_ = " LIKE ";
+    					}
     				}
     			}
     		}
     	}
+    	
 		fieldID_ = fieldID_.trim();
 		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID_);
 		if (workElement != null && !workElement.getAttribute("PhysicalID").equals("")) {
@@ -292,15 +302,19 @@ public class XFTableOperator {
     					&& operand_.equals(" = ") && value.toString().trim().equals("")) {
     				withKeyList_.add(fieldID_ + " is NULL");
     			} else {
-    				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
-    					int length = Integer.parseInt(workElement.getAttribute("Size"));
-    					if (workElement.getAttribute("Type").contains("VARCHAR")) {
-    						length = value.toString().length();
-    					}
-    					withKeyList_.add(fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length));
+    				if (operand_.equals(" LIKE ")) {
+    					withKeyList_.add(fieldID_ + operand_ + "'" + value + "'");
     				} else {
-    					withKeyList_.add(fieldID_ + operand_ + value);
+        				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
+        				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+        					int length = Integer.parseInt(workElement.getAttribute("Size"));
+        					if (workElement.getAttribute("Type").contains("VARCHAR")) {
+        						length = value.toString().length();
+        					}
+        					withKeyList_.add(fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length));
+        				} else {
+        					withKeyList_.add(fieldID_ + operand_ + value);
+        				}
     				}
     			}
     		}
@@ -326,38 +340,44 @@ public class XFTableOperator {
 		sqlText_ = "";
     	String fieldID_ = fieldID;
     	String operand_ = " = ";
-    	if (fieldID.contains("!=")) {
-    		fieldID_ = fieldID.replace("!=", "");
-    		operand_ = " != ";
+    	if (fieldID.contains("<>")) {
+    		fieldID_ = fieldID.replace("<>", "");
+    		operand_ = " <> ";
     	} else {
-    		if (fieldID.contains("<=")) {
-    			fieldID_ = fieldID.replace("<=", "");
-    			operand_ = " <= ";
+    		if (fieldID.contains("!=")) {
+    			fieldID_ = fieldID.replace("!=", "");
+    			operand_ = " != ";
     		} else {
-    			if (fieldID.contains(">=")) {
-    				fieldID_ = fieldID.replace(">=", "");
-    				operand_ = " >= ";
+    			if (fieldID.contains("<=")) {
+    				fieldID_ = fieldID.replace("<=", "");
+    				operand_ = " <= ";
     			} else {
-    				if (fieldID.contains("=")) {
-    					fieldID_ = fieldID.replace("=", "");
-    					operand_ = " = ";
-    				}
-    				if (fieldID.contains("<")) {
-    					fieldID_ = fieldID.replace("<", "");
-    					operand_ = " < ";
-    				}
-    				if (fieldID.contains(">")) {
-    					fieldID_ = fieldID.replace(">", "");
-    					operand_ = " > ";
+    				if (fieldID.contains(">=")) {
+    					fieldID_ = fieldID.replace(">=", "");
+    					operand_ = " >= ";
+    				} else {
+    					if (fieldID.contains("=")) {
+    						fieldID_ = fieldID.replace("=", "");
+    						operand_ = " = ";
+    					}
+    					if (fieldID.contains("<")) {
+    						fieldID_ = fieldID.replace("<", "");
+    						operand_ = " < ";
+    					}
+    					if (fieldID.contains(">")) {
+    						fieldID_ = fieldID.replace(">", "");
+    						operand_ = " > ";
+    					}
+    					if (fieldID.contains(" LIKE")) {
+    						fieldID_ = fieldID.replace(" LIKE", "");
+    						operand_ = " LIKE ";
+    					}
     				}
     			}
     		}
     	}
 		fieldID_ = fieldID_.trim();
 		org.w3c.dom.Element workElement = session_.getFieldElement(tableID_, fieldID_);
-		//if (workElement != null && !workElement.getAttribute("PhysicalID").equals("")) {
-	    //	fieldID_ = workElement.getAttribute("PhysicalID");
-		//}
 
 		if (value.toString().trim().startsWith("'") && value.toString().trim().endsWith("'")) {
 	    	withKeyList_.add(prefix + " " + fieldID_ + operand_ + value + " " + postfix);
@@ -377,15 +397,19 @@ public class XFTableOperator {
     					withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);
     				}
     			} else {
-    				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-    				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
-    					int length = Integer.parseInt(workElement.getAttribute("Size"));
-    					if (workElement.getAttribute("Type").contains("VARCHAR")) {
-    						length = value.toString().length();
-    					}
-    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length) + " " + postfix);
+    				if (operand_.equals(" LIKE ")) {
+    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);
     				} else {
-    					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
+    					String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
+    					if (XFUtility.isLiteralRequiredBasicType(basicType)) {
+    						int length = Integer.parseInt(workElement.getAttribute("Size"));
+    						if (workElement.getAttribute("Type").contains("VARCHAR")) {
+    							length = value.toString().length();
+    						}
+    						withKeyList_.add(prefix + " " + fieldID_ + operand_ + getLiteraledStringValue(value.toString(), length) + " " + postfix);
+    					} else {
+    						withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
+    					}
     				}
     			}
     		}

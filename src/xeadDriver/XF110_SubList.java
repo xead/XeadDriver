@@ -328,11 +328,14 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 		if (session_.userMenus.equals("ALL")) {
 			jLabelSessionID.setText("<html><u><font color='blue'>" + session_.getSessionID());
 			jLabelSessionID.addMouseListener(new MouseAdapter() {
-				@Override public void mouseClicked(MouseEvent e) {
+				@Override public void mousePressed(MouseEvent e) {
 					try {
 						HashMap<String, Object> parmMap = new HashMap<String, Object>();
 						parmMap.put("NRSESSION", session_.getSessionID());
-						session_.executeFunction("ZF051", parmMap);
+						HashMap<String, Object> returnMap = session_.executeFunction("ZF051", parmMap);
+						if (returnMap.get("RETURN_TO") != null) {
+							returnTo(returnMap.get("RETURN_TO").toString());
+						}
 					} catch (Exception e1) {
 						JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
 					}

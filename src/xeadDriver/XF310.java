@@ -558,11 +558,14 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		if (session_.userMenus.equals("ALL")) {
 			jLabelSessionID.setText("<html><u><font color='blue'>" + session_.getSessionID());
 			jLabelSessionID.addMouseListener(new MouseAdapter() {
-				@Override public void mouseClicked(MouseEvent e) {
+				@Override public void mousePressed(MouseEvent e) {
 					try {
 						HashMap<String, Object> parmMap = new HashMap<String, Object>();
 						parmMap.put("NRSESSION", session_.getSessionID());
-						session_.executeFunction("ZF051", parmMap);
+						HashMap<String, Object> returnMap = session_.executeFunction("ZF051", parmMap);
+						if (returnMap.get("RETURN_TO") != null) {
+							returnTo(returnMap.get("RETURN_TO").toString());
+						}
 					} catch (Exception e1) {
 						JOptionPane.showMessageDialog(null, "Unable to call the function ZF051.");
 					}
@@ -2344,6 +2347,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			////////////////////////////////////////////////
 			fieldValuesMap.put("RETURN_TO", getFunctionID());
 			HashMap<String, Object> returnMap = session_.executeFunction(functionID, fieldValuesMap);
+			if (returnMap != null) {
 			if (returnMap.get("RETURN_TO") != null) {
 				returnTo(returnMap.get("RETURN_TO").toString());
 			}
@@ -2380,6 +2384,12 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							workTokenizer = new StringTokenizer(value.toString(), "<ListSeparator>" );
 							numberOfSelection = workTokenizer.countTokens();
 							break;
+						} else {
+							if (value.toString().contains(";")) {
+								workTokenizer = new StringTokenizer(value.toString(), ";" );
+								numberOfSelection = workTokenizer.countTokens();
+								break;
+							}
 						}
 					}
 				}
@@ -2414,7 +2424,21 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 											index++;
 										}
 									} else {
-										fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+										//fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+										if (value.toString().contains(";")) {
+											int index = 0;
+											workTokenizer = new StringTokenizer(value.toString(), ";" );
+											while (workTokenizer.hasMoreTokens()) {
+												tokenValue = workTokenizer.nextToken();
+												if (index == p) {
+													fieldsToGetMap.put(fieldsToGetToList_.get(i), tokenValue);
+													break;
+												}
+												index++;
+											}
+										} else {
+											fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+										}
 									}
 								}
 							}
@@ -2441,6 +2465,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 //						}
 					}
 				}
+			}
 			}
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(null, ex.getMessage());
@@ -3994,8 +4019,8 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 		} else {
 			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 			if (!wrkStr.equals("")) {
-				isNoUpdate = false;
-				isEditable = true;
+				//isNoUpdate = false;
+				//isEditable = true;
 				component = new XF310_HeaderPromptCall(functionFieldElement_, wrkStr, dialog_);
 				component.setLocation(5, 0);
 				wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL_TO_PUT");

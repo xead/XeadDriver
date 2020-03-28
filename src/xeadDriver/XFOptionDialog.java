@@ -88,6 +88,10 @@ public class XFOptionDialog extends JDialog {
     	}
     }
 
+    public int getRowCount() {
+    	return optionList.size();
+    }
+
     public void setWidth(int width) {
     	explicitWidth = width;
     }

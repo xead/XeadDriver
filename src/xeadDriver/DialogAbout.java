@@ -1,10 +1,10 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2020 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
- * This file is part of XEAD Driver.
+ * This file is part of X-TEA Driver.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -43,11 +43,32 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M26";
-	public static final String VERSION  = "1.3.26";
+	public static final String FULL_VERSION  = "V1.R3.M29";
+	public static final String VERSION  = "1.3.29";
 	public static final String FORMAT_VERSION  = "1.2";
-	public static final String COPYRIGHT = "Copyright 2019 DBC Ltd.";
+	public static final String COPYRIGHT = "Copyright 2020 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.29
+	//・リスト系のダイアログでgetRowCount()できるようにした
+	//・XF300での明細行処理機能の返り結果にもとづくリストの更新を制限した
+	//・XF100,110,300でのフィルター条件のオペランドが条件の編集不可設定に連動するゆおにした
+	//・XF200,310の見出しフィールドでプロンプトをつけると入力可能になってしまう問題を修正
+	//
+	//1.3.28
+	//・XFTableOperatorでLIKE句を使えるようにした
+	//・XF300での検索結果メッセージを改善した
+	//・色設定にmagentaを追加した
+	//・XF100,110,300で明細行がゼロ件の際にエラーになる場合があるバグを修正した
+	//・XF310での行追加プログラムの返信処理でのバグを修正した
+	//
+	//1.3.27
+	//・XF000でダイアログを含むスクリプトでコンソールありを指定した場合の自動実行をやめた（ダイアログの動きがおかしくなることがあるゆえ）
+	//・XF200で年月フィールドの年が３０年前まで指定可能だったのを５０年に拡張した
+	//・セッションIDのラベルからZF051を呼ぶ出す際の動きを改善した
+	//・XF100でのパラメータINITIAL_MESSAGEの扱いを改善した
+	//・XF100,110,300で一覧順序項目にゼロ数値が含まれる場合にエラーになるバグを修正した
+	//・XF100,110,300のフィルターコンポーネント内でCtrl+Lが効くようにした
+	//
 	//1.3.26
 	//・XF100,300の明細行でリンク機能を使えるようにした
 	//・リンク機能の組み込みに伴い、XF200,300,310のパラメータ設定仕様を改善した

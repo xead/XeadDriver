@@ -1857,7 +1857,7 @@ public class Session extends JFrame {
 						int hour = Integer.parseInt(time.substring(0,2));
 						int min = Integer.parseInt(time.substring(3,5));
 						if (hour >= 0 && hour <= 24
-								&& min >= 0 && min <= 60) {
+								&& min >= 0 && min < 60) {
 							result = true;
 						}
 					}
@@ -3245,6 +3245,10 @@ public class Session extends JFrame {
 
 	public Connection getConnectionReadOnly(String id) {
 		return subDBConnectionList.get(subDBIDList.indexOf(id));
+	}
+
+	public void rollback() {
+		this.commit(false, null);
 	}
 
 	public void commit() {

@@ -798,6 +798,12 @@ public class XF290 extends Component implements XFExecutable, XFScriptable {
 		}
 	}
 
+	public void executeScript(String scriptText) {
+		try {
+			evalScript("Internal Script", scriptText);
+		} catch (Exception e) {}
+	}
+
 	public XF290_PrimaryTable getPrimaryTable() {
 		return primaryTable_;
 	}

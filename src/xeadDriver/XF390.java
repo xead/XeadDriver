@@ -875,7 +875,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 					keyMap.put(detailTableArray[index].getKeyFieldIDList().get(i), operatorDetail.getValueOf(detailTableArray[index].getKeyFieldIDList().get(i)));
 				}
 
-				if (detailTableArray[index].hasOrderByAsItsOwnFields()) {
+				if (detailTableArray[index].hasOrderByAsItsOwnPhysicalFields()) {
 
 					if (tableRowNoWidthArray[index] > 0) {
 						rowNo++;
@@ -954,7 +954,7 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				countOfRows++;
 			}
 
-			if (!detailTableArray[index].hasOrderByAsItsOwnFields()) {
+			if (!detailTableArray[index].hasOrderByAsItsOwnPhysicalFields()) {
 				WorkingRow[] workingRowArray = workingRowList.toArray(new WorkingRow[0]);
 				Arrays.sort(workingRowArray);
 				for (int i = 0; i < workingRowArray.length; i++) {
@@ -1273,8 +1273,17 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				script.eval(detailScriptBindingsArray[index]);
 				compiledScriptMapArray[index].put(scriptNameRunning, script);
 			}
-		
 		}
+	}
+
+	public void executeScript(String scriptText) {
+		try {
+			if (evaluatingScriptTabIndex < 0) {
+				evalHeaderScript("Internal Script", scriptText);
+			} else {
+				evalDetailTableScript("Internal Script", scriptText, evaluatingScriptTabIndex);
+			}
+		} catch (Exception e) {}
 	}
 
 	public XF390_HeaderTable getHeaderTable() {
@@ -2542,7 +2551,7 @@ class XF390_DetailTable extends Object {
 	private ArrayList<XFScript> scriptList = new ArrayList<XFScript>();
 	private XF390 dialog_;
 	private StringTokenizer workTokenizer;
-	private boolean hasOrderByAsItsOwnFields = true;
+	private boolean hasOrderByAsItsOwnPhysicalFields = true;
 	private String updateCounterID = "";
 	private int index_;
 	private String dbName = "";
@@ -2569,8 +2578,8 @@ class XF390_DetailTable extends Object {
 			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
 		}
 
-		int pos1;
-		String wrkStr1, wrkStr2;
+		int pos1; int pos2;
+		String wrkStr1, wrkStr2, wrkStr3;
 		org.w3c.dom.Element workElement;
 
 		if (detailElement_.getAttribute("HeaderKeyFields").equals("")) {
@@ -2620,8 +2629,22 @@ class XF390_DetailTable extends Object {
 			pos1 = wrkStr1.indexOf(".");
 			if (pos1 > -1) { 
 				wrkStr2 = wrkStr1.substring(0, pos1);
-				if (!wrkStr2.equals(tableID_)) {
-					hasOrderByAsItsOwnFields = false;
+//				if (!wrkStr2.equals(tableID_)) {
+//					hasOrderByAsItsOwnFields = false;
+//				}
+				if (wrkStr2.equals(tableID_)) {
+					pos2 = wrkStr1.indexOf("(", pos1);
+					if (pos2 > -1) {
+						wrkStr3 = wrkStr1.substring(pos1+1, pos2);
+					} else {
+						wrkStr3 = wrkStr1.substring(pos1+1);
+					}
+					workElement = dialog_.getSession().getFieldElement(wrkStr2, wrkStr3);
+					if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
+						hasOrderByAsItsOwnPhysicalFields = false;
+					}
+				} else {
+					hasOrderByAsItsOwnPhysicalFields = false;
 				}
 			}
 			orderByFieldIDList.add(wrkStr1);
@@ -2703,7 +2726,7 @@ class XF390_DetailTable extends Object {
 		//////////////////////
 		// Order-by section //
 		//////////////////////
-		if (this.hasOrderByAsItsOwnFields) {
+		if (this.hasOrderByAsItsOwnPhysicalFields) {
 			if (orderByFieldIDList.size() > 0) {
 				int pos0,pos1;
 				buf.append(" order by ");
@@ -2763,8 +2786,8 @@ class XF390_DetailTable extends Object {
 		return orderByFieldIDList;
 	}
 	
-	public boolean hasOrderByAsItsOwnFields(){
-		return hasOrderByAsItsOwnFields;
+	public boolean hasOrderByAsItsOwnPhysicalFields(){
+		return hasOrderByAsItsOwnPhysicalFields;
 	}
 	
 	public boolean isValidDataSource(String tableID, String tableAlias, String fieldID) {

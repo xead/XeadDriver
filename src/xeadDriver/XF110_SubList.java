@@ -2728,6 +2728,12 @@ public class XF110_SubList extends JDialog implements XFScriptable {
 			scriptEngine.eval(bf.toString(), scriptBindings);
 		}
 	}
+
+	public void executeScript(String scriptText) {
+		try {
+			evalScript("Internal Script", scriptText);
+		} catch (Exception e) {}
+	}
 	
 	public XF110_SubListBatchTable getBatchTable() {
 		return batchTable;
@@ -3660,10 +3666,18 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 	public Object getValue() {
 		Object returnObj = null;
 		if (this.getBasicType().equals("INTEGER")) {
-			returnObj = Long.parseLong((String)component.getInternalValue());
+			try {
+				returnObj = Long.parseLong((String)component.getInternalValue());
+			} catch (NumberFormatException e) {
+				returnObj = 0;
+			}
 		} else {
 			if (this.getBasicType().equals("FLOAT")) {
-				returnObj = Double.parseDouble((String)component.getInternalValue());
+				try {
+					returnObj = Double.parseDouble((String)component.getInternalValue());
+				} catch (NumberFormatException e) {
+					returnObj = 0.0;
+				}
 			} else {
 				if (this.getBasicType().equals("BYTEA")) {
 					returnObj = component.getInternalValue();

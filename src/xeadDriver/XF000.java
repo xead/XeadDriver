@@ -713,6 +713,12 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		return null;
 	}
 
+	public void executeScript(String scriptText) {
+		try {
+			scriptEngine.eval(scriptText);
+		} catch (Exception e) {}
+	}
+
 	public void runScript() throws ScriptException, Exception {
 		engineScriptBindings.clear();
 		engineScriptBindings.put("instance", (XFScriptable)this);

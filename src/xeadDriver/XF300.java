@@ -1649,7 +1649,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 								cellObjectList.add(detailColumnListArray[index].get(i).getCellObject());
 							}
 
-							if (detailTableArray[index].hasOrderByAsItsOwnFields()) {
+							if (detailTableArray[index].hasOrderByAsItsOwnPhysicalFields()) {
 								Object[] cell = new Object[1];
 								cell[0] = new XF300_DetailRowNumber(rowIndexNumber, keyMap, columnMap, cellObjectList);
 								tableModelMainArray[index].addRow(cell);
@@ -1713,7 +1713,7 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 
 			headerTable_.runScript("AR", "AS()"); /* Script to be run AFTER READ and AFTER SUMMARY */
 
-			if (!detailTableArray[index].hasOrderByAsItsOwnFields()) {
+			if (!detailTableArray[index].hasOrderByAsItsOwnPhysicalFields()) {
 				WorkingRow[] workingRowArray = workingRowListArray[index].toArray(new WorkingRow[0]);
 				Arrays.sort(workingRowArray);
 				for (int i = 0; i < workingRowArray.length; i++) {
@@ -3611,8 +3611,17 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 				script.eval(detailScriptBindingsArray[index]);
 				compiledScriptMapArray[index].put(scriptNameRunning, script);
 			}
-		
 		}
+	}
+
+	public void executeScript(String scriptText) {
+		try {
+			if (evaluatingScriptTabIndex < 0) {
+				evalHeaderTableScript("Internal Script", scriptText);
+			} else {
+				evalDetailTableScript("Internal Script", scriptText, evaluatingScriptTabIndex);
+			}
+		} catch (Exception e) {}
 	}
 	
 	public void setEvaluatingScriptTabIndex(int index) {
@@ -6307,7 +6316,8 @@ class XF300_Filter extends JPanel {
 									value = fieldID + whereValue;
 								}
 							} else {
-								if (wrkStr.equals("\'\'") || wrkStr.equals("\"\"") || wrkStr.equals("\'") || wrkStr.equals("\"")) {
+								if (wrkStr.equals("\'\'") || wrkStr.equals("\"\"") || wrkStr.equals("\'") || wrkStr.equals("\"") ||
+									wrkStr.equals("ff") || wrkStr.equals("hh") || wrkStr.equals("f") || wrkStr.equals("h")) {
 									wrkStr = "";
 								}
 								if (operandType.equals("SCAN")) {
@@ -6317,6 +6327,9 @@ class XF300_Filter extends JPanel {
 										value = "UPPER(" + fieldID + ") LIKE UPPER('" + wrkStr + "%')";
 									} else {
 										value = fieldID + operand + "'" + wrkStr + "'";
+										if (wrkStr.equals("") && operandType.equals("EQ")) {
+											value = fieldID + " = '' or " + fieldID + " is null";
+										}
 									}
 								}
 							}
@@ -6498,9 +6511,6 @@ class XF300_Filter extends JPanel {
 						stringFilterValue = (String)xFInputAssistField.getInternalValue();
 					}
 					if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-//						if ((Double.parseDouble(stringFilterValue) == 0) && fieldOptionList.contains("IGNORE_IF_ZERO")) {
-//							validated = true;
-//						} else {
 						if (stringFilterValue.equals("")) {
 							validated = true;
 						} else {
@@ -6531,6 +6541,11 @@ class XF300_Filter extends JPanel {
 							}
 							if (operandType.equals("LT")) {
 								if (doubleResultValue < doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("NE")) {
+								if (doubleResultValue != doubleFilterValue) {
 									validated = true;
 								}
 							}
@@ -6572,6 +6587,11 @@ class XF300_Filter extends JPanel {
 										validated = true;
 									}
 								}
+								if (operandType.equals("NE")) {
+									if (doubleResultValue != doubleFilterValue) {
+										validated = true;
+									}
+								}
 								if (operandType.equals("GENERIC")) {
 									int lengthResultValue = stringResultValue.length();
 									int lengthFieldValue = stringFilterValue.length();
@@ -6593,6 +6613,14 @@ class XF300_Filter extends JPanel {
 										stringFilterValue = "";
 									}
 									if (stringResultValue.toUpperCase().equals(stringFilterValue.toUpperCase())) {
+										validated = true;
+									}
+								}
+								if (operandType.equals("NE")) {
+									if (stringFilterValue.equals("\'\'") || stringFilterValue.equals("\"\"") || stringFilterValue.equals("\'") || stringFilterValue.equals("\"")) {
+										stringFilterValue = "";
+									}
+									if (!stringResultValue.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 										validated = true;
 									}
 								}
@@ -6710,6 +6738,11 @@ class XF300_Filter extends JPanel {
 									validated = true;
 								}
 							}
+							if (operandType.equals("NE")) {
+								if (doubleResultValue != doubleFilterValue) {
+									validated = true;
+								}
+							}
 						}
 					}
 				}
@@ -6749,6 +6782,11 @@ class XF300_Filter extends JPanel {
 						}
 						if (operandType.equals("LT")) {
 							if (doubleResultValue < doubleFilterValue) {
+								validated = true;
+							}
+						}
+						if (operandType.equals("NE")) {
+							if (doubleResultValue != doubleFilterValue) {
 								validated = true;
 							}
 						}
@@ -6804,6 +6842,11 @@ class XF300_Filter extends JPanel {
 								validated = true;
 							}
 						}
+						if (operandType.equals("NE")) {
+							if (doubleResultValue != doubleFilterValue) {
+								validated = true;
+							}
+						}
 						if (operandType.equals("GENERIC")) {
 							int lengthResultValue = stringResultValue.length();
 							int lengthFieldValue = stringFilterValue.length();
@@ -6853,6 +6896,11 @@ class XF300_Filter extends JPanel {
 						}
 						if (operandType.equals("LT")) {
 							if (doubleResultValue < doubleFilterValue) {
+								validated = true;
+							}
+						}
+						if (operandType.equals("NE")) {
+							if (doubleResultValue != doubleFilterValue) {
 								validated = true;
 							}
 						}
@@ -6910,6 +6958,11 @@ class XF300_Filter extends JPanel {
 									validated = true;
 								}
 							}
+							if (operandType.equals("NE")) {
+								if (doubleResultValue != doubleFilterValue) {
+									validated = true;
+								}
+							}
 						}
 						
 					} else {
@@ -6948,6 +7001,11 @@ class XF300_Filter extends JPanel {
 										validated = true;
 									}
 								}
+								if (operandType.equals("NE")) {
+									if (doubleResultValue != doubleFilterValue) {
+										validated = true;
+									}
+								}
 								if (operandType.equals("GENERIC")) {
 									int lengthResultValue = stringResultValue.length();
 									int lengthFieldValue = stringFilterValue.length();
@@ -6968,6 +7026,11 @@ class XF300_Filter extends JPanel {
 								while (workTokenizer.hasMoreTokens()) {
 									if (operandType.equals("EQ")) {
 										if (stringResultValue.equals(workTokenizer.nextToken())) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("NE")) {
+										if (!stringResultValue.equals(workTokenizer.nextToken())) {
 											validated = true;
 										}
 									}
@@ -7971,7 +8034,7 @@ class XF300_DetailTable extends Object {
 	private XF300 dialog_;
 	private int tabIndex_;
 	private StringTokenizer workTokenizer;
-	private boolean hasOrderByAsItsOwnFields = true;
+	private boolean hasOrderByAsItsOwnPhysicalFields = true;
 	private String dbName = "";
 
 	public XF300_DetailTable(org.w3c.dom.Element detailTableElement, int tabIndex, XF300 dialog){
@@ -7989,8 +8052,8 @@ class XF300_DetailTable extends Object {
 			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
 		}
 
-		int pos1;
-		String wrkStr1, wrkStr2;
+		int pos1; int pos2;
+		String wrkStr1, wrkStr2, wrkStr3;
 		org.w3c.dom.Element workElement;
 
 		if (detailTableElement_.getAttribute("HeaderKeyFields").equals("")) {
@@ -8040,8 +8103,22 @@ class XF300_DetailTable extends Object {
 			pos1 = wrkStr1.indexOf(".");
 			if (pos1 > -1) { 
 				wrkStr2 = wrkStr1.substring(0, pos1);
-				if (!wrkStr2.equals(this.tableID)) {
-					hasOrderByAsItsOwnFields = false;
+				//if (!wrkStr2.equals(this.tableID)) {
+				//	hasOrderByAsItsOwnFields = false;
+				//}
+				if (wrkStr2.equals(this.tableID)) {
+					pos2 = wrkStr1.indexOf("(", pos1);
+					if (pos2 > -1) {
+						wrkStr3 = wrkStr1.substring(pos1+1, pos2);
+					} else {
+						wrkStr3 = wrkStr1.substring(pos1+1);
+					}
+					workElement = dialog_.getSession().getFieldElement(wrkStr2, wrkStr3);
+					if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
+						hasOrderByAsItsOwnPhysicalFields = false;
+					}
+				} else {
+					hasOrderByAsItsOwnPhysicalFields = false;
 				}
 			}
 			orderByFieldIDList.add(wrkStr1);
@@ -8118,7 +8195,7 @@ class XF300_DetailTable extends Object {
 				//////////////////////
 				// Order-by section //
 				//////////////////////
-				if (this.hasOrderByAsItsOwnFields) {
+				if (this.hasOrderByAsItsOwnPhysicalFields) {
 					ArrayList<String> orderByFieldList = getOrderByFieldIDList(dialog_.isListingInNormalOrder(tabIndex_));
 					if (orderByFieldList.size() > 0) {
 						int pos0,pos1;
@@ -8291,7 +8368,7 @@ class XF300_DetailTable extends Object {
 		//////////////////////
 		// Order-by section //
 		//////////////////////
-		if (this.hasOrderByAsItsOwnFields) {
+		if (this.hasOrderByAsItsOwnPhysicalFields) {
 			ArrayList<String> orderByFieldList = getOrderByFieldIDList(dialog_.isListingInNormalOrder(tabIndex_));
 			if (orderByFieldList.size() > 0) {
 				int pos0,pos1;
@@ -8421,8 +8498,8 @@ class XF300_DetailTable extends Object {
 		return buf.toString();
 	}
 	
-	public boolean hasOrderByAsItsOwnFields(){
-		return hasOrderByAsItsOwnFields;
+	public boolean hasOrderByAsItsOwnPhysicalFields(){
+		return hasOrderByAsItsOwnPhysicalFields;
 	}
 	
 	public boolean isValidDataSource(int index, String tableID, String tableAlias, String fieldID) {

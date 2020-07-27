@@ -2087,6 +2087,12 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 
+	public void executeScript(String scriptText) {
+		try {
+			evalScript("Internal Script", scriptText);
+		} catch (Exception e) {}
+	}
+
 	public XF200_PrimaryTable getPrimaryTable() {
 		return primaryTable_;
 	}
@@ -2336,8 +2342,8 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 		} else {
 			wrkStr = XFUtility.getOptionValueWithKeyword(fieldOptions, "PROMPT_CALL");
 			if (!wrkStr.equals("")) {
-				//isEditable = true;
-				//isNoUpdate = false;
+				isEditable = true;
+				isNoUpdate = false;
 				boolean isEditableInEditMode = false;
 				if (this.isFieldOnPrimaryTable) {
 					isEditableInEditMode = true;
@@ -2815,14 +2821,13 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 
 	public void setEditMode(String mode){
 		this.setComponentEditable(false);
-		if (mode.equals("ADD") && this.isEditable) {
+		if (mode.equals("ADD") && this.isEditable && !isAutoDetailRowNumber()) {
 			this.setComponentEditable(true);
 		}
-		if (mode.equals("COPY") && this.isEditable) {
+		if (mode.equals("COPY") && this.isEditable && !isAutoDetailRowNumber()) {
 			this.setComponentEditable(true);
 		}
 		if (mode.equals("EDIT") && this.isEditable && !this.isNoUpdate) {
-//			if (!this.isKey && !this.isKeyDependent) {
 			if (!this.isKey) {
 				this.setComponentEditable(true);
 			}
@@ -3100,10 +3105,18 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 	public Object getValue() {
 		Object returnObj = null;
 		if (this.getBasicType().equals("INTEGER")) {
-			returnObj = Long.parseLong((String)component.getInternalValue());
+			try {
+				returnObj = Long.parseLong((String)component.getInternalValue());
+			} catch (NumberFormatException e) {
+				returnObj = 0;
+			}
 		} else {
 			if (this.getBasicType().equals("FLOAT")) {
-				returnObj = Double.parseDouble((String)component.getInternalValue());
+				try {
+					returnObj = Double.parseDouble((String)component.getInternalValue());
+				} catch (NumberFormatException e) {
+					returnObj = 0.0;
+				}
 			} else {
 				if (this.getBasicType().equals("BYTEA")) {
 					returnObj = component.getInternalValue();

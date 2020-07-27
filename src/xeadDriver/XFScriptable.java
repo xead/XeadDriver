@@ -2,6 +2,7 @@ package xeadDriver;
 
 import java.io.PrintStream;
 import java.util.HashMap;
+
 import javax.script.ScriptException;
 
 /*
@@ -61,4 +62,5 @@ public interface XFScriptable {
 	public void setErrorAndCloseFunction();
 	public void setStatusMessage(String message);
 	public void setStatusMessage(String message, boolean isToReplaceLastLine);
+	public void executeScript(String scriptText);
 }

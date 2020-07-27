@@ -88,6 +88,14 @@ public class XFOptionDialog extends JDialog {
     	}
     }
 
+    public String getOptionAt(int index) {
+    	if (optionList.size() > 0 && optionList.size() >= (index+1) && index >= 0) {
+    		return optionList.get(index);
+    	} else {
+    		return "";
+    	}
+    }
+
     public int getRowCount() {
     	return optionList.size();
     }

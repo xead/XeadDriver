@@ -58,7 +58,8 @@ public class XFInputDialogField extends JPanel {
     			&& !inputType.equals("DATE")
     			&& !inputType.equals("LISTBOX")
     			&& !inputType.equals("CHECKBOX")
-				&& !inputType.equals("TEXTAREA")) {
+				&& !inputType.equals("TEXTAREA")
+				&& !inputType.equals("PASSWORD")) {
     		inputType_ = "ALPHA";
     	}
 		inputType_ = inputType;
@@ -101,6 +102,10 @@ public class XFInputDialogField extends JPanel {
 			field.setLineWrap(true);
 			component = field;
 		}
+		if (inputType_.equals("PASSWORD")) {
+			JPasswordField field = new JPasswordField();
+			component = field;
+		}
 		component.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-1));
 		this.setOpaque(false);
 		if (inputType_.equals("DATE")) {
@@ -130,7 +135,8 @@ public class XFInputDialogField extends JPanel {
 		if (inputType_.equals("ALPHA")
 				|| inputType_.equals("TEXTAREA")
 				|| inputType_.equals("KANJI")
-				|| inputType_.equals("NUMERIC")) {
+				|| inputType_.equals("NUMERIC")
+				|| inputType_.equals("PASSWORD")) {
 			((JTextField)component).setEditable(isEditable_);
 			((JTextField)component).setFocusable(isEditable_);
 		}
@@ -214,8 +220,9 @@ public class XFInputDialogField extends JPanel {
 			|| inputType_.equals("TEXTAREA")
 			|| inputType_.equals("ZEROFILL")
 			|| inputType_.equals("KANJI")
-			|| inputType_.equals("NUMERIC")) {
-		   if (inputType_.equals("ALPHA") || inputType_.equals("KANJI")) {
+			|| inputType_.equals("NUMERIC")
+			|| inputType_.equals("PASSWORD")) {
+		   if (inputType_.equals("ALPHA") || inputType_.equals("KANJI") || inputType_.equals("PASSWORD")) {
 			   String strValue = value.toString();
 			   if (strValue.length() > size_) {
 				   strValue = strValue.substring(0, size_);

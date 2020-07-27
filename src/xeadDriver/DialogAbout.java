@@ -43,11 +43,24 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M29";
-	public static final String VERSION  = "1.3.29";
+	public static final String FULL_VERSION  = "V1.R3.M30";
+	public static final String VERSION  = "1.3.30";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2020 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.30
+	//・instanceでexecuteScript(...)のメソッドを使えるようにした
+	//・XF100でのINITIAL_MESSAGEの操作方法を改善した
+	//・XF100,110,300でのフィルターのブランク比較にnull比較を含めた
+	//・OptionDialogにgetOptionAt(index)を追加した
+	//・XF310でOptionDialogからの行追加でブランクのキー値で追加されることがある問題を修正
+	//・XF100,110,300で!=のフィルター条件が効かないことがある問題を修正
+	//・session.isValidTime(...)が60分の値を許していた問題を修正
+	//・XF200で結合フィールドのプロンプトが効かなくなっていた問題を修正
+	//・XF110,200.310の見出し域の数値フィールドでブランクにするとエラーになることがある問題を修正
+	//#XF300,310.390の明細テーブルに対して仮想フィールドで並び順指定できるように修正
+	//#sessionでrollback()のメソッドを使えるようにした
+	//
 	//1.3.29
 	//・リスト系のダイアログでgetRowCount()できるようにした
 	//・XF300での明細行処理機能の返り結果にもとづくリストの更新を制限した

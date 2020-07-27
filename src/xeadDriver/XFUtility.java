@@ -218,15 +218,18 @@ public class XFUtility {
 		} else {
 			wrkValue = value;
 		}
-		wrkValue = wrkValue.replace("-", "");
+		wrkValue = wrkValue.replace("-", "").replace("%", "");
 
 		if (dataTypeOptionList.contains("NO_EDIT")) {
+			StringBuffer bf = new StringBuffer();
 			int intValue = Integer.parseInt(wrkValue);
 			if (intValue == 0) {
-				returnValue = "";
+				for (int i = 0; i < size; i++) {
+					bf.append("0");
+				}
+				returnValue = bf.toString();
 				
 			} else {
-				StringBuffer bf = new StringBuffer();
 				if (value.startsWith("-")) {
 					bf.append("-");
 				}
@@ -284,7 +287,11 @@ public class XFUtility {
 					if (value.endsWith("-")) {
 						bf.append("-");
 					}
-					returnValue = bf.toString();
+					if (dataTypeOptionList.contains("PERCENT")) {
+						returnValue = bf.toString() + "%";
+					} else {
+						returnValue = bf.toString();
+					}
 				}
 			}
 		}
@@ -4794,6 +4801,9 @@ class XFTextField extends JPanel implements XFEditableField {
 		decimal_ = decimal;
 		dataTypeOptionList = XFUtility.getOptionList(dataTypeOptions);
 		fieldOptions_ = fieldOptions;
+		if (dataTypeOptionList.contains("PERCENT")) {
+			digits_++;
+		}
 		String alignment = XFUtility.getOptionValueWithKeyword(fieldOptions_, "ALIGNMENT");
 
 		if (basicType_.equals("INTEGER")) {
@@ -5011,7 +5021,6 @@ class XFTextField extends JPanel implements XFEditableField {
 	
 	public void setEditable(boolean editable) {
 		jTextField.setEditable(editable);
-		//jTextField.setFocusable(editable);
 		if (jComboBox == null) {
 			if (editable) {
 				jTextField.setFont(new java.awt.Font(fontName_, 0, XFUtility.FONT_SIZE - 2));
@@ -5220,7 +5229,9 @@ class XFTextField extends JPanel implements XFEditableField {
 			}
 		}
 		public void focusGained(FocusEvent event){
-			jTextField.selectAll();
+			if (jTextField.isEditable()) {
+				jTextField.selectAll();
+			}
 			Character.Subset[] subsets  = new Character.Subset[] {java.awt.im.InputSubset.LATIN_DIGITS};
 			String lang = Locale.getDefault().getLanguage();
 			if (basicType_.equals("STRING")) {

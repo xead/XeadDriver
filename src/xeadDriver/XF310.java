@@ -1513,7 +1513,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 				if (!detailTable.getUpdateCounterID().equals("")) {
-					columnValueMap.put(detailTable.getUpdateCounterID(), Long.parseLong(operator.getValueOf(detailTable.getUpdateCounterID()).toString()));
+					long value = 0;
+					try {
+						value = Long.parseLong(operator.getValueOf(detailTable.getUpdateCounterID()).toString());
+					} catch (Exception e) {}
+					columnValueMap.put(detailTable.getUpdateCounterID(), value);
 				}
 
 				/////////////////////////////////////////////////////////
@@ -1532,7 +1536,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 					}
 				}
 
-				if (detailTable.hasOrderByAsItsOwnFields()) {
+				if (detailTable.hasOrderByAsItsOwnPhysicalFields()) {
 					Object[] cell = new Object[1];
 					cell[0] = new XF310_DetailRowNumber(countOfRows + 1, "CURRENT", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, columnValueListMap, this);
 					tableModelMain.addRow(cell);
@@ -1561,7 +1565,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 			////////////////////////////////////////////////
 			headerTable.runScript("AR,BU", "AS()");
 
-			if (!detailTable.hasOrderByAsItsOwnFields()) {
+			if (!detailTable.hasOrderByAsItsOwnPhysicalFields()) {
 				WorkingRow[] workingRowArray = tableRowList.toArray(new WorkingRow[0]);
 				Arrays.sort(workingRowArray);
 				for (int i = 0; i < workingRowArray.length; i++) {
@@ -2371,7 +2375,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				////////////////////////////////////////////////////////
 				// Create new row(s) according to value maps returned //
 				////////////////////////////////////////////////////////
-				//String datasourceName = "";
 				int numberOfSelection = 1;
 				for (int i = 0; i < fieldsToGetList_.size(); i++) {
 					value = returnMap.get(fieldsToGetList_.get(i));
@@ -2398,7 +2401,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
-							if (value != null) {
+							if (value != null && !value.toString().equals("")) {
 								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}
@@ -2411,7 +2414,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 							for (int i = 0; i < fieldsToGetList_.size(); i++) {
 								value = returnMap.get(fieldsToGetList_.get(i));
-								if (value != null) {
+								if (value != null && !value.toString().equals("")) {
 									if (value.toString().contains("<ListSeparator>")) {
 										int index = 0;
 										workTokenizer = new StringTokenizer(value.toString(), "<ListSeparator>" );
@@ -2424,7 +2427,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 											index++;
 										}
 									} else {
-										//fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 										if (value.toString().contains(";")) {
 											int index = 0;
 											workTokenizer = new StringTokenizer(value.toString(), ";" );
@@ -2446,23 +2448,6 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 								setupNewRowAndAddToJTable(fieldsToGetMap);
 							}
 						}
-//						workTokenizer = new StringTokenizer(multipleValues, ";" );
-//						while (workTokenizer.hasMoreTokens()) {
-//							HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
-//							for (int i = 0; i < fieldsToGetList_.size(); i++) {
-//								value = returnMap.get(fieldsToGetList_.get(i));
-//								if (value != null) {
-//									if (fieldsToGetList_.get(i).equals(datasourceName)) {
-//										fieldsToGetMap.put(fieldsToGetToList_.get(i), workTokenizer.nextToken());
-//									} else {
-//										fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
-//									}
-//								}
-//							}
-//							if (fieldsToGetMap.size() > 0) {
-//								setupNewRowAndAddToJTable(fieldsToGetMap);
-//							}
-//						}
 					}
 				}
 			}
@@ -3631,6 +3616,12 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 
+	public void executeScript(String scriptText) {
+		try {
+			evalScript("Internal Script", scriptText, scriptBindings);
+		} catch (Exception e) {}
+	}
+
 	public HashMap<String, Object> getParmMap() {
 		return parmMap_;
 	}
@@ -4667,10 +4658,18 @@ class XF310_HeaderField extends JPanel implements XFFieldScriptable {
 	public Object getValue() {
 		Object returnObj = null;
 		if (this.getBasicType().equals("INTEGER")) {
-			returnObj = Long.parseLong((String)component.getInternalValue());
+			try {
+				returnObj = Long.parseLong((String)component.getInternalValue());
+			} catch (NumberFormatException e) {
+				returnObj = 0;
+			}
 		} else {
 			if (this.getBasicType().equals("FLOAT")) {
-				returnObj = Double.parseDouble((String)component.getInternalValue());
+				try {
+					returnObj = Double.parseDouble((String)component.getInternalValue());
+				} catch (NumberFormatException e) {
+					returnObj = 0;
+				}
 			} else {
 				if (this.getBasicType().equals("BYTEA")) {
 					returnObj = component.getInternalValue();
@@ -8458,7 +8457,7 @@ class XF310_DetailTable extends Object {
 	private ArrayList<XFScript> scriptList = new ArrayList<XFScript>();
 	private XF310 dialog_;
 	private StringTokenizer workTokenizer;
-	private boolean hasOrderByAsItsOwnFields = true;
+	private boolean hasOrderByAsItsOwnPhysicalFields = true;
 	private String detailRowNoID = "";
 	private String updateCounterID = "";
 	private String dbName = "";
@@ -8485,8 +8484,8 @@ class XF310_DetailTable extends Object {
 			dbName = dialog_.getSession().getSubDBName(tableElement.getAttribute("DB"));
 		}
 
-		int pos1;
-		String wrkStr1, wrkStr2;
+		int pos1; int pos2;
+		String wrkStr1, wrkStr2, wrkStr3;
 		org.w3c.dom.Element workElement, fieldElement;
 
 		if (functionElement_.getAttribute("DetailKeyFields").equals("")) {
@@ -8539,8 +8538,22 @@ class XF310_DetailTable extends Object {
 			pos1 = wrkStr1.indexOf(".");
 			if (pos1 > -1) { 
 				wrkStr2 = wrkStr1.substring(0, pos1);
-				if (!wrkStr2.equals(tableID_)) {
-					hasOrderByAsItsOwnFields = false;
+//				if (!wrkStr2.equals(tableID_)) {
+//					hasOrderByAsItsOwnFields = false;
+//				}
+				if (wrkStr2.equals(tableID_)) {
+					pos2 = wrkStr1.indexOf("(", pos1);
+					if (pos2 > -1) {
+						wrkStr3 = wrkStr1.substring(pos1+1, pos2);
+					} else {
+						wrkStr3 = wrkStr1.substring(pos1+1);
+					}
+					workElement = dialog_.getSession().getFieldElement(wrkStr2, wrkStr3);
+					if (XFUtility.getOptionList(workElement.getAttribute("TypeOptions")).contains("VIRTUAL")) {
+						hasOrderByAsItsOwnPhysicalFields = false;
+					}
+				} else {
+					hasOrderByAsItsOwnPhysicalFields = false;
 				}
 			}
 			orderByFieldIDList.add(wrkStr1);
@@ -8625,7 +8638,7 @@ class XF310_DetailTable extends Object {
 		//////////////////////
 		// Order-by section //
 		//////////////////////
-		if (this.hasOrderByAsItsOwnFields) {
+		if (this.hasOrderByAsItsOwnPhysicalFields) {
 			if (orderByFieldIDList.size() > 0) {
 				int pos0,pos1;
 				buf.append(" order by ");
@@ -8893,8 +8906,8 @@ class XF310_DetailTable extends Object {
 		return orderByFieldIDList;
 	}
 	
-	public boolean hasOrderByAsItsOwnFields(){
-		return hasOrderByAsItsOwnFields;
+	public boolean hasOrderByAsItsOwnPhysicalFields(){
+		return hasOrderByAsItsOwnPhysicalFields;
 	}
 	
 	boolean hasPrimaryKeyValueAltered(XF310_DetailRowNumber rowNumber) {

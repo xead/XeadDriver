@@ -2023,6 +2023,12 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		}
 	}
 
+	public void executeScript(String scriptText) {
+		try {
+			evalScript("Internal Script", scriptText);
+		} catch (Exception e) {}
+	}
+
 	public ArrayList<XF110_Filter> getFilterList() {
 		return filterList;
 	}
@@ -3331,9 +3337,6 @@ class XF110_Filter extends JPanel {
 							stringFilterValue = (String)xFInputAssistField.getInternalValue();
 						}
 						if (this.getBasicType().equals("INTEGER") || this.getBasicType().equals("FLOAT")) {
-//							if ((Double.parseDouble(stringFilterValue) == 0) && fieldOptionList.contains("IGNORE_IF_ZERO")) {
-//								validated = true;
-//							} else {
 							if (stringFilterValue.equals("")) {
 								validated = true;
 							} else {
@@ -3364,6 +3367,11 @@ class XF110_Filter extends JPanel {
 								}
 								if (operandType.equals("LT")) {
 									if (doubleResultValue < doubleFilterValue) {
+										validated = true;
+									}
+								}
+								if (operandType.equals("NE")) {
+									if (doubleResultValue != doubleFilterValue) {
 										validated = true;
 									}
 								}
@@ -3404,6 +3412,11 @@ class XF110_Filter extends JPanel {
 											validated = true;
 										}
 									}
+									if (operandType.equals("NE")) {
+										if (doubleResultValue != doubleFilterValue) {
+											validated = true;
+										}
+									}
 									if (operandType.equals("GENERIC")) {
 										int lengthResultValue = stringResultValue.length();
 										int lengthFieldValue = stringFilterValue.length();
@@ -3424,6 +3437,14 @@ class XF110_Filter extends JPanel {
 											stringFilterValue = "";
 										}
 										if (stringResultValue.toUpperCase().equals(stringFilterValue.toUpperCase())) {
+											validated = true;
+										}
+									}
+									if (operandType.equals("NE")) {
+										if (stringFilterValue.equals("\'\'") || stringFilterValue.equals("\"\"") || stringFilterValue.equals("\'") || stringFilterValue.equals("\"")) {
+											stringFilterValue = "";
+										}
+										if (!stringResultValue.toUpperCase().equals(stringFilterValue.toUpperCase())) {
 											validated = true;
 										}
 									}
@@ -3529,6 +3550,11 @@ class XF110_Filter extends JPanel {
 										validated = true;
 									}
 								}
+								if (operandType.equals("NE")) {
+									if (doubleResultValue != doubleFilterValue) {
+										validated = true;
+									}
+								}
 							}
 						}
 					}
@@ -3568,6 +3594,11 @@ class XF110_Filter extends JPanel {
 							}
 							if (operandType.equals("LT")) {
 								if (doubleResultValue < doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("NE")) {
+								if (doubleResultValue != doubleFilterValue) {
 									validated = true;
 								}
 							}
@@ -3623,6 +3654,11 @@ class XF110_Filter extends JPanel {
 									validated = true;
 								}
 							}
+							if (operandType.equals("NE")) {
+								if (doubleResultValue != doubleFilterValue) {
+									validated = true;
+								}
+							}
 							if (operandType.equals("GENERIC")) {
 								int lengthResultValue = stringResultValue.length();
 								int lengthFieldValue = stringFilterValue.length();
@@ -3672,6 +3708,11 @@ class XF110_Filter extends JPanel {
 							}
 							if (operandType.equals("LT")) {
 								if (doubleResultValue < doubleFilterValue) {
+									validated = true;
+								}
+							}
+							if (operandType.equals("NE")) {
+								if (doubleResultValue != doubleFilterValue) {
 									validated = true;
 								}
 							}
@@ -3728,6 +3769,11 @@ class XF110_Filter extends JPanel {
 										validated = true;
 									}
 								}
+								if (operandType.equals("NE")) {
+									if (doubleResultValue != doubleFilterValue) {
+										validated = true;
+									}
+								}
 							}
 						} else {
 							if (this.getBasicType().equals("DATE") || this.getBasicType().equals("TIME") || this.getBasicType().equals("DATETIME")) {
@@ -3765,6 +3811,11 @@ class XF110_Filter extends JPanel {
 											validated = true;
 										}
 									}
+									if (operandType.equals("NE")) {
+										if (doubleResultValue != doubleFilterValue) {
+											validated = true;
+										}
+									}
 									if (operandType.equals("GENERIC")) {
 										int lengthResultValue = stringResultValue.length();
 										int lengthFieldValue = stringFilterValue.length();
@@ -3784,6 +3835,11 @@ class XF110_Filter extends JPanel {
 									while (workTokenizer.hasMoreTokens()) {
 										if (operandType.equals("EQ")) {
 											if (stringResultValue.equals(workTokenizer.nextToken())) {
+												validated = true;
+											}
+										}
+										if (operandType.equals("NE")) {
+											if (!stringResultValue.equals(workTokenizer.nextToken())) {
 												validated = true;
 											}
 										}
@@ -3847,7 +3903,8 @@ class XF110_Filter extends JPanel {
 									value = fieldID + whereValue;
 								}
 							} else {
-								if (wrkStr.equals("\'\'") || wrkStr.equals("\"\"") || wrkStr.equals("\'") || wrkStr.equals("\"")) {
+								if (wrkStr.equals("\'\'") || wrkStr.equals("\"\"") || wrkStr.equals("\'") || wrkStr.equals("\"") ||
+										wrkStr.equals("ff") || wrkStr.equals("hh") || wrkStr.equals("f") || wrkStr.equals("h")) {
 									wrkStr = "";
 								}
 								if (operandType.equals("SCAN")) {
@@ -3857,6 +3914,9 @@ class XF110_Filter extends JPanel {
 										value = "UPPER(" + fieldID + ") LIKE UPPER('" + wrkStr + "%')";
 									} else {
 										value = fieldID + operand + "'" + wrkStr + "'";
+										if (wrkStr.equals("") && operandType.equals("EQ")) {
+											value = fieldID + " = '' or " + fieldID + " is null";
+										}
 									}
 								}
 							}

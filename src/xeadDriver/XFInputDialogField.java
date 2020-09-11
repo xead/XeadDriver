@@ -94,6 +94,7 @@ public class XFInputDialogField extends JPanel {
 		}
 		if (inputType_.equals("CHECKBOX")) {
 			JCheckBox field = new JCheckBox();
+			field.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 			component = field;
 		}
 		if (inputType_.equals("TEXTAREA")) {
@@ -167,6 +168,15 @@ public class XFInputDialogField extends JPanel {
    public boolean isEditable() {
 	   return isEditable_;
    }
+   
+  public void setComment(String comment) {
+	  if (inputType_.equals("CHECKBOX")) {
+		  ((JCheckBox)component).setText(comment);
+		  FontMetrics commentMetrics = ((JCheckBox)component).getFontMetrics(((JCheckBox)component).getFont());
+		  int componentWidth = commentMetrics.stringWidth(comment) + 65 + XFUtility.DEFAULT_LABEL_WIDTH - 30;
+		  this.setBounds(this.getBounds().x, this.getBounds().y, componentWidth, height_);
+	  }
+  }
     
    public void setSize(int size) {
 	   size_ = size;

@@ -125,9 +125,18 @@ public class XFCheckListDialog extends JDialog {
     	initialSelectKeyList.clear();
     }
 
+    public void addRow(String key, String text, boolean isSelected) {
+    	if (!keyList.contains(key.trim())) {
+    		keyList.add(key.trim());
+    		textList.add(text.trim());
+    		if (isSelected) {
+    			initialSelectKeyList.add(key.trim());
+    		}
+    	}
+    }
+
     public void addRow(String key, String text) {
-		keyList.add(key.trim());
-		textList.add(text.trim());
+    	addRow(key, text, false);
     }
 
     public int request(String title) {

@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2018 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2020 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of XEAD Driver.
@@ -207,7 +207,7 @@ public class Session extends JFrame {
 	private HttpGet httpGet = new HttpGet();
 	private ArrayList<XFExecutable> preloadedFunctionList = new ArrayList<XFExecutable>();
 	private Application application = null;
-	private XFOptionDialog optionDialog = null;
+	//private XFOptionDialog optionDialog = null;
 	private XFInputDialog inputDialog = null;
 	private XFCheckListDialog checkListDialog = null;
 	private XFLongTextEditor xfLongTextEditor = null;
@@ -529,7 +529,7 @@ public class Session extends JFrame {
 		/////////////
 		// Dialogs //
 		/////////////
-		optionDialog = new XFOptionDialog(this);
+		//optionDialog = new XFOptionDialog(this);
 		inputDialog = new XFInputDialog(this);
 		checkListDialog = new XFCheckListDialog(this);
 		xfLongTextEditor = new XFLongTextEditor(this);
@@ -1364,7 +1364,8 @@ public class Session extends JFrame {
 	}
 
 	public XFOptionDialog getOptionDialog() {
-		return optionDialog;
+		//return optionDialog;
+		return new XFOptionDialog(this);
 	}
 
 	public XFInputDialog getInputDialog() {
@@ -1552,33 +1553,33 @@ public class Session extends JFrame {
 		double hh = Double.parseDouble(hhmmFrom.substring(0,2));
 		double mm = Double.parseDouble(hhmmFrom.substring(3,5)) + minutes;
 
-		if (mm >= 60) {
+		if(mm >= 60){
+			hh = hh + Math.floor(mm / 60);
+			mm = mm % 60;
+		}
+		if(mm <= -60){
 			hh = hh + Math.ceil(mm / 60);
 			mm = mm % 60;
 		}
-		if (mm <= -60) {
-			hh = hh + Math.ceil(mm / 60);
-			mm = (mm % 60) * -1;
-		} else {
-			if (mm < 0) {
-				hh = hh + - 1;
-				mm = mm + 60;
-			}
+		if(mm < 0){
+			hh = hh - 1;
+			mm = mm + 60;
 		}
+		mm = Math.abs(mm);
 
-		if (hh >= 24) {
-			days = Math.ceil(hh / 24);
-			hh = hh % 24;
+		if(hh >= 24){
+			days = Math.floor(hh / 24);
+			hh   = hh % 24;
 		}
-		if (hh <= -24) {
+		if(hh <= -24){
 			days = Math.ceil(hh / 24);
-			hh = (hh % 24) * -1;
-		} else {
-			if (hh < 0) {
-				days = days - 1;
-				hh = hh + 24;
-			}
+			hh   = hh % 24;
 		}
+		if(hh < 0){
+			days = days - 1;
+			hh   = hh + 24;
+		}
+		hh = Math.abs(hh);
 
 		String strDays = Double.toString(days).replace(".0", "");
 		String strHH = Double.toString(hh).replace(".0", "");
@@ -1856,7 +1857,7 @@ public class Session extends JFrame {
 					if (time.substring(2, 3).equals(":")) {
 						int hour = Integer.parseInt(time.substring(0,2));
 						int min = Integer.parseInt(time.substring(3,5));
-						if (hour >= 0 && hour <= 24
+						if (hour >= 0 && hour < 24
 								&& min >= 0 && min < 60) {
 							result = true;
 						}
@@ -1870,7 +1871,7 @@ public class Session extends JFrame {
 						int hour = Integer.parseInt(time.substring(0,2));
 						int min = Integer.parseInt(time.substring(3,5));
 						float sec = Float.parseFloat(time.substring(6,time.length()));
-						if (hour >= 0 && hour <= 24
+						if (hour >= 0 && hour < 24
 								&& min >= 0 && min < 60
 								&& sec >= 0 && sec < 60) {
 							result = true;

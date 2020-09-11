@@ -37,7 +37,6 @@ import java.awt.FontMetrics;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -75,10 +74,10 @@ public class XFOptionDialog extends JDialog {
 		this.setResizable(false);
     }
 
-    public void clear() {
-    	optionList.clear();
-    	maxCellWidth = 0;
-    }
+//    public void clear() {
+//    	optionList.clear();
+//    	maxCellWidth = 0;
+//    }
 
     public void addOption(String option) {
 		optionList.add(option);
@@ -136,18 +135,18 @@ public class XFOptionDialog extends JDialog {
     	return selectedIndex;
     }
 
-    protected void processWindowEvent(WindowEvent e) {
-		super.processWindowEvent(e);
-		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-			clear();
-		}
-	}
+//    protected void processWindowEvent(WindowEvent e) {
+//		super.processWindowEvent(e);
+//		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
+//			clear();
+//		}
+//	}
 
     class XFOptionDialog_keyAdapter extends java.awt.event.KeyAdapter {
     	public void keyPressed(KeyEvent e) {
     		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
     			selectedIndex = jList.getSelectedIndex();
-    			clear();
+//    			clear();
     			setVisible(false);
     		}
     	}
@@ -157,7 +156,7 @@ public class XFOptionDialog extends JDialog {
     	public void mouseClicked(MouseEvent e) {
     		if (optionList.size() > 0) {
     			selectedIndex = jList.getSelectedIndex();
-    			clear();
+//    			clear();
     			setVisible(false);
     		}
     	}

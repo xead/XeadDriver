@@ -430,11 +430,11 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 		jCheckBoxRunOffDay.setSelected(false);
 		jCheckBoxRunOffDay.setEnabled(false);
 
-//		if (functionElement_.getAttribute("TimerMessage").equals("")) {
-//			jTextAreaMessages.setText("> " + XFUtility.RESOURCE.getString("FunctionMessage66"));
-//		} else {
-//			jTextAreaMessages.setText("> " + functionElement_.getAttribute("TimerMessage"));
-//		}
+		if (functionElement_.getAttribute("TimerMessage").equals("")) {
+			jTextAreaMessages.setText("> " + XFUtility.RESOURCE.getString("FunctionMessage66"));
+		} else {
+			jTextAreaMessages.setText("> " + functionElement_.getAttribute("TimerMessage"));
+		}
 
 		jButtonStart.setEnabled(true);
 		jButtonStop.setEnabled(false);

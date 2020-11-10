@@ -35,6 +35,7 @@ public class XFInputDialogField extends JPanel {
 	private JLabel jLabelField = new JLabel();
 	private JButton jButton = null;
 	private Component component = null;
+	private JLabel jLabelComment = new JLabel();
 	private FontMetrics metrics;
 	private ArrayList<Object> valueList = new ArrayList<Object>();
 	private boolean isEditable_ = true;
@@ -42,7 +43,6 @@ public class XFInputDialogField extends JPanel {
 	private XFInputDialog dialog_ = null;
 	private String functionID_ = "";
 	private JFileChooser jFileChooser = null;
-	//private String jFileChooserTitle = "";
     private ArrayList<String> fieldsToPutList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToPutToList_ = new ArrayList<String>();
     private ArrayList<String> fieldsToGetList_ = new ArrayList<String>();
@@ -94,7 +94,7 @@ public class XFInputDialogField extends JPanel {
 		}
 		if (inputType_.equals("CHECKBOX")) {
 			JCheckBox field = new JCheckBox();
-			field.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
+			//field.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 			component = field;
 		}
 		if (inputType_.equals("TEXTAREA")) {
@@ -108,6 +108,7 @@ public class XFInputDialogField extends JPanel {
 			component = field;
 		}
 		component.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-1));
+		jLabelComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
 		this.setOpaque(false);
 		if (inputType_.equals("DATE")) {
 			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
@@ -117,7 +118,11 @@ public class XFInputDialogField extends JPanel {
 				height_ = XFUtility.FIELD_UNIT_HEIGHT * 3;
 				this.setBounds(this.getBounds().x, this.getBounds().y, 1000, height_);
 			} else {
-				this.setBounds(this.getBounds().x, this.getBounds().y, 250, height_);
+				if (inputType_.equals("CHECKBOX")) {
+					this.setBounds(this.getBounds().x, this.getBounds().y, 175, height_);
+				} else {
+					this.setBounds(this.getBounds().x, this.getBounds().y, 250, height_);
+				}
 			}
 		}
 		this.setLayout(new BorderLayout());
@@ -145,10 +150,12 @@ public class XFInputDialogField extends JPanel {
 			((XFDateField)component).setEditable(isEditable_);
 			((XFDateField)component).setFocusable(isEditable_);
 			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
+			FontMetrics commentMetrics = jLabelComment.getFontMetrics(jLabelComment.getFont());
+			int commentWidth = commentMetrics.stringWidth(jLabelComment.getText());
 			if (isEditable_) {
-				this.setBounds(this.getBounds().x, this.getBounds().y, 200 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
+				this.setBounds(this.getBounds().x, this.getBounds().y, 200 + fieldWidth + commentWidth, XFUtility.FIELD_UNIT_HEIGHT);
 			} else {
-				this.setBounds(this.getBounds().x, this.getBounds().y, 174 + fieldWidth, XFUtility.FIELD_UNIT_HEIGHT);
+				this.setBounds(this.getBounds().x, this.getBounds().y, 174 + fieldWidth + commentWidth, XFUtility.FIELD_UNIT_HEIGHT);
 			}
 		}
 		if (inputType_.equals("LISTBOX")) {
@@ -170,12 +177,19 @@ public class XFInputDialogField extends JPanel {
    }
    
   public void setComment(String comment) {
-	  if (inputType_.equals("CHECKBOX")) {
-		  ((JCheckBox)component).setText(comment);
-		  FontMetrics commentMetrics = ((JCheckBox)component).getFontMetrics(((JCheckBox)component).getFont());
-		  int componentWidth = commentMetrics.stringWidth(comment) + 65 + XFUtility.DEFAULT_LABEL_WIDTH - 30;
-		  this.setBounds(this.getBounds().x, this.getBounds().y, componentWidth, height_);
-	  }
+//	  if (inputType_.equals("CHECKBOX")) {
+//		  ((JCheckBox)component).setText(comment);
+//		  FontMetrics commentMetrics = ((JCheckBox)component).getFontMetrics(((JCheckBox)component).getFont());
+//		  int componentWidth = commentMetrics.stringWidth(comment) + 65 + XFUtility.DEFAULT_LABEL_WIDTH - 30;
+//		  this.setBounds(this.getBounds().x, this.getBounds().y, componentWidth, height_);
+//	  } else {
+		  FontMetrics commentMetrics = jLabelComment.getFontMetrics(jLabelComment.getFont());
+		  int oldCommentWidth = commentMetrics.stringWidth(jLabelComment.getText());
+		  int newCommentWidth = commentMetrics.stringWidth(" " + comment);
+		  jLabelComment.setText(" " + comment);
+		  this.add(jLabelComment, BorderLayout.EAST);
+		  this.setBounds(this.getBounds().x, this.getBounds().y, this.getWidth() - oldCommentWidth + newCommentWidth, height_);
+//	  }
   }
     
    public void setSize(int size) {
@@ -214,10 +228,12 @@ public class XFInputDialogField extends JPanel {
 	   if (width > 800 || inputType_.equals("TEXTAREA")) {
 		   width = 800;
 	   }
+	   FontMetrics commentMetrics = jLabelComment.getFontMetrics(jLabelComment.getFont());
+	   int commentWidth = commentMetrics.stringWidth(jLabelComment.getText());
 	   if (jButton == null) {
-		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 150, this.getBounds().height);
+		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 150 + commentWidth, this.getBounds().height);
 	   } else {
-		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 150 + 26, this.getBounds().height);
+		   this.setBounds(this.getBounds().x, this.getBounds().y, width + 150 + 26 + commentWidth, this.getBounds().height);
 	   }
 	   isAutoSizing = false;
    }

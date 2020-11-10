@@ -143,7 +143,7 @@ public class XFUtility {
 	public static final Color ERROR_COLOR = new Color(238,187,203);
 	public static final Color ACTIVE_COLOR = SystemColor.white;
 	public static final Color INACTIVE_COLOR = SystemColor.control;
-	public static final Color ODD_ROW_COLOR = new Color(240, 240, 255);
+	public static final Color ODD_ROW_COLOR = new Color(231, 231, 255);
 	public static final Color SELECTED_ACTIVE_COLOR = new Color(49,106,197);
 
 	public static final ImageIcon ICON_CHECK_0A = new ImageIcon(Toolkit.getDefaultToolkit().createImage(xeadDriver.XFUtility.class.getResource("iCheck0A.PNG")));
@@ -5756,65 +5756,25 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private int rows_ = 1;
 	private JTextField jTextField = new JTextField();
-	private JComboBox jComboBoxYear = new JComboBox();
-	private ArrayList<String> listYear = new ArrayList<String>();
+	private JTextField jTextFieldYear = new JTextField();
 	private JComboBox jComboBoxMonth = new JComboBox();
 	private ArrayList<String> listMonth = new ArrayList<String>();
 	private boolean isEditable = false;
 	private String oldValue = "";
     private Session session_;
-    private String dateFormat = "";
     private String language = "";
 	
 	public XFYMonthBox(Session session){
 		super();
 
 		session_ = session;
-		dateFormat = session_.getDateFormat();
 		language = session_.getDateFormat().substring(0, 2);
 
 		jTextField.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jTextField.setEditable(false);
-		//jTextField.setFocusable(false);
-
-		GregorianCalendar calendar = new GregorianCalendar();
-		int currentYear = calendar.get(Calendar.YEAR);
-		int minimumYear = currentYear - 50;
-		int maximumYear = currentYear + 10;
-		jComboBoxYear.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
-		jComboBoxYear.addKeyListener(new XFYMonthBox_Year_keyAdapter(this));
-
-		SimpleDateFormat gengoFormatter = new SimpleDateFormat("Gyy", new Locale("ja", "JP", "JP"));
-		Calendar cal = Calendar.getInstance();
-		listYear.add("");
-		jComboBoxYear.addItem("");
-		for (int i = minimumYear; i <= maximumYear; i++) {
-			listYear.add(String.valueOf(i));
-			if (language.equals("en")
-					|| dateFormat.equals("jp00")
-					|| dateFormat.equals("jp01")
-					|| dateFormat.equals("jp10")
-					|| dateFormat.equals("jp11")
-					|| dateFormat.equals("jp20")
-					|| dateFormat.equals("jp21")) {
-				jComboBoxYear.addItem(String.valueOf(i));
-			} else {
-				cal.set(i, 0, 1);
-				jComboBoxYear.addItem(gengoFormatter.format(cal.getTime()));
-			}
-		}
-		listYear.add("9999");
-		if (language.equals("en")
-				|| dateFormat.equals("jp00")
-				|| dateFormat.equals("jp01")
-				|| dateFormat.equals("jp10")
-				|| dateFormat.equals("jp11")
-				|| dateFormat.equals("jp20")
-				|| dateFormat.equals("jp21")) {
-			jComboBoxYear.addItem("9999");
-		} else {
-			jComboBoxYear.addItem("H99");
-		}
+		jTextFieldYear.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+		jTextFieldYear.setEditable(true);
+		jTextFieldYear.setDocument(new LimitedDocument());
 
 		jComboBoxMonth.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jComboBoxMonth.addKeyListener(new XFYMonthBox_Month_keyAdapter(this));
@@ -5833,8 +5793,8 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 		listMonth.add("11");
 		listMonth.add("12");
 		if (language.equals("en")) {
+			jTextFieldYear.setBounds(new Rectangle(71, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMonth.setBounds(new Rectangle(0, 0, 70, XFUtility.FIELD_UNIT_HEIGHT));
-			jComboBoxYear.setBounds(new Rectangle(71, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
 			jTextField.setBounds(new Rectangle(0, 0, 151, XFUtility.FIELD_UNIT_HEIGHT));
 			this.setSize(new Dimension(151, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMonth.addItem("");
@@ -5852,7 +5812,7 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 			jComboBoxMonth.addItem("Dec");
 		}
 		if (language.equals("jp")) {
-			jComboBoxYear.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
+			jTextFieldYear.setBounds(new Rectangle(0, 0, 80, XFUtility.FIELD_UNIT_HEIGHT));
 			jComboBoxMonth.setBounds(new Rectangle(81, 0, 60, XFUtility.FIELD_UNIT_HEIGHT));
 			jTextField.setBounds(new Rectangle(0, 0, 141, XFUtility.FIELD_UNIT_HEIGHT));
 			this.setSize(new Dimension(141, XFUtility.FIELD_UNIT_HEIGHT));
@@ -5875,14 +5835,13 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 	}
 	
 	public void addActionListener(ActionListener listener) {
-		jComboBoxYear.addActionListener(listener);
 		jComboBoxMonth.addActionListener(listener);
 	}
 
 	public void setEditable(boolean editable) {
 		this.removeAll();
 		if (editable) {
-			this.add(jComboBoxYear);
+			this.add(jTextFieldYear);
 			this.add(jComboBoxMonth);
 		} else {
 			this.add(jTextField);
@@ -5892,9 +5851,16 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 	}
 
 	public Object getInternalValue() {
-		String year = listYear.get(jComboBoxYear.getSelectedIndex());
-		String month = listMonth.get(jComboBoxMonth.getSelectedIndex());
-		return year + month;
+		String value = "";
+		try {
+			if (!jTextFieldYear.getText().equals("") && jComboBoxMonth.getSelectedIndex() > 0) {
+				int workInt = Integer.parseInt(jTextFieldYear.getText());
+				value = Integer.toString(workInt) + listMonth.get(jComboBoxMonth.getSelectedIndex());
+				value = "000" + value;
+				value = value.substring(value.length() - 6, value.length());
+			}
+		} catch (NumberFormatException e) {}
+		return value;
 	}
 
 	public Object getExternalValue() {
@@ -5914,35 +5880,30 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 	}
 
 	public void setValue(Object obj) {
+		jComboBoxMonth.setSelectedIndex(0);
+		jTextField.setText("");
+		jTextFieldYear.setText("");
+
 		String value = (String)obj;
 		if (value != null) {
 			value = value.trim();
 		}
-		if (value == null || value.equals("")) {
-			jComboBoxYear.setSelectedIndex(0);
-			jComboBoxMonth.setSelectedIndex(0);
-			jTextField.setText("");
-		} else {
+		if (value != null && !value.equals("")) {
 			if (value.length() == 6) {
 				String yearValue = value.substring(0, 4);
 				String monthValue = value.substring(4, 6);
-				int index = listYear.indexOf(yearValue);
-				if (index == -1) {
-					jComboBoxYear.setSelectedIndex(0);
-				} else {
-					jComboBoxYear.setSelectedIndex(index);
-				}
-				index = listMonth.indexOf(monthValue);
+				jTextFieldYear.setText(yearValue);
+				int index = listMonth.indexOf(monthValue);
 				if (index == -1) {
 					jComboBoxMonth.setSelectedIndex(0);
 				} else {
 					jComboBoxMonth.setSelectedIndex(index);
 				}
 				if (language.equals("en")) {
-					jTextField.setText(jComboBoxMonth.getItemAt(jComboBoxMonth.getSelectedIndex()).toString() + ", " + jComboBoxYear.getItemAt(jComboBoxYear.getSelectedIndex()).toString());
+					jTextField.setText(jComboBoxMonth.getItemAt(jComboBoxMonth.getSelectedIndex()).toString() + ", " + jTextFieldYear.getText());
 				}
 				if (language.equals("jp")) {
-					jTextField.setText(jComboBoxYear.getItemAt(jComboBoxYear.getSelectedIndex()).toString() + "”N" + jComboBoxMonth.getItemAt(jComboBoxMonth.getSelectedIndex()).toString() + "ŒŽ");
+					jTextField.setText(jTextFieldYear.getText() + "”N" + jComboBoxMonth.getItemAt(jComboBoxMonth.getSelectedIndex()).toString() + "ŒŽ");
 				}
 			}
 		}
@@ -5960,8 +5921,10 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 	}
 
 	public void setForeground(Color color) {
-		if (jComboBoxYear != null && jComboBoxMonth != null) {
-			jComboBoxYear.setForeground(color);
+		if (jTextFieldYear != null) {
+			jTextFieldYear.setForeground(color);
+		}
+		if (jComboBoxMonth != null) {
 			jComboBoxMonth.setForeground(color);
 		}
 		if (jTextField != null) {
@@ -5970,26 +5933,16 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 	}
 
 	public void setBackground(Color color) {
-		if (jComboBoxYear != null && jComboBoxMonth != null) {
-			jComboBoxYear.setBackground(color);
+		if (jTextFieldYear != null) {
+			jTextFieldYear.setBackground(color);
+		}
+		if (jComboBoxMonth != null) {
 			jComboBoxMonth.setBackground(color);
 		}
 	}
 
 	public int getRows() {
 		return rows_;
-	}
-
-	void jComboBoxYear_keyPressed(KeyEvent e) {
-	    if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0){
-			if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-				jComboBoxYear.showPopup();
-			}
-		}
-		if (e.getKeyCode() == KeyEvent.VK_ENTER && !jComboBoxYear.isPopupVisible()) {
-			this.requestFocus();
-			this.dispatchEvent(e);
-		}
 	}
 
 	void jComboBoxMonth_keyPressed(KeyEvent e) {
@@ -6001,6 +5954,19 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 		if (e.getKeyCode() == KeyEvent.VK_ENTER && !jComboBoxMonth.isPopupVisible()) {
 			this.requestFocus();
 			this.dispatchEvent(e);
+		}
+	}
+
+	class LimitedDocument extends PlainDocument {
+		private static final long serialVersionUID = 1L;
+		public void insertString(int offset, String str, AttributeSet attr) {
+			try {
+				String preStr = jTextFieldYear.getText();
+				int workInt = Integer.parseInt(preStr + str);
+				if (workInt >= 0 && workInt <= 9999) {
+					super.insertString( offset, str, attr );
+				}
+			} catch (Exception e) {}
 		}
 	}
 }
@@ -7524,15 +7490,15 @@ class XFCalendar_keyAdapter extends java.awt.event.KeyAdapter {
 	  }
 }
 
-class XFYMonthBox_Year_keyAdapter extends java.awt.event.KeyAdapter {
-	  XFYMonthBox adaptee;
-	  XFYMonthBox_Year_keyAdapter(XFYMonthBox adaptee) {
-	    this.adaptee = adaptee;
-	  }
-	  public void keyPressed(KeyEvent e) {
-	    adaptee.jComboBoxYear_keyPressed(e);
-	  }
-}
+//class XFYMonthBox_Year_keyAdapter extends java.awt.event.KeyAdapter {
+//	  XFYMonthBox adaptee;
+//	  XFYMonthBox_Year_keyAdapter(XFYMonthBox adaptee) {
+//	    this.adaptee = adaptee;
+//	  }
+//	  public void keyPressed(KeyEvent e) {
+//	    adaptee.jComboBoxYear_keyPressed(e);
+//	  }
+//}
 
 class XFYMonthBox_Month_keyAdapter extends java.awt.event.KeyAdapter {
 	  XFYMonthBox adaptee;

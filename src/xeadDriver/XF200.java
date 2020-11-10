@@ -286,10 +286,10 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				setFunctionSpecifications(functionElement);
 			}
 
-			/////////////////////////////////
-			// Write log to start function //
-			/////////////////////////////////
-			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
+//			/////////////////////////////////
+//			// Write log to start function //
+//			/////////////////////////////////
+//			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 			
 			//////////////////////////////
 			// Set panel configurations //
@@ -485,6 +485,11 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 		// Set specifications to the inner variant //
 		/////////////////////////////////////////////
 		functionElement_ = functionElement;
+
+		/////////////////////////////////
+		// Write log to start function //
+		/////////////////////////////////
+		programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 		////////////////////////////////
 		// Setup Panel Configurations //
@@ -1957,9 +1962,13 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 			} else {
 				style.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
 				style.setVerticalAlignment(XSSFCellStyle.VERTICAL_CENTER);
-				if (!object.getTypeOptionList().contains("NO_EDIT")
-					&& !object.getTypeOptionList().contains("ZERO_SUPPRESS")) {
-					style.setDataFormat(format.getFormat("#,##0"));
+				if (object.getTypeOptionList().contains("PERCENT")) {
+					style.setDataFormat(format.getFormat("0%"));
+				} else {
+					if (!object.getTypeOptionList().contains("NO_EDIT")
+							&& !object.getTypeOptionList().contains("ZERO_SUPPRESS")) {
+						style.setDataFormat(format.getFormat("#,##0"));
+					}
 				}
 				cellValue.setCellStyle(style);
 				if (rowIndexInCell==0) {
@@ -1968,12 +1977,22 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 					} else {
 						wrkStr = XFUtility.getStringNumber(object.getExternalValue().toString());
 					}
-					if (wrkStr.equals("") || object.getTypeOptionList().contains("NO_EDIT")) {
-						cellValue.setCellType(XSSFCell.CELL_TYPE_STRING);
-						cellValue.setCellValue(new XSSFRichTextString(wrkStr));
-					} else {
+					if (object.getTypeOptionList().contains("PERCENT")) {
+						if (wrkStr.equals("")) {
+							wrkStr = "0.0";
+						} else {
+							wrkStr = Float.toString(Float.parseFloat(wrkStr) / 100);
+						}
 						cellValue.setCellType(XSSFCell.CELL_TYPE_NUMERIC);
 						cellValue.setCellValue(Double.parseDouble(wrkStr));
+					} else {
+						if (wrkStr.equals("") || object.getTypeOptionList().contains("NO_EDIT")) {
+							cellValue.setCellType(XSSFCell.CELL_TYPE_STRING);
+							cellValue.setCellValue(new XSSFRichTextString(wrkStr));
+						} else {
+							cellValue.setCellType(XSSFCell.CELL_TYPE_NUMERIC);
+							cellValue.setCellValue(Double.parseDouble(wrkStr));
+						}
 					}
 				}
 			}
@@ -3071,10 +3090,10 @@ class XF200_Field extends JPanel implements XFFieldScriptable {
 							isError = true;
 						}
 					}
-					if (dataTypeOptionList.contains("YMONTH") && strWrk.length() > 0 && strWrk.length() < 6) {
+					if (dataTypeOptionList.contains("YMONTH") && strWrk.length() >= 0 && strWrk.length() < 6) {
 						isError = true;
 					}
-					if (dataTypeOptionList.contains("FYEAR") && strWrk.length() > 0 && strWrk.length() < 4) {
+					if (dataTypeOptionList.contains("FYEAR") && strWrk.length() >= 0 && strWrk.length() < 4) {
 						isError = true;
 					}
 				}

@@ -151,10 +151,10 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 				setFunctionSpecifications(functionElement);
 			}
 
-			/////////////////////////////////
-			// Write log to start function //
-			/////////////////////////////////
-			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
+//			/////////////////////////////////
+//			// Write log to start function //
+//			/////////////////////////////////
+//			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 			//////////////////////////////////////
 			// Setup Script Engine and Bindings //
@@ -211,6 +211,11 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 		// Set specifications to the inner variant //
 		/////////////////////////////////////////////
 		functionElement_ = functionElement;
+
+		/////////////////////////////////
+		// Write log to start function //
+		/////////////////////////////////
+		programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 		//////////////////////////////////////////////
 		// Setup the primary table and refer tables //

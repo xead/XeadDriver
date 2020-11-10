@@ -3496,10 +3496,10 @@ class XF110_SubListBatchField extends JPanel implements XFFieldScriptable {
 						isNullError = true;
 					}
 				}
-				if (dataTypeOptionList.contains("YMONTH") && strWrk.length() > 0 && strWrk.length() < 6) {
+				if (dataTypeOptionList.contains("YMONTH") && strWrk.length() >= 0 && strWrk.length() < 6) {
 					isNullError = true;	
 				}
-				if (dataTypeOptionList.contains("FYEAR") && strWrk.length() > 0 && strWrk.length() < 4) {
+				if (dataTypeOptionList.contains("FYEAR") && strWrk.length() >= 0 && strWrk.length() < 4) {
 					isNullError = true;	
 				}
 			}
@@ -4584,8 +4584,9 @@ class XF110_SubListCellEditorWithLongTextEditor extends JPanel implements XFTabl
 
 class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
-	private JComboBox jComboBoxYear = new JComboBox();
+	private JTextField jTextFieldYear = new JTextField();
 	private JComboBox jComboBoxMonth = new JComboBox();
+	private ArrayList<String> listMonth = new ArrayList<String>();
 	private JLabel jLabel = new JLabel();
 	private boolean isEditable_ = true;
 	private XF110_SubList dialog_ = null;
@@ -4593,44 +4594,13 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 	public XF110_SubListCellEditorWithYMonthBox(XF110_SubList dialog) {
 		super();
 		dialog_ = dialog;
-		GregorianCalendar calendar = new GregorianCalendar();
-		int currentYear = calendar.get(Calendar.YEAR);
-		int minimumYear = currentYear - 10;
-		int maximumYear = currentYear + 10;
 
-		jComboBoxYear.setEditable(false);
-		jComboBoxYear.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-		jComboBoxYear.setBounds(new Rectangle(0, 0, 70, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
-		jComboBoxYear.addItem("");
-		for (int i = minimumYear; i <= maximumYear; i++) {
-			jComboBoxYear.addItem(String.valueOf(i));
-		}
-		jComboBoxYear.addItem("9999");
-		jComboBoxYear.addPopupMenuListener(new PopupMenuListener() {
-			public void popupMenuCanceled(PopupMenuEvent arg0) {
-			}
-			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
-				dialog_.getCellsEditor().updateRowObject();
-			}
-			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
-			}
-		});
+		jTextFieldYear.setEditable(true);
+		jTextFieldYear.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
+		jTextFieldYear.setDocument(new LimitedDocument());
+
 		jComboBoxMonth.setEditable(false);
 		jComboBoxMonth.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
-		jComboBoxMonth.setBounds(new Rectangle(70, 0, 50, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
-		jComboBoxMonth.addItem("");
-		jComboBoxMonth.addItem("01");
-		jComboBoxMonth.addItem("02");
-		jComboBoxMonth.addItem("03");
-		jComboBoxMonth.addItem("04");
-		jComboBoxMonth.addItem("05");
-		jComboBoxMonth.addItem("06");
-		jComboBoxMonth.addItem("07");
-		jComboBoxMonth.addItem("08");
-		jComboBoxMonth.addItem("09");
-		jComboBoxMonth.addItem("10");
-		jComboBoxMonth.addItem("11");
-		jComboBoxMonth.addItem("12");
 		jComboBoxMonth.addPopupMenuListener(new PopupMenuListener() {
 			public void popupMenuCanceled(PopupMenuEvent arg0) {
 			}
@@ -4640,6 +4610,57 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {
 			}
 		});
+
+		listMonth.add("");
+		listMonth.add("01");
+		listMonth.add("02");
+		listMonth.add("03");
+		listMonth.add("04");
+		listMonth.add("05");
+		listMonth.add("06");
+		listMonth.add("07");
+		listMonth.add("08");
+		listMonth.add("09");
+		listMonth.add("10");
+		listMonth.add("11");
+		listMonth.add("12");
+
+		String language = dialog_.getSession().getDateFormat().substring(0, 2);
+		if (language.equals("en")) {
+			jComboBoxMonth.setBounds(new Rectangle(0, 0, 65, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
+			jTextFieldYear.setBounds(new Rectangle(66, 0, 54, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
+			jComboBoxMonth.addItem("");
+			jComboBoxMonth.addItem("Jan");
+			jComboBoxMonth.addItem("Feb");
+			jComboBoxMonth.addItem("Mar");
+			jComboBoxMonth.addItem("Apr");
+			jComboBoxMonth.addItem("May");
+			jComboBoxMonth.addItem("Jun");
+			jComboBoxMonth.addItem("Jul");
+			jComboBoxMonth.addItem("Aug");
+			jComboBoxMonth.addItem("Sep");
+			jComboBoxMonth.addItem("Oct");
+			jComboBoxMonth.addItem("Nov");
+			jComboBoxMonth.addItem("Dec");
+		}
+		if (language.equals("jp")) {
+			jTextFieldYear.setBounds(new Rectangle(0, 0, 54, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
+			jComboBoxMonth.setBounds(new Rectangle(55, 0, 65, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
+			jComboBoxMonth.addItem("");
+			jComboBoxMonth.addItem("01");
+			jComboBoxMonth.addItem("02");
+			jComboBoxMonth.addItem("03");
+			jComboBoxMonth.addItem("04");
+			jComboBoxMonth.addItem("05");
+			jComboBoxMonth.addItem("06");
+			jComboBoxMonth.addItem("07");
+			jComboBoxMonth.addItem("08");
+			jComboBoxMonth.addItem("09");
+			jComboBoxMonth.addItem("10");
+			jComboBoxMonth.addItem("11");
+			jComboBoxMonth.addItem("12");
+		}
+
 		jLabel.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE));
 		jLabel.setBackground(SystemColor.control);
 		jLabel.setBounds(new Rectangle(0, 0, 120, XFUtility.ROW_UNIT_HEIGHT_EDITABLE));
@@ -4649,16 +4670,16 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 		this.addFocusListener(new java.awt.event.FocusAdapter() {
 			public void focusGained(FocusEvent e) {
 				dialog_.getCellsEditor().updateActiveColumnIndex();
-				jComboBoxYear.setBackground(Color.cyan);
+				jTextFieldYear.setBackground(Color.cyan);
 				jComboBoxMonth.setBackground(Color.cyan);
 			}
 			public void focusLost(FocusEvent e) {
-				jComboBoxYear.setBackground(SystemColor.text);
+				jTextFieldYear.setBackground(SystemColor.text);
 				jComboBoxMonth.setBackground(SystemColor.text);
 			}
 		});
 		this.setLayout(null);
-		this.add(jComboBoxYear);
+		this.add(jTextFieldYear);
 		this.add(jComboBoxMonth);
 	}
 	
@@ -4670,10 +4691,9 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 		isEditable_ = isEditable;
 		this.removeAll();
 		if (isEditable) {
-			this.add(jComboBoxYear);
+			this.add(jTextFieldYear);
 			this.add(jComboBoxMonth);
 		} else {
-			//jLabel.setText(this.getExternalValue().toString());
 			this.add(jLabel);
 		}
 	}
@@ -4683,9 +4703,16 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 	}
 
 	public Object getInternalValue() {
-		String year = (String)jComboBoxYear.getItemAt(jComboBoxYear.getSelectedIndex());
-		String month = (String)jComboBoxMonth.getItemAt(jComboBoxMonth.getSelectedIndex());
-		return year + month;
+		String value = "";
+		try {
+			if (!jTextFieldYear.getText().equals("") && jComboBoxMonth.getSelectedIndex() > 0) {
+				int workInt = Integer.parseInt(jTextFieldYear.getText());
+				value = Integer.toString(workInt) + listMonth.get(jComboBoxMonth.getSelectedIndex());
+				value = "000" + value;
+				value = value.substring(value.length() - 6, value.length());
+			}
+		} catch (NumberFormatException e) {}
+		return value;
 	}
 
 	public Object getExternalValue() {
@@ -4693,28 +4720,24 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 	}
 	
 	public void setValue(Object obj) {
+		jTextFieldYear.setText("");
+		jComboBoxMonth.setSelectedIndex(0);
+		jLabel.setText("");
+
 		String value = (String)obj;
 		if (value != null) {
 			value = value.trim();
 		}
-		if (value == null || value.equals("")) {
-			jComboBoxYear.setSelectedIndex(0);
-			jComboBoxMonth.setSelectedIndex(0);
-		} else {
+		if (value != null && !value.equals("")) {
 			if (value.length() == 6) {
 				String yearValue = value.substring(0, 4);
 				String monthValue = value.substring(4, 6);
-				for (int i = 0; i < jComboBoxYear.getItemCount(); i++) {
-					if (jComboBoxYear.getItemAt(i).equals(yearValue)) {
-						jComboBoxYear.setSelectedIndex(i);
-						break;
-					}
-				}
-				for (int i = 0; i < jComboBoxMonth.getItemCount(); i++) {
-					if (jComboBoxMonth.getItemAt(i).equals(monthValue)) {
-						jComboBoxMonth.setSelectedIndex(i);
-						break;
-					}
+				jTextFieldYear.setText(yearValue);
+				int index = listMonth.indexOf(monthValue);
+				if (index == -1) {
+					jComboBoxMonth.setSelectedIndex(0);
+				} else {
+					jComboBoxMonth.setSelectedIndex(index);
 				}
 				jLabel.setText(XFUtility.getUserExpressionOfYearMonth(value, dialog_.getSession().getDateFormat()));
 			}
@@ -4722,29 +4745,42 @@ class XF110_SubListCellEditorWithYMonthBox extends JPanel implements XFTableColu
 	}
 
 	public void setBackground(Color color) {
-		if (jComboBoxYear != null && jComboBoxMonth != null) {
-			jComboBoxYear.setBackground(color);
+		if (jTextFieldYear != null && jComboBoxMonth != null) {
+			jTextFieldYear.setBackground(color);
 			jComboBoxMonth.setBackground(color);
 		}
 	}
 	
 	public void setColorOfError() {
-		jComboBoxYear.setBackground(XFUtility.ERROR_COLOR);
+		jTextFieldYear.setBackground(XFUtility.ERROR_COLOR);
 		jComboBoxMonth.setBackground(XFUtility.ERROR_COLOR);
 	}
 	
 	public void setColorOfNormal(int row) {
 		if (this.isEditable()) {
 			if (row%2==0) {
-				jComboBoxYear.setBackground(SystemColor.text);
+				jTextFieldYear.setBackground(SystemColor.text);
 				jComboBoxMonth.setBackground(SystemColor.text);
 			} else {
-				jComboBoxYear.setBackground(XFUtility.ODD_ROW_COLOR);
+				jTextFieldYear.setBackground(XFUtility.ODD_ROW_COLOR);
 				jComboBoxMonth.setBackground(XFUtility.ODD_ROW_COLOR);
 			}
 		} else {
-			jComboBoxYear.setBackground(SystemColor.control);
+			jTextFieldYear.setBackground(SystemColor.control);
 			jComboBoxMonth.setBackground(SystemColor.control);
+		}
+	}
+
+	class LimitedDocument extends PlainDocument {
+		private static final long serialVersionUID = 1L;
+		public void insertString(int offset, String str, AttributeSet attr) {
+			try {
+				String preStr = jTextFieldYear.getText();
+				int workInt = Integer.parseInt(preStr + str);
+				if (workInt >= 0 && workInt <= 9999) {
+					super.insertString( offset, str, attr );
+				}
+			} catch (Exception e) {}
 		}
 	}
 }
@@ -6207,10 +6243,10 @@ class XF110_SubListDetailColumn implements XFFieldScriptable {
 			if (strWrk.equals("") && !this.isNullable) {
 				isNullError = true;
 			}
-			if (dataTypeOptionList.contains("YMONTH") && strWrk.length() > 0 && strWrk.length() < 6) {
+			if (dataTypeOptionList.contains("YMONTH") && strWrk.length() >= 0 && strWrk.length() < 6) {
 				isNullError = true;
 			}
-			if (dataTypeOptionList.contains("FYEAR") && strWrk.length() > 0 && strWrk.length() < 4) {
+			if (dataTypeOptionList.contains("FYEAR") && strWrk.length() >= 0 && strWrk.length() < 4) {
 				isNullError = true;
 			}
 		}

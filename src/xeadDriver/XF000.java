@@ -313,10 +313,10 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 				setFunctionSpecifications(functionElement);
 			}
 
-			/////////////////////////////////
-			// Write log to start function //
-			/////////////////////////////////
-			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
+//			/////////////////////////////////
+//			// Write log to start function //
+//			/////////////////////////////////
+//			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 			
 			////////////////////////////////////
 			// Run Script or Show Timer Panel //
@@ -359,6 +359,9 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 
 	public void setFunctionSpecifications(org.w3c.dom.Element functionElement) throws Exception {
 		functionElement_ = functionElement;
+
+		programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
+
 		if (!functionElement_.getAttribute("TimerOption").equals("")) {
 			this.setTitle(functionElement_.getAttribute("Name"));
 			this.setSize(new Dimension(scrSize.width, scrSize.height));

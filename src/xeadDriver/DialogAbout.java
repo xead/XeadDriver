@@ -43,18 +43,26 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M31";
-	public static final String VERSION  = "1.3.31";
+	public static final String FULL_VERSION  = "V1.R3.M32";
+	public static final String VERSION  = "1.3.32";
 	public static final String FORMAT_VERSION  = "1.2";
 	public static final String COPYRIGHT = "Copyright 2020 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.32
+	//・InputDialogのフィールドで、#setComment(...)を使えるようにした
+	//・年月型のコントローラを全面刷新して使いやすくした
+	//・XF300の明細行上でのポップアップメニューでの追加オプションの動作バグを修正
+	//・XF100,110,200,300,310の明細行のEXCEL出力に％編集の設定を反映させた
+	//・明細表示での偶数行背景色をRGB(240,240,255)から(231,231,255)に変更した
+	//・XF100,110,300の明細行上のリンク項目がブランクの場合、リンク機能が動作しないようにした
+	//#・仕様分析のエラーログを記録するために、各機能タイプでセッションログの書き込みタイミングを早めた
+	//
 	//1.3.31
 	//・XF300,310.390の明細テーブルに対して仮想フィールドで並び順指定できるように修正
 	//・sessionでrollback()のメソッドを使えるようにした
 	//・OptionDialogの起動方法を改善して、getOptionAt(...)をいつでも使えるようにした
 	//・session.isValidTime(...)のバグを修正した
 	//・session.getOffsetDateTime(...)のバグを修正した
-	//・#InputDialogのCHECKBOXフィールドで、#setComment(...)を使えるようにした
 	//
 	//1.3.30
 	//・instanceでexecuteScript(...)のメソッドを使えるようにした

@@ -330,10 +330,10 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				setFunctionSpecifications(functionElement);
 			}
 
-			/////////////////////////////////
-			// Write log to start function //
-			/////////////////////////////////
-			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
+//			/////////////////////////////////
+//			// Write log to start function //
+//			/////////////////////////////////
+//			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 			/////////////////////////////////////
 			// Validate parameters with filter //
@@ -463,6 +463,11 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 		// Set specifications to the inner variant //
 		/////////////////////////////////////////////
 		functionElement_ = functionElement;
+
+		/////////////////////////////////
+		// Write log to start function //
+		/////////////////////////////////
+		programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 		//////////////////////////////////////////////
 		// Setup the primary table and refer tables //
@@ -1730,9 +1735,18 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 				 }
 				 style.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
 				 style.setVerticalAlignment(XSSFCellStyle.VERTICAL_TOP);
-				 if (!typeOptionList.contains("NO_EDIT")
-						 && !typeOptionList.contains("ZERO_SUPPRESS")) {
-					 style.setDataFormat(format.getFormat("#,##0"));
+				 if (typeOptionList.contains("PERCENT")) {
+					 style.setDataFormat(format.getFormat("0%"));
+					 if (wrk.equals("")) {
+						 wrk = "0.0";
+					 } else {
+						 wrk = Float.toString(Float.parseFloat(wrk) / 100);
+					 }
+				 } else {
+					 if (!typeOptionList.contains("NO_EDIT")
+							 && !typeOptionList.contains("ZERO_SUPPRESS")) {
+						 style.setDataFormat(format.getFormat("#,##0"));
+					 }
 				 }
 				 cell.setCellStyle(style);
 			 }
@@ -1820,7 +1834,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void jTableMain_mousePressed(MouseEvent e) {
-		if (headersRenderer.isUrlColumn(e.getPoint().x)) {
+		//if (headersRenderer.isUrlColumn(e.getPoint().x)) {
+		if (headersRenderer.isUrlColumn(e)) {
 			browseUrl(jTableMain.rowAtPoint(e.getPoint()), headersRenderer.getColumnIndex(e.getPoint().x));
 		} else {
 			if (tableModelMain.getRowCount() > 0) {
@@ -1830,7 +1845,8 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void jTableMain_mouseMoved(MouseEvent e) {
-		if (headersRenderer.isUrlColumn(e.getPoint().x)) {
+		//if (headersRenderer.isUrlColumn(e.getPoint().x)) {
+		if (headersRenderer.isUrlColumn(e)) {
 			setCursor(session_.editorKit.getLinkCursor());
 		} else {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -2331,21 +2347,42 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			return index;
 		}
-
-		public boolean isUrlColumn(int posX) {
-			boolean isUrlColumn = false;
-			int posXOnCenterPanel = posX - westPanel.getPreferredSize().width;
-			for (int i = 0; i < headerList.size(); i++) {
-				if (posXOnCenterPanel >= headerList.get(i).getBounds().x
-						&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
-					if (dataTypeList.get(i).equals("URL")) {
-						isUrlColumn = true;
+		
+		public boolean isUrlColumn(MouseEvent e) {
+			boolean isLinkedColumn = false;
+			int rowIndex = jTableMain.rowAtPoint(e.getPoint());
+			int columnIndex = headersRenderer.getColumnIndex(e.getPoint().x);
+			XF110_RowNumber rowObject = (XF110_RowNumber)tableModelMain.getValueAt(rowIndex, 0);
+			String text = rowObject.getCellObjectList().get(columnIndex).getInternalValue().toString();
+			if (!text.equals("")) {
+				int posXOnCenterPanel = e.getPoint().x - westPanel.getPreferredSize().width;
+				for (int i = 0; i < headerList.size(); i++) {
+					if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+							&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+						if (dataTypeList.get(i).equals("URL")) {
+							isLinkedColumn = true;
+						}
+						break;
 					}
-					break;
 				}
 			}
-			return isUrlColumn;
+			return isLinkedColumn;
 		}
+
+//		public boolean isUrlColumn(int posX) {
+//			boolean isUrlColumn = false;
+//			int posXOnCenterPanel = posX - westPanel.getPreferredSize().width;
+//			for (int i = 0; i < headerList.size(); i++) {
+//				if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+//						&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+//					if (dataTypeList.get(i).equals("URL")) {
+//						isUrlColumn = true;
+//					}
+//					break;
+//				}
+//			}
+//			return isUrlColumn;
+//		}
 
 		public String getToolTipText(MouseEvent e) {
 			String text = "";

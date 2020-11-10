@@ -340,10 +340,10 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				setFunctionSpecifications(functionElement);
 			}
 
-			/////////////////////////////////
-			// Write log to start function //
-			/////////////////////////////////
-			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
+//			/////////////////////////////////
+//			// Write log to start function //
+//			/////////////////////////////////
+//			programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 
 			/////////////////////////////////////
 			// Validate parameters with filter //
@@ -516,6 +516,11 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 		// Set specifications to the inner variant //
 		/////////////////////////////////////////////
 		functionElement_ = functionElement;
+
+		/////////////////////////////////
+		// Write log to start function //
+		/////////////////////////////////
+		programSequence = session_.writeLogOfFunctionStarted(functionElement_.getAttribute("ID"), functionElement_.getAttribute("Name"));
 		
 		//////////////////////////////////////////////
 		// Setup the primary table and refer tables //
@@ -1846,9 +1851,18 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 				}
 				style.setAlignment(XSSFCellStyle.ALIGN_RIGHT);
 				style.setVerticalAlignment(XSSFCellStyle.VERTICAL_TOP);
-				if (!typeOptionList.contains("NO_EDIT")
-						&& !typeOptionList.contains("ZERO_SUPPRESS")) {
-					style.setDataFormat(format.getFormat("#,##0"));
+				if (typeOptionList.contains("PERCENT")) {
+					 style.setDataFormat(format.getFormat("0%"));
+					 if (wrk.equals("")) {
+						 wrk = "0.0";
+					 } else {
+						 wrk = Float.toString(Float.parseFloat(wrk) / 100);
+					 }
+				} else {
+					if (!typeOptionList.contains("NO_EDIT")
+							&& !typeOptionList.contains("ZERO_SUPPRESS")) {
+						style.setDataFormat(format.getFormat("#,##0"));
+					}
 				}
 				cell.setCellStyle(style);
 			}
@@ -1948,7 +1962,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void jTableMain_mouseClicked(MouseEvent e) {
-		if (headersRenderer.isLinkedColumn(e.getPoint().x)) {
+		//if (headersRenderer.isLinkedColumn(e.getPoint().x)) {
+		if (headersRenderer.isLinkedColumn(e)) {
 			callLinkedFunction(jTableMain.rowAtPoint(e.getPoint()), headersRenderer.getColumnIndex(e.getPoint().x));
 		} else {
 			if (headersRenderer.isWithCheckBox_) {
@@ -1971,7 +1986,8 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	void jTableMain_mouseMoved(MouseEvent e) {
-		if (headersRenderer.isLinkedColumn(e.getPoint().x)) {
+		//if (headersRenderer.isLinkedColumn(e.getPoint().x)) {
+		if (headersRenderer.isLinkedColumn(e)) {
 			setCursor(session_.editorKit.getLinkCursor());
 		} else {
 			setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -2636,26 +2652,52 @@ public class XF100 extends JDialog implements XFExecutable, XFScriptable {
 			}
 			return index;
 		}
-
-		public boolean isLinkedColumn(int posX) {
+		
+		public boolean isLinkedColumn(MouseEvent e) {
 			boolean isLinkedColumn = false;
-			int posXOnCenterPanel = 0;
-			if (isWithCheckBox_) {
-				posXOnCenterPanel = posX - westPanel.getPreferredSize().width;
-			} else {
-				posXOnCenterPanel = posX - numberLabel.getPreferredSize().width;
-			}
-			for (int i = 0; i < headerList.size(); i++) {
-				if (posXOnCenterPanel >= headerList.get(i).getBounds().x
-						&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
-					if (dataTypeList.get(i).equals("URL") || dataTypeList.get(i).equals("LINKED")) {
-						isLinkedColumn = true;
+			int rowIndex = jTableMain.rowAtPoint(e.getPoint());
+			int columnIndex = headersRenderer.getColumnIndex(e.getPoint().x);
+			XF100_RowNumber rowObject = (XF100_RowNumber)tableModelMain.getValueAt(rowIndex, 0);
+			String text = rowObject.getCellObjectList().get(columnIndex).getInternalValue().toString();
+			if (!text.equals("")) {
+				int posXOnCenterPanel = 0;
+				if (isWithCheckBox_) {
+					posXOnCenterPanel = e.getPoint().x - westPanel.getPreferredSize().width;
+				} else {
+					posXOnCenterPanel = e.getPoint().x - numberLabel.getPreferredSize().width;
+				}
+				for (int i = 0; i < headerList.size(); i++) {
+					if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+							&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+						if (dataTypeList.get(i).equals("URL") || dataTypeList.get(i).equals("LINKED")) {
+							isLinkedColumn = true;
+						}
+						break;
 					}
-					break;
 				}
 			}
 			return isLinkedColumn;
 		}
+		
+//		public boolean isLinkedColumn(int posX) {
+//			boolean isLinkedColumn = false;
+//			int posXOnCenterPanel = 0;
+//			if (isWithCheckBox_) {
+//				posXOnCenterPanel = posX - westPanel.getPreferredSize().width;
+//			} else {
+//				posXOnCenterPanel = posX - numberLabel.getPreferredSize().width;
+//			}
+//			for (int i = 0; i < headerList.size(); i++) {
+//				if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+//						&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+//					if (dataTypeList.get(i).equals("URL") || dataTypeList.get(i).equals("LINKED")) {
+//						isLinkedColumn = true;
+//					}
+//					break;
+//				}
+//			}
+//			return isLinkedColumn;
+//		}
 		
 		public String getToolTipText(MouseEvent e) {
 			String text = "";

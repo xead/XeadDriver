@@ -203,6 +203,7 @@ public class Res_ja extends java.util.ListResourceBundle {
 		{ "FunctionMessage64", "見出しデータが削除されます。よろしいですか？" },
 		{ "FunctionMessage65", "zip.cgis.bizのWEBサービスに接続できません。Proxyを使わない設定に切り替えますか？" },
 		{ "FunctionMessage66", "スタートボタンを押せば処理が実行されます。" },
+		{ "FunctionMessage67", "instance.executeScript(...)のメソッドが異常終了しました。" },
 		{ "Iconify", "最小化" },
 		{ "ImageFileMessage1", "規定外のファイル形式です。<br>クリックすれば画像表示されます" },
 		{ "ImageFileNotFound1", "<html>指定された画像ファイル<br>" },

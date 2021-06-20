@@ -1,7 +1,7 @@
 package xeadDriver;
 
 /*
- * Copyright (c) 2020 WATANABE kozo <qyf05466@nifty.com>,
+ * Copyright (c) 2021 WATANABE kozo <qyf05466@nifty.com>,
  * All rights reserved.
  *
  * This file is part of X-TEA Driver.
@@ -43,11 +43,27 @@ public class DialogAbout extends JDialog implements ActionListener {
 	 * Application Information
 	 */
 	public static final String PRODUCT_NAME = "X-TEA Driver";
-	public static final String FULL_VERSION  = "V1.R3.M32";
-	public static final String VERSION  = "1.3.32";
+	public static final String FULL_VERSION  = "V1.R3.M34";
+	public static final String VERSION  = "1.3.34";
 	public static final String FORMAT_VERSION  = "1.2";
-	public static final String COPYRIGHT = "Copyright 2020 DBC Ltd.";
+	public static final String COPYRIGHT = "Copyright 2021 DBC Ltd.";
 	public static final String URL_DBC = "http://dbc.in.coocan.jp/";
+	//1.3.34
+	//・CheckListDialogにsortList()のメソッドを組み込んだ
+	//・getLastDateOfTheYearMonth(...)をsessionのメソッドとして追加した
+	//・getMonthsBetweenYearMonths(...)をsessionのメソッドとして追加した
+	//・XF000のexecuteScriptメソッドを改善した
+	//・XF110,310でスクリプトのフィールド色制御が効かなかったバグを修正した
+	//
+	//1.3.33
+	//・仕様分析のエラーログを記録するために、各機能タイプでセッションログの書き込みタイミングを早めた
+	//・テーブルスクリプト内のフィールドID切り出しロジックを改善した
+	//・TableOperatorの日付項目に対するsetKeyValue(...)のバグを修正した
+	//・SQLにもとづくTableOperatorのビルダメソッドを改善した
+	//・TableEvaluatorのエラーハンドリングのバグを修正した
+	//・フィールド属性オプションのリスト値でコンマを含む値を指定できるようにした
+	//・InputDialogのフィールドのsetComment(...)をsetPrompter(...)と併用できるようにした
+	//
 	//1.3.32
 	//・InputDialogのフィールドで、#setComment(...)を使えるようにした
 	//・年月型のコントローラを全面刷新して使いやすくした
@@ -55,7 +71,6 @@ public class DialogAbout extends JDialog implements ActionListener {
 	//・XF100,110,200,300,310の明細行のEXCEL出力に％編集の設定を反映させた
 	//・明細表示での偶数行背景色をRGB(240,240,255)から(231,231,255)に変更した
 	//・XF100,110,300の明細行上のリンク項目がブランクの場合、リンク機能が動作しないようにした
-	//#・仕様分析のエラーログを記録するために、各機能タイプでセッションログの書き込みタイミングを早めた
 	//
 	//1.3.31
 	//・XF300,310.390の明細テーブルに対して仮想フィールドで並び順指定できるように修正

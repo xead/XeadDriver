@@ -94,6 +94,7 @@ public class XFTableOperator {
     	org.w3c.dom.Element tableElement = session_.getTableElement(tableID_);
     	if (tableElement == null) {
 			throw new Exception("'" + tableID_ + "' is invalid to get Table-Operator.");
+
     	} else {
     		moduleID = tableElement.getAttribute("ModuleID");
     		if (moduleID.equals("")) {
@@ -108,11 +109,11 @@ public class XFTableOperator {
     	}
 	}
 
-	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText) {
+	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText) throws Exception {
 		this(session, logBuf, sqlText, false);
 	}
 	
-	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText, boolean isAutoCommit) {
+	public XFTableOperator(Session session, StringBuffer logBuf, String sqlText, boolean isAutoCommit) throws Exception {
 		super();
 		session_ = session;
 		logBuf_ = logBuf;
@@ -130,7 +131,7 @@ public class XFTableOperator {
 			if (pos2 < 0) {
 				pos2 = sqlText_.length();
 			}
-			tableID_ = sqlText_.substring(pos1, pos2);
+			tableID_ = sqlText_.toUpperCase().substring(pos1, pos2);
 			if (tableID_.startsWith("(")) {
 				pos1 = sqlText_.toUpperCase().indexOf(" FROM ", pos1+1) + 6;
 				pos2 = sqlText_.indexOf(" ", pos1);
@@ -147,7 +148,7 @@ public class XFTableOperator {
 			if (pos2 < 0) {
 				pos2 = sqlText_.length();
 			}
-			tableID_ = sqlText_.substring(pos1, pos2);
+			tableID_ = sqlText_.toUpperCase().substring(pos1, pos2);
 		}
 		if (sqlText_.toUpperCase().startsWith("UPDATE ")) {
 			operation_ = "UPDATE";
@@ -156,7 +157,7 @@ public class XFTableOperator {
 			if (pos2 < 0) {
 				pos2 = sqlText_.length();
 			}
-			tableID_ = sqlText_.substring(pos1, pos2);
+			tableID_ = sqlText_.toUpperCase().substring(pos1, pos2);
 		}
 		if (sqlText_.toUpperCase().startsWith("DELETE ")) {
 			operation_ = "DELETE";
@@ -165,25 +166,29 @@ public class XFTableOperator {
 			if (pos2 < 0) {
 				pos2 = sqlText_.length();
 			}
-			tableID_ = sqlText_.substring(pos1, pos2);
+			tableID_ = sqlText_.toUpperCase().substring(pos1, pos2);
 		}
     	isAutoCommit_ = isAutoCommit;
 
     	org.w3c.dom.Element tableElement = session_.getTableElement(tableID_);
-    	moduleID = tableElement.getAttribute("ModuleID");
-		if (moduleID.equals("")) {
-			moduleID = tableID_;
-		}
-		dbID = tableElement.getAttribute("DB");
-		if (dbID.equals("")) {
-			dbName = session_.getDatabaseName();
-		} else {
-			dbName = session_.getSubDBName(dbID);
-		}
+    	if (tableElement == null) {
+    		throw new Exception("'" + tableID_ + "' is invalid to get Table-Operator.");
 
-		if (dbName.contains("jdbc:mysql:")) {
-			sqlText_ = sqlText_.replaceAll("\\\\", "\\\\\\\\");
-		}
+    	} else {
+    		moduleID = tableElement.getAttribute("ModuleID");
+    		if (moduleID.equals("")) {
+    			moduleID = tableID_;
+    		}
+    		dbID = tableElement.getAttribute("DB");
+    		if (dbID.equals("")) {
+    			dbName = session_.getDatabaseName();
+    		} else {
+    			dbName = session_.getSubDBName(dbID);
+    		}
+    		if (dbName.contains("jdbc:mysql:")) {
+    			sqlText_ = sqlText_.replaceAll("\\\\", "\\\\\\\\");
+    		}
+    	}
 	}
 
     public void setSelectFields(String fields) {
@@ -298,9 +303,20 @@ public class XFTableOperator {
     		if (workElement == null) { //UPDCOUNTER//
 				withKeyList_.add(fieldID_ + operand_ + value);
     		} else {
-    			if ((workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME"))
-    					&& operand_.equals(" = ") && value.toString().trim().equals("")) {
-    				withKeyList_.add(fieldID_ + " is NULL");
+//    			if ((workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME"))
+//    					&& operand_.equals(" = ") && value.toString().trim().equals("")) {
+//    				withKeyList_.add(fieldID_ + " is NULL");
+    			if (workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME")) {
+    				if (value.toString().trim().equals("")) {
+    					if (operand_.equals(" = ")) {
+    						withKeyList_.add(fieldID_ + " is null ");
+    					}
+    					if (operand_.equals(" != ")) {
+    						withKeyList_.add(fieldID_ + " is not null ");
+    					}
+    				} else {
+    					withKeyList_.add(fieldID_ + operand_ + "'" + value + "' ");
+    				}
     			} else {
     				if (operand_.equals(" LIKE ")) {
     					withKeyList_.add(fieldID_ + operand_ + "'" + value + "'");
@@ -388,10 +404,10 @@ public class XFTableOperator {
     			if (workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME")) {
     				if (value.toString().trim().equals("")) {
     					if (operand_.equals(" = ")) {
-    						withKeyList_.add(prefix + " " + fieldID_ + " is NULL " + postfix);
+    						withKeyList_.add(prefix + " " + fieldID_ + " is null " + postfix);
     					}
     					if (operand_.equals(" != ")) {
-    						withKeyList_.add(prefix + " " + fieldID_ + " is not NULL " + postfix);
+    						withKeyList_.add(prefix + " " + fieldID_ + " is not null " + postfix);
     					}
     				} else {
     					withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);

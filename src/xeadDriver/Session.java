@@ -227,8 +227,8 @@ public class Session extends JFrame {
 		////////////////////////
 		String version = System.getProperty("java.version");
 		if (!version.startsWith("1.7.") && !version.startsWith("1.8.")) {
-			JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("JavaVersionError1") + version + XFUtility.RESOURCE.getString("JavaVersionError2"));
-			System.exit(0);
+			//JOptionPane.showMessageDialog(null, XFUtility.RESOURCE.getString("JavaVersionError1") + version + XFUtility.RESOURCE.getString("JavaVersionError2"));
+			//System.exit(0);
 		}
 
 		///////////////////////////////////////////
@@ -1742,6 +1742,22 @@ public class Session extends JFrame {
 		return offsetYearMonth;
 	}
 
+	public String getLastDateOfTheYearMonth(String yearMonth) {
+		String date = "";
+		try {
+			String processedYearMonth = yearMonth.replaceAll("-", "").replaceAll("/", "").trim();
+			processedYearMonth = processedYearMonth.substring(0,6);
+			int y = Integer.parseInt(processedYearMonth.substring(0,4));
+			int m = Integer.parseInt(processedYearMonth.substring(4,6));
+			SimpleDateFormat dfm = new SimpleDateFormat("yyyy-MM-dd");
+			Calendar cal = Calendar.getInstance();
+			cal.set(y, m, 1, 0, 0, 0); //Note minimum value of m is 0
+			cal.add(Calendar.DATE, -1);
+			date = dfm.format(cal.getTime());
+		} catch (Exception e) {}
+		return date;
+	}
+
 	public int getDaysBetweenDates(String strDateFrom, String strDateThru, int countType) {
 		return getDaysBetweenDates(strDateFrom, strDateThru, countType, "00");
 	}
@@ -1809,6 +1825,28 @@ public class Session extends JFrame {
 		}
 
 		return days;
+	}
+
+	public int getMonthsBetweenYearMonths(String strYearMonthFrom, String strYearMonthThru) {
+		int yearFrom, monthFrom, yearThru, monthThru;
+		int months = 0;
+
+		try {
+			yearFrom = Integer.parseInt(strYearMonthFrom.substring(0,4));
+			monthFrom = Integer.parseInt(strYearMonthFrom.substring(4,6));
+			yearThru = Integer.parseInt(strYearMonthThru.substring(0,4));
+			monthThru = Integer.parseInt(strYearMonthThru.substring(4,6));
+
+			if (monthFrom > monthThru) {
+				yearFrom--;
+				monthFrom = monthFrom + 12;
+			}
+			months = (yearThru - yearFrom) * 12;
+			months = months + monthThru - monthFrom;
+		} catch (NumberFormatException e) {
+		}
+
+		return months;
 	}
 
 	public boolean isValidDate(String date) {
@@ -3727,7 +3765,11 @@ public class Session extends JFrame {
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
-		return new XFTableOperator(this, null, sqlText, true);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(this, null, sqlText, true);
+		} catch (Exception e) {}
+		return operator;
 	}
 
 	public int copyTableRecords(String fromTable, String toTable, String type) {

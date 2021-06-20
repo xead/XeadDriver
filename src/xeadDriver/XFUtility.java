@@ -481,7 +481,7 @@ public class XFUtility {
 									}
 								}
 								if (!wrkStr2.equals("")) {
-									dataSource = variantExpression.replace(wrkStr2+"_", wrkStr2+".");
+									dataSource = variantExpression.replaceFirst(wrkStr2+"_", wrkStr2+".");
 									if (!fieldList.contains(dataSource)) {
 										fieldList.add(dataSource);
 									}
@@ -687,10 +687,22 @@ public class XFUtility {
 
 	public static ArrayList<String> getOptionList(String options) {
 		ArrayList<String> typeOptionList = new ArrayList<String>();
+
+		int index = options.indexOf("VALUES(");
+		if (index > -1) {
+			int index2 = options.indexOf(")", index);
+			if (index2 > -1) {
+				String wrkStr = options.substring(index, index2+1);
+				typeOptionList.add(wrkStr);
+				options.replace(wrkStr+",", "").replace(wrkStr, "");
+			}
+		}
+		
 		StringTokenizer workTokenizer = new StringTokenizer(options, ",");
 		while (workTokenizer.hasMoreTokens()) {
 			typeOptionList.add(workTokenizer.nextToken());
 		}
+
 		return typeOptionList;
 	}
 	
@@ -4774,7 +4786,7 @@ class XFTextField extends JPanel implements XFEditableField {
 	private String autoNumberKey = "";
 	private String oldValue = "";
 	private JTextField jTextField = new JTextField();
-	private JComboBox jComboBox = null;
+	private JComboBox<String> jComboBox = null;
 	private String[] valueList_ = null;
 	private boolean itemSelectionControled = true;
 	private boolean isFilter_ = true;
@@ -4972,7 +4984,7 @@ class XFTextField extends JPanel implements XFEditableField {
 
 			} else {
 				itemSelectionControled = true;
-				jComboBox = new JComboBox();
+				jComboBox = new JComboBox<String>();
 				jComboBox.setBorder(null);
 				ListCellRenderer renderer = new DefaultListCellRenderer();
 				((JLabel)renderer).setHorizontalAlignment(jTextField.getHorizontalAlignment());
@@ -5610,8 +5622,8 @@ class XFInputAssistField extends JComboBox implements XFEditableField {
 		String wrkStr;
 		valueList.removeAllElements();
 		String sql = "select distinct " + fieldID_ + " from " + tableID_ + " order by " + fieldID_;
-		XFTableOperator operator = new XFTableOperator(session_, null, sql, true);
 		try {
+			XFTableOperator operator = new XFTableOperator(session_, null, sql, true);
 			while (operator.next()) {
 				wrkStr = operator.getValueOf(fieldID_).toString().trim();
 				valueList.add(wrkStr);
@@ -5642,7 +5654,7 @@ class XFInputAssistField extends JComboBox implements XFEditableField {
 	}
 	
 	class ComboKeyHandler extends KeyAdapter{
-		private final JComboBox comboBox;
+		private final JComboBox<String> comboBox;
 		private final Vector<String> list = new Vector<String>();
 		public ComboKeyHandler(JComboBox combo) {
 			this.comboBox = combo;
@@ -5757,7 +5769,7 @@ class XFYMonthBox extends JPanel implements XFEditableField {
 	private int rows_ = 1;
 	private JTextField jTextField = new JTextField();
 	private JTextField jTextFieldYear = new JTextField();
-	private JComboBox jComboBoxMonth = new JComboBox();
+	private JComboBox<String> jComboBoxMonth = new JComboBox<String>();
 	private ArrayList<String> listMonth = new ArrayList<String>();
 	private boolean isEditable = false;
 	private String oldValue = "";
@@ -5975,7 +5987,7 @@ class XFFYearBox extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private int rows_ = 1;
 	private JTextField jTextField = new JTextField();
-	private JComboBox jComboBoxYear = new JComboBox();
+	private JComboBox<String> jComboBoxYear = new JComboBox<String>();
 	private ArrayList<String> listYear = new ArrayList<String>();
 	private boolean isEditable = false;
 	private String oldValue = "";
@@ -6137,7 +6149,7 @@ class XFMSeqBox extends JPanel implements XFEditableField {
 	private static final long serialVersionUID = 1L;
 	private int rows_ = 1;
 	private JTextField jTextField = new JTextField();
-	private JComboBox jComboBoxMSeq = new JComboBox();
+	private JComboBox<String> jComboBoxMSeq = new JComboBox<String>();
 	private ArrayList<Integer> listMSeq = new ArrayList<Integer>();
 	private boolean isEditable = false;
     private Session session_;
@@ -7414,7 +7426,8 @@ class XFCalendar extends JDialog {
 		private Date date;
 		public DateButton() {
 			super();
-			this.setFont(new java.awt.Font(session_.systemFont, java.awt.Font.BOLD, 12));
+//			this.setFont(new java.awt.Font(session_.systemFont, java.awt.Font.BOLD, 12));
+			this.setFont(new java.awt.Font(Font.SANS_SERIF, java.awt.Font.BOLD, 12));
 			this.addFocusListener(new DateButton_FocusAdapter());
 		}
 		public void setDate(Date date) {

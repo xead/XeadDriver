@@ -1480,6 +1480,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		HashMap<String, Object> keyValueMap, columnValueMap, columnOldValueMap;
 		HashMap<String, String[]> columnValueListMap;
 		HashMap<String, Boolean> columnEditableMap;
+		HashMap<String, String> columnColorMap;
 		ArrayList<Object> orderByValueList;
 		String workStr;
 
@@ -1536,9 +1537,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				/////////////////////////////////////////////////////////
 				fetchDetailReferRecords("AR,BU", false, "", columnValueMap, columnOldValueMap);
 
+				columnColorMap = new HashMap<String, String>();
 				columnEditableMap = new HashMap<String, Boolean>();
 				columnValueListMap = new HashMap<String, String[]>();
 				for (int i = 0; i < detailColumnList.size(); i++) {
+					columnColorMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getColor());
 					columnEditableMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).isEditable());
 					columnValueListMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getValueList());
 					if (detailColumnList.get(i).getBasicType().equals("BYTEA")) {
@@ -1548,7 +1551,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 
 				if (detailTable.hasOrderByAsItsOwnPhysicalFields()) {
 					Object[] cell = new Object[1];
-					cell[0] = new XF310_DetailRowNumber(countOfRows + 1, "CURRENT", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, columnValueListMap, this);
+					cell[0] = new XF310_DetailRowNumber(countOfRows + 1, "CURRENT", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, columnColorMap, columnValueListMap, this);
 					tableModelMain.addRow(cell);
 				} else {
 					orderByValueList = new ArrayList<Object>();
@@ -1562,7 +1565,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 							}
 						}
 					}
-					tableRowList.add(new WorkingRow(keyValueMap, columnValueMap, columnOldValueMap, orderByValueList, columnEditableMap, columnValueListMap));
+					tableRowList.add(new WorkingRow(keyValueMap, columnValueMap, columnOldValueMap, orderByValueList, columnEditableMap, columnColorMap, columnValueListMap));
 				}
 
 				countOfRows++;
@@ -1580,7 +1583,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 				Arrays.sort(workingRowArray);
 				for (int i = 0; i < workingRowArray.length; i++) {
 					Object[] cell = new Object[1];
-					cell[0] = new XF310_DetailRowNumber(i + 1, "CURRENT", workingRowArray[i].getKeyValueMap(), workingRowArray[i].getColumnValueMap(), workingRowArray[i].getColumnOldValueMap(), workingRowArray[i].getColumnEditableMap(), workingRowArray[i].getColumnValueListMap(), this);
+					cell[0] = new XF310_DetailRowNumber(i + 1, "CURRENT", workingRowArray[i].getKeyValueMap(), workingRowArray[i].getColumnValueMap(), workingRowArray[i].getColumnOldValueMap(), workingRowArray[i].getColumnEditableMap(), workingRowArray[i].getColumnColorMap(), workingRowArray[i].getColumnValueListMap(), this);
 					tableModelMain.addRow(cell);
 				}
 			}
@@ -2109,9 +2112,11 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		//////////////////////////////////////////////////////
 		// Setup columnEditableMap(DataSourceName, boolean) //
 		//////////////////////////////////////////////////////
+		HashMap<String, String> columnColorMap = new HashMap<String, String>();
 		HashMap<String, Boolean> columnEditableMap = new HashMap<String, Boolean>();
 		HashMap<String, String[]> columnValueListMap = new HashMap<String, String[]>();
 		for (int i = 0; i < detailColumnList.size(); i++) {
+			columnColorMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getColor());
 			columnEditableMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).isEditable());
 			columnValueListMap.put(detailColumnList.get(i).getDataSourceName(), detailColumnList.get(i).getValueList());
 			if (detailColumnList.get(i).getBasicType().equals("BYTEA")) {
@@ -2144,7 +2149,7 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		} else {
 			countOfAdded = 1;
 			Object[] cell = new Object[1];
-			XF310_DetailRowNumber blankRow = new XF310_DetailRowNumber(tableModelMain.getRowCount() + 1, "NEW", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, columnValueListMap, this);
+			XF310_DetailRowNumber blankRow = new XF310_DetailRowNumber(tableModelMain.getRowCount() + 1, "NEW", keyValueMap, columnValueMap, columnOldValueMap, columnEditableMap, columnColorMap, columnValueListMap, this);
 			blankRow.setJustAdded(false);
 			cell[0] = blankRow;
 			tableModelMain.addRow(cell);
@@ -3041,14 +3046,16 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		private HashMap<String, Object> columnValueMap_ = new HashMap<String, Object>();
 		private HashMap<String, Object> columnOldValueMap_ = new HashMap<String, Object>();
 		private HashMap<String, Boolean> columnEditableMap_ = new HashMap<String, Boolean>();
+		private HashMap<String, String> columnColorMap_ = new HashMap<String, String>();
 		private HashMap<String, String[]> columnValueListMap_ = new HashMap<String, String[]>();
 		private ArrayList<Object> orderByValueList_ = new ArrayList<Object>();
-		public WorkingRow(HashMap<String, Object> keyValueMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, ArrayList<Object> orderByValueList, HashMap<String, Boolean> columnEditableMap, HashMap<String, String[]> columnValueListMap) {
+		public WorkingRow(HashMap<String, Object> keyValueMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, ArrayList<Object> orderByValueList, HashMap<String, Boolean> columnEditableMap, HashMap<String, String> columnColorMap, HashMap<String, String[]> columnValueListMap) {
 			keyValueMap_ = keyValueMap;
 			columnValueMap_ = columnValueMap;
 			columnOldValueMap_ = columnOldValueMap;
 			orderByValueList_ = orderByValueList;
 			columnEditableMap_ = columnEditableMap;
+			columnColorMap_ = columnColorMap;
 			columnValueListMap_ = columnValueListMap;
 		}
 		public HashMap<String, Object> getKeyValueMap() {
@@ -3062,6 +3069,9 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 		}
 		public HashMap<String, Boolean> getColumnEditableMap() {
 			return columnEditableMap_;
+		}
+		public HashMap<String, String> getColumnColorMap() {
+			return columnColorMap_;
 		}
 		public HashMap<String, String[]> getColumnValueListMap() {
 			return columnValueListMap_;
@@ -3697,7 +3707,15 @@ public class XF310 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
-		return new XFTableOperator(session_, processLog, sqlText);
+		//return new XFTableOperator(session_, processLog, sqlText);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, processLog, sqlText);
+		} catch (Exception e) {
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		}
+		return operator;
 	}
 
 	public XFTableEvaluator createTableEvaluator(String tableID) {
@@ -4797,7 +4815,7 @@ class XF310_CellEditorWithTextField extends JPanel implements XFTableColumnEdito
 	private String autoNumberKey = "";
 	private String oldValue = "";
 	private JTextField jTextField = new JTextField();
-	private JComboBox jComboBox = new JComboBox();
+	private JComboBox<String> jComboBox = new JComboBox<String>();
 	private String[] valueList_ = null;
 	private boolean itemSelectionControled = true;
 	private XF310 dialog_ = null;
@@ -5598,7 +5616,7 @@ class XF310_CellEditorWithLongTextEditor extends JPanel implements XFTableColumn
 class XF310_CellEditorWithYMonthBox extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
 	private JTextField jTextFieldYear = new JTextField();
-	private JComboBox jComboBoxMonth = new JComboBox();
+	private JComboBox<String> jComboBoxMonth = new JComboBox<String>();
 	private ArrayList<String> listMonth = new ArrayList<String>();
 	private JLabel jLabel = new JLabel();
 	private boolean isEditable_ = true;
@@ -5800,7 +5818,7 @@ class XF310_CellEditorWithYMonthBox extends JPanel implements XFTableColumnEdito
 
 class XF310_CellEditorWithFYearBox extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
-	private JComboBox jComboBoxYear = new JComboBox();
+	private JComboBox<String> jComboBoxYear = new JComboBox<String>();
 	private JLabel jLabel = new JLabel();
 	private boolean isEditable_ = true;
 	private XF310 dialog_ = null;
@@ -5916,7 +5934,7 @@ class XF310_CellEditorWithFYearBox extends JPanel implements XFTableColumnEditor
 
 class XF310_CellEditorWithMSeqBox extends JPanel implements XFTableColumnEditor {
 	private static final long serialVersionUID = 1L;
-	private JComboBox jComboBoxMSeq = new JComboBox();
+	private JComboBox<String> jComboBoxMSeq = new JComboBox<String>();
 	private ArrayList<Integer> listMSeq = new ArrayList<Integer>();
 	private JLabel jLabel = new JLabel();
 	private boolean isEditable_ = true;
@@ -6107,7 +6125,7 @@ class XF310_CellEditorWithComboBox extends JPanel implements XFTableColumnEditor
 	private String tableAlias = "";
 	private String fieldID = "";
 	private String listType = "";
-	private JComboBox jComboBox = new JComboBox();
+	private JComboBox<String> jComboBox = new JComboBox<String>();
 	private JLabel jLabel = new JLabel();
 	private boolean isEditable_ = true;
 	private ArrayList<String> kubunKeyValueList = new ArrayList<String>();
@@ -6528,9 +6546,12 @@ class XF310_CellEditorWithPromptCall extends JPanel implements XFTableColumnEdit
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
-							if (value == null) {
-								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
-							} else {
+//							if (value == null) {
+//								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+//							} else {
+//								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+//							}
+							if (value != null) {
 								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}
@@ -6675,6 +6696,7 @@ class XF310_DetailRowNumber extends Object {
 	private String recordType_ = "";
 	private HashMap<String, Object> keyValueMap_;
 	private HashMap<String, Object> columnValueMapWithDSName_;
+	private HashMap<String, String> columnColorMapWithDSName_;
 	private HashMap<String, Object> columnOldValueMapWithDSName_;
 	private HashMap<String, Boolean> columnEditableMapWithDSName_;
 	private HashMap<String, String[]> columnValueListMapWithDSName_;
@@ -6682,7 +6704,7 @@ class XF310_DetailRowNumber extends Object {
 	private boolean isJustAdded = false;
 	private XF310 dialog_ = null;
 
-	public XF310_DetailRowNumber(int num, String recordType, HashMap<String, Object> keyValueMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, HashMap<String, Boolean> columnEditableMap, HashMap<String, String[]> columnValueListMap, XF310 dialog) {
+	public XF310_DetailRowNumber(int num, String recordType, HashMap<String, Object> keyValueMap, HashMap<String, Object> columnValueMap, HashMap<String, Object> columnOldValueMap, HashMap<String, Boolean> columnEditableMap, HashMap<String, String> columnColorMap, HashMap<String, String[]> columnValueListMap, XF310 dialog) {
 		number_ = num;
 		keyValueMap_ = keyValueMap;
 		recordType_ = recordType;
@@ -6692,6 +6714,7 @@ class XF310_DetailRowNumber extends Object {
 		columnValueMapWithDSName_ = columnValueMap;
 		columnOldValueMapWithDSName_ = columnOldValueMap;
 		columnEditableMapWithDSName_ = columnEditableMap;
+		columnColorMapWithDSName_ = columnColorMap;
 		columnValueListMapWithDSName_ = columnValueListMap;
 		dialog_ = dialog;
 	}
@@ -6762,6 +6785,7 @@ class XF310_DetailRowNumber extends Object {
 			dialog_.getDetailColumnList().get(i).setOldValue(columnOldValueMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 			dialog_.getDetailColumnList().get(i).setEditable(columnEditableMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 			dialog_.getDetailColumnList().get(i).setValueList(columnValueListMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
+			dialog_.getDetailColumnList().get(i).setColor(columnColorMapWithDSName_.get(dialog_.getDetailColumnList().get(i).getDataSourceName()));
 		}
 	}
 	
@@ -9375,7 +9399,7 @@ class XF310_HeaderComboBox extends JPanel implements XFEditableField {
 	private ArrayList<String> kubunKeyValueList = new ArrayList<String>();
 	private ArrayList<XFHashMap> tableKeyValuesList = new ArrayList<XFHashMap>();
 	private JTextField jTextField = new JTextField();
-	private JComboBox jComboBox = new JComboBox();
+	private JComboBox<String> jComboBox = new JComboBox<String>();
 	private boolean isEditable = true;
 	private ArrayList<String> keyFieldList = new ArrayList<String>();
 	private XF310_HeaderReferTable referTable_ = null;
@@ -9948,9 +9972,12 @@ class XF310_HeaderPromptCall extends JPanel implements XFEditableField {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
-							if (value == null) {
-								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
-							} else {
+//							if (value == null) {
+//								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+//							} else {
+//								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+//							}
+							if (value != null) {
 								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}

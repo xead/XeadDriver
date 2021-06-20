@@ -1973,7 +1973,15 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
-		return new XFTableOperator(session_, processLog, sqlText);
+		//return new XFTableOperator(session_, processLog, sqlText);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, processLog, sqlText);
+		} catch (Exception e) {
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		}
+		return operator;
 	}
 
 	public XFTableEvaluator createTableEvaluator(String tableID) {
@@ -2352,17 +2360,19 @@ public class XF110 extends JDialog implements XFExecutable, XFScriptable {
 			boolean isLinkedColumn = false;
 			int rowIndex = jTableMain.rowAtPoint(e.getPoint());
 			int columnIndex = headersRenderer.getColumnIndex(e.getPoint().x);
-			XF110_RowNumber rowObject = (XF110_RowNumber)tableModelMain.getValueAt(rowIndex, 0);
-			String text = rowObject.getCellObjectList().get(columnIndex).getInternalValue().toString();
-			if (!text.equals("")) {
-				int posXOnCenterPanel = e.getPoint().x - westPanel.getPreferredSize().width;
-				for (int i = 0; i < headerList.size(); i++) {
-					if (posXOnCenterPanel >= headerList.get(i).getBounds().x
-							&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
-						if (dataTypeList.get(i).equals("URL")) {
-							isLinkedColumn = true;
+			if (columnIndex > -1) {
+				XF110_RowNumber rowObject = (XF110_RowNumber)tableModelMain.getValueAt(rowIndex, 0);
+				String text = rowObject.getCellObjectList().get(columnIndex).getInternalValue().toString();
+				if (!text.equals("")) {
+					int posXOnCenterPanel = e.getPoint().x - westPanel.getPreferredSize().width;
+					for (int i = 0; i < headerList.size(); i++) {
+						if (posXOnCenterPanel >= headerList.get(i).getBounds().x
+								&& posXOnCenterPanel <= (headerList.get(i).getBounds().x + headerList.get(i).getBounds().width)) {
+							if (dataTypeList.get(i).equals("URL")) {
+								isLinkedColumn = true;
+							}
+							break;
 						}
-						break;
 					}
 				}
 			}
@@ -2577,7 +2587,7 @@ class XF110_Filter extends JPanel {
 	private XFMSeqBox xFMSeqBox = null;
 	private XFFYearBox xFFYearBox = null;
 	private XF110_PromptCallField xFPromptCall = null;
-	private JComboBox jComboBox = null;
+	private JComboBox<String> jComboBox = null;
 	private ArrayList<String> keyValueList = new ArrayList<String>();
 	private JComponent component = null;
 	private boolean isVertical = false;
@@ -2903,7 +2913,7 @@ class XF110_Filter extends JPanel {
 					wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 					if (!wrkStr.equals("")) {
 						componentType = "KUBUN_LIST";
-						jComboBox = new JComboBox();
+						jComboBox = new JComboBox<String>();
 						jComboBox.addKeyListener(new XF110_Component_keyAdapter(dialog));
 						component = jComboBox;
 						int fieldWidth = 20;
@@ -2935,7 +2945,7 @@ class XF110_Filter extends JPanel {
 						wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES");
 						if (!wrkStr.equals("")) {
 							componentType = "VALUES_LIST";
-							jComboBox = new JComboBox();
+							jComboBox = new JComboBox<String>();
 							jComboBox.addKeyListener(new XF110_Component_keyAdapter(dialog));
 							component = jComboBox;
 							int fieldWidth = 20;
@@ -2955,7 +2965,7 @@ class XF110_Filter extends JPanel {
 							jComboBox.setSelectedIndex(0);
 						} else {
 							componentType = "RECORDS_LIST";
-							jComboBox = new JComboBox();
+							jComboBox = new JComboBox<String>();
 							jComboBox.addKeyListener(new XF110_Component_keyAdapter(dialog));
 							component = jComboBox;
 							int fieldWidth = 20;

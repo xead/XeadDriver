@@ -1043,11 +1043,23 @@ public class XF200 extends JDialog implements XFExecutable, XFScriptable {
 				}
 			}
 			if (operator == null ) {
-				operator = new XFTableOperator(session_, processLog, sqlText);
-				operatorList.add(operator);
+				//operator = new XFTableOperator(session_, processLog, sqlText);
+				try {
+					operator = new XFTableOperator(session_, processLog, sqlText);
+					operatorList.add(operator);
+				} catch (Exception e) {
+					e.printStackTrace(exceptionStream);
+					setErrorAndCloseFunction();
+				}
 			}
 		} else {
-			operator = new XFTableOperator(session_, processLog, sqlText);
+			//operator = new XFTableOperator(session_, processLog, sqlText);
+			try {
+				operator = new XFTableOperator(session_, processLog, sqlText);
+			} catch (Exception e) {
+				e.printStackTrace(exceptionStream);
+				setErrorAndCloseFunction();
+			}
 		}
 		return operator;
 	}
@@ -3209,7 +3221,7 @@ class XF200_ComboBox extends JPanel implements XFEditableField {
 	private ArrayList<String> kubunKeyValueList = new ArrayList<String>();
 	private ArrayList<XFHashMap> tableKeyValuesList = new ArrayList<XFHashMap>();
 	private JTextField jTextField = new JTextField();
-	private JComboBox jComboBox = new JComboBox();
+	private JComboBox<String> jComboBox = new JComboBox<String>();
 	private boolean isEditable = true;
 	private ArrayList<String> keyFieldList = new ArrayList<String>();
 	private XF200_ReferTable referTable_ = null;
@@ -3790,9 +3802,12 @@ class XF200_PromptCallField extends JPanel implements XFEditableField {
 						HashMap<String, Object> fieldsToGetMap = new HashMap<String, Object>();
 						for (int i = 0; i < fieldsToGetList_.size(); i++) {
 							value = returnMap.get(fieldsToGetList_.get(i));
-							if (value == null) {
-								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
-							} else {
+//							if (value == null) {
+//								JOptionPane.showMessageDialog(null, "Unable to get the value of field " + fieldsToGetList_.get(i));
+//							} else {
+//								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
+//							}
+							if (value != null) {
 								fieldsToGetMap.put(fieldsToGetToList_.get(i), value);
 							}
 						}

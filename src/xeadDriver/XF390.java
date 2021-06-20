@@ -1360,7 +1360,15 @@ public class XF390 extends Component implements XFExecutable, XFScriptable {
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
-		return new XFTableOperator(session_, processLog, sqlText);
+		//return new XFTableOperator(session_, processLog, sqlText);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, processLog, sqlText);
+		} catch (Exception e) {
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		}
+		return operator;
 	}
 
 	public XFTableEvaluator createTableEvaluator(String tableID) {

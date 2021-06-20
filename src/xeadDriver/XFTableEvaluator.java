@@ -246,9 +246,20 @@ public class XFTableEvaluator {
     		if (workElement == null) { //UPDCOUNTER//
 				withKeyList_.add(fieldID_ + operand_ + value);
     		} else {
-    			if ((workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME"))
-    					&& operand_.equals(" = ") && value.toString().trim().equals("")) {
-    				withKeyList_.add(fieldID_ + " is NULL");
+    			//if ((workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME"))
+    			//		&& operand_.equals(" = ") && value.toString().trim().equals("")) {
+    			//	withKeyList_.add(fieldID_ + " is NULL");
+    			if (workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME")) {
+    				if (value.toString().trim().equals("")) {
+    					if (operand_.equals(" = ")) {
+    						withKeyList_.add(fieldID_ + " is null ");
+    					}
+    					if (operand_.equals(" != ")) {
+    						withKeyList_.add(fieldID_ + " is not null ");
+    					}
+    				} else {
+    					withKeyList_.add(fieldID_ + operand_ + "'" + value + "' ");
+    				}
     			} else {
     				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
     				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
@@ -324,17 +335,16 @@ public class XFTableEvaluator {
     			if (workElement.getAttribute("Type").contains("DATE") || workElement.getAttribute("Type").contains("TIME")) {
     				if (value.toString().trim().equals("")) {
     					if (operand_.equals(" = ")) {
-    						withKeyList_.add(prefix + " " + fieldID_ + " is NULL " + postfix);
+    						withKeyList_.add(prefix + " " + fieldID_ + " is null " + postfix);
     					}
     					if (operand_.equals(" != ")) {
-    						withKeyList_.add(prefix + " " + fieldID_ + " is not NULL " + postfix);
+    						withKeyList_.add(prefix + " " + fieldID_ + " is not null " + postfix);
     					}
     				} else {
     					withKeyList_.add(prefix + " " + fieldID_ + operand_ + "'" + value + "' " + postfix);
     				}
     			} else {
     				String basicType = XFUtility.getBasicTypeOf(workElement.getAttribute("Type"));
-//					withKeyList_.add(prefix + " " + fieldID_ + operand_ + XFUtility.getTableOperationValue(basicType, value, dbName) + " " + postfix);
     				if (XFUtility.isLiteralRequiredBasicType(basicType)) {
     					int length = Integer.parseInt(workElement.getAttribute("Size"));
     					if (workElement.getAttribute("Type").contains("VARCHAR")) {

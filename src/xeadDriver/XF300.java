@@ -3725,7 +3725,15 @@ public class XF300 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
-		return new XFTableOperator(session_, processLog, sqlText);
+		//return new XFTableOperator(session_, processLog, sqlText);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, processLog, sqlText);
+		} catch (Exception e) {
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		}
+		return operator;
 	}
 
 	public XFTableEvaluator createTableEvaluator(String tableID) {
@@ -5440,7 +5448,7 @@ class XF300_Filter extends JPanel {
 	private XFYMonthBox xFYMonthBox = null;
 	private XFMSeqBox xFMSeqBox = null;
 	private XFFYearBox xFFYearBox = null;
-	private JComboBox jComboBox = null;
+	private JComboBox<String> jComboBox = null;
 	private XF300_PromptCallField xFPromptCall = null;
 	private ArrayList<String> keyValueList = new ArrayList<String>();
 	private JComponent component = null;
@@ -5770,7 +5778,7 @@ class XF300_Filter extends JPanel {
 					wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "KUBUN");
 					if (!wrkStr.equals("")) {
 						componentType = "KUBUN_LIST";
-						jComboBox = new JComboBox();
+						jComboBox = new JComboBox<String>();
 						jComboBox.addKeyListener(new XF300_keyAdapter(dialog));
 						component = jComboBox;
 						int fieldWidth = 20;
@@ -5806,7 +5814,7 @@ class XF300_Filter extends JPanel {
 						wrkStr = XFUtility.getOptionValueWithKeyword(dataTypeOptions, "VALUES");
 						if (!wrkStr.equals("")) {
 							componentType = "VALUES_LIST";
-							jComboBox = new JComboBox();
+							jComboBox = new JComboBox<String>();
 							jComboBox.addKeyListener(new XF300_keyAdapter(dialog));
 							component = jComboBox;
 							int fieldWidth = 20;
@@ -5830,7 +5838,7 @@ class XF300_Filter extends JPanel {
 
 						} else {
 							componentType = "RECORDS_LIST";
-							jComboBox = new JComboBox();
+							jComboBox = new JComboBox<String>();
 							jComboBox.addKeyListener(new XF300_keyAdapter(dialog));
 							component = jComboBox;
 							int fieldWidth = 20;

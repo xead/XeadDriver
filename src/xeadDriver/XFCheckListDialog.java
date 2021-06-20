@@ -42,6 +42,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 import javax.swing.BorderFactory;
@@ -62,15 +65,17 @@ import javax.swing.ListCellRenderer;
 public class XFCheckListDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
     private JPanel jPanelMain = new JPanel();
-	private DefaultListModel listModel = new DefaultListModel();
-    private JList jList = new JList(listModel);
+	private DefaultListModel<JCheckBox> listModel = new DefaultListModel<JCheckBox>();
+    private JList<JCheckBox> jList = new JList<JCheckBox>(listModel);
     private JScrollPane jScrollPane = new JScrollPane();
 	private JButton jButtonOK = new JButton();
 	private JButton jButtonCancel = new JButton();
 	private JPanel jPanelButtons = new JPanel();
     private Dimension scrSize, dlgSize;
-    private ArrayList<String> keyList = new ArrayList<String>();
-    private ArrayList<String> textList = new ArrayList<String>();
+    //private ArrayList<String> keyList = new ArrayList<String>();
+    //private ArrayList<String> textList = new ArrayList<String>();
+    private HashMap<String, String> textKeyMap = new HashMap<String, String>();
+    private int sortMode = 0;
     private ArrayList<String> initialSelectKeyList = new ArrayList<String>();
     private int reply = -1;
     private String checkedKeyList = "";
@@ -120,15 +125,22 @@ public class XFCheckListDialog extends JDialog {
     }
 
     public void clear() {
-    	keyList.clear();
-    	textList.clear();
+    	//keyList.clear();
+    	//textList.clear();
+    	textKeyMap.clear();
     	initialSelectKeyList.clear();
     }
 
     public void addRow(String key, String text, boolean isSelected) {
-    	if (!keyList.contains(key.trim())) {
-    		keyList.add(key.trim());
-    		textList.add(text.trim());
+//    	if (!keyList.contains(key.trim())) {
+//    		keyList.add(key.trim());
+//    		textList.add(text.trim());
+//    		if (isSelected) {
+//    			initialSelectKeyList.add(key.trim());
+//    		}
+//    	}
+    	if (!textKeyMap.containsValue(key.trim())) {
+    		textKeyMap.put(text, key.trim());
     		if (isSelected) {
     			initialSelectKeyList.add(key.trim());
     		}
@@ -143,19 +155,36 @@ public class XFCheckListDialog extends JDialog {
     	reply = -1;
     	checkedKeyList = "";
 		listModel.clear();
-		for (int i = 0; i < keyList.size(); i++) {
-				JCheckBox checkBox = new JCheckBox();
-				checkBox.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
-				checkBox.setText(textList.get(i));
-				if (initialSelectKeyList.contains(keyList.get(i))) {
-					checkBox.setSelected(true);
-				}
-				listModel.addElement(checkBox);
+//		for (int i = 0; i < keyList.size(); i++) {
+//				JCheckBox checkBox = new JCheckBox();
+//				checkBox.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+//				checkBox.setText(textList.get(i));
+//				if (initialSelectKeyList.contains(keyList.get(i))) {
+//					checkBox.setSelected(true);
+//				}
+//				listModel.addElement(checkBox);
+//		}
+    	Object[] mapkey = textKeyMap.keySet().toArray();
+    	if (sortMode == 1) {
+    		Arrays.sort(mapkey);
+    	}
+        if (sortMode == -1) {
+    		Arrays.sort(mapkey, Collections.reverseOrder());
+    	}
+		for (int i = 0; i < mapkey.length; i++) {
+			JCheckBox checkBox = new JCheckBox();
+			checkBox.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
+			checkBox.setText(mapkey[i].toString());
+			if (initialSelectKeyList.contains(textKeyMap.get(mapkey[i].toString()))) {
+				checkBox.setSelected(true);
+			}
+			listModel.addElement(checkBox);
 		}
 		jList.setSelectedIndex(0);
 		jList.requestFocus();
 
-    	int height = keyList.size() * XFUtility.ROW_UNIT_HEIGHT + 70;
+    	//int height = keyList.size() * XFUtility.ROW_UNIT_HEIGHT + 70;
+    	int height = textKeyMap.size() * XFUtility.ROW_UNIT_HEIGHT + 70;
     	if (height > 400) {
     		height = 400;
     	}
@@ -167,6 +196,18 @@ public class XFCheckListDialog extends JDialog {
     	this.setVisible(true);
 
     	return reply;
+    }
+    
+    public void sortList() {
+    	sortList(true);
+    }
+    
+    public void sortList(boolean isAscent) {
+    	if (isAscent) {
+    		sortMode = 1;
+    	} else {
+    		sortMode = -1;
+    	}
     }
     
     public void setWidth(int width) {
@@ -234,13 +275,22 @@ public class XFCheckListDialog extends JDialog {
     
     public void jButtonOK_actionPerformed(ActionEvent e) {
     	StringBuffer bf = new StringBuffer();
-    	for (int i = 0; i < keyList.size(); i++) {
+//    	for (int i = 0; i < keyList.size(); i++) {
+//    		JCheckBox checkBox = (JCheckBox)listModel.getElementAt(i);
+//    		if (checkBox.isSelected()){
+//    			if (!bf.toString().equals("")) {
+//    				bf.append(";");
+//    			}
+//    			bf.append(keyList.get(i));
+//    		}
+//    	}
+    	for (int i = 0; i < listModel.size(); i++) {
     		JCheckBox checkBox = (JCheckBox)listModel.getElementAt(i);
     		if (checkBox.isSelected()){
     			if (!bf.toString().equals("")) {
     				bf.append(";");
     			}
-    			bf.append(keyList.get(i));
+    			bf.append(textKeyMap.get(checkBox.getText()));
     		}
     	}
     	checkedKeyList = bf.toString();
@@ -257,7 +307,8 @@ public class XFCheckListDialog extends JDialog {
     }
 
     public int getRowCount() {
-    	return keyList.size();
+    	//return keyList.size();
+    	return textKeyMap.size();
     }
 
     public void setListSelected(String keyList) {

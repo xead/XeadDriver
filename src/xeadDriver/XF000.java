@@ -693,7 +693,15 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 	}
 
 	public XFTableOperator createTableOperator(String sqlText) {
-		return new XFTableOperator(session_, processLog, sqlText);
+		//return new XFTableOperator(session_, processLog, sqlText);
+		XFTableOperator operator = null;
+		try {
+			operator = new XFTableOperator(session_, processLog, sqlText);
+		} catch (Exception e) {
+			e.printStackTrace(exceptionStream);
+			setErrorAndCloseFunction();
+		}
+		return operator;
 	}
 
 	public XFTableEvaluator createTableEvaluator(String tableID) {
@@ -718,8 +726,17 @@ public class XF000 extends JDialog implements XFExecutable, XFScriptable {
 
 	public void executeScript(String scriptText) {
 		try {
-			scriptEngine.eval(scriptText);
-		} catch (Exception e) {}
+			JOptionPane.showMessageDialog(null, "2:"+engineScriptBindings.keySet());
+			StringBuffer bf = new StringBuffer();
+			bf.append(scriptText);
+			bf.append(session_.getScriptFunctions());
+			scriptEngine.eval(bf.toString());
+
+		} catch (Exception e) {
+			if (this.isVisible()) {
+				jTextAreaMessages.setText(getNewMessage(XFUtility.RESOURCE.getString("FunctionMessage67"), e.getMessage() + "\n"));
+			}
+		}
 	}
 
 	public void runScript() throws ScriptException, Exception {

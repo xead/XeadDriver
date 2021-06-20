@@ -36,6 +36,7 @@ public class XFInputDialogField extends JPanel {
 	private JButton jButton = null;
 	private Component component = null;
 	private JLabel jLabelComment = new JLabel();
+	private JPanel jPanelEast = new JPanel();
 	private FontMetrics metrics;
 	private ArrayList<Object> valueList = new ArrayList<Object>();
 	private boolean isEditable_ = true;
@@ -89,7 +90,7 @@ public class XFInputDialogField extends JPanel {
 			component = field;
 		}
 		if (inputType_.equals("LISTBOX")) {
-			JComboBox field = new JComboBox();
+			JComboBox<String> field = new JComboBox<String>();
 			component = field;
 		}
 		if (inputType_.equals("CHECKBOX")) {
@@ -109,6 +110,8 @@ public class XFInputDialogField extends JPanel {
 		}
 		component.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-1));
 		jLabelComment.setFont(new java.awt.Font(dialog_.getSession().systemFont, 0, XFUtility.FONT_SIZE-2));
+		jPanelEast.setLayout(new BorderLayout());
+		jPanelEast.setSize(0, XFUtility.FIELD_UNIT_HEIGHT);
 		this.setOpaque(false);
 		if (inputType_.equals("DATE")) {
 			int fieldWidth = XFUtility.getWidthOfDateValue(dialog_.getSession().getDateFormat(), dialog_.getSession().systemFont, XFUtility.FONT_SIZE);
@@ -134,6 +137,7 @@ public class XFInputDialogField extends JPanel {
 		} else {
 			this.add(component, BorderLayout.CENTER);
 		}
+		this.add(jPanelEast, BorderLayout.EAST);
    }
     
    public void setEditable(boolean isEditable) {
@@ -159,8 +163,8 @@ public class XFInputDialogField extends JPanel {
 			}
 		}
 		if (inputType_.equals("LISTBOX")) {
-			((JComboBox)component).setEnabled(isEditable_);
-			((JComboBox)component).setFocusable(isEditable_);
+			((JComboBox<String>)component).setEnabled(isEditable_);
+			((JComboBox<String>)component).setFocusable(isEditable_);
 		}
 		if (inputType_.equals("CHECKBOX")) {
 			((JCheckBox)component).setEnabled(isEditable_);
@@ -177,19 +181,13 @@ public class XFInputDialogField extends JPanel {
    }
    
   public void setComment(String comment) {
-//	  if (inputType_.equals("CHECKBOX")) {
-//		  ((JCheckBox)component).setText(comment);
-//		  FontMetrics commentMetrics = ((JCheckBox)component).getFontMetrics(((JCheckBox)component).getFont());
-//		  int componentWidth = commentMetrics.stringWidth(comment) + 65 + XFUtility.DEFAULT_LABEL_WIDTH - 30;
-//		  this.setBounds(this.getBounds().x, this.getBounds().y, componentWidth, height_);
-//	  } else {
-		  FontMetrics commentMetrics = jLabelComment.getFontMetrics(jLabelComment.getFont());
-		  int oldCommentWidth = commentMetrics.stringWidth(jLabelComment.getText());
-		  int newCommentWidth = commentMetrics.stringWidth(" " + comment);
-		  jLabelComment.setText(" " + comment);
-		  this.add(jLabelComment, BorderLayout.EAST);
-		  this.setBounds(this.getBounds().x, this.getBounds().y, this.getWidth() - oldCommentWidth + newCommentWidth, height_);
-//	  }
+	  FontMetrics commentMetrics = jLabelComment.getFontMetrics(jLabelComment.getFont());
+	  int oldCommentWidth = commentMetrics.stringWidth(jLabelComment.getText());
+	  int newCommentWidth = commentMetrics.stringWidth(" " + comment);
+	  jLabelComment.setText(" " + comment);
+	  jPanelEast.add(jLabelComment, BorderLayout.EAST);
+	  jPanelEast.setSize(jPanelEast.getWidth() - oldCommentWidth + newCommentWidth, XFUtility.FIELD_UNIT_HEIGHT);
+	  this.setBounds(this.getBounds().x, this.getBounds().y, this.getWidth() - oldCommentWidth + newCommentWidth, height_);
   }
     
    public void setSize(int size) {
@@ -284,7 +282,7 @@ public class XFInputDialogField extends JPanel {
 	   if (inputType_.equals("LISTBOX")) {
 			for (int i = 0; i < valueList.size(); i++) {
 				if (value == valueList.get(i) || value.toString().equals(valueList.get(i).toString())) {
-					((JComboBox)component).setSelectedIndex(i);
+					((JComboBox<String>)component).setSelectedIndex(i);
 					break;
 				}
 			}
@@ -352,7 +350,7 @@ public class XFInputDialogField extends JPanel {
 			return ((XFDateField)component).getInternalValue();
 		}
 		if (inputType_.equals("LISTBOX")) {
-			return valueList.get(((JComboBox)component).getSelectedIndex());
+			return valueList.get(((JComboBox<String>)component).getSelectedIndex());
 		}
 		if (inputType_.equals("CHECKBOX")) {
 			return ((JCheckBox)component).isSelected();
@@ -362,7 +360,7 @@ public class XFInputDialogField extends JPanel {
    
    public void addItem(String text, Object value) {
 		if (inputType_.equals("LISTBOX")) {
-			((JComboBox)component).addItem(text);
+			((JComboBox<String>)component).addItem(text);
 			int width = this.getBounds().width - 180;
 			if (metrics.stringWidth(text) > width) {
 				this.setBounds(this.getBounds().x, this.getBounds().y, metrics.stringWidth(text) + 180, this.getBounds().height);
@@ -373,7 +371,7 @@ public class XFInputDialogField extends JPanel {
    
    public Object getItem() {
 		if (inputType_.equals("LISTBOX")) {
-			return ((JComboBox)component).getItemAt(((JComboBox)component).getSelectedIndex());
+			return ((JComboBox<String>)component).getItemAt(((JComboBox<String>)component).getSelectedIndex());
 		} else {
 			return null;
 		}
@@ -381,7 +379,7 @@ public class XFInputDialogField extends JPanel {
    
    public int getItemCount() {
 		if (inputType_.equals("LISTBOX")) {
-			return ((JComboBox)component).getItemCount();
+			return ((JComboBox<String>)component).getItemCount();
 		} else {
 			return 0;
 		}
@@ -422,7 +420,9 @@ public class XFInputDialogField extends JPanel {
 			ImageIcon imageIcon = new ImageIcon(xeadDriver.XFInputDialogField.class.getResource("prompt.png"));
 		 	jButton.setIcon(imageIcon);
 			jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
-			this.add(jButton, BorderLayout.EAST);
+			//this.add(jButton, BorderLayout.EAST);
+			jPanelEast.add(jButton, BorderLayout.CENTER);
+			jPanelEast.setSize(jPanelEast.getWidth() + 26, XFUtility.FIELD_UNIT_HEIGHT);
 			this.setBounds(this.getBounds().x, this.getBounds().y, this.getBounds().width + 26, this.getBounds().height);
 			jButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -495,7 +495,9 @@ public class XFInputDialogField extends JPanel {
 			ImageIcon imageIcon = new ImageIcon(xeadDriver.XFInputDialogField.class.getResource("prompt.png"));
 		 	jButton.setIcon(imageIcon);
 			jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
-			this.add(jButton, BorderLayout.EAST);
+			//this.add(jButton, BorderLayout.EAST);
+			jPanelEast.add(jButton, BorderLayout.CENTER);
+			jPanelEast.setSize(jPanelEast.getWidth() + 26, XFUtility.FIELD_UNIT_HEIGHT);
 			this.setBounds(this.getBounds().x, this.getBounds().y, this.getBounds().width + 26, this.getBounds().height);
 			jButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -526,7 +528,9 @@ public class XFInputDialogField extends JPanel {
 			ImageIcon imageIcon = new ImageIcon(xeadDriver.XFInputDialogField.class.getResource("prompt.png"));
 		 	jButton.setIcon(imageIcon);
 			jButton.setPreferredSize(new Dimension(26, XFUtility.FIELD_UNIT_HEIGHT));
-			this.add(jButton, BorderLayout.EAST);
+			//this.add(jButton, BorderLayout.EAST);
+			jPanelEast.add(jButton, BorderLayout.CENTER);
+			jPanelEast.setSize(jPanelEast.getWidth() + 26, XFUtility.FIELD_UNIT_HEIGHT);
 			this.setBounds(this.getBounds().x, this.getBounds().y, this.getBounds().width + 26, this.getBounds().height);
 			jButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {

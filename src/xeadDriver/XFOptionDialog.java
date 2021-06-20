@@ -38,6 +38,7 @@ import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -51,7 +52,7 @@ import javax.swing.ListSelectionModel;
 public class XFOptionDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
     private JPanel jPanelMain = new JPanel();
-    private JList jList = null;
+    private JList<Object> jList = null;
 	private Session session_;
     private Dimension scrSize, dlgSize;
     private int maxCellWidth = 0;
@@ -115,7 +116,7 @@ public class XFOptionDialog extends JDialog {
     	this.setTitle(title);
 
     	jPanelMain.removeAll();
-    	jList = new JList(optionList.toArray());
+    	jList = new JList<Object>(optionList.toArray());
 		jList.setFont(new java.awt.Font(session_.systemFont, 0, XFUtility.FONT_SIZE));
 		jList.setSelectedIndex(0);
 		jList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

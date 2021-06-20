@@ -203,6 +203,7 @@ public class Res extends java.util.ListResourceBundle {
 		{ "FunctionMessage64", "Sure to delete the header record?" },
 		{ "FunctionMessage65", "Web service is not available. Retry connectiong without proxy?" },
 		{ "FunctionMessage66", "Push the start button to execute." },
+		{ "FunctionMessage67", "The method of instance executeScript(...) has ended abnormally." },
 		{ "Iconify", "Iconify" },
 		{ "ImageFileMessage1", "Click to browse the image." },
 		{ "ImageFileNotFound1", "<html>Image file specified<br>" },
